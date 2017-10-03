@@ -1,5 +1,4 @@
 [![License: GPL v3](https://img.shields.io/badge/license-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
-[![Dependencies Status](https://jarkeeper.com/bob-cd/bob/status.svg)](https://jarkeeper.com/bob-cd/bob)
 
 # Bob the Builder
 

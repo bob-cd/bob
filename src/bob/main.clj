@@ -23,22 +23,18 @@
             [ring.util.response :refer [response]])
   (:gen-class))
 
-(defn status
-  [request]
+(defn status [request]
   (response {:status "Ok"}))
 
 (defroutes app
            (GET "/status" [] status)
            (route/not-found "You've hit a dead end."))
 
-(defn wrap
-  [app]
+(defn wrap [app]
   (wrap-defaults (wrap-json-response app) api-defaults))
 
-(defn -main
-  [& args]
-  (let [app (wrap app)]
-    (run-jetty {:ring-handler         app
-                :port                 7777
-                :http2?               true
-                :send-server-version? false})))
+(defn -main [& args]
+  (run-jetty {:ring-handler         (wrap app)
+              :port                 7777
+              :http2?               true
+              :send-server-version? false}))
