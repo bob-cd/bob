@@ -13,14 +13,19 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.primitives.env)
+(ns bob.primitives.env.env-test
+  (:require [clojure.test :refer :all]
+            [bob.primitives.env.env :refer :all])
+  (:import (bob.primitives.env.env Env)))
 
-(defrecord Env [id vars])
-
-(defn add-var-in [env key value]
-  (Env. (.id env)
-        (assoc (.vars env) key value)))
-
-(defn remove-var-from [env key]
-  (Env. (.id env)
-        (dissoc (.vars env) key)))
+(deftest env-test
+  (testing "Adding var to Bob Env"
+    (let [initial-env (Env. "1" {:k1 "v1"})
+          final-env (Env. "1" {:k1 "v1"
+                               :k2 "v2"})]
+      (is (= final-env (add-var-in initial-env :k2 "v2")))))
+  (testing "Removing var from Bob Env"
+    (let [initial-env (Env. "1" {:k1 "v1"
+                                 :k2 "v2"})
+          final-env (Env. "1" {:k1 "v1"})]
+      (is (= final-env (remove-var-from initial-env :k2))))))
