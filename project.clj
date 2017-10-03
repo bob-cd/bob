@@ -26,7 +26,8 @@
                   :excludes [javax .servlet/servlet-api]]
                  [ring/ring-defaults "0.3.1"
                   :excludes [javax .servlet/servlet-api]]
-                 [ring/ring-json "0.4.0"]]
+                 [ring/ring-json "0.4.0"]
+                 [cheshire "5.8.0"]]
   :plugins [[lein-cloverage "1.0.9"]
             [lein-ancient "0.6.10"]]
   :main bob.main
