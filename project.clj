@@ -30,5 +30,4 @@
             [lein-ancient "0.6.10"]]
   :main bob.main
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}
-             :dev     {:dependencies [[ring/ring-mock "0.3.1"]]}})
+  :profiles {:uberjar {:aot :all}})
