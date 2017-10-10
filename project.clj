@@ -17,16 +17,11 @@
   :description "This is what CI/CD should've been."
   :license {:name "GPL 3.0"
             :url  "https://www.gnu.org/licenses/gpl-3.0.en.html"}
-  :dependencies [[org.clojure/clojure "1.8.0"]
-                 [compojure "1.6.0"]
-                 [cc.qbits/jet "0.7.11"]
-                 [ring/ring-core "1.6.2"
-                  :excludes [javax .servlet/servlet-api]]
-                 [ring/ring-servlet "1.6.2"
-                  :excludes [javax .servlet/servlet-api]]
-                 [ring/ring-defaults "0.3.1"
-                  :excludes [javax .servlet/servlet-api]]
-                 [ring/ring-json "0.4.0"]
+  :dependencies [[org.clojure/clojure "1.9.0-beta2"]
+                 [io.pedestal/pedestal.service "0.5.3"]
+                 [io.pedestal/pedestal.route "0.5.3"]
+                 [io.pedestal/pedestal.immutant "0.5.3"]
+                 [org.slf4j/slf4j-simple "1.7.25"]
                  [cheshire "5.8.0"]
                  [ragtime "0.7.2"]
                  [com.h2database/h2 "1.4.196"]

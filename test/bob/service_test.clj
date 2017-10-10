@@ -13,23 +13,14 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.main-test
+(ns bob.service-test
   (:require [clojure.test :refer :all]
-            [ring.mock.request :as mock]
-            [bob.main :refer :all]))
+            [io.pedestal.test :refer :all]
+            [io.pedestal.http :as http]
+            [bob.service :refer [service]]))
 
-(deftest routes-test
-  (testing "Status page"
-    (let [response (app (mock/request :get "/status"))
-          body (:body response)]
-      (is (= (:status response) 200))
-      (is (= (:status body) "Ok"))))
+(def mocked-service
+  (::http/service-fn (http/create-servlet service)))
 
-  (testing "Non-existent route"
-    (let [response (app (mock/request :get "/bogus-route"))
-          body (:body response)]
-      (is (= (:status response) 404))
-      (is (= body "You've hit a dead end."))))
-
-  (testing "Wrapping bob"
-    (is (not (nil? (wrap app))))))
+(deftest status-test
+  (is (= "{\"status\":\"Ok\"}" (:body (response-for mocked-service :get "/status")))))

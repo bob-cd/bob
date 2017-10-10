@@ -14,29 +14,11 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.main
-  (:require [qbits.jet.server :refer [run-jetty]]
-            [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
-            [compojure.core :refer :all]
-            [compojure.route :as route]
-            [compojure.response :refer [render]]
-            [ring.middleware.json :refer [wrap-json-response]]
-            [ring.util.response :refer [response]]
+  (:require [io.pedestal.http :as http]
+            [bob.service :refer [service]]
             [bob.storage.db :refer [init-db]])
   (:gen-class))
 
-(defn status [request]
-  (response {:status "Ok"}))
-
-(defroutes app
-           (GET "/status" [] status)
-           (route/not-found "You've hit a dead end."))
-
-(defn wrap [app]
-  (wrap-defaults (wrap-json-response app) api-defaults))
-
 (defn -main [& args]
   (do (init-db)
-      (run-jetty {:ring-handler         (wrap app)
-                  :port                 7777
-                  :http2?               true
-                  :send-server-version? false})))
+      (http/start (http/create-server service))))
