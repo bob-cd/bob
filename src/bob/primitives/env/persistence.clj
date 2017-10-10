@@ -38,7 +38,7 @@
                                    :KEY   (name key)
                                    :VALUE (key vars)}))))))
 
-(defn get-vars [id]
+(defn- get-vars [id]
   (->> (select envvars (where {:ID [= id]}))
        (map #(hash-map (keyword (:KEY %)) (:VALUE %)))
        (into (hash-map))))
