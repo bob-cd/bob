@@ -27,7 +27,10 @@
                  [ring/ring-defaults "0.3.1"
                   :excludes [javax .servlet/servlet-api]]
                  [ring/ring-json "0.4.0"]
-                 [cheshire "5.8.0"]]
+                 [cheshire "5.8.0"]
+                 [ragtime "0.7.2"]
+                 [com.h2database/h2 "1.4.196"]
+                 [korma "0.4.3"]]
   :plugins [[lein-cloverage "1.0.9"]
             [lein-ancient "0.6.10"]]
   :main bob.main

@@ -13,15 +13,22 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.primitives.env.serialization
-  (:require [cheshire.core :refer [generate-string parse-string]]
-            [bob.primitives.env.env :refer [map->Env]]))
+(ns bob.storage.db
+  (:require [ragtime.jdbc :as jdbc]
+            [ragtime.repl :refer [migrate]])
+  (:import java.io.File))
 
-; TODO 1: Find a better way if possible, or Spec it.
-(defn env-to-json [env]
-  (generate-string env))
+(defonce db-spec
+         {:classname   "org.h2.Driver"
+          :subprotocol "h2:file"
+          :subname     (str (System/getProperty "user.home")
+                            File/separator
+                            ".bob")})
 
-(defn json-to-env [json]
-  (-> json
-      (parse-string true)
-      (map->Env)))
+(def migration-config
+  {:datastore  (jdbc/sql-database db-spec)
+   :migrations (jdbc/load-resources "migrations")})
+
+; TODO 2: Use ragtime.core's migrate-all
+(defn init-db []
+  (migrate migration-config))

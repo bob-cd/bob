@@ -20,7 +20,8 @@
             [compojure.route :as route]
             [compojure.response :refer [render]]
             [ring.middleware.json :refer [wrap-json-response]]
-            [ring.util.response :refer [response]])
+            [ring.util.response :refer [response]]
+            [bob.storage.db :refer [init-db]])
   (:gen-class))
 
 (defn status [request]
@@ -34,7 +35,8 @@
   (wrap-defaults (wrap-json-response app) api-defaults))
 
 (defn -main [& args]
-  (run-jetty {:ring-handler         (wrap app)
-              :port                 7777
-              :http2?               true
-              :send-server-version? false}))
+  (do (init-db)
+      (run-jetty {:ring-handler         (wrap app)
+                  :port                 7777
+                  :http2?               true
+                  :send-server-version? false})))
