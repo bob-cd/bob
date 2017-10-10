@@ -26,13 +26,11 @@
 (defn accepted-type [context]
   (get-in context [:request :accept :field] "application/json"))
 
-(defn transform-content
-  [body content-type]
+(defn transform-content [body content-type]
   (case content-type
     "application/json" (generate-string body)))
 
-(defn coerce-to
-  [response content-type]
+(defn coerce-to [response content-type]
   (-> response
       (update :body transform-content content-type)
       (assoc-in [:headers "Content-Type"] content-type)))
