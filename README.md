@@ -1,6 +1,7 @@
 [![License: GPL v3](https://img.shields.io/badge/license-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://travis-ci.org/bob-cd/bob.svg?branch=master)](https://travis-ci.org/bob-cd/bob)
 [![codecov](https://codecov.io/gh/bob-cd/bob/branch/master/graph/badge.svg)](https://codecov.io/gh/bob-cd/bob)
+[![Dependencies Status](https://versions.deps.co/bob-cd/bob/status.png)](https://versions.deps.co/bob-cd/bob)
 
 # Bob the Builder
 
