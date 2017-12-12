@@ -17,7 +17,7 @@
   :description "This is what CI/CD should've been."
   :license {:name "GPL 3.0"
             :url  "https://www.gnu.org/licenses/gpl-3.0.en.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-beta2"]
+  :dependencies [[org.clojure/clojure "1.9.0"]
                  [io.pedestal/pedestal.service "0.5.3"]
                  [io.pedestal/pedestal.route "0.5.3"]
                  [io.pedestal/pedestal.immutant "0.5.3"]
