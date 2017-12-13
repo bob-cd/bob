@@ -26,7 +26,7 @@
                  [com.h2database/h2 "1.4.196"]
                  [korma "0.4.3"]]
   :plugins [[lein-cloverage "1.0.9"]
-            [lein-ancient "0.6.10"]]
+            [lein-ancient "0.6.14"]]
   :main bob.main
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
