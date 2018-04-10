@@ -14,11 +14,9 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.main
-  (:require [io.pedestal.http :as http]
-            [bob.service :refer [service]]
-            [bob.storage.db :refer [init-db]])
-  (:gen-class))
+  (:require [aleph.http :as http]
+            [bob.routes :refer [routes]]))
 
-(defn -main [& args]
-  (do (init-db)
-      (http/start (http/create-server service))))
+(defn -main
+  [& _]
+  (http/start-server routes {:port 7777}))

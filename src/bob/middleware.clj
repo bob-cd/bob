@@ -13,8 +13,13 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-{:up   ["CREATE TABLE envvars (id    varchar(32),
-                               key   varchar(30),
-                               value varchar(50),
-                               FOREIGN KEY (id) REFERENCES env(id) ON DELETE CASCADE);"]
- :down ["DROP TABLE envvars;"]}
+(ns bob.middleware)
+
+(defn ignore-trailing-slash
+  [handler]
+  (fn [request]
+    (let [uri ^String (:uri request)]
+      (handler (assoc request :uri (if (and (not (= "/" uri))
+                                            (.endsWith uri "/"))
+                                     (subs uri 0 (dec (count uri)))
+                                     uri))))))

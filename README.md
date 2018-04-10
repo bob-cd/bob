@@ -11,11 +11,11 @@ This is what CI/CD should've been.
 
 ## Build requirements
 - Preferably any *nix environment
-- JDK 1.8
+- JDK 1.8+
 - [Leiningen](https://leiningen.org/) 2.0+
 
 ## Running requirements
-- JRE 1.8
+- JRE 1.8+
 
 ## Testing, building and running
 - Run `lein cloverage` to run tests with coverage.

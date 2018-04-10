@@ -13,17 +13,9 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.primitives.env.serialization-test
-  (:require [clojure.test :refer :all]
-            [bob.primitives.env.serialization :refer :all])
-  (:import (bob.primitives.env.env Env)))
+(ns bob.util
+  (:require [ring.util.response :refer [response]]))
 
-(deftest env-serialization-test
-  (testing "Serialize Env to JSON"
-    (let [json "{\"id\":\"1\",\"vars\":{\"k1\":\"v1\"}}"
-          env (Env. "1" {:k1 "v1"})]
-      (is (= json (env-to-json env)))))
-  (testing "De-Serialize JSON to Env"
-    (let [json "{\"id\":\"1\",\"vars\":{\"k1\":\"v1\"}}"
-          env (Env. "1" {:k1 "v1"})]
-      (is (= env (json-to-env json))))))
+(defn m
+  [msg]
+  (response {:message msg}))

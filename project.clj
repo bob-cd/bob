@@ -18,15 +18,17 @@
   :license {:name "GPL 3.0"
             :url  "https://www.gnu.org/licenses/gpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [io.pedestal/pedestal.service "0.5.3"]
-                 [io.pedestal/pedestal.route "0.5.3"]
-                 [io.pedestal/pedestal.immutant "0.5.3"]
-                 [cheshire "5.8.0"]
-                 [ragtime "0.7.2"]
-                 [com.h2database/h2 "1.4.196"]
-                 [korma "0.4.3"]]
-  :plugins [[lein-cloverage "1.0.9"]
-            [lein-ancient "0.6.14"]]
+                 [manifold "0.1.6"]
+                 [aleph "0.4.4"]
+                 [ring "1.6.3"]
+                 [ring/ring-json "0.4.0"]
+                 [compojure "1.6.0"]
+                 [com.fasterxml.jackson.core/jackson-core "2.9.5"]
+                 [com.spotify/docker-client "8.11.2"]]
+  :plugins [[lein-cloverage "1.0.10"]
+            [lein-ancient "0.6.15"]]
+  :jvm-opts ["--add-modules" "java.xml.bind"]
+  :global-vars {*warn-on-reflection* true}
   :main bob.main
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
