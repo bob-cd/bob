@@ -15,7 +15,8 @@
 
 (ns bob.main
   (:require [aleph.http :as http]
-            [bob.routes :refer [routes]]))
+            [bob.routes :refer [routes]])
+  (:gen-class))
 
 (defn -main
   [& _]
