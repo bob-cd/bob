@@ -16,6 +16,7 @@ This is what CI/CD should've been.
 
 ## Running requirements
 - JRE 1.8+
+- Docker
 
 ## Testing, building and running
 - Run `lein cloverage` to run tests with coverage.

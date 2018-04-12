@@ -16,11 +16,15 @@
 (ns bob.execution
   (:require [clojure.string :refer [split-lines]]
             [manifold.deferred :as d]
+            [failjure.core :as f]
             [bob.util :refer [m]])
   (:import (com.spotify.docker.client DefaultDockerClient LogStream DockerClient$LogsParam)
-           (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation)))
+           (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation)
+           (java.util List)))
 
 (def default-image "debian:latest")
+
+(def default-command ["bash" "-c" "while sleep 1; do echo ${RANDOM}; done"])
 
 (def docker ^DefaultDockerClient (.build (DefaultDockerClient/fromEnv)))
 
@@ -30,22 +34,48 @@
                             [(DockerClient$LogsParam/stdout)
                              (DockerClient$LogsParam/stderr)]))
 
+(defn- perform!
+  [action]
+  (f/try* (action)))
+
+(defn- has-image
+  [name]
+  (let [result (perform! #(.searchImages docker name))]
+    (if (or (f/failed? result) (zero? (count result)))
+      (f/fail "%s not found" name)
+      name)))
+
+(defn- pull
+  [name]
+  (if (f/failed? (has-image name))
+    (perform! #(.pull docker name))
+    name))
+
+(defn- build
+  [^String image ^List cmd]
+  (perform! #(let [config   (-> (ContainerConfig/builder)
+                                (.hostConfig host-config)
+                                (.image image)
+                                (.cmd cmd)
+                                (.build))
+                   creation ^ContainerCreation (.createContainer docker config)]
+               (.id creation))))
+
 (defn- run
-  []
-  (let [config   (-> (ContainerConfig/builder)
-                     (.hostConfig host-config)
-                     (.image default-image)
-                     (.cmd ["bash" "-c" "while sleep 1; do echo ${RANDOM}; done"])
-                     (.build))
-        creation ^ContainerCreation (.createContainer docker config)
-        id       (.id creation)]
-    (do (.startContainer docker id)
-        id)))
+  [^String id]
+  (let [result (perform! #(.startContainer docker id))]
+    (if (f/failed? result)
+      (format "Could not start: %s" (f/message result))
+      (subs id 0 12))))
 
 (defn start
   [_]
-  (d/let-flow [id ^String (run)]
-              (m (subs id 0 12))))
+  (d/let-flow [result (f/ok-> (pull default-image)
+                              (build default-command)
+                              (run))]
+              (m (if (f/failed? result)
+                   (f/message result)
+                   result))))
 
 (defn logs-of
   [id count]
