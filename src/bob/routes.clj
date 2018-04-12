@@ -19,7 +19,7 @@
             [compojure.core :as compojure]
             [compojure.route :as route]
             [compojure.core :as compojure :refer [GET]]
-            [bob.execution :refer [start logs-of stop]]
+            [bob.execution.core :refer [start logs-of stop]]
             [bob.middleware :refer [ignore-trailing-slash]]
             [bob.util :refer [m]]))
 

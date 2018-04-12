@@ -13,12 +13,11 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.execution
+(ns bob.execution.blocks
   (:require [clojure.string :refer [split-lines]]
-            [manifold.deferred :as d]
             [failjure.core :as f]
             [bob.util :refer [m]])
-  (:import (com.spotify.docker.client DefaultDockerClient LogStream DockerClient$LogsParam)
+  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam)
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation)
            (java.util List)))
 
@@ -38,20 +37,20 @@
   [action]
   (f/try* (action)))
 
-(defn- has-image
+(defn has-image
   [name]
   (let [result (perform! #(.searchImages docker name))]
     (if (or (f/failed? result) (zero? (count result)))
       (f/fail "%s not found" name)
       name)))
 
-(defn- pull
+(defn pull
   [name]
   (if (f/failed? (has-image name))
     (perform! #(.pull docker name))
     name))
 
-(defn- build
+(defn build
   [^String image ^List cmd]
   (perform! #(let [config   (-> (ContainerConfig/builder)
                                 (.hostConfig host-config)
@@ -61,33 +60,9 @@
                    creation ^ContainerCreation (.createContainer docker config)]
                (.id creation))))
 
-(defn- run
+(defn run
   [^String id]
   (let [result (perform! #(.startContainer docker id))]
     (if (f/failed? result)
       (format "Could not start: %s" (f/message result))
       (subs id 0 12))))
-
-(defn start
-  [_]
-  (d/let-flow [result (f/ok-> (pull default-image)
-                              (build default-command)
-                              (run))]
-              (m (if (f/failed? result)
-                   (f/message result)
-                   result))))
-
-(defn logs-of
-  [id count]
-  (d/let-flow [log-stream ^LogStream (.logs docker id log-params)
-               log (->> log-stream
-                        (.readFully)
-                        (split-lines)
-                        (take count))]
-              (m log)))
-
-(defn stop
-  [id]
-  (d/let-flow [_ (.killContainer docker id)
-               _ (.removeContainer docker id)]
-              (m true)))
