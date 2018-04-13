@@ -17,7 +17,7 @@
   (:require [clojure.string :refer [split-lines]]
             [failjure.core :as f]
             [bob.util :refer [m]])
-  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam)
+  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam)
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation)
            (java.util List)))
 
@@ -37,17 +37,20 @@
   [action]
   (f/try* (action)))
 
-(defn has-image
+(defn- has-image
   [name]
-  (let [result (perform! #(.searchImages docker name))]
+  (let [result (perform! #(.listImages docker (into-array DockerClient$ListImagesParam
+                                                          [(DockerClient$ListImagesParam/byName name)])))]
     (if (or (f/failed? result) (zero? (count result)))
-      (f/fail "%s not found" name)
+      (f/fail "Failed to find %s" name)
       name)))
 
 (defn pull
   [name]
-  (if (f/failed? (has-image name))
-    (perform! #(.pull docker name))
+  (if (and (f/failed? (has-image name)) (f/failed? (perform! #(do (println (format "Pulling %s" name))
+                                                                  (.pull docker name)
+                                                                  (println (format "Pulled %s" name))))))
+    (f/fail "Cannot pull %s" name)
     name))
 
 (defn build
@@ -64,5 +67,5 @@
   [^String id]
   (let [result (perform! #(.startContainer docker id))]
     (if (f/failed? result)
-      (format "Could not start: %s" (f/message result))
+      (format "Run failed due to %s" (f/message result))
       (subs id 0 12))))
