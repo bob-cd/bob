@@ -75,8 +75,18 @@
   (perform! #(.logs docker name log-params)))
 
 (defn read-log-stream
-  [^LogStream stream ^Integer count]
+  [^LogStream stream count]
   (perform! #(->> stream
                   (.readFully)
                   (split-lines)
                   (take count))))
+
+(defn kill-container
+  [name]
+  (if (f/failed? (perform! #(.killContainer docker name)))
+    (f/fail "Could not kill %s" name)
+    name))
+
+(defn remove-container
+  [name]
+  (perform! #(.removeContainer docker name)))

@@ -17,29 +17,30 @@
   (:require [clojure.string :refer [split-lines]]
             [manifold.deferred :as d]
             [failjure.core :as f]
-            [bob.execution.blocks :refer [docker default-image default-command log-params pull build run
-                                          log-stream-of read-log-stream]]
+            [bob.execution.blocks :as b]
             [bob.util :refer [m]]))
 
 (defn start
   [_]
-  (d/let-flow [result (f/ok-> (pull default-image)
-                              (build default-command)
-                              (run))]
+  (d/let-flow [result (f/ok-> (b/pull b/default-image)
+                              (b/build b/default-command)
+                              (b/run))]
               (m (if (f/failed? result)
                    (f/message result)
                    result))))
 
 (defn logs-of
-  [id count]
-  (d/let-flow [result (f/ok-> (log-stream-of id)
-                              (read-log-stream count))]
+  [name count]
+  (d/let-flow [result (f/ok-> (b/log-stream-of name)
+                              (b/read-log-stream count))]
               (m (if (f/failed? result)
                    (f/message result)
                    result))))
 
 (defn stop
-  [^String id]
-  (d/let-flow [_ (.killContainer docker id)
-               _ (.removeContainer docker id)]
-              (m true)))
+  [^String name]
+  (d/let-flow [result (f/ok-> (b/kill-container name)
+                              (b/remove-container))]
+              (m (if (f/failed? result)
+                   (f/message result)
+                   true))))
