@@ -17,7 +17,7 @@
   (:require [clojure.string :refer [split-lines]]
             [failjure.core :as f]
             [bob.util :refer [m]])
-  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam)
+  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam LogStream)
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation)
            (java.util List)))
 
@@ -69,3 +69,14 @@
     (if (f/failed? result)
       (format "Run failed due to %s" (f/message result))
       (subs id 0 12))))
+
+(defn log-stream-of
+  [name]
+  (perform! #(.logs docker name log-params)))
+
+(defn read-log-stream
+  [^LogStream stream ^Integer count]
+  (perform! #(->> stream
+                  (.readFully)
+                  (split-lines)
+                  (take count))))

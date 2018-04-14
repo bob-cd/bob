@@ -17,9 +17,9 @@
   (:require [clojure.string :refer [split-lines]]
             [manifold.deferred :as d]
             [failjure.core :as f]
-            [bob.execution.blocks :refer [docker default-image default-command log-params pull build run]]
-            [bob.util :refer [m]])
-  (:import (com.spotify.docker.client LogStream)))
+            [bob.execution.blocks :refer [docker default-image default-command log-params pull build run
+                                          log-stream-of read-log-stream]]
+            [bob.util :refer [m]]))
 
 (defn start
   [_]
@@ -32,12 +32,11 @@
 
 (defn logs-of
   [id count]
-  (d/let-flow [log-stream ^LogStream (.logs docker id log-params)
-               log (->> log-stream
-                        (.readFully)
-                        (split-lines)
-                        (take count))]
-              (m log)))
+  (d/let-flow [result (f/ok-> (log-stream-of id)
+                              (read-log-stream count))]
+              (m (if (f/failed? result)
+                   (f/message result)
+                   result))))
 
 (defn stop
   [^String id]
