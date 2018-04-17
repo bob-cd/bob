@@ -21,7 +21,7 @@
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation)
            (java.util List)))
 
-(def default-image "debian:latest")
+(def default-image "debian:unstable-slim")
 
 (def default-command ["bash" "-c" "while sleep 1; do echo ${RANDOM}; done"])
 
