@@ -9,6 +9,8 @@
 
 This is what CI/CD should've been.
 
+### More info [here](https://github.com/bob-cd/bob/blob/master/RATIONALE.md)
+
 ## Build requirements
 - Preferably any *nix environment
 - JDK 1.8+
