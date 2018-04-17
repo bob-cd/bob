@@ -14,8 +14,7 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.execution.core
-  (:require [clojure.string :refer [split-lines]]
-            [manifold.deferred :as d]
+  (:require [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
             [bob.execution.blocks :as b]
             [bob.util :refer [m]]))
@@ -26,25 +25,25 @@
   ([] (start b/default-command b/default-image))
   ([command] (start command b/default-image))
   ([command image]
-   (d/let-flow [result (f/ok-> (b/pull image)
-                               (b/build command)
-                               (b/run))]
-               (m (if (f/failed? result)
-                    (f/message result)
-                    result)))))
+   (let-flow [result (f/ok-> (b/pull image)
+                             (b/build command)
+                             (b/run))]
+             (m (if (f/failed? result)
+                  (f/message result)
+                  result)))))
 
 (defn logs-of
   [name count]
-  (d/let-flow [result (f/ok-> (b/log-stream-of name)
-                              (b/read-log-stream count))]
-              (m (if (f/failed? result)
-                   (f/message result)
-                   result))))
+  (let-flow [result (f/ok-> (b/log-stream-of name)
+                            (b/read-log-stream count))]
+            (m (if (f/failed? result)
+                 (f/message result)
+                 result))))
 
 (defn stop
   [^String name]
-  (d/let-flow [result (f/ok-> (b/kill-container name)
-                              (b/remove-container))]
-              (m (if (f/failed? result)
-                   (f/message result)
-                   true))))
+  (let-flow [result (f/ok-> (b/kill-container name)
+                            (b/remove-container))]
+            (m (if (f/failed? result)
+                 (f/message result)
+                 "Ok"))))
