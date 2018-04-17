@@ -22,7 +22,7 @@
                  [aleph "0.4.4"]
                  [ring "1.6.3"]
                  [ring/ring-json "0.4.0"]
-                 [compojure "1.6.0"]
+                 [compojure "1.6.1"]
                  [com.fasterxml.jackson.core/jackson-core "2.9.5"]
                  [com.spotify/docker-client "8.11.2"]
                  [failjure "1.3.0"]]
