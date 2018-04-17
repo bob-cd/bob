@@ -15,9 +15,9 @@
 
 (ns bob.main
   (:require [aleph.http :as http]
-            [bob.routes :refer [routes]])
+            [bob.routes :refer [bob-routes]])
   (:gen-class))
 
 (defn -main
   [& _]
-  (http/start-server routes {:port 7777}))
+  (http/start-server bob-routes {:port 7777}))

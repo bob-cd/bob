@@ -14,27 +14,32 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.routes
-  (:require [ring.middleware.json :refer [wrap-json-response]]
+  (:require [clojure.string :refer [split]]
+            [ring.middleware.json :refer [wrap-json-response]]
             [ring.middleware.params :as params]
-            [compojure.core :as compojure]
+            [compojure.core :refer [GET POST defroutes]]
             [compojure.route :as route]
-            [compojure.core :as compojure :refer [GET]]
             [bob.execution.core :refer [start logs-of stop]]
             [bob.middleware :refer [ignore-trailing-slash]]
-            [bob.util :refer [m]]))
+            [bob.util :refer [m]])
+  (:import (org.apache.tools.ant.types Commandline)))
 
 (defn status
   [_]
   (m "Bob's here!"))
 
-(def routes
-  (-> (compojure/routes
-        (GET "/" [] status)
-        (GET "/status" [] status)
-        (GET "/start" [] start)
-        (GET "/read/:id/:count" [id count] (logs-of id (Integer/parseInt count)))
-        (GET "/stop/:id" [id] (stop id))
-        (route/not-found (m "Took a wrong turn?")))
+(defroutes routes
+  (GET "/" [] status)
+  (GET "/status" [] status)
+  ;; TODO: Parse the command with something else/lighter?
+  (POST "/start" [& args] (start (seq (Commandline/translateCommandline (args "cmd")))
+                                 (args "img")))
+  (GET "/read/:id/:count" [id count] (logs-of id (Integer/parseInt count)))
+  (GET "/stop/:id" [id] (stop id))
+  (route/not-found (m "Took a wrong turn?")))
+
+(def bob-routes
+  (-> routes
       (ignore-trailing-slash)
       (wrap-json-response)
       (params/wrap-params)))

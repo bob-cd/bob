@@ -20,14 +20,18 @@
             [bob.execution.blocks :as b]
             [bob.util :refer [m]]))
 
+;; TODO: Extract the let-flow->s to a macro?
+
 (defn start
-  [_]
-  (d/let-flow [result (f/ok-> (b/pull b/default-image)
-                              (b/build b/default-command)
-                              (b/run))]
-              (m (if (f/failed? result)
-                   (f/message result)
-                   result))))
+  ([] (start b/default-command b/default-image))
+  ([command] (start command b/default-image))
+  ([command image]
+   (d/let-flow [result (f/ok-> (b/pull image)
+                               (b/build command)
+                               (b/run))]
+               (m (if (f/failed? result)
+                    (f/message result)
+                    result)))))
 
 (defn logs-of
   [name count]
