@@ -10,11 +10,11 @@
 
 ## Build requirements
 - Preferably any *nix environment
-- JDK 1.8+
+- JDK 9+
 - [Leiningen](https://leiningen.org/) 2.0+
 
 ## Running requirements
-- JRE 1.8+
+- JRE 9+
 - Docker
 
 ## Testing, building and running
