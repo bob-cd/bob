@@ -46,6 +46,7 @@ dev:
   pipelines:
     -
       test:
+        image: clojure:latest
         auto: True
         resources:
           -
@@ -56,6 +57,7 @@ dev:
           - "lein test"
     -
       build:
+        image: clojure:latest
         artifacts:
           -
             name: jar
@@ -68,6 +70,7 @@ dev:
           - "lein uberjar"
     -
       package:
+        image: debian:latest
         artifacts:
           -
             name: dev_installer
@@ -89,6 +92,7 @@ stable:
   pipelines:
     -
       sign:
+      image: debian:latest
         artifacts:
           -
             name: bob_signature
@@ -101,6 +105,7 @@ stable:
           - "gpg --output bob.sig --sign bob*-standalone.jar"
     -
       upload:
+        image: debain:latest
         auto: False
         resources:
           -

@@ -47,9 +47,10 @@
 
 (defn pull
   [name]
-  (if (and (f/failed? (has-image name)) (f/failed? (perform! #(do (println (format "Pulling %s" name))
-                                                                  (.pull docker name)
-                                                                  (println (format "Pulled %s" name))))))
+  (if (and (f/failed? (has-image name))
+           (f/failed? (perform! #(do (println (format "Pulling %s" name))
+                                     (.pull docker name)
+                                     (println (format "Pulled %s" name))))))
     (f/fail "Cannot pull %s" name)
     name))
 
