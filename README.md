@@ -5,11 +5,9 @@
 
 # Bob the Builder
 
-![](http://vignette2.wikia.nocookie.net/dreamlogos/images/8/8d/Btb1.png/revision/latest?cb=20150801085138)
+## This is what CI/CD should've been.
 
-This is what CI/CD should've been.
-
-### More info [here](https://github.com/bob-cd/bob/blob/master/RATIONALE.md)
+### More [info](https://github.com/bob-cd/bob/blob/master/RATIONALE.md)
 
 ## Build requirements
 - Preferably any *nix environment
@@ -25,4 +23,4 @@ This is what CI/CD should've been.
 - Run `lein uberjar` to get the standalone JAR.
 - Run `java -jar <JAR_file>` to start the server on port **7777**.
 
-**Bob the Builder image is ©BBC**
+![](https://raw.githubusercontent.com/bob-cd/bob/master/resources/bob_cc.png)
