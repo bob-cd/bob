@@ -17,6 +17,3 @@ language: clojure
 jdk:
   - oraclejdk8
   - oraclejdk9
-after_success:
-  - CLOVERAGE_VERSION=1.0.10 lein cloverage --codecov
-  - bash <(curl -s https://codecov.io/bash) -f target/coverage/codecov.json
