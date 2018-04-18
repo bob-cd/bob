@@ -16,7 +16,7 @@
 (ns bob.execution.blocks
   (:require [clojure.string :refer [split-lines]]
             [failjure.core :as f]
-            [bob.util :refer [m]])
+            [bob.util :refer [respond]])
   (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam LogStream)
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation)
            (java.util List)))

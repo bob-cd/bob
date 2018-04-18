@@ -21,12 +21,12 @@
             [compojure.route :as route]
             [bob.execution.core :refer [start logs-of stop]]
             [bob.middleware :refer [ignore-trailing-slash]]
-            [bob.util :refer [m]])
+            [bob.util :refer [respond]])
   (:import (org.apache.tools.ant.types Commandline)))
 
 (defn status
   [_]
-  (m "Bob's here!"))
+  (respond "Bob's here!"))
 
 (defroutes routes
   (GET "/" [] status)
@@ -36,7 +36,7 @@
                                  (args "img")))
   (GET "/read/:id/:count" [id count] (logs-of id (Integer/parseInt count)))
   (GET "/stop/:id" [id] (stop id))
-  (route/not-found (m "Took a wrong turn?")))
+  (route/not-found (respond "Took a wrong turn?")))
 
 (def bob-routes
   (-> routes

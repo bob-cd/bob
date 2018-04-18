@@ -13,9 +13,15 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.util
-  (:require [ring.util.response :refer [response]]))
+(ns bob.util-test
+  (:require [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [bob.util :refer [respond]]))
 
-(defn respond
-  [msg]
-  (response {:message msg}))
+(defspec respond-returns-a-ring-response
+         100
+         (prop/for-all [msg gen/string]
+                       (= (respond msg) {:body    {:message msg}
+                                         :headers {}
+                                         :status  200})))

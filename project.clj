@@ -33,4 +33,5 @@
   :global-vars {*warn-on-reflection* true}
   :main bob.main
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+  :profiles {:dev     {:dependencies [[org.clojure/test.check "0.9.0"]]}
+             :uberjar {:aot :all}})

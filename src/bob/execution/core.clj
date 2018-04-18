@@ -17,7 +17,7 @@
   (:require [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
             [bob.execution.blocks :as b]
-            [bob.util :refer [m]]))
+            [bob.util :refer [respond]]))
 
 ;; TODO: Extract the let-flow->s to a macro?
 
@@ -28,7 +28,7 @@
    (let-flow [result (f/ok-> (b/pull image)
                              (b/build command)
                              (b/run))]
-             (m (if (f/failed? result)
+             (respond (if (f/failed? result)
                   (f/message result)
                   result)))))
 
@@ -36,7 +36,7 @@
   [name count]
   (let-flow [result (f/ok-> (b/log-stream-of name)
                             (b/read-log-stream count))]
-            (m (if (f/failed? result)
+            (respond (if (f/failed? result)
                  (f/message result)
                  result))))
 
@@ -44,6 +44,6 @@
   [^String name]
   (let-flow [result (f/ok-> (b/kill-container name)
                             (b/remove-container))]
-            (m (if (f/failed? result)
+            (respond (if (f/failed? result)
                  (f/message result)
                  "Ok"))))
