@@ -29,21 +29,21 @@
                              (b/build command)
                              (b/run))]
              (respond (if (f/failed? result)
-                  (f/message result)
-                  result)))))
+                        (f/message result)
+                        result)))))
 
 (defn logs-of
   [name count]
   (let-flow [result (f/ok-> (b/log-stream-of name)
                             (b/read-log-stream count))]
             (respond (if (f/failed? result)
-                 (f/message result)
-                 result))))
+                       (f/message result)
+                       result))))
 
 (defn stop
   [^String name]
   (let-flow [result (f/ok-> (b/kill-container name)
                             (b/remove-container))]
             (respond (if (f/failed? result)
-                 (f/message result)
-                 "Ok"))))
+                       (f/message result)
+                       "Ok"))))
