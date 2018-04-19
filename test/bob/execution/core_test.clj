@@ -27,7 +27,7 @@
 
 (def bad-test-image "busybox:mus")
 
-(deftest start-execution-test
+(deftest start-test
   (testing "successful start"
     (let [id ((@(start good-test-command good-test-image) :body) :message)]
       (is (not (nil? (re-matches SHA-pattern id))))
@@ -48,3 +48,12 @@
   (testing "unsuccessful log fetch"
     (let [log ((@(logs-of "crap" 1) :body) :message)]
       (is (= log "Container not found: crap")))))
+
+(deftest stop-test
+  (testing "successful stop"
+    (let [id  ((@(start good-test-command good-test-image) :body) :message)
+          msg ((@(stop id) :body) :message)]
+      (is (= "Ok" msg))))
+  (testing "unsuccessful stop"
+    (let [msg ((@(stop "crap") :body) :message)]
+      (is (= "Could not kill crap" msg)))))
