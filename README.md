@@ -18,7 +18,8 @@
 - Docker
 
 ## Testing, building and running
-- Run `lein cloverage` to run tests with coverage.
+- All these steps **need Docker**
+- Run `lein test` to run tests. 
 - Run `lein uberjar` to get the standalone JAR.
 - Run `java -jar <JAR_file>` to start the server on port **7777**.
 
