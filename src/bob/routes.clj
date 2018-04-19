@@ -24,9 +24,7 @@
             [bob.util :refer [respond]])
   (:import (org.apache.tools.ant.types Commandline)))
 
-(defn status
-  [_]
-  (respond "Bob's here!"))
+(def status (respond "Bob's here!"))
 
 (defroutes routes
   (GET "/" [] status)
