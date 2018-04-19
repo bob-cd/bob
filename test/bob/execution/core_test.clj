@@ -1,0 +1,40 @@
+;   This file is part of Bob.
+;
+;   Bob is free software: you can redistribute it and/or modify
+;   it under the terms of the GNU General Public License as published by
+;   the Free Software Foundation, either version 3 of the License, or
+;   (at your option) any later version.
+;
+;   Bob is distributed in the hope that it will be useful,
+;   but WITHOUT ANY WARRANTY; without even the implied warranty of
+;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;   GNU General Public License for more details.
+;
+;   You should have received a copy of the GNU General Public License
+;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+(ns bob.execution.core-test
+  (:require [clojure.test :refer :all]
+            [bob.execution.core :refer :all]))
+
+(def SHA-pattern #"\b[0-9a-f]{5,40}\b")
+
+(def good-test-command ["echo" "hello"])
+
+(def bad-test-command ["ech" "hello"])
+
+(def good-test-image "busybox:musl")
+
+(def bad-test-image "busybox:mus")
+
+(deftest start-execution-test
+  (testing "successful start"
+    (let [id ((@(start good-test-command good-test-image) :body) :message)]
+      (is (not (nil? (re-matches SHA-pattern id))))
+      (stop id)))
+  (testing "unsuccessful start with wrong image"
+    (let [id ((@(start good-test-command bad-test-image) :body) :message)]
+      (is (= id (format "Cannot pull %s" bad-test-image)))))
+  (testing "unsuccessful start with bad command"
+    (let [id ((@(start bad-test-command good-test-image) :body) :message)]
+      (is (.contains id "executable file not found in $PATH")))))

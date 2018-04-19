@@ -45,6 +45,16 @@
       (f/fail "Failed to find %s" name)
       name)))
 
+(defn kill-container
+  [name]
+  (if (f/failed? (perform! #(.killContainer docker name)))
+    (f/fail "Could not kill %s" name)
+    name))
+
+(defn remove-container
+  [name]
+  (perform! #(.removeContainer docker name)))
+
 (defn pull
   [name]
   (if (and (f/failed? (has-image name))
@@ -68,7 +78,10 @@
   [^String id]
   (let [result (perform! #(.startContainer docker id))]
     (if (f/failed? result)
-      (format "Run failed due to %s" (f/message result))
+      (do
+        (println "Run failed, removing dead container.")
+        (remove-container id)
+        (format "Run failed due to %s" (f/message result)))
       (subs id 0 12))))
 
 (defn log-stream-of
@@ -81,13 +94,3 @@
                   (.readFully)
                   (split-lines)
                   (take count))))
-
-(defn kill-container
-  [name]
-  (if (f/failed? (perform! #(.killContainer docker name)))
-    (f/fail "Could not kill %s" name)
-    name))
-
-(defn remove-container
-  [name]
-  (perform! #(.removeContainer docker name)))
