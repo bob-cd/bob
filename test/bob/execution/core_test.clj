@@ -38,3 +38,13 @@
   (testing "unsuccessful start with bad command"
     (let [id ((@(start bad-test-command good-test-image) :body) :message)]
       (is (.contains id "executable file not found in $PATH")))))
+
+(deftest logs-test
+  (testing "successful log fetch"
+    (let [id   ((@(start good-test-command good-test-image) :body) :message)
+          logs ((@(logs-of id 1) :body) :message)]
+      (is (= (list "hello") logs))
+      (stop id)))
+  (testing "unsuccessful log fetch"
+    (let [log ((@(logs-of "crap" 1) :body) :message)]
+      (is (= log "Container not found: crap")))))
