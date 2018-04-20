@@ -33,9 +33,9 @@
                         result)))))
 
 (defn logs-of
-  [name count]
+  [name from count]
   (let-flow [result (f/ok-> (b/log-stream-of name)
-                            (b/read-log-stream count))]
+                            (b/read-log-stream from count))]
             (respond (if (f/failed? result)
                        (f/message result)
                        result))))

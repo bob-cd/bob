@@ -89,8 +89,9 @@
   (perform! #(.logs docker name log-params)))
 
 (defn read-log-stream
-  [^LogStream stream count]
+  [^LogStream stream from lines]
   (perform! #(->> stream
                   (.readFully)
                   (split-lines)
-                  (take count))))
+                  (drop (dec from))
+                  (take lines))))

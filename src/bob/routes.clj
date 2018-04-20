@@ -27,14 +27,15 @@
 (def status (respond "Bob's here!"))
 
 (defroutes routes
-  (GET "/" [] status)
-  (GET "/status" [] status)
-  ;; TODO: Parse the command with something else/lighter?
-  (POST "/start" [& args] (start (seq (Commandline/translateCommandline (args "cmd")))
-                                 (args "img")))
-  (GET "/read/:id/:count" [id count] (logs-of id (Integer/parseInt count)))
-  (GET "/stop/:id" [id] (stop id))
-  (route/not-found (respond "Took a wrong turn?")))
+           (GET "/" [] status)
+           (GET "/status" [] status)
+           ;; TODO: Parse the command with something else/lighter?
+           (POST "/start" [& args] (start (seq (Commandline/translateCommandline (args "cmd")))
+                                          (args "img")))
+           (GET "/read/:id/:from/:count" [id from count] (logs-of id (Integer/parseInt from)
+                                                                  (Integer/parseInt count)))
+           (GET "/stop/:id" [id] (stop id))
+           (route/not-found (respond "Took a wrong turn?")))
 
 (def bob-routes
   (-> routes

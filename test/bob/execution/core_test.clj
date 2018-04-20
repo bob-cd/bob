@@ -42,11 +42,11 @@
 (deftest logs-test
   (testing "successful log fetch"
     (let [id   ((@(start good-test-command good-test-image) :body) :message)
-          logs ((@(logs-of id 1) :body) :message)]
+          logs ((@(logs-of id 1 1) :body) :message)]
       (is (= (list "hello") logs))
       (stop id)))
   (testing "unsuccessful log fetch"
-    (let [log ((@(logs-of "crap" 1) :body) :message)]
+    (let [log ((@(logs-of "crap" 1 1) :body) :message)]
       (is (= log "Container not found: crap")))))
 
 (deftest stop-test
