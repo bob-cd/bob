@@ -26,14 +26,21 @@
 
 (def status (respond "Bob's here!"))
 
+;; TODO: Can do better than this.
+(defn parse-int
+  [number]
+  (try (Integer/parseInt number)
+       (catch Exception _ 0)))
+
 (defroutes routes
            (GET "/" [] status)
            (GET "/status" [] status)
            ;; TODO: Parse the command with something else/lighter?
            (POST "/start" [& args] (start (seq (Commandline/translateCommandline (args "cmd")))
                                           (args "img")))
-           (GET "/read/:id/:from/:count" [id from count] (logs-of id (Integer/parseInt from)
-                                                                  (Integer/parseInt count)))
+           (GET "/read/:id/:from/:count" [id from count] (logs-of id
+                                                                  (parse-int from)
+                                                                  (parse-int count)))
            (GET "/stop/:id" [id] (stop id))
            (route/not-found (respond "Took a wrong turn?")))
 
