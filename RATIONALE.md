@@ -1,6 +1,6 @@
 ### Some of the (non exhaustive) reasons of why Bob
 
-I am primarily a server side dev dealing with a lot for DevOps tools almost everyday and specially CI servers. Some 
+I am primarily a server side dev dealing with a lot for DevOps tools almost everyday and specially CI servers. Some
 of the pain points I see in systems like Jenkins and GoCD are:
 
 - The plugin architecture. They are mainly to be extended via JARs which are loaded by the main process. This presents the following issues:
@@ -14,7 +14,7 @@ of the pain points I see in systems like Jenkins and GoCD are:
 - Some good ones aren't even FOSS.
 - Infra is hard to version control
 
-Hence bob is what I was thinking. This is a **VERY** new project and haven't really thought it through. Here are the 
+Hence bob is what I was thinking. This is a **VERY** new project and haven't really thought it through. Here are the
 features what I think it should have:
 - Use GPL and be FOSS
 - Have a very small core with a limited feature set. And be opinionated ONLY about them.
@@ -35,7 +35,7 @@ features what I think it should have:
   - Infra plugins like Terraform based stuff which can provision entire cloud infra to support bob and his agents.
 - Scale via multiple servers and share loads and resources
 
-And this is a project born out of my frustration and is VERY new. 😄 
+And this is a project born out of my frustration and is VERY new. 😄
 
 Any and every help, suggestion is most welcome!
 
