@@ -22,7 +22,7 @@
             [bob.execution.core :refer [start logs-of stop status-of]]
             [bob.middleware :refer [ignore-trailing-slash]]
             [bob.util :refer [respond]])
-  (:import (org.apache.tools.ant.types Commandline)))
+  (:import (bob.java ShellCmd)))
 
 (def status (respond "Bob's here!"))
 
@@ -34,8 +34,7 @@
 
 (defroutes routes
            (GET "/" [] status)
-           ;; TODO: Parse the command with something else/lighter?
-           (POST "/start" [& args] (start (seq (Commandline/translateCommandline (args "cmd")))
+           (POST "/start" [& args] (start (seq (ShellCmd/tokenize (args "cmd")))
                                           (args "img")))
            (GET "/read/:id/:from/:count" [id from count] (logs-of id
                                                                   (parse-int from)

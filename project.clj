@@ -25,9 +25,9 @@
                  [compojure "1.6.1"]
                  [com.fasterxml.jackson.core/jackson-core "2.9.5"]
                  [com.spotify/docker-client "8.11.2"]
-                 [failjure "1.3.0"]
-                 [org.apache.ant/ant "1.10.3"]]
+                 [failjure "1.3.0"]]
   :plugins [[lein-ancient "0.6.15"]]
+  :java-source-paths ["src/bob/java"]
   :jvm-opts ["--add-modules" "java.xml.bind"]
   :global-vars {*warn-on-reflection* true}
   :main bob.main

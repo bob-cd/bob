@@ -20,8 +20,8 @@ features what I think it should have:
 - Have a very small core with a limited feature set. And be opinionated ONLY about them.
   - Jobs (direct commands like shell)
   - Pipeline (Collection of Jobs which can consume artifacts from other pipelines)
-  - Environment(Key value store associated with either Jobs and/or Stages and/or Pipelines)
-  - Resources (Things like source code or assets)
+  - Environment (Key value store associated with either Jobs and/or Pipelines)
+  - Resources (Things like source code or artifacts produced by pipelines)
   - Artifacts (Something built by a Pipeline)
 - Expose the above feature set entirely via an API, hence allow any client to configure/control it. Also not be affected by bugs in it.
 - Be agnostic of an UI
