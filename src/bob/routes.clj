@@ -34,7 +34,7 @@
 
 (defroutes routes
            (GET "/" [] status)
-           (POST "/start" [& args] (start (seq (ShellCmd/tokenize (args "cmd")))
+           (POST "/start" [& args] (start (seq (ShellCmd/tokenize (args "cmd") false))
                                           (args "img")))
            (GET "/read/:id/:from/:count" [id from count] (logs-of id
                                                                   (parse-int from)
