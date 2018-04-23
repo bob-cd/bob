@@ -27,8 +27,7 @@
                  [com.spotify/docker-client "8.11.2"]
                  [failjure "1.3.0"]
                  [org.apache.ant/ant "1.10.3"]]
-  :plugins [[lein-cloverage "1.0.10"]
-            [lein-ancient "0.6.15"]]
+  :plugins [[lein-ancient "0.6.15"]]
   :jvm-opts ["--add-modules" "java.xml.bind"]
   :global-vars {*warn-on-reflection* true}
   :main bob.main
