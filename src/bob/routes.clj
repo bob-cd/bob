@@ -19,7 +19,7 @@
             [ring.middleware.params :as params]
             [compojure.core :refer [GET POST defroutes]]
             [compojure.route :as route]
-            [bob.execution.core :refer [start logs-of stop]]
+            [bob.execution.core :refer [start logs-of stop status-of]]
             [bob.middleware :refer [ignore-trailing-slash]]
             [bob.util :refer [respond]])
   (:import (org.apache.tools.ant.types Commandline)))
@@ -34,7 +34,6 @@
 
 (defroutes routes
            (GET "/" [] status)
-           (GET "/status" [] status)
            ;; TODO: Parse the command with something else/lighter?
            (POST "/start" [& args] (start (seq (Commandline/translateCommandline (args "cmd")))
                                           (args "img")))
@@ -42,6 +41,7 @@
                                                                   (parse-int from)
                                                                   (parse-int count)))
            (GET "/stop/:id" [id] (stop id))
+           (GET "/status/:id" [id] (status-of id))
            (route/not-found (respond "Took a wrong turn?")))
 
 (def bob-routes

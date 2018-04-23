@@ -17,8 +17,10 @@
   (:require [clojure.string :refer [split-lines]]
             [failjure.core :as f]
             [bob.util :refer [respond]])
-  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam LogStream)
-           (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation)
+  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam
+                                      LogStream)
+           (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation
+                                               ContainerState ContainerInfo)
            (java.util List)))
 
 (def default-image "debian:unstable-slim")
@@ -95,3 +97,12 @@
                   (split-lines)
                   (drop (dec from))
                   (take lines))))
+
+(defn status-of
+  [^String id]
+  (let [result ^ContainerInfo (perform! #(.inspectContainer docker id))]
+    (if (f/failed? result)
+      (f/message result)
+      (let [state ^ContainerState (.state result)]
+        {:running  (.running state)
+         :exitCode (.exitCode state)}))))

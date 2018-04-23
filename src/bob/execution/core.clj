@@ -47,3 +47,8 @@
             (respond (if (f/failed? result)
                        (f/message result)
                        "Ok"))))
+
+(defn status-of
+  [^String name]
+  (let-flow [result (f/ok-> (b/status-of name))]
+            (respond result)))
