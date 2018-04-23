@@ -34,6 +34,8 @@ package bob.java;
  * from http://www.drjava.org/ or http://sourceforge.net/projects/drjava/
  */
 
+// TODO: Try writing in clojure
+
 import java.util.List;
 import java.util.LinkedList;
 
