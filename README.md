@@ -9,11 +9,13 @@
 ### More [info](https://github.com/bob-cd/bob/blob/master/RATIONALE.md)
 
 ## Build requirements
-- Preferably any *nix environment
+- An OS supporting Java and Docker
 - JDK 9+
+- Clojure 1.9+
 - [Leiningen](https://leiningen.org/) 2.0+
 
 ## Running requirements
+- An OS supporting Java and Docker
 - JRE 9+
 - Docker
 
