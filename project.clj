@@ -26,6 +26,9 @@
                  [com.fasterxml.jackson.core/jackson-core "2.9.5"]
                  [com.spotify/docker-client "8.11.2"]
                  [failjure "1.3.0"]
+                 [com.h2database/h2 "1.4.197"]
+                 [ragtime "0.7.2"]
+                 [korma "0.5.0-RC1"]
                  [javax.xml.bind/jaxb-api "2.3.0"]          ;; For Aleph's XML dependency, Java 8 compat
                  [io.netty/netty-all "4.1.24.Final"]        ;; Forced Netty version for Java 9+ compat
                  [javax.activation/activation "1.1.1"]      ;; Java 9+ compat for XML bindings

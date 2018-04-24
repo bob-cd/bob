@@ -22,6 +22,8 @@
 
 ;; TODO: Extract the let-flow->s to a macro?
 
+(declare result)
+
 (defn start
   ([] (start b/default-command b/default-image))
   ([command] (start command b/default-image))

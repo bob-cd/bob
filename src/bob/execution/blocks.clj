@@ -16,7 +16,7 @@
 (ns bob.execution.blocks
   (:require [clojure.string :refer [split-lines]]
             [failjure.core :as f]
-            [bob.util :refer [respond]])
+            [bob.util :refer [respond perform!]])
   (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam
                                       LogStream)
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation
@@ -34,10 +34,6 @@
 (def log-params (into-array DockerClient$LogsParam
                             [(DockerClient$LogsParam/stdout)
                              (DockerClient$LogsParam/stderr)]))
-
-(defn- perform!
-  [action]
-  (f/try* (action)))
 
 (defn- has-image
   [name]

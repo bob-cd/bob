@@ -13,16 +13,21 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.main
-  (:require [aleph.http :as http]
-            [bob.routes :refer [bob-routes]]
-            [bob.db.core :refer [init-db]])
-  (:gen-class))
+(ns bob.db.core
+  (:require [ragtime.jdbc :as jdbc]
+            [ragtime.repl :refer [migrate]])
+  (:import (java.io File)))
 
-(def PORT 7777)
+(defonce db-spec
+         {:classname   "org.h2.Driver"
+          :subprotocol "h2:file"
+          :subname     (str (System/getProperty "user.home")
+                            File/separator
+                            ".bob")})
 
-(defn -main
-  [& _]
-  (do (init-db)
-      (println (format "Bob's listening on http://0.0.0.0:%d/" PORT))
-      (http/start-server bob-routes {:port PORT})))
+(def migration-config
+  {:datastore  (jdbc/sql-database db-spec)
+   :migrations (jdbc/load-resources "migrations")})
+
+(defn init-db []
+  (migrate migration-config))

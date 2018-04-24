@@ -13,16 +13,9 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.main
-  (:require [aleph.http :as http]
-            [bob.routes :refer [bob-routes]]
-            [bob.db.core :refer [init-db]])
-  (:gen-class))
-
-(def PORT 7777)
-
-(defn -main
-  [& _]
-  (do (init-db)
-      (println (format "Bob's listening on http://0.0.0.0:%d/" PORT))
-      (http/start-server bob-routes {:port PORT})))
+{:up   ["CREATE TABLE steps (id       VARCHAR(12)  UNIQUE,
+                             cmd      VARCHAR(500) NOT NULL,
+                             pipeline VARCHAR(100) NOT NULL,
+                             PRIMARY KEY(id, pipeline),
+                             FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]
+ :down ["DROP TABLE steps;"]}
