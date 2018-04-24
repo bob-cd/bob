@@ -31,7 +31,7 @@
   (testing "successful start"
     (let [id ((@(start good-test-command good-test-image) :body) :message)]
       (is (not (nil? (re-matches SHA-pattern id))))
-      (stop id)))
+      (cancel id)))
   (testing "unsuccessful start with wrong image"
     (let [id ((@(start good-test-command bad-test-image) :body) :message)]
       (is (= id (format "Cannot pull %s" bad-test-image)))))
@@ -44,18 +44,18 @@
     (let [id   ((@(start good-test-command good-test-image) :body) :message)
           logs ((@(logs-of id 1 1) :body) :message)]
       (is (= (list "hello") logs))
-      (stop id)))
+      (cancel id)))
   (testing "unsuccessful log fetch"
     (let [log ((@(logs-of "crap" 1 1) :body) :message)]
       (is (= log "Container not found: crap")))))
 
-(deftest stop-test
-  (testing "successful stop"
+(deftest cancel-test
+  (testing "successful cancel"
     (let [id  ((@(start good-test-command good-test-image) :body) :message)
-          msg ((@(stop id) :body) :message)]
+          msg ((@(cancel id) :body) :message)]
       (is (= "Ok" msg))))
-  (testing "unsuccessful stop"
-    (let [msg ((@(stop "crap") :body) :message)]
+  (testing "unsuccessful cancel"
+    (let [msg ((@(cancel "crap") :body) :message)]
       (is (= "Could not kill crap" msg)))))
 
 (deftest status-test
@@ -64,7 +64,7 @@
           status ((@(status-of id) :body) :message)]
       (is (status :running))
       (is (= 0 (status :exitCode)))
-      (stop id)))
+      (cancel id)))
   (testing "unsuccessful status fetch"
     (let [status ((@(status-of "crap") :body) :message)]
       (is (= "Container not found: crap" status)))))

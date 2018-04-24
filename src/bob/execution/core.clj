@@ -40,7 +40,7 @@
                        (f/message result)
                        result))))
 
-(defn stop
+(defn cancel
   [^String name]
   (let-flow [result (f/ok-> (b/kill-container name)
                             (b/remove-container))]
