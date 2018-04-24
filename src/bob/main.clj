@@ -22,5 +22,5 @@
 
 (defn -main
   [& _]
-  (do (println (format "Starting bob on 0.0.0.0:%d." PORT))
+  (do (println (format "Bob's listening on http://0.0.0.0:%d/" PORT))
       (http/start-server bob-routes {:port PORT})))
