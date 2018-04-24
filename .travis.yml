@@ -21,4 +21,5 @@ services:
 language: clojure
 
 jdk:
+  - oraclejdk8
   - oraclejdk9
