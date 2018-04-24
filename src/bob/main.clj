@@ -18,6 +18,9 @@
             [bob.routes :refer [bob-routes]])
   (:gen-class))
 
+(def PORT 7777)
+
 (defn -main
   [& _]
-  (http/start-server bob-routes {:port 7777}))
+  (do (println (format "Starting bob on 0.0.0.0:%d." PORT))
+      (http/start-server bob-routes {:port PORT})))
