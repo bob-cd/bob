@@ -18,6 +18,7 @@
   :license {:name "GPL 3.0"
             :url  "https://www.gnu.org/licenses/gpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.9.0"]
+                 [javax.activation/activation "1.1.1"] ;; Java 9+ compat
                  [manifold "0.1.6"]
                  [aleph "0.4.4"]
                  [ring "1.6.3"]
