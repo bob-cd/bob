@@ -19,7 +19,7 @@
             [ring.middleware.params :as params]
             [compojure.core :refer [GET POST defroutes]]
             [compojure.route :as route]
-            [bob.execution.core :refer [start logs-of cancel status-of]]
+            [bob.execution.core :refer [start logs-of cancel status-of gc]]
             [bob.middleware :refer [ignore-trailing-slash]]
             [bob.util :refer [respond]])
   (:import (bob.java ShellCmd)))
@@ -41,6 +41,8 @@
                                                                   (parse-int count)))
            (GET "/cancel/:id" [id] (cancel id))
            (GET "/status/:id" [id] (status-of id))
+           (GET "/gc" [] (gc))
+           (GET "/gc/all" [] (gc true))
            (route/not-found (respond "Took a wrong turn?")))
 
 (def bob-routes

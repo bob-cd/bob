@@ -14,7 +14,8 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.execution.core
-  (:require [manifold.deferred :refer [let-flow]]
+  (:require [clojure.java.shell :refer [sh]]
+            [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
             [bob.execution.blocks :as b]
             [bob.util :refer [respond]]))
@@ -52,3 +53,11 @@
   [^String name]
   (let-flow [result (f/ok-> (b/status-of name))]
             (respond result)))
+
+(defn gc
+  ([] (gc false))
+  ([all]
+   (let [base-args ["docker" "system" "prune" "-f"]
+         args      (if all (conj base-args "-a") base-args)]
+     (let-flow [result (f/ok-> (apply sh args))]
+               (respond result)))))
