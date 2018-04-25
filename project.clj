@@ -32,7 +32,10 @@
                  [javax.xml.bind/jaxb-api "2.3.0"]          ;; For Aleph's XML dependency, Java 8 compat
                  [io.netty/netty-all "4.1.24.Final"]        ;; Forced Netty version for Java 9+ compat
                  [javax.activation/activation "1.1.1"]      ;; Java 9+ compat for XML bindings
-                 [org.slf4j/slf4j-simple "1.7.25"]]         ;; Using simple slf4j logger and silence warnings
+                 [log4j "1.2.17" :exclusions [javax.mail/mail
+                                              javax.jms/jms
+                                              com.sun.jdmk/jmxtools
+                                              com.sun.jmx/jmxri]]]
   :plugins [[lein-ancient "0.6.15"]]
   :java-source-paths ["src/bob/java"]
   :global-vars {*warn-on-reflection* true}
