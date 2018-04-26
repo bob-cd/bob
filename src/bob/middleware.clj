@@ -17,9 +17,8 @@
 
 (defn ignore-trailing-slash
   [handler]
-  (fn [request]
-    (let [uri ^String (:uri request)]
-      (handler (assoc request :uri (if (and (not (= "/" uri))
-                                            (.endsWith uri "/"))
-                                     (subs uri 0 (dec (count uri)))
-                                     uri))))))
+  #(let [uri ^String (:uri %)]
+     (handler (assoc % :uri (if (and (not (= "/" uri))
+                                     (.endsWith uri "/"))
+                              (subs uri 0 (dec (count uri)))
+                              uri)))))
