@@ -39,4 +39,6 @@
   :main bob.main
   :target-path "target/%s"
   :profiles {:dev     {:dependencies [[org.clojure/test.check "0.9.0"]]}
-             :uberjar {:aot :all}})
+             :uberjar {:aot      :all
+                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"
+                                  "-Dclojure.compiler.elide-meta=[:doc :file :line :added]"]}})
