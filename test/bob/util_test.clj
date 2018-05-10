@@ -17,7 +17,8 @@
   (:require [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
-            [bob.util :refer [respond]]))
+            [clojure.spec.alpha :as s]
+            [bob.util :refer :all]))
 
 (defspec respond-returns-a-ring-response
          100
@@ -25,3 +26,12 @@
                        (= (respond msg) {:body    {:message msg}
                                          :headers {}
                                          :status  200})))
+
+(s/def ::container-id
+  (s/and string?
+         #(> (count %) id-length)))
+
+(defspec format-id-formats-given-id
+         100
+         (prop/for-all [msg (s/gen ::container-id)]
+                       (<= (count (format-id msg)) id-length)))

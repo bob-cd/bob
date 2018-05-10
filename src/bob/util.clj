@@ -17,6 +17,8 @@
   (:require [ring.util.response :refer [response]]
             [failjure.core :as f]))
 
+(def id-length 12)
+
 (defn perform!
   [action]
   (f/try* (action)))
@@ -24,3 +26,7 @@
 (defn respond
   [msg]
   (response {:message msg}))
+
+(defn format-id
+  [^String id]
+  (subs id 0 id-length))

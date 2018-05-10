@@ -16,7 +16,7 @@
 (ns bob.execution.blocks
   (:require [clojure.string :refer [split-lines]]
             [failjure.core :as f]
-            [bob.util :refer [respond perform!]])
+            [bob.util :refer [respond perform! format-id]])
   (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam
                                       LogStream)
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation
@@ -62,13 +62,17 @@
     (f/fail "Cannot pull %s" name)
     name))
 
+(defn config-of
+  [^String image ^List cmd]
+  (perform! #(-> (ContainerConfig/builder)
+                 (.hostConfig host-config)
+                 (.image image)
+                 (.cmd cmd)
+                 (.build))))
+
 (defn build
   [^String image ^List cmd]
-  (perform! #(let [config   (-> (ContainerConfig/builder)
-                                (.hostConfig host-config)
-                                (.image image)
-                                (.cmd cmd)
-                                (.build))
+  (perform! #(let [config   ^ContainerConfig (config-of image cmd)
                    creation ^ContainerCreation (.createContainer docker config)]
                (.id creation))))
 
@@ -80,7 +84,7 @@
         (println "Run failed, removing dead container.")
         (remove-container id)
         (format "Run failed due to %s" (f/message result)))
-      (subs id 0 12))))
+      (format-id id))))
 
 (defn log-stream-of
   [name]
@@ -102,3 +106,25 @@
       (let [state ^ContainerState (.state result)]
         {:running  (.running state)
          :exitCode (.exitCode state)}))))
+
+(declare _ err)
+
+;; TODO: Can optimize the multiple (config-of) calls
+(defn next-step
+  [^String id ^List next-command]
+  (let [repo (format "%s/%d" id (System/currentTimeMillis))
+        tag  "latest"]
+    (f/attempt-all [_ (perform! #(.commitContainer docker
+                                                   id
+                                                   repo
+                                                   tag
+                                                   (config-of (-> docker
+                                                                  (.inspectContainer id)
+                                                                  (.config)
+                                                                  (.image))
+                                                              next-command)
+                                                   nil
+                                                   nil))
+                    id (build (format "%s:%s" repo tag) next-command)]
+                   (format-id id)
+                   (f/when-failed [err] (f/message err)))))
