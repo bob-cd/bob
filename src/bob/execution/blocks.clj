@@ -77,14 +77,15 @@
                (.id creation))))
 
 (defn run
-  [^String id]
-  (let [result (perform! #(.startContainer docker id))]
-    (if (f/failed? result)
-      (do
-        (println "Run failed, removing dead container.")
-        (remove-container id)
-        (format "Run failed due to %s" (f/message result)))
-      (format-id id))))
+  [^String id ^Boolean wait?]
+  (f/attempt-all [result (perform! #(.startContainer docker id))
+                  _ (when wait? (perform! #(.waitContainer docker id)))]
+                 (format-id id)
+                 (f/when-failed [err]
+                                (do
+                                  (println "Run failed, removing dead container.")
+                                  (remove-container id)
+                                  (format "Run failed due to %s" (f/message err))))))
 
 (defn log-stream-of
   [name]
@@ -107,8 +108,6 @@
         {:running  (.running state)
          :exitCode (.exitCode state)}))))
 
-(declare _ err)
-
 ;; TODO: Can optimize the multiple (config-of) calls
 (defn next-step
   [^String id ^List next-command]
@@ -127,4 +126,20 @@
                                                    nil))
                     id (build (format "%s:%s" repo tag) next-command)]
                    (format-id id)
-                   (f/when-failed [err] (f/message err)))))
+                   (f/when-failed [err] err))))
+
+(defn- exec-step
+  [id step]
+  (f/attempt-all [result (f/ok-> (next-step id step)
+                                 (run true))]
+                 result
+                 (f/when-failed [err] err)))
+
+(defn exec-steps
+  [^String image ^List steps]
+  (f/attempt-all [id (f/ok-> (pull image)
+                             (build (first steps))
+                             (run true))
+                  result (reduce exec-step id (rest steps))]
+                 result
+                 (f/when-failed [err] (f/message err))))

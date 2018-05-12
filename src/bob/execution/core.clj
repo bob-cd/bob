@@ -22,15 +22,13 @@
 
 ;; TODO: Extract the let-flow->s to a macro?
 
-(declare result)
-
 (defn start
   ([] (start b/default-command b/default-image))
   ([command] (start command b/default-image))
   ([command image]
    (let-flow [result (f/ok-> (b/pull image)
                              (b/build command)
-                             (b/run))]
+                             (b/run false))]
              (respond (if (f/failed? result)
                         (f/message result)
                         result)))))
