@@ -23,9 +23,9 @@
 (defspec respond-returns-a-ring-response
          100
          (prop/for-all [msg gen/string]
-                       (= (respond msg) {:body    {:message msg}
-                                         :headers {}
-                                         :status  200})))
+           (= (respond msg) {:body    {:message msg}
+                             :headers {}
+                             :status  200})))
 
 (s/def ::container-id
   (s/and string?
@@ -34,4 +34,4 @@
 (defspec format-id-formats-given-id
          100
          (prop/for-all [msg (s/gen ::container-id)]
-                       (<= (count (format-id msg)) id-length)))
+           (<= (count (format-id msg)) id-length)))

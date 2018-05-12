@@ -78,14 +78,14 @@
 
 (defn run
   [^String id ^Boolean wait?]
-  (f/attempt-all [result (perform! #(.startContainer docker id))
+  (f/attempt-all [_ (perform! #(.startContainer docker id))
                   _ (when wait? (perform! #(.waitContainer docker id)))]
-                 (format-id id)
-                 (f/when-failed [err]
-                                (do
-                                  (println "Run failed, removing dead container.")
-                                  (remove-container id)
-                                  (format "Run failed due to %s" (f/message err))))))
+    (format-id id)
+    (f/when-failed [err]
+      (do
+        (println "Run failed, removing dead container.")
+        (remove-container id)
+        (format "Run failed due to %s" (f/message err))))))
 
 (defn log-stream-of
   [name]
@@ -113,33 +113,33 @@
   [^String id ^List next-command]
   (let [repo (format "%s/%d" id (System/currentTimeMillis))
         tag  "latest"]
-    (f/attempt-all [_ (perform! #(.commitContainer docker
-                                                   id
-                                                   repo
-                                                   tag
-                                                   (config-of (-> docker
-                                                                  (.inspectContainer id)
-                                                                  (.config)
-                                                                  (.image))
-                                                              next-command)
-                                                   nil
-                                                   nil))
+    (f/attempt-all [_  (perform! #(.commitContainer docker
+                                                    id
+                                                    repo
+                                                    tag
+                                                    (config-of (-> docker
+                                                                   (.inspectContainer id)
+                                                                   (.config)
+                                                                   (.image))
+                                                               next-command)
+                                                    nil
+                                                    nil))
                     id (build (format "%s:%s" repo tag) next-command)]
-                   (format-id id)
-                   (f/when-failed [err] err))))
+      (format-id id)
+      (f/when-failed [err] err))))
 
 (defn- exec-step
   [id step]
   (f/attempt-all [result (f/ok-> (next-step id step)
                                  (run true))]
-                 result
-                 (f/when-failed [err] err)))
+    result
+    (f/when-failed [err] err)))
 
 (defn exec-steps
   [^String image ^List steps]
-  (f/attempt-all [id (f/ok-> (pull image)
-                             (build (first steps))
-                             (run true))
+  (f/attempt-all [id     (f/ok-> (pull image)
+                                 (build (first steps))
+                                 (run true))
                   result (reduce exec-step id (rest steps))]
-                 result
-                 (f/when-failed [err] (f/message err))))
+    result
+    (f/when-failed [err] (f/message err))))

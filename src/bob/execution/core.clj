@@ -29,30 +29,30 @@
    (let-flow [result (f/ok-> (b/pull image)
                              (b/build command)
                              (b/run false))]
-             (respond (if (f/failed? result)
-                        (f/message result)
-                        result)))))
+     (respond (if (f/failed? result)
+                (f/message result)
+                result)))))
 
 (defn logs-of
   [name from count]
   (let-flow [result (f/ok-> (b/log-stream-of name)
                             (b/read-log-stream from count))]
-            (respond (if (f/failed? result)
-                       (f/message result)
-                       result))))
+    (respond (if (f/failed? result)
+               (f/message result)
+               result))))
 
 (defn cancel
   [^String name]
   (let-flow [result (f/ok-> (b/kill-container name)
                             (b/remove-container))]
-            (respond (if (f/failed? result)
-                       (f/message result)
-                       "Ok"))))
+    (respond (if (f/failed? result)
+               (f/message result)
+               "Ok"))))
 
 (defn status-of
   [^String name]
   (let-flow [result (f/ok-> (b/status-of name))]
-            (respond result)))
+    (respond result)))
 
 (defn gc
   ([] (gc false))
@@ -60,4 +60,4 @@
    (let [base-args ["docker" "system" "prune" "-f"]
          args      (if all (conj base-args "-a") base-args)]
      (let-flow [result (f/ok-> (apply sh args))]
-               (respond result)))))
+       (respond result)))))
