@@ -16,7 +16,7 @@
 (ns bob.execution.blocks
   (:require [clojure.string :refer [split-lines]]
             [failjure.core :as f]
-            [bob.util :refer [respond perform! format-id]])
+            [bob.util :refer [perform! format-id]])
   (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam
                                       LogStream)
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation
@@ -107,39 +107,3 @@
       (let [state ^ContainerState (.state result)]
         {:running  (.running state)
          :exitCode (.exitCode state)}))))
-
-;; TODO: Can optimize the multiple (config-of) calls
-(defn next-step
-  [^String id ^List next-command]
-  (let [repo (format "%s/%d" id (System/currentTimeMillis))
-        tag  "latest"]
-    (f/attempt-all [_  (perform! #(.commitContainer docker
-                                                    id
-                                                    repo
-                                                    tag
-                                                    (config-of (-> docker
-                                                                   (.inspectContainer id)
-                                                                   (.config)
-                                                                   (.image))
-                                                               next-command)
-                                                    nil
-                                                    nil))
-                    id (build (format "%s:%s" repo tag) next-command)]
-      (format-id id)
-      (f/when-failed [err] err))))
-
-(defn- exec-step
-  [id step]
-  (f/attempt-all [result (f/ok-> (next-step id step)
-                                 (run true))]
-    result
-    (f/when-failed [err] err)))
-
-(defn exec-steps
-  [^String image ^List steps]
-  (f/attempt-all [id     (f/ok-> (pull image)
-                                 (build (first steps))
-                                 (run true))
-                  result (reduce exec-step id (rest steps))]
-    result
-    (f/when-failed [err] (f/message err))))
