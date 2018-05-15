@@ -25,7 +25,7 @@
 
 (def default-image "debian:unstable-slim")
 
-(def default-command ["bash" "-c" "while sleep 1; do echo ${RANDOM}; done"])
+(def default-command ["echo 'Hello, world!'"])
 
 (def docker ^DefaultDockerClient (.build (DefaultDockerClient/fromEnv)))
 
@@ -77,9 +77,9 @@
                (.id creation))))
 
 (defn run
-  [^String id ^Boolean wait?]
+  [^String id]
   (f/attempt-all [_ (perform! #(.startContainer docker id))
-                  _ (when wait? (perform! #(.waitContainer docker id)))]
+                  _ (perform! #(.waitContainer docker id))]
     (format-id id)
     (f/when-failed [err]
       (do

@@ -62,7 +62,7 @@
 (defn- exec-step
   [id step]
   (f/attempt-all [result (f/ok-> (next-step id (:cmd step))
-                                 (e/run true)
+                                 (e/run)
                                  (update-pid (:id step)))]
     result
     (f/when-failed [err] err)))
@@ -71,7 +71,7 @@
   [^String image ^List steps]
   (go (f/attempt-all [id (f/ok-> (e/pull image)
                                  (e/build (:cmd (first steps)))
-                                 (e/run true)
+                                 (e/run)
                                  (update-pid (:id (first steps))))]
         (reduce exec-step id (rest steps))
         (f/when-failed [err] (f/message err)))))

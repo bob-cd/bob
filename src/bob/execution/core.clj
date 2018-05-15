@@ -28,7 +28,7 @@
   ([command image]
    (let-flow [result (f/ok-> (b/pull image)
                              (b/build command)
-                             (b/run false))]
+                             (b/run))]
      (respond (if (f/failed? result)
                 (f/message result)
                 result)))))
@@ -41,18 +41,23 @@
                (f/message result)
                result))))
 
-(defn cancel
-  [^String name]
-  (let-flow [result (f/ok-> (b/kill-container name)
-                            (b/remove-container))]
-    (respond (if (f/failed? result)
-               (f/message result)
-               "Ok"))))
-
 (defn status-of
   [^String name]
   (let-flow [result (f/ok-> (b/status-of name))]
     (respond result)))
+
+(defn cancel
+  [^String name]
+  (let-flow [running? (-> (status-of name)
+                          (:message)
+                          (:running))
+             result   (f/ok-> (if running?
+                                (b/kill-container name)
+                                name)
+                              (b/remove-container))]
+    (respond (if (f/failed? result)
+               (f/message result)
+               "Ok"))))
 
 (defn gc
   ([] (gc false))

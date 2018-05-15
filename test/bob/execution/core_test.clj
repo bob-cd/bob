@@ -56,13 +56,12 @@
       (is (= "Ok" msg))))
   (testing "unsuccessful cancel"
     (let [msg ((@(cancel "crap") :body) :message)]
-      (is (= "Could not kill crap" msg)))))
+      (is (= "Container not found: crap" msg)))))
 
 (deftest status-test
   (testing "successful status fetch"
     (let [id     ((@(start good-test-command good-test-image) :body) :message)
           status ((@(status-of id) :body) :message)]
-      (is (status :running))
       (is (= 0 (status :exitCode)))
       (cancel id)))
   (testing "unsuccessful status fetch"
