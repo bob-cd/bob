@@ -76,11 +76,23 @@
                    creation ^ContainerCreation (.createContainer docker config)]
                (.id creation))))
 
+(defn status-of
+  [^String id]
+  (let [result ^ContainerInfo (perform! #(.inspectContainer docker id))]
+    (if (f/failed? result)
+      (f/message result)
+      (let [state ^ContainerState (.state result)]
+        {:running  (.running state)
+         :exitCode (.exitCode state)}))))
+
 (defn run
   [^String id]
-  (f/attempt-all [_ (perform! #(.startContainer docker id))
-                  _ (perform! #(.waitContainer docker id))]
-    (format-id id)
+  (f/attempt-all [_      (perform! #(.startContainer docker id))
+                  _      (perform! #(.waitContainer docker id))
+                  status (status-of id)]
+    (if (zero? (:exitCode status))
+      (format-id id)
+      (f/fail "Abnormal exit."))
     (f/when-failed [err]
       (do
         (println "Run failed, removing dead container.")
@@ -98,12 +110,3 @@
                   (split-lines)
                   (drop (dec from))
                   (take lines))))
-
-(defn status-of
-  [^String id]
-  (let [result ^ContainerInfo (perform! #(.inspectContainer docker id))]
-    (if (f/failed? result)
-      (f/message result)
-      (let [state ^ContainerState (.state result)]
-        {:running  (.running state)
-         :exitCode (.exitCode state)}))))
