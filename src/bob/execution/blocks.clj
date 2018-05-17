@@ -93,11 +93,7 @@
     (if (zero? (:exitCode status))
       (format-id id)
       (f/fail "Abnormal exit."))
-    (f/when-failed [err]
-      (do
-        (println "Run failed, removing dead container.")
-        (remove-container id)
-        (format "Run failed due to %s" (f/message err))))))
+    (f/when-failed [err] err)))
 
 (defn log-stream-of
   [name]

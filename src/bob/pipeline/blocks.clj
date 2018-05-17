@@ -61,11 +61,13 @@
 
 (defn- exec-step
   [id step]
-  (f/attempt-all [result (f/ok-> (next-step id (:cmd step))
-                                 (e/run)
-                                 (update-pid (:id step)))]
-    result
-    (f/when-failed [err] err)))
+  (if (f/failed? id)
+    (reduced id)
+    (f/attempt-all [result (f/ok-> (next-step id (:cmd step))
+                                   (e/run)
+                                   (update-pid (:id step)))]
+      result
+      (f/when-failed [err] err))))
 
 (defn exec-steps
   [^String image ^List steps]

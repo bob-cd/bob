@@ -37,7 +37,8 @@
       (is (= id (format "Cannot pull %s" bad-test-image)))))
   (testing "unsuccessful start with bad command"
     (let [id ((@(start bad-test-command good-test-image) :body) :message)]
-      (is (.contains id "executable file not found in $PATH")))))
+      (is (.contains id "executable file not found in $PATH")
+          (gc true)))))
 
 (deftest logs-test
   (testing "successful log fetch"
