@@ -18,8 +18,8 @@
             [korma.core :refer [defentity table has-many insert values where select fields]]
             [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
-            [bob.execution.blocks :refer [default-image]]
-            [bob.pipeline.blocks :refer [exec-steps]]
+            [bob.execution.internals :refer [default-image]]
+            [bob.pipeline.internals :refer [exec-steps]]
             [bob.db.core :refer [db-spec]]
             [bob.util :refer [respond perform!]])
   (:import (bob.java ShellCmd)))

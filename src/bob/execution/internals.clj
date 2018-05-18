@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.execution.blocks
+(ns bob.execution.internals
   (:require [clojure.string :refer [split-lines]]
             [failjure.core :as f]
             [bob.util :refer [perform! format-id]])

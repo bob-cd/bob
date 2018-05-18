@@ -17,7 +17,7 @@
   (:require [clojure.java.shell :refer [sh]]
             [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
-            [bob.execution.blocks :as b]
+            [bob.execution.internals :as b]
             [bob.util :refer [respond]]))
 
 ;; TODO: Extract the let-flow->s to a macro?

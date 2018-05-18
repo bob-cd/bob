@@ -13,13 +13,13 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.pipeline.blocks
+(ns bob.pipeline.internals
   (:require [clojure.core.async :refer [go]]
             [korma.db :refer [defdb]]
             [korma.core :refer [defentity table update set-fields where]]
             [failjure.core :as f]
             [bob.db.core :refer [db-spec]]
-            [bob.execution.blocks :as e]
+            [bob.execution.internals :as e]
             [bob.util :refer [perform! format-id]])
   (:import (java.util List)))
 
