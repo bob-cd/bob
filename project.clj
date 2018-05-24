@@ -25,13 +25,13 @@
                  [ring/ring-json "0.4.0"]
                  [compojure "1.6.1"]
                  [com.fasterxml.jackson.core/jackson-core "2.9.5"]
-                 [com.spotify/docker-client "8.11.2"]
+                 [com.spotify/docker-client "8.11.4"]
                  [failjure "1.3.0"]
                  [com.h2database/h2 "1.4.197"]
                  [ragtime "0.7.2"]
                  [korma "0.5.0-RC1"]
                  [javax.xml.bind/jaxb-api "2.3.0"]          ;; For Aleph's XML dependency, Java 8 compat
-                 [io.netty/netty-all "4.1.24.Final"]        ;; Forced Netty version for Java 9+ compat
+                 [io.netty/netty-all "4.1.25.Final"]        ;; Forced Netty version for Java 9+ compat
                  [javax.activation/activation "1.1.1"]      ;; Java 9+ compat for XML bindings
                  [ch.qos.logback/logback-classic "1.2.3"]]  ;; For sane logging in the 21st century
   :plugins [[lein-ancient "0.6.15"]]
