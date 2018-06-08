@@ -28,7 +28,7 @@
 (defdb _ db-spec)
 
 (defentity steps
-           (table :STEPS))
+  (table :STEPS))
 
 (defn update-pid
   [pid id]
@@ -40,7 +40,7 @@
 
 ;; TODO: Can optimize the multiple (config-of) calls
 
-(defn next-step
+(defn- next-step
   [^String id ^List next-command]
   (let [repo (format "%s/%d" id (System/currentTimeMillis))
         tag  "latest"]
