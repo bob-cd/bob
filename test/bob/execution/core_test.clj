@@ -15,7 +15,9 @@
 
 (ns bob.execution.core-test
   (:require [clojure.test :refer :all]
-            [bob.execution.core :refer :all]))
+            [clojure.core.async :refer [go]]
+            [bob.execution.core :refer :all]
+            [bob.execution.internals :refer [pull build]]))
 
 (def SHA-pattern #"\b[0-9a-f]{5,40}\b")
 
@@ -25,46 +27,45 @@
 
 (def good-test-image "busybox:musl")
 
-(def bad-test-image "busybox:mus")
+(defn good-container []
+  (-> (pull good-test-image)
+      (build good-test-command)))
+
+(defn bad-container []
+  (-> (pull good-test-image)
+      (build bad-test-command)))
 
 (deftest start-test
   (testing "successful start"
-    (let [id ((@(start good-test-command good-test-image) :body) :message)]
-      (is (not (nil? (re-matches SHA-pattern id))))
-      (cancel id)))
-  (testing "unsuccessful start with wrong image"
-    (let [id ((@(start good-test-command bad-test-image) :body) :message)]
-      (is (= id (format "Cannot pull %s" bad-test-image)))))
+    (let [id (good-container)
+          id ((@(start id) :body) :message)]
+      (is (not (nil? (re-matches SHA-pattern id))))))
   (testing "unsuccessful start with bad command"
-    (let [id ((@(start bad-test-command good-test-image) :body) :message)]
-      (is (.contains id "executable file not found in $PATH")
-          (gc true)))))
+    (let [id (bad-container)
+          id ((@(start id) :body) :message)]
+      (is (.contains id "executable file not found in $PATH"))))
+  (gc true))
 
 (deftest logs-test
   (testing "successful log fetch"
-    (let [id   ((@(start good-test-command good-test-image) :body) :message)
+    (let [id   (good-container)
+          id   ((@(start id) :body) :message)
           logs ((@(logs-of id 1 1) :body) :message)]
       (is (= (list "hello") logs))
       (cancel id)))
   (testing "unsuccessful log fetch"
     (let [log ((@(logs-of "crap" 1 1) :body) :message)]
-      (is (= log "Container not found: crap")))))
-
-(deftest cancel-test
-  (testing "successful cancel"
-    (let [id  ((@(start good-test-command good-test-image) :body) :message)
-          msg ((@(cancel id) :body) :message)]
-      (is (= "Ok" msg))))
-  (testing "unsuccessful cancel"
-    (let [msg ((@(cancel "crap") :body) :message)]
-      (is (= "Container not found: crap" msg)))))
+      (is (= log "Container not found: crap"))))
+  (gc true))
 
 (deftest status-test
   (testing "successful status fetch"
-    (let [id     ((@(start good-test-command good-test-image) :body) :message)
+    (let [id     (good-container)
+          id     ((@(start id) :body) :message)
           status ((@(status-of id) :body) :message)]
       (is (= 0 (status :exitCode)))
       (cancel id)))
   (testing "unsuccessful status fetch"
     (let [status ((@(status-of "crap") :body) :message)]
-      (is (= "Container not found: crap" status)))))
+      (is (= "Container not found: crap" status))))
+  (gc true))

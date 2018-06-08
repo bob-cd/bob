@@ -21,8 +21,7 @@
             [compojure.route :as route]
             [bob.execution.core :refer [start logs-of cancel status-of gc]]
             [bob.middleware :refer [ignore-trailing-slash]]
-            [bob.util :refer [respond]])
-  (:import (bob.java ShellCmd)))
+            [bob.util :refer [respond]]))
 
 (def status (respond "Bob's here!"))
 
@@ -34,8 +33,7 @@
 
 (defroutes routes
            (GET "/" [] status)
-           (POST "/start" [& args] (start (seq (ShellCmd/tokenize (args "cmd") false))
-                                          (args "img")))
+           (GET "/start/:id" [id] (start id))
            (GET "/read/:id/:from/:count" [id from count] (logs-of id
                                                                   (parse-int from)
                                                                   (parse-int count)))

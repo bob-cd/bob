@@ -23,15 +23,11 @@
 ;; TODO: Extract the let-flow->s to a macro?
 
 (defn start
-  ([] (start b/default-command b/default-image))
-  ([command] (start command b/default-image))
-  ([command image]
-   (let-flow [result (f/ok-> (b/pull image)
-                             (b/build command)
-                             (b/run))]
-     (respond (if (f/failed? result)
-                (f/message result)
-                result)))))
+  [name]
+  (let-flow [result (f/ok-> (b/run name))]
+    (respond (if (f/failed? result)
+               (f/message result)
+               result))))
 
 (defn logs-of
   [name from count]
