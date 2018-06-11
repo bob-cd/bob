@@ -15,7 +15,6 @@
 
 (ns bob.pipeline.core-test
   (:require [clojure.test :refer :all]
-            [clojure.java.io :as io]
             [korma.db :refer [defdb]]
             [korma.core :refer [select fields]]
             [ragtime.jdbc :as jdbc]
