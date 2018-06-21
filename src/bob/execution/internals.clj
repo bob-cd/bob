@@ -37,48 +37,48 @@
 
 (defn- has-image
   [name]
-  (let [result (perform! #(.listImages docker (into-array DockerClient$ListImagesParam
-                                                          [(DockerClient$ListImagesParam/byName name)])))]
+  (let [result (perform! (.listImages docker (into-array DockerClient$ListImagesParam
+                                                         [(DockerClient$ListImagesParam/byName name)])))]
     (if (or (f/failed? result) (zero? (count result)))
       (f/fail "Failed to find %s" name)
       name)))
 
 (defn kill-container
   [name]
-  (if (f/failed? (perform! #(.killContainer docker name)))
+  (if (f/failed? (perform! (.killContainer docker name)))
     (f/fail "Could not kill %s" name)
     name))
 
 (defn remove-container
   [name]
-  (perform! #(.removeContainer docker name)))
+  (perform! (.removeContainer docker name)))
 
 (defn pull
   [name]
   (if (and (f/failed? (has-image name))
-           (f/failed? (perform! #(do (println (format "Pulling %s" name))
-                                     (.pull docker name)
-                                     (println (format "Pulled %s" name))))))
+           (f/failed? (perform! (do (println (format "Pulling %s" name))
+                                    (.pull docker name)
+                                    (println (format "Pulled %s" name))))))
     (f/fail "Cannot pull %s" name)
     name))
 
 (defn config-of
   [^String image ^List cmd]
-  (perform! #(-> (ContainerConfig/builder)
-                 (.hostConfig host-config)
-                 (.image image)
-                 (.cmd cmd)
-                 (.build))))
+  (perform! (-> (ContainerConfig/builder)
+                (.hostConfig host-config)
+                (.image image)
+                (.cmd cmd)
+                (.build))))
 
 (defn build
   [^String image ^List cmd]
-  (perform! #(let [config   ^ContainerConfig (config-of image cmd)
-                   creation ^ContainerCreation (.createContainer docker config)]
-               (.id creation))))
+  (perform! (let [config   ^ContainerConfig (config-of image cmd)
+                  creation ^ContainerCreation (.createContainer docker config)]
+              (.id creation))))
 
 (defn status-of
   [^String id]
-  (let [result ^ContainerInfo (perform! #(.inspectContainer docker id))]
+  (let [result ^ContainerInfo (perform! (.inspectContainer docker id))]
     (if (f/failed? result)
       (f/message result)
       (let [state ^ContainerState (.state result)]
@@ -87,8 +87,8 @@
 
 (defn run
   [^String id]
-  (f/attempt-all [_      (perform! #(.startContainer docker id))
-                  _      (perform! #(.waitContainer docker id))
+  (f/attempt-all [_      (perform! (.startContainer docker id))
+                  _      (perform! (.waitContainer docker id))
                   status (status-of id)]
     (if (zero? (:exitCode status))
       (format-id id)
@@ -97,12 +97,12 @@
 
 (defn log-stream-of
   [name]
-  (perform! #(.logs docker name log-params)))
+  (perform! (.logs docker name log-params)))
 
 (defn read-log-stream
   [^LogStream stream from lines]
-  (perform! #(->> stream
-                  (.readFully)
-                  (split-lines)
-                  (drop (dec from))
-                  (take lines))))
+  (perform! (->> stream
+                 (.readFully)
+                 (split-lines)
+                 (drop (dec from))
+                 (take lines))))

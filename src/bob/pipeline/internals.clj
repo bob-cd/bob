@@ -32,9 +32,9 @@
 
 (defn update-pid
   [pid id]
-  (f/attempt-all [_ (perform! #(update steps
-                                       (set-fields {:PID pid})
-                                       (where {:ID id})))]
+  (f/attempt-all [_ (perform! (update steps
+                                      (set-fields {:PID pid})
+                                      (where {:ID id})))]
     pid
     (f/when-failed [err] err)))
 
@@ -44,17 +44,17 @@
   [^String id ^List next-command]
   (let [repo (format "%s/%d" id (System/currentTimeMillis))
         tag  "latest"]
-    (f/attempt-all [_  (perform! #(.commitContainer e/docker
-                                                    id
-                                                    repo
-                                                    tag
-                                                    (e/config-of (-> e/docker
-                                                                     (.inspectContainer id)
-                                                                     (.config)
-                                                                     (.image))
-                                                                 next-command)
-                                                    nil
-                                                    nil))
+    (f/attempt-all [_  (perform! (.commitContainer e/docker
+                                                   id
+                                                   repo
+                                                   tag
+                                                   (e/config-of (-> e/docker
+                                                                    (.inspectContainer id)
+                                                                    (.config)
+                                                                    (.image))
+                                                                next-command)
+                                                   nil
+                                                   nil))
                     id (e/build (format "%s:%s" repo tag) next-command)]
       (format-id id)
       (f/when-failed [err] err))))

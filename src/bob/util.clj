@@ -14,14 +14,15 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.util
-  (:require [ring.util.response :refer [response]]
-            [failjure.core :as f]))
+  (:require [ring.util.response :refer [response]]))
 
 (def id-length 12)
 
-(defn perform!
-  [action]
-  (f/try* (action)))
+(defmacro perform!
+  [& body]
+  `(try
+     ~@body
+     (catch Exception e# e#)))
 
 (defn respond
   [msg]

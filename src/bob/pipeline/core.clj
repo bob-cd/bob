@@ -40,25 +40,25 @@
 (defn create
   ([group name pipeline-steps] (create group name pipeline-steps default-image))
   ([group name pipeline-steps image]
-   (let-flow [result (f/attempt-all [_ (perform! #(insert pipelines (values {:NAME  (name-of group name)
-                                                                             :IMAGE image})))
-                                     _ (perform! #(doseq [step pipeline-steps]
-                                                    (insert steps (values {:CMD      step
-                                                                           :PIPELINE (name-of group name)}))))]
+   (let-flow [result (f/attempt-all [_ (perform! (insert pipelines (values {:NAME  (name-of group name)
+                                                                            :IMAGE image})))
+                                     _ (perform! (doseq [step pipeline-steps]
+                                                   (insert steps (values {:CMD      step
+                                                                          :PIPELINE (name-of group name)}))))]
                        "Ok"
                        (f/when-failed [err] (f/message err)))]
      (respond result))))
 
 (defn start
   [group name]
-  (let-flow [result (f/attempt-all [steps (perform! #(select steps (where {:PIPELINE (name-of group name)})))
+  (let-flow [result (f/attempt-all [steps (perform! (select steps (where {:PIPELINE (name-of group name)})))
                                     steps (map (fn [step] {:cmd (ShellCmd/tokenize (:CMD step) false)
                                                            :id  (:ID step)}) steps)
-                                    image (perform! #(-> (select pipelines
-                                                                 (fields [:IMAGE])
-                                                                 (where {:NAME (name-of group name)}))
-                                                         (first)
-                                                         (:IMAGE)))]
+                                    image (perform! (-> (select pipelines
+                                                                (fields [:IMAGE])
+                                                                (where {:NAME (name-of group name)}))
+                                                        (first)
+                                                        (:IMAGE)))]
                       (exec-steps image steps)
                       (f/when-failed [err] (f/message err)))]
     (respond result)))
