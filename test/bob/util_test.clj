@@ -18,20 +18,27 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [clojure.spec.alpha :as s]
+            [clojure.test :refer [deftest testing is]]
             [bob.util :refer :all]))
 
 (defspec respond-returns-a-ring-response
-         100
-         (prop/for-all [msg gen/string]
-           (= (respond msg) {:body    {:message msg}
-                             :headers {}
-                             :status  200})))
+  100
+  (prop/for-all [msg gen/string]
+    (= (respond msg) {:body    {:message msg}
+                      :headers {}
+                      :status  200})))
 
 (s/def ::container-id
   (s/and string?
          #(> (count %) id-length)))
 
 (defspec format-id-formats-given-id
-         100
-         (prop/for-all [msg (s/gen ::container-id)]
-           (<= (count (format-id msg)) id-length)))
+  100
+  (prop/for-all [msg (s/gen ::container-id)]
+    (<= (count (format-id msg)) id-length)))
+
+(deftest perform-test
+  (testing "monadic handling of success"
+    (is (= (perform! (/ 4 2)) 2)))
+  (testing "monadic handling of exception"
+    (is (instance? Exception (perform! (/ 4 0))))))
