@@ -32,16 +32,16 @@
        (catch Exception _ 0)))
 
 (defroutes routes
-           (GET "/" [] status)
-           (GET "/start/:id" [id] (start id))
-           (GET "/read/:id/:from/:count" [id from count] (logs-of id
-                                                                  (parse-int from)
-                                                                  (parse-int count)))
-           (GET "/cancel/:id" [id] (cancel id))
-           (GET "/status/:id" [id] (status-of id))
-           (GET "/gc" [] (gc))
-           (GET "/gc/all" [] (gc true))
-           (route/not-found (respond "Took a wrong turn?")))
+  (GET "/" [] status)
+  (GET "/start/:id" [id] (start id))
+  (GET "/read/:id/:from/:count" [id from count] (logs-of id
+                                                         (parse-int from)
+                                                         (parse-int count)))
+  (GET "/cancel/:id" [id] (cancel id))
+  (GET "/status/:id" [id] (status-of id))
+  (GET "/gc" [] (gc))
+  (GET "/gc/all" [] (gc true))
+  (route/not-found (respond "Took a wrong turn?")))
 
 (def bob-routes
   (-> routes

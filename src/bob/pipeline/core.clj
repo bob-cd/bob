@@ -26,14 +26,12 @@
 
 (defdb _ db-spec)
 
-(declare steps)
+(defentity steps
+  (table :STEPS))
 
 (defentity pipelines
-           (table :PIPELINES)
-           (has-many steps))
-
-(defentity steps
-           (table :STEPS))
+  (table :PIPELINES)
+  (has-many steps))
 
 (def name-of (memoize #(str %1 ":" %2)))
 
