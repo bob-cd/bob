@@ -9,20 +9,22 @@
 ### More [info](https://github.com/bob-cd/bob/blob/master/RATIONALE.md)
 
 ## Build requirements
-- An OS supporting Java and Docker
-- JDK 8+
+- Any OS supporting Java and Docker
+- JDK 8+ (latest preferred for optimal performance)
 - Clojure 1.9+
 - [Leiningen](https://leiningen.org/) 2.0+
 
 ## Running requirements
-- An OS supporting Java and Docker
-- JRE 8+
-- Docker
+- Any OS supporting Java and Docker
+- JRE 8+ (latest preferred for optimal performance)
+- Docker (latest preferred for optimal performance)
 
 ## Testing, building and running
-- All these steps **need Docker**
-- Run `lein test` to run tests.
-- Run `lein uberjar` to get the standalone JAR.
-- Run `java -jar <JAR_file>` to start the server on port **7777**.
+- Clone this repository.
+- Install the Build requirements.
+- Following steps **need Docker**:
+    - Run `lein test` to run tests.
+    - Run `lein uberjar` to get the standalone JAR.
+    - Run `java -jar ./target/bob-standalone.jar` to start the server on port **7777**.
 
 ![](https://raw.githubusercontent.com/bob-cd/bob/master/resources/bob_cc.png)

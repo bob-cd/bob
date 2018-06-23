@@ -38,7 +38,8 @@
   :java-source-paths ["src/bob/java"]
   :global-vars {*warn-on-reflection* true}
   :main bob.main
-  :target-path "target/%s"
+  :jar-name "bob.jar"
+  :uberjar-name "bob-standalone.jar"
   :profiles {:dev     {:dependencies [[org.clojure/test.check "0.9.0"]]}
              :uberjar {:aot      :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"
