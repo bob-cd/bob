@@ -14,7 +14,8 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.util
-  (:require [ring.util.response :refer [response]]))
+  (:require [ring.util.response :refer [response]])
+  (:import (java.sql Clob)))
 
 (def id-length 12)
 
@@ -31,3 +32,7 @@
 (defn format-id
   [^String id]
   (subs id 0 id-length))
+
+(defn clob->str
+  [^Clob clob]
+  (.getSubString clob 1 (int (.length clob))))

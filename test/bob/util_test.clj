@@ -19,7 +19,8 @@
             [clojure.test.check.properties :as prop]
             [clojure.spec.alpha :as s]
             [clojure.test :refer [deftest testing is]]
-            [bob.util :refer :all]))
+            [bob.util :refer :all])
+  (:import (javax.sql.rowset.serial SerialClob)))
 
 (defspec respond-returns-a-ring-response
   100
@@ -38,7 +39,12 @@
     (<= (count (format-id msg)) id-length)))
 
 (deftest perform-test
-  (testing "monadic handling of success"
+  (testing "Monadic handling of success"
     (is (= (perform! (/ 4 2)) 2)))
-  (testing "monadic handling of exception"
+  (testing "Monadic handling of exception"
     (is (instance? Exception (perform! (/ 4 0))))))
+
+(deftest clob-str-test
+  (testing "Conversion of a Clob to String"
+    (is (= (clob->str (SerialClob. (.toCharArray "test")))
+           "test"))))

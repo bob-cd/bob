@@ -15,7 +15,8 @@
 
 (ns bob.db.core
   (:require [ragtime.jdbc :as jdbc]
-            [ragtime.repl :refer [migrate]])
+            [ragtime.repl :refer [migrate]]
+            [clojure.string :as str])
   (:import (java.io File)))
 
 (defonce db-spec
@@ -23,7 +24,9 @@
           :subprotocol "h2:file"
           :subname     (str (System/getProperty "user.home")
                             File/separator
-                            ".bob")})
+                            ".bob")
+          :naming      {:keys   str/lower-case
+                        :fields str/upper-case}})
 
 (def migration-config
   {:datastore  (jdbc/sql-database db-spec)

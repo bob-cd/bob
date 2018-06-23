@@ -15,19 +15,20 @@
 
 (ns bob.pipeline.core-test
   (:require [clojure.test :refer :all]
+            [clojure.string :as str]
             [korma.db :refer [defdb]]
             [korma.core :refer [select fields]]
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :refer [migrate]]
-            [bob.pipeline.core :refer [create pipelines steps]])
-  (:import (java.io File)))
-
-(def test-db ^File (File/createTempFile "test" ".db"))
+            [bob.pipeline.core :refer [create pipelines steps]]
+            [bob.util :refer [clob->str]]))
 
 (defonce test-db-spec
          {:classname   "org.h2.Driver"
-          :subprotocol "h2:file"
-          :subname     (.getAbsolutePath test-db)})
+          :subprotocol "h2:mem"
+          :subname     "test;DB_CLOSE_DELAY=-1"
+          :naming      {:keys   str/lower-case
+                        :fields str/upper-case}})
 
 (def migration-config
   {:datastore  (jdbc/sql-database test-db-spec)
@@ -43,8 +44,10 @@
     (defdb _ test-db-spec)
     (migrate migration-config)
     (create "dev" "test" valid-steps "test:image")
-    (is (= (first (select pipelines)) {:IMAGE "test:image", :NAME "dev:test"}))
-    (is (= (select steps) (list {:CMD "echo 1 >> state.txt" :ID 1 :PID nil :PIPELINE "dev:test"}
-                                {:CMD "echo 2 >> state.txt" :ID 2 :PID nil :PIPELINE "dev:test"}
-                                {:CMD "echo 3 >> state.txt" :ID 3 :PID nil :PIPELINE "dev:test"}
-                                {:CMD "cat state.txt" :ID 4 :PID nil :PIPELINE "dev:test"})))))
+    (is (= (first (select pipelines)) {:image "test:image", :name "dev:test"}))
+    (is (= (->> (select steps)
+                (map #(update-in % [:cmd] clob->str)))
+           (list {:cmd "echo 1 >> state.txt" :id 1 :pid nil :pipeline "dev:test"}
+                 {:cmd "echo 2 >> state.txt" :id 2 :pid nil :pipeline "dev:test"}
+                 {:cmd "echo 3 >> state.txt" :id 3 :pid nil :pipeline "dev:test"}
+                 {:cmd "cat state.txt" :id 4 :pid nil :pipeline "dev:test"})))))

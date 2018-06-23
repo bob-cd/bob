@@ -33,8 +33,8 @@
 (defn update-pid
   [pid id]
   (f/attempt-all [_ (perform! (update steps
-                                      (set-fields {:PID pid})
-                                      (where {:ID id})))]
+                                      (set-fields {:pid pid})
+                                      (where {:id id})))]
     pid
     (f/when-failed [err] err)))
 
