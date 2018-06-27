@@ -14,23 +14,37 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.db.core
-  (:require [ragtime.jdbc :as jdbc]
+  (:require [clojure.string :as str]
+            [ragtime.jdbc :as jdbc]
             [ragtime.repl :refer [migrate]]
-            [clojure.string :as str])
+            [korma.db :refer [defdb]]
+            [korma.core :refer [defentity has-many]]
+            [hikari-cp.core :refer [make-datasource]])
   (:import (java.io File)))
 
-(defonce db-spec
-         {:classname   "org.h2.Driver"
-          :subprotocol "h2:file"
-          :subname     (str (System/getProperty "user.home")
-                            File/separator
-                            ".bob")
-          :naming      {:keys   str/lower-case
-                        :fields str/upper-case}})
+(def db-uri (format "jdbc:h2:file://%s"
+                    (str (System/getProperty "user.home")
+                         File/separator
+                         ".bob")))
+
+(def data-source
+  (when-not *compile-files*
+    (make-datasource {:adapter "h2"
+                      :url     db-uri})))
 
 (def migration-config
-  {:datastore  (jdbc/sql-database db-spec)
-   :migrations (jdbc/load-resources "migrations")})
+  (when-not *compile-files*
+    {:datastore  (jdbc/sql-database {:connection-uri db-uri})
+     :migrations (jdbc/load-resources "migrations")}))
 
 (defn init-db []
   (migrate migration-config))
+
+(defdb _ {:datasource data-source
+          :naming     {:keys   str/lower-case
+                       :fields str/upper-case}})
+
+(defentity steps)
+
+(defentity pipelines
+  (has-many steps))

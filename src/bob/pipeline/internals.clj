@@ -16,19 +16,14 @@
 (ns bob.pipeline.internals
   (:require [clojure.core.async :refer [go]]
             [korma.db :refer [defdb]]
-            [korma.core :refer [defentity table update set-fields where]]
+            [korma.core :refer [update set-fields where]]
             [failjure.core :as f]
-            [bob.db.core :refer [db-spec]]
+            [bob.db.core :refer [steps]]
             [bob.execution.internals :as e]
             [bob.util :refer [perform! format-id]])
   (:import (java.util List)))
 
 ;; TODO: Extract DB stuff
-
-(defdb _ db-spec)
-
-(defentity steps
-  (table :STEPS))
 
 (defn update-pid
   [pid id]

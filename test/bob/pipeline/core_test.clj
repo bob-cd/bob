@@ -20,18 +20,19 @@
             [korma.core :refer [select fields]]
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :refer [migrate]]
-            [bob.pipeline.core :refer [create pipelines steps]]
+            [hikari-cp.core :refer [make-datasource]]
+            [bob.db.core :refer [pipelines steps]]
+            [bob.pipeline.core :refer [create]]
             [bob.util :refer [clob->str]]))
 
-(defonce test-db-spec
-         {:classname   "org.h2.Driver"
-          :subprotocol "h2:mem"
-          :subname     "test;DB_CLOSE_DELAY=-1"
-          :naming      {:keys   str/lower-case
-                        :fields str/upper-case}})
+(def db-uri "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
+
+(def data-source
+  (make-datasource {:adapter "h2"
+                    :url     db-uri}))
 
 (def migration-config
-  {:datastore  (jdbc/sql-database test-db-spec)
+  {:datastore  (jdbc/sql-database {:connection-uri db-uri})
    :migrations (jdbc/load-resources "migrations")})
 
 (def valid-steps ["echo 1 >> state.txt"
@@ -41,8 +42,11 @@
 
 (deftest create-test
   (testing "Creating a valid pipeline"
-    (defdb _ test-db-spec)
     (migrate migration-config)
+    (defdb _
+      {:datasource data-source
+       :naming     {:keys   str/lower-case
+                    :fields str/upper-case}})
     (create "dev" "test" valid-steps "test:image")
     (is (= (first (select pipelines)) {:image "test:image", :name "dev:test"}))
     (is (= (->> (select steps)

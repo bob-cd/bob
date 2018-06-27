@@ -22,18 +22,9 @@
             [failjure.core :as f]
             [bob.execution.internals :refer [default-image]]
             [bob.pipeline.internals :refer [exec-steps]]
-            [bob.db.core :refer [db-spec]]
+            [bob.db.core :refer [pipelines steps]]
             [bob.util :refer [respond perform!]])
   (:import (bob.java ShellCmd)))
-
-(defdb _ db-spec)
-
-(defentity steps
-  (table :STEPS))
-
-(defentity pipelines
-  (table :PIPELINES)
-  (has-many steps))
 
 (def name-of (memoize #(str %1 ":" %2)))
 
