@@ -19,7 +19,7 @@
 
 (def id-length 12)
 
-(defmacro perform!
+(defmacro unsafe!
   [& body]
   `(try
      ~@body

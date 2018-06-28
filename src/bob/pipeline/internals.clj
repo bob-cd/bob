@@ -20,16 +20,16 @@
             [failjure.core :as f]
             [bob.db.core :refer [steps]]
             [bob.execution.internals :as e]
-            [bob.util :refer [perform! format-id]])
+            [bob.util :refer [unsafe! format-id]])
   (:import (java.util List)))
 
 ;; TODO: Extract DB stuff
 
 (defn update-pid
   [pid id]
-  (f/attempt-all [_ (perform! (update steps
-                                      (set-fields {:pid pid})
-                                      (where {:id id})))]
+  (f/attempt-all [_ (unsafe! (update steps
+                                     (set-fields {:pid pid})
+                                     (where {:id id})))]
     pid
     (f/when-failed [err] err)))
 
@@ -39,17 +39,17 @@
   [^String id ^List next-command]
   (let [repo (format "%s/%d" id (System/currentTimeMillis))
         tag  "latest"]
-    (f/attempt-all [_  (perform! (.commitContainer e/docker
-                                                   id
-                                                   repo
-                                                   tag
-                                                   (e/config-of (-> e/docker
-                                                                    (.inspectContainer id)
-                                                                    (.config)
-                                                                    (.image))
-                                                                next-command)
-                                                   nil
-                                                   nil))
+    (f/attempt-all [_  (unsafe! (.commitContainer e/docker
+                                                  id
+                                                  repo
+                                                  tag
+                                                  (e/config-of (-> e/docker
+                                                                   (.inspectContainer id)
+                                                                   (.config)
+                                                                   (.image))
+                                                               next-command)
+                                                  nil
+                                                  nil))
                     id (e/build (format "%s:%s" repo tag) next-command)]
       (format-id id)
       (f/when-failed [err] err))))

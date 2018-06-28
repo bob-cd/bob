@@ -40,9 +40,9 @@
 
 (deftest perform-test
   (testing "Monadic handling of success"
-    (is (= (perform! (/ 4 2)) 2)))
+    (is (= (unsafe! (/ 4 2)) 2)))
   (testing "Monadic handling of exception"
-    (is (instance? Exception (perform! (/ 4 0))))))
+    (is (instance? Exception (unsafe! (/ 4 0))))))
 
 (deftest clob-str-test
   (testing "Conversion of a Clob to String"

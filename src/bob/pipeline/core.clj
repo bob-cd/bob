@@ -23,7 +23,7 @@
             [bob.execution.internals :refer [default-image]]
             [bob.pipeline.internals :refer [exec-steps]]
             [bob.db.core :refer [pipelines steps]]
-            [bob.util :refer [respond perform!]])
+            [bob.util :refer [respond unsafe!]])
   (:import (bob.java ShellCmd)))
 
 (def name-of (memoize #(str %1 ":" %2)))
@@ -31,25 +31,25 @@
 (defn create
   ([group name pipeline-steps] (create group name pipeline-steps default-image))
   ([group name pipeline-steps image]
-   (let-flow [result (f/attempt-all [_ (perform! (insert pipelines (values {:name  (name-of group name)
-                                                                            :image image})))
-                                     _ (perform! (doseq [step pipeline-steps]
-                                                   (insert steps (values {:cmd      step
-                                                                          :pipeline (name-of group name)}))))]
+   (let-flow [result (f/attempt-all [_ (unsafe! (insert pipelines (values {:name  (name-of group name)
+                                                                           :image image})))
+                                     _ (unsafe! (doseq [step pipeline-steps]
+                                                  (insert steps (values {:cmd      step
+                                                                         :pipeline (name-of group name)}))))]
                        "Ok"
                        (f/when-failed [err] (f/message err)))]
      (respond result))))
 
 (defn start
   [group name]
-  (let-flow [result (f/attempt-all [steps (perform! (select steps (where {:pipeline (name-of group name)})))
+  (let-flow [result (f/attempt-all [steps (unsafe! (select steps (where {:pipeline (name-of group name)})))
                                     steps (map (fn [step] {:cmd (ShellCmd/tokenize (:cmd step) false)
                                                            :id  (:ID step)}) steps)
-                                    image (perform! (-> (select pipelines
-                                                                (fields [:image])
-                                                                (where {:name (name-of group name)}))
-                                                        (first)
-                                                        (:image)))]
+                                    image (unsafe! (-> (select pipelines
+                                                               (fields [:image])
+                                                               (where {:name (name-of group name)}))
+                                                       (first)
+                                                       (:image)))]
                       (exec-steps image steps)
                       (f/when-failed [err] (f/message err)))]
     (respond result)))
