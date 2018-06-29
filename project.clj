@@ -35,7 +35,9 @@
                  [io.netty/netty-all "4.1.25.Final"]        ;; Forced Netty version for Java 9+ compat
                  [javax.activation/activation "1.1.1"]      ;; Java 9+ compat for XML bindings
                  [ch.qos.logback/logback-classic "1.2.3"]]  ;; For sane logging in the 21st century
-  :plugins [[lein-ancient "0.6.15"]]
+  :plugins [[lein-ancient "0.6.15"]
+            [lein-kibit "0.1.6"]
+            [jonase/eastwood "0.2.6"]]
   :java-source-paths ["src/bob/java"]
   :global-vars {*warn-on-reflection* true}
   :main bob.main
