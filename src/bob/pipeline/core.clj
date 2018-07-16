@@ -23,7 +23,7 @@
             [bob.execution.internals :refer [default-image]]
             [bob.pipeline.internals :refer [exec-steps]]
             [bob.db.core :refer [pipelines steps]]
-            [bob.util :refer [respond unsafe!]])
+            [bob.util :refer [respond unsafe! clob->str]])
   (:import (bob.java ShellCmd)))
 
 (def name-of (memoize #(str %1 ":" %2)))
@@ -43,8 +43,8 @@
 (defn start
   [group name]
   (let-flow [result (f/attempt-all [steps (unsafe! (select steps (where {:pipeline (name-of group name)})))
-                                    steps (map (fn [step] {:cmd (ShellCmd/tokenize (:cmd step) false)
-                                                           :id  (:ID step)}) steps)
+                                    steps (map (fn [step] {:cmd (ShellCmd/tokenize (clob->str (:cmd step)) false)
+                                                           :id  (:id step)}) steps)
                                     image (unsafe! (-> (select pipelines
                                                                (fields [:image])
                                                                (where {:name (name-of group name)}))
