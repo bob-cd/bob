@@ -48,3 +48,8 @@
   (testing "Conversion of a Clob to String"
     (is (= (clob->str (SerialClob. (.toCharArray "test")))
            "test"))))
+
+(deftest test-shell-arg-tokenize
+  (testing "tokenizing a Shell command"
+    (is (= (tokenize "sh -c \"while sleep 1; do echo ${RANDOM}; done\"")
+           ["sh" "-c" "while sleep 1; do echo ${RANDOM}; done"]))))

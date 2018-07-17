@@ -36,3 +36,47 @@
 (defn clob->str
   [^Clob clob]
   (.getSubString clob 1 (int (.length clob))))
+
+(defn tokenize
+  [^String command]
+  (let [[escaped?
+         current-arg
+         args
+         state] (loop [cmd         command
+                       escaped?    false
+                       state       :no-token
+                       current-arg ""
+                       args        []]
+                  (if (or (nil? cmd)
+                          (zero? (count cmd)))
+                    [escaped? current-arg args state]
+                    (let [char ^Character (first cmd)]
+                      (if escaped?
+                        (recur (rest cmd) false state (str current-arg char) args)
+                        (case state
+                          :single-quote (if (= char \\)
+                                          (recur (rest cmd) escaped? :normal current-arg args)
+                                          (recur (rest cmd) escaped? state (str current-arg char) args))
+                          :double-quote (case char
+                                          \" (recur cmd escaped? :normal current-arg args)
+                                          \\ (let [next (second cmd)]
+                                               (if (or (= next \")
+                                                       (= next \\))
+                                                 (recur (drop 2 cmd) escaped? state (str current-arg next) args)
+                                                 (recur (drop 2 cmd) escaped? state (str current-arg char next) args)))
+                                          (recur (rest cmd) escaped? state (str current-arg char) args))
+                          (:no-token :normal) (case char
+                                                \\ (recur (rest cmd) true :normal current-arg args)
+                                                \' (recur (rest cmd) escaped? :single-quote current-arg args)
+                                                \" (recur (rest cmd) escaped? :double-quote current-arg args)
+                                                (if (not (Character/isWhitespace char))
+                                                  (recur (rest cmd) escaped? :normal (str current-arg char) args)
+                                                  (if (= state :normal)
+                                                    (recur (rest cmd) escaped? :no-token "" (conj args current-arg))
+                                                    (recur (rest cmd) escaped? state current-arg args))))
+                          (throw (IllegalStateException. (format "Tokenizer is in an invalid state: %s" state))))))))]
+    (if escaped?
+      (conj args (str current-arg \\))
+      (if (not= state :no-token)
+        (conj args current-arg)
+        args))))
