@@ -53,7 +53,7 @@ public class ShellCmd {
      * @param stringify whether or not to include escape special characters
      * @return A list of parsed and properly escaped arguments.
      */
-    public static List<String> tokenize(String arguments, boolean stringify) {
+    public static List<String> tokenize(String arguments) {
         LinkedList<String> argList = new LinkedList<>();
         StringBuilder currArg = new StringBuilder();
         boolean escaped = false;
@@ -136,52 +136,6 @@ public class ShellCmd {
             argList.add(currArg.toString());
         }
 
-        // Format each argument if we've been told to stringify them
-        if (stringify) {
-            for (int i = 0; i < argList.size(); i++) {
-                argList.set(i, "\"" + _escapeQuotesAndBackslashes(argList.get(i)) + "\"");
-            }
-        }
         return argList;
-    }
-
-    /**
-     * Inserts backslashes before any occurrences of a backslash or
-     * quote in the given string.  Also converts any special characters
-     * appropriately.
-     */
-    private static String _escapeQuotesAndBackslashes(String s) {
-        final StringBuilder buf = new StringBuilder(s);
-
-        // Walk backwards, looking for quotes or backslashes.
-        //  If we see any, insert an extra backslash into the buffer at
-        //  the same index.  (By walking backwards, the index into the buffer
-        //  will remain correct as we change the buffer.)
-
-        for (int i = s.length() - 1; i >= 0; i--) {
-            char c = s.charAt(i);
-
-            if ((c == '\\') || (c == '"')) {
-                buf.insert(i, '\\');
-            } else if (c == '\n') {
-                // Replace any special characters with escaped versions
-                buf.deleteCharAt(i);
-                buf.insert(i, "\\n");
-            } else if (c == '\t') {
-                buf.deleteCharAt(i);
-                buf.insert(i, "\\t");
-            } else if (c == '\r') {
-                buf.deleteCharAt(i);
-                buf.insert(i, "\\r");
-            } else if (c == '\b') {
-                buf.deleteCharAt(i);
-                buf.insert(i, "\\b");
-            } else if (c == '\f') {
-                buf.deleteCharAt(i);
-                buf.insert(i, "\\f");
-            }
-        }
-
-        return buf.toString();
     }
 }

@@ -43,7 +43,7 @@
 (defn start
   [group name]
   (let-flow [result (f/attempt-all [steps (unsafe! (select steps (where {:pipeline (name-of group name)})))
-                                    steps (map (fn [step] {:cmd (ShellCmd/tokenize (clob->str (:cmd step)) false)
+                                    steps (map (fn [step] {:cmd (ShellCmd/tokenize (clob->str (:cmd step)))
                                                            :id  (:id step)}) steps)
                                     image (unsafe! (-> (select pipelines
                                                                (fields [:image])

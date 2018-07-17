@@ -19,5 +19,5 @@
 
 (deftest test-shell-arg-tokenize
   (testing "tokenizing a Shell command"
-    (is (= (into [] (ShellCmd/tokenize "sh -c \"while sleep 1; do echo ${RANDOM}; done\"" false))
+    (is (= (into [] (ShellCmd/tokenize "sh -c \"while sleep 1; do echo ${RANDOM}; done\""))
            ["sh" "-c" "while sleep 1; do echo ${RANDOM}; done"]))))
