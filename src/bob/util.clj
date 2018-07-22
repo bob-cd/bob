@@ -37,7 +37,9 @@
   [^Clob clob]
   (.getSubString clob 1 (int (.length clob))))
 
-(defn tokenize
+;; TODO: Optimize as mentioned in:
+;; https://www.reddit.com/r/Clojure/comments/8zurv4/critical_code_review_and_feedback/
+(defn sh-tokenize
   [^String command]
   (let [[escaped?
          current-arg
