@@ -14,7 +14,8 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.util
-  (:require [ring.util.response :refer [response]])
+  (:require [ring.util.response :refer [response]]
+            [failjure.core :refer [failed?]])
   (:import (java.sql Clob)
            (java.util UUID)))
 
@@ -42,7 +43,7 @@
 
 ;; TODO: Optimize as mentioned in:
 ;; https://www.reddit.com/r/Clojure/comments/8zurv4/critical_code_review_and_feedback/
-(defn sh-tokenize
+(defn sh-tokenize!
   [^String command]
   (let [[escaped?
          current-arg
@@ -79,7 +80,8 @@
                                                   (if (= state :normal)
                                                     (recur (rest cmd) escaped? :no-token "" (conj args current-arg))
                                                     (recur (rest cmd) escaped? state current-arg args))))
-                          (throw (IllegalStateException. (format "Tokenizer is in an invalid state: %s" state))))))))]
+                          (throw (IllegalStateException.
+                                   (format "Invalid shell command: %s, unexpected token %s found." command state))))))))]
     (if escaped?
       (conj args (str current-arg \\))
       (if (not= state :no-token)

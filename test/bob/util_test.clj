@@ -60,5 +60,5 @@
 
 (deftest shell-arg-tokenize-test
   (testing "tokenizing a Shell command"
-    (is (= (sh-tokenize "sh -c \"while sleep 1; do echo ${RANDOM}; done\"")
+    (is (= (sh-tokenize! "sh -c \"while sleep 1; do echo ${RANDOM}; done\"")
            ["sh" "-c" "while sleep 1; do echo ${RANDOM}; done"]))))

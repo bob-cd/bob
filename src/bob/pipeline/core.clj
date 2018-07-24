@@ -23,7 +23,7 @@
             [bob.execution.internals :refer [default-image]]
             [bob.pipeline.internals :refer [exec-steps]]
             [bob.db.core :refer [pipelines steps]]
-            [bob.util :refer [respond unsafe! clob->str sh-tokenize]]))
+            [bob.util :refer [respond unsafe! clob->str sh-tokenize!]]))
 
 (def name-of (memoize #(str %1 ":" %2)))
 
@@ -44,7 +44,7 @@
   [group name]
   (let-flow [pipeline (name-of group name)
              result   (f/attempt-all [steps (unsafe! (select steps (where {:pipeline pipeline})))
-                                      steps (map #(hash-map :cmd (sh-tokenize (clob->str (:cmd %)))
+                                      steps (map #(hash-map :cmd (sh-tokenize! (clob->str (:cmd %)))
                                                             :id (:id %))
                                                  steps)
                                       image (unsafe! (-> (select pipelines
