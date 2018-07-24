@@ -39,16 +39,19 @@
                        (f/when-failed [err] (f/message err)))]
      (respond result))))
 
+;; TODO: Unit test this?
 (defn start
   [group name]
-  (let-flow [result (f/attempt-all [steps (unsafe! (select steps (where {:pipeline (name-of group name)})))
-                                    steps (map (fn [step] {:cmd (sh-tokenize (clob->str (:cmd step)))
-                                                           :id  (:id step)}) steps)
-                                    image (unsafe! (-> (select pipelines
-                                                               (fields [:image])
-                                                               (where {:name (name-of group name)}))
-                                                       (first)
-                                                       (:image)))]
-                      (exec-steps image steps)
-                      (f/when-failed [err] (f/message err)))]
+  (let-flow [pipeline (name-of group name)
+             result   (f/attempt-all [steps (unsafe! (select steps (where {:pipeline pipeline})))
+                                      steps (map #(hash-map :cmd (sh-tokenize (clob->str (:cmd %)))
+                                                            :id (:id %))
+                                                 steps)
+                                      image (unsafe! (-> (select pipelines
+                                                                 (fields [:image])
+                                                                 (where {:name pipeline}))
+                                                         (first)
+                                                         (:image)))]
+                        (exec-steps image steps pipeline)
+                        (f/when-failed [err] (f/message err)))]
     (respond result)))

@@ -15,7 +15,8 @@
 
 (ns bob.util
   (:require [ring.util.response :refer [response]])
-  (:import (java.sql Clob)))
+  (:import (java.sql Clob)
+           (java.util UUID)))
 
 (def id-length 12)
 
@@ -37,6 +38,8 @@
   [^Clob clob]
   (.getSubString clob 1 (int (.length clob))))
 
+(defn get-id [] (.toString (UUID/randomUUID)))
+
 ;; TODO: Optimize as mentioned in:
 ;; https://www.reddit.com/r/Clojure/comments/8zurv4/critical_code_review_and_feedback/
 (defn sh-tokenize
@@ -56,7 +59,7 @@
                       (if escaped?
                         (recur (rest cmd) false state (str current-arg char) args)
                         (case state
-                          :single-quote (if (= char \\)
+                          :single-quote (if (= char \')
                                           (recur (rest cmd) escaped? :normal current-arg args)
                                           (recur (rest cmd) escaped? state (str current-arg char) args))
                           :double-quote (case char

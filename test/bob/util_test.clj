@@ -49,7 +49,16 @@
     (is (= (clob->str (SerialClob. (.toCharArray "test")))
            "test"))))
 
-(deftest test-shell-arg-tokenize
+(def UUID-pattern #"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+(deftest get-id-test
+  (testing "Unique id generation"
+    (is (re-matches UUID-pattern (get-id)))
+    (let [id1 (get-id)
+          id2 (get-id)]
+      (is (not= id1 id2)))))
+
+(deftest shell-arg-tokenize-test
   (testing "tokenizing a Shell command"
     (is (= (sh-tokenize "sh -c \"while sleep 1; do echo ${RANDOM}; done\"")
            ["sh" "-c" "while sleep 1; do echo ${RANDOM}; done"]))))

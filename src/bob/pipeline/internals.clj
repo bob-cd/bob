@@ -16,11 +16,12 @@
 (ns bob.pipeline.internals
   (:require [clojure.core.async :refer [go]]
             [korma.db :refer [defdb]]
-            [korma.core :refer [update set-fields where]]
+            [korma.core :refer [update set-fields where
+                                insert values]]
             [failjure.core :as f]
-            [bob.db.core :refer [steps]]
+            [bob.db.core :refer [steps runs]]
             [bob.execution.internals :as e]
-            [bob.util :refer [unsafe! format-id]])
+            [bob.util :refer [unsafe! format-id get-id]])
   (:import (java.util List)))
 
 ;; TODO: Extract DB stuff
@@ -65,10 +66,21 @@
       (f/when-failed [err] err))))
 
 (defn exec-steps
-  [^String image ^List steps]
-  (go (f/attempt-all [id (f/ok-> (e/pull image)
-                                 (e/build (:cmd (first steps)))
-                                 (e/run)
-                                 (update-pid (:id (first steps))))]
-        (reduce exec-step id (rest steps))
-        (f/when-failed [err] (f/message err)))))
+  [^String image ^List steps ^String name]
+  (let [run-id (get-id)]
+    (go (f/attempt-all [_  (unsafe! (insert runs (values {:id       run-id
+                                                          :pipeline name
+                                                          :status   "running"})))
+                        id (f/ok-> (e/pull image)
+                                   (e/build (:cmd (first steps)))
+                                   (e/run)
+                                   (update-pid (:id (first steps))))
+                        id (reduce exec-step id (rest steps))
+                        _  (unsafe! (update runs
+                                            (set-fields {:status "passed"})
+                                            (where {:id run-id})))]
+          id
+          (f/when-failed [err] (do (unsafe! (update runs
+                                                    (set-fields {:status "failed"})
+                                                    (where {:id run-id})))
+                                   (f/message err)))))))
