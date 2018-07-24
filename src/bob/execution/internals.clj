@@ -74,7 +74,7 @@
   [^String image ^List cmd]
   (unsafe! (let [config   ^ContainerConfig (config-of image cmd)
                  creation ^ContainerCreation (.createContainer docker config)]
-             (.id creation))))
+             (format-id (.id creation)))))
 
 (defn status-of
   [^String id]

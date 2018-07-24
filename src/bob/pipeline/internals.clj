@@ -60,8 +60,9 @@
   (if (f/failed? id)
     (reduced id)
     (f/attempt-all [result (f/ok-> (next-step id (:cmd step))
-                                   (e/run)
-                                   (update-pid (:id step)))]
+                                   (update-pid (:id step))
+                                   (e/run))]
+
       result
       (f/when-failed [err] err))))
 
@@ -73,8 +74,8 @@
                                                           :status   "running"})))
                         id (f/ok-> (e/pull image)
                                    (e/build (:cmd (first steps)))
-                                   (e/run)
-                                   (update-pid (:id (first steps))))
+                                   (update-pid (:id (first steps)))
+                                   (e/run))
                         id (reduce exec-step id (rest steps))
                         _  (unsafe! (update runs
                                             (set-fields {:status "passed"})
