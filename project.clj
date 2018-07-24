@@ -37,7 +37,7 @@
                  [ch.qos.logback/logback-classic "1.2.3"]]  ;; For sane logging in the 21st century
   :plugins [[lein-ancient "0.6.15"]
             [lein-kibit "0.1.6"]
-            [jonase/eastwood "0.2.6"]]
+            [jonase/eastwood "0.2.9"]]
   :java-source-paths ["src/bob/java"]
   :global-vars {*warn-on-reflection* true}
   :main bob.main

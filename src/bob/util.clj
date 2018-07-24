@@ -38,7 +38,7 @@
   [^Clob clob]
   (.getSubString clob 1 (int (.length clob))))
 
-(defn get-id [] (.toString (UUID/randomUUID)))
+(defn get-id [] (str (UUID/randomUUID)))
 
 ;; TODO: Optimize as mentioned in:
 ;; https://www.reddit.com/r/Clojure/comments/8zurv4/critical_code_review_and_feedback/
@@ -74,7 +74,7 @@
                                                 \\ (recur (rest cmd) true :normal current-arg args)
                                                 \' (recur (rest cmd) escaped? :single-quote current-arg args)
                                                 \" (recur (rest cmd) escaped? :double-quote current-arg args)
-                                                (if (not (Character/isWhitespace char))
+                                                (if-not (Character/isWhitespace char)
                                                   (recur (rest cmd) escaped? :normal (str current-arg char) args)
                                                   (if (= state :normal)
                                                     (recur (rest cmd) escaped? :no-token "" (conj args current-arg))
