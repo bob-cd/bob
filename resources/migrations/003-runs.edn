@@ -14,6 +14,7 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 {:up   ["CREATE TABLE runs (id       VARCHAR(36) PRIMARY KEY,
+                            number   INTEGER NOT NULL,
                             pipeline VARCHAR(100) NOT NULL,
                             status   VARCHAR(7) NOT NULL,
                             FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]

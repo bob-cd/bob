@@ -17,7 +17,7 @@
   (:require [clojure.core.async :refer [go]]
             [korma.db :refer [defdb]]
             [korma.core :refer [update set-fields where
-                                insert values]]
+                                select insert values]]
             [failjure.core :as f]
             [bob.db.core :refer [logs runs]]
             [bob.execution.internals :as e]
@@ -61,10 +61,20 @@
       result
       (f/when-failed [err] err))))
 
+(defn- next-build-number-of
+  [name]
+  (f/attempt-all [result (unsafe! (last (select runs
+                                                (where {:pipeline name}))))]
+    (if (nil? result)
+      1
+      (inc (result :number)))
+    (f/when-failed [err] err)))
+
 (defn exec-steps
   [^String image ^List steps ^String name]
   (let [run-id (get-id)]
     (go (f/attempt-all [_  (unsafe! (insert runs (values {:id       run-id
+                                                          :number   (next-build-number-of name)
                                                           :pipeline name
                                                           :status   "running"})))
                         id (f/ok-> (e/pull image)
