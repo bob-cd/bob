@@ -46,7 +46,10 @@
 
 (defentity steps)
 
-(defentity runs)
+(defentity logs)
+
+(defentity runs
+  (has-many logs))
 
 (defentity pipelines
   (has-many steps)

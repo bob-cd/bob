@@ -19,50 +19,45 @@
             [korma.core :refer [update set-fields where
                                 insert values]]
             [failjure.core :as f]
-            [bob.db.core :refer [steps runs]]
+            [bob.db.core :refer [logs runs]]
             [bob.execution.internals :as e]
             [bob.util :refer [unsafe! format-id get-id]])
   (:import (java.util List)))
 
-;; TODO: Extract DB stuff
+;; TODO: Reduce and optimize DB interactions to a single place
 
 (defn update-pid
-  [pid id]
-  (f/attempt-all [_ (unsafe! (update steps
-                                     (set-fields {:pid pid})
-                                     (where {:id id})))]
+  [pid run-id]
+  (f/attempt-all [_ (unsafe! (insert logs (values {:pid pid
+                                                   :run run-id})))]
     pid
     (f/when-failed [err] err)))
-
-;; TODO: Can optimize the multiple (config-of) calls
 
 (defn- next-step
   [^String id ^List next-command]
   (let [repo (format "%s/%d" id (System/currentTimeMillis))
         tag  "latest"]
-    (f/attempt-all [_  (unsafe! (.commitContainer e/docker
-                                                  id
-                                                  repo
-                                                  tag
-                                                  (e/config-of (-> e/docker
-                                                                   (.inspectContainer id)
-                                                                   (.config)
-                                                                   (.image))
-                                                               next-command)
-                                                  nil
-                                                  nil))
-                    id (e/build (format "%s:%s" repo tag) next-command)]
-      (format-id id)
+    (f/attempt-all [_ (unsafe! (.commitContainer e/docker
+                                                 id
+                                                 repo
+                                                 tag
+                                                 (e/config-of (-> e/docker
+                                                                  (.inspectContainer id)
+                                                                  (.config)
+                                                                  (.image))
+                                                              next-command)
+                                                 nil
+                                                 nil))]
+      (e/build (format "%s:%s" repo tag) next-command)
       (f/when-failed [err] err))))
 
 (defn- exec-step
-  [id step]
+  [run-id id step]
   (if (f/failed? id)
     (reduced id)
     (f/attempt-all [result (f/ok-> (next-step id (:cmd step))
-                                   (update-pid (:id step))
+                                   (update-pid run-id)
                                    (e/run))]
-
       result
       (f/when-failed [err] err))))
 
@@ -74,9 +69,9 @@
                                                           :status   "running"})))
                         id (f/ok-> (e/pull image)
                                    (e/build (:cmd (first steps)))
-                                   (update-pid (:id (first steps)))
+                                   (update-pid run-id)
                                    (e/run))
-                        id (reduce exec-step id (rest steps))
+                        id (reduce (partial exec-step run-id) id (rest steps))
                         _  (unsafe! (update runs
                                             (set-fields {:status "passed"})
                                             (where {:id run-id})))]

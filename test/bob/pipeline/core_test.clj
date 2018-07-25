@@ -51,7 +51,7 @@
     (is (= (first (select pipelines)) {:image "test:image", :name "dev:test"}))
     (is (= (->> (select steps)
                 (map #(update-in % [:cmd] clob->str)))
-           (list {:cmd "echo 1 >> state.txt" :id 1 :pid nil :pipeline "dev:test"}
-                 {:cmd "echo 2 >> state.txt" :id 2 :pid nil :pipeline "dev:test"}
-                 {:cmd "echo 3 >> state.txt" :id 3 :pid nil :pipeline "dev:test"}
-                 {:cmd "cat state.txt" :id 4 :pid nil :pipeline "dev:test"})))))
+           (list {:cmd "echo 1 >> state.txt" :id 1 :pipeline "dev:test"}
+                 {:cmd "echo 2 >> state.txt" :id 2 :pipeline "dev:test"}
+                 {:cmd "echo 3 >> state.txt" :id 3 :pipeline "dev:test"}
+                 {:cmd "cat state.txt" :id 4 :pipeline "dev:test"})))))

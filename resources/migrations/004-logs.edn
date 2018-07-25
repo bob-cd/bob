@@ -13,9 +13,7 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-{:up   ["CREATE TABLE steps (id       INTEGER AUTO_INCREMENT,
-                             cmd      CLOB NOT NULL,
-                             pipeline VARCHAR(100) NOT NULL,
-                             PRIMARY KEY(id, pipeline),
-                             FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]
- :down ["DROP TABLE steps;"]}
+{:up   ["CREATE TABLE logs (run VARCHAR(36) NOT NULL,
+                            pid VARCHAR(12) DEFAULT NULL,
+                            FOREIGN KEY(run) REFERENCES runs(id) ON DELETE CASCADE);"]
+ :down ["DROP TABLE logs;"]}
