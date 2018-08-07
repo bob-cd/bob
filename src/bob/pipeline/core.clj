@@ -18,7 +18,8 @@
             [korma.db :refer [defdb]]
             [korma.core :refer [defentity table has-many
                                 insert values where
-                                select fields order]]
+                                select fields order
+                                delete]]
             [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
             [bob.execution.internals :refer [default-image]]
@@ -81,3 +82,11 @@
     (if (nil? status)
       (not-found {:message "No such pipeline"})
       (respond status))))
+
+;; TODO: Unit test this?
+(defn remove
+  [group name]
+  (let-flow [pipeline (name-of group name)
+             _        (unsafe! (delete pipelines
+                                       (where {:name [= pipeline]})))]
+    (respond "Ok")))
