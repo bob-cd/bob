@@ -14,7 +14,8 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.pipeline.core
-  (:require [korma.db :refer [defdb]]
+  (:require [ring.util.response :refer [not-found]]
+            [korma.db :refer [defdb]]
             [korma.core :refer [defentity table has-many
                                 insert values where
                                 select fields]]
@@ -22,7 +23,7 @@
             [failjure.core :as f]
             [bob.execution.internals :refer [default-image]]
             [bob.pipeline.internals :refer [exec-steps stop-pipeline]]
-            [bob.db.core :refer [pipelines steps]]
+            [bob.db.core :refer [pipelines steps runs]]
             [bob.util :refer [respond unsafe! clob->str sh-tokenize!]]))
 
 (def name-of (memoize #(str %1 ":" %2)))
@@ -61,4 +62,20 @@
   [group name number]
   (let-flow [pipeline (name-of group name)
              result   (stop-pipeline pipeline number)]
-    (respond result)))
+    (if (nil? result)
+      (not-found {:message "Pipeline not running"})
+      (respond result))))
+
+;; TODO: Unit test this?
+(defn status
+  [group name number]
+  (let-flow [pipeline (name-of group name)
+             status   (unsafe! (-> (select runs
+                                           (fields [:status])
+                                           (where {:pipeline pipeline
+                                                   :number   number}))
+                                   (first)
+                                   (:status)))]
+    (if (nil? status)
+      (not-found {:message "No such pipeline"})
+      (respond status))))

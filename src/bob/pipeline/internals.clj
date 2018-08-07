@@ -18,7 +18,7 @@
             [korma.db :refer [defdb]]
             [korma.core :refer [update set-fields where
                                 select insert values
-                                fields limit]]
+                                fields]]
             [failjure.core :as f]
             [bob.db.core :refer [logs runs]]
             [bob.execution.internals :as e]
@@ -59,8 +59,7 @@
   [run-id id step]
   (let [stopped? (unsafe! (-> (select runs
                                       (fields [:stopped])
-                                      (where {:id run-id})
-                                      (limit 1))
+                                      (where {:id run-id}))
                               (first)
                               (:stopped)))]
     (if (or stopped?
@@ -108,23 +107,20 @@
                   :number   number}
         status   (unsafe! (-> (select runs
                                       (fields [:status])
-                                      (where criteria)
-                                      (limit 1))
+                                      (where criteria))
                               (first)
                               (:status)))]
-    (if (= status "running")
+    (when (= status "running")
       (f/attempt-all [_      (unsafe! (update runs
                                               (set-fields {:stopped true})
                                               (where criteria)))
                       pid    (unsafe! (-> (select runs
                                                   (fields [:last_pid])
-                                                  (where criteria)
-                                                  (limit 1))
+                                                  (where criteria))
                                           (first)
                                           (:last_pid)))
                       status (e/status-of pid)
                       _      (when (status :running)
                                (e/kill-container pid))]
         "Ok"
-        (f/when-failed [err] (f/message err)))
-      "Ok")))
+        (f/when-failed [err] (f/message err))))))
