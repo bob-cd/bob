@@ -17,5 +17,7 @@
                             number   INTEGER NOT NULL,
                             pipeline VARCHAR(100) NOT NULL,
                             status   VARCHAR(7) NOT NULL,
+                            last_pid VARCHAR(12) DEFAULT NULL,
+                            stopped  BOOLEAN DEFAULT FALSE,
                             FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]
  :down ["DROP TABLE runs;"]}

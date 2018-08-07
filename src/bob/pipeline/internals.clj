@@ -17,7 +17,8 @@
   (:require [clojure.core.async :refer [go]]
             [korma.db :refer [defdb]]
             [korma.core :refer [update set-fields where
-                                select insert values]]
+                                select insert values
+                                fields limit]]
             [failjure.core :as f]
             [bob.db.core :refer [logs runs]]
             [bob.execution.internals :as e]
@@ -29,7 +30,10 @@
 (defn update-pid
   [pid run-id]
   (f/attempt-all [_ (unsafe! (insert logs (values {:pid pid
-                                                   :run run-id})))]
+                                                   :run run-id})))
+                  _ (unsafe! (update runs
+                                     (set-fields {:last_pid pid})
+                                     (where {:id run-id})))]
     pid
     (f/when-failed [err] err)))
 
@@ -53,13 +57,20 @@
 
 (defn- exec-step
   [run-id id step]
-  (if (f/failed? id)
-    (reduced id)
-    (f/attempt-all [result (f/ok-> (next-step id (:cmd step))
-                                   (update-pid run-id)
-                                   (e/run))]
-      result
-      (f/when-failed [err] err))))
+  (let [stopped? (unsafe! (-> (select runs
+                                      (fields [:stopped])
+                                      (where {:id run-id})
+                                      (limit 1))
+                              (first)
+                              (:stopped)))]
+    (if (or stopped?
+            (f/failed? id))
+      (reduced id)
+      (f/attempt-all [result (f/ok-> (next-step id (:cmd step))
+                                     (update-pid run-id)
+                                     (e/run))]
+        result
+        (f/when-failed [err] err)))))
 
 (defn- next-build-number-of
   [name]
@@ -90,3 +101,30 @@
                                                     (set-fields {:status "failed"})
                                                     (where {:id run-id})))
                                    (f/message err)))))))
+
+(defn stop-pipeline
+  [name number]
+  (let [criteria {:pipeline name
+                  :number   number}
+        status   (unsafe! (-> (select runs
+                                      (fields [:status])
+                                      (where criteria)
+                                      (limit 1))
+                              (first)
+                              (:status)))]
+    (if (= status "running")
+      (f/attempt-all [_      (unsafe! (update runs
+                                              (set-fields {:stopped true})
+                                              (where criteria)))
+                      pid    (unsafe! (-> (select runs
+                                                  (fields [:last_pid])
+                                                  (where criteria)
+                                                  (limit 1))
+                                          (first)
+                                          (:last_pid)))
+                      status (e/status-of pid)
+                      _      (when (status :running)
+                               (e/kill-container pid))]
+        "Ok"
+        (f/when-failed [err] (f/message err)))
+      "Ok")))

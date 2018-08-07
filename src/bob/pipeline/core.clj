@@ -21,7 +21,7 @@
             [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
             [bob.execution.internals :refer [default-image]]
-            [bob.pipeline.internals :refer [exec-steps]]
+            [bob.pipeline.internals :refer [exec-steps stop-pipeline]]
             [bob.db.core :refer [pipelines steps]]
             [bob.util :refer [respond unsafe! clob->str sh-tokenize!]]))
 
@@ -54,4 +54,11 @@
                                                          (:image)))]
                         (exec-steps image steps pipeline)
                         (f/when-failed [err] (f/message err)))]
+    (respond result)))
+
+;; TODO: Unit test this?
+(defn stop
+  [group name number]
+  (let-flow [pipeline (name-of group name)
+             result   (stop-pipeline pipeline number)]
     (respond result)))
