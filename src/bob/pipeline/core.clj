@@ -18,7 +18,7 @@
             [korma.db :refer [defdb]]
             [korma.core :refer [defentity table has-many
                                 insert values where
-                                select fields]]
+                                select fields order]]
             [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
             [bob.execution.internals :refer [default-image]]
@@ -44,7 +44,9 @@
 (defn start
   [group name]
   (let-flow [pipeline (name-of group name)
-             result   (f/attempt-all [steps (unsafe! (select steps (where {:pipeline pipeline})))
+             result   (f/attempt-all [steps (unsafe! (select steps
+                                                             (where {:pipeline pipeline})
+                                                             (order :id)))
                                       steps (map #(hash-map :cmd (sh-tokenize! (clob->str (:cmd %)))
                                                             :id (:id %))
                                                  steps)
