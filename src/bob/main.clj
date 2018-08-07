@@ -22,6 +22,8 @@
 (def PORT 7777)
 
 (defn -main
+  "Defines the entry point of Bob.
+  Starts up the HTTP API on port *7777* by default."
   [& _]
   (do (init-db)
       (println (format "Bob's listening on http://0.0.0.0:%d/" PORT))

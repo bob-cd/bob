@@ -37,7 +37,10 @@
     {:datastore  (jdbc/sql-database {:connection-uri db-uri})
      :migrations (jdbc/load-resources "migrations")}))
 
-(defn init-db []
+(defn init-db
+  "Initiates the data store for Bob by running all migrations
+  stored in resources."
+  []
   (migrate migration-config))
 
 (defdb _ {:datasource data-source

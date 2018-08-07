@@ -11,7 +11,6 @@
 ## Build requirements
 - Any OS supporting Java and Docker
 - JDK 8+ (latest preferred for optimal performance)
-- Clojure 1.9+
 - [Leiningen](https://leiningen.org/) 2.0+
 
 ## Running requirements

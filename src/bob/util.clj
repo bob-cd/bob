@@ -22,20 +22,26 @@
 (def id-length 12)
 
 (defmacro unsafe!
+  "Monad to wrap around potentially side effecting expression(s).
+  Either it catches the exception if thrown returns it as a value
+  or the result of the computation if successful."
   [& body]
   `(try
      ~@body
      (catch Exception e# e#)))
 
 (defn respond
+  "Simple decorator for wrapping a message in the response format."
   [msg]
   (response {:message msg}))
 
 (defn format-id
+  "Return docker container ids in the standard length"
   [^String id]
   (subs id 0 id-length))
 
 (defn clob->str
+  "Transforms a Java Clob object to a Java String"
   [^Clob clob]
   (.getSubString clob 1 (int (.length clob))))
 
@@ -44,6 +50,12 @@
 ;; TODO: Optimize as mentioned in:
 ;; https://www.reddit.com/r/Clojure/comments/8zurv4/critical_code_review_and_feedback/
 (defn sh-tokenize!
+  "Tokenizes a shell command given as a string into the command and its args.
+  Either returns a list of tokens or throws an IllegalStateException.
+  This is used to parse the step commands received by Bob.
+
+  Sample input: sh -c 'while sleep 1; do echo \\\"${RANDOM}\\\"; done'
+  Output: [sh, -c, while sleep 1; do echo \"${RANDOM}\"; done]"
   [^String command]
   (let [[escaped?
          current-arg

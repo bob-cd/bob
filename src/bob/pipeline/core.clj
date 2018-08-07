@@ -30,6 +30,14 @@
 (def name-of (memoize #(str %1 ":" %2)))
 
 (defn create
+  "Creates a new pipeline with the group, name and a list of steps and an optional
+  starting Docker image.
+  The group defines a logical grouping of pipelines like dev or staging
+  and the name is the name of the pipeline like build or test.
+  Steps is a list of strings of the commands that need to be executed in sequence.
+  The steps are assumed to be BASH commands.
+  Stores the pipeline info in the pipeline table, steps in steps table.
+  Returns Ok or error if any."
   ([group name pipeline-steps] (create group name pipeline-steps default-image))
   ([group name pipeline-steps image]
    (let-flow [result (f/attempt-all [_ (unsafe! (insert pipelines (values {:name  (name-of group name)
@@ -43,6 +51,8 @@
 
 ;; TODO: Unit test this?
 (defn start
+  "Asynchronously starts a pipeline in a group by name.
+  Returns Ok or any starting errors."
   [group name]
   (let-flow [pipeline (name-of group name)
              result   (f/attempt-all [steps (unsafe! (select steps
@@ -56,12 +66,15 @@
                                                                  (where {:name pipeline}))
                                                          (first)
                                                          (:image)))]
-                        (exec-steps image steps pipeline)
+                        (do (exec-steps image steps pipeline)
+                            "Ok")
                         (f/when-failed [err] (f/message err)))]
     (respond result)))
 
 ;; TODO: Unit test this?
 (defn stop
+  "Stops a running pipeline with SIGKILL.
+  Returns Ok or any stopping errors."
   [group name number]
   (let-flow [pipeline (name-of group name)
              result   (stop-pipeline pipeline number)]
@@ -71,6 +84,8 @@
 
 ;; TODO: Unit test this?
 (defn status
+  "Fetches the status of a pipeline.
+  Returns the status or 404"
   [group name number]
   (let-flow [pipeline (name-of group name)
              status   (unsafe! (-> (select runs
@@ -85,6 +100,8 @@
 
 ;; TODO: Unit test this?
 (defn remove
+  "Removes a pipeline.
+  Returns Ok or 404"
   [group name]
   (let-flow [pipeline (name-of group name)
              _        (unsafe! (delete pipelines
