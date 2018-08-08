@@ -14,18 +14,14 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.execution.internals
-  (:require [clojure.string :refer [split-lines]]
-            [failjure.core :as f]
+  (:require [failjure.core :as f]
             [bob.util :refer [unsafe! format-id]])
-  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam
-                                      LogStream)
+  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam)
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation
                                                ContainerState ContainerInfo)
            (java.util List)))
 
 (def default-image "debian:unstable-slim")
-
-(def default-command ["echo 'Hello, world!'"])
 
 (def docker ^DefaultDockerClient (.build (DefaultDockerClient/fromEnv)))
 
@@ -52,12 +48,6 @@
   (if (f/failed? (unsafe! (.killContainer docker name)))
     (f/fail "Could not kill %s" name)
     name))
-
-(defn remove-container
-  "Removes a container if present. Cleans up the resources consumed.
-  Returns the error if any."
-  [name]
-  (unsafe! (.removeContainer docker name)))
 
 (defn pull
   "Pulls in an image if it's not present locally.
@@ -115,12 +105,3 @@
   "Fetches the lazy log stream from a running/dead container."
   [name]
   (unsafe! (.logs docker name log-params)))
-
-(defn read-log-stream
-  "Reads the lazy log stream beginning at an offset and the number of lines."
-  [^LogStream stream from lines]
-  (unsafe! (->> stream
-                (.readFully)
-                (split-lines)
-                (drop (dec from))
-                (take lines))))

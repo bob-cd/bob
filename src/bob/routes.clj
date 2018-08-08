@@ -19,26 +19,14 @@
             [ring.middleware.params :as params]
             [compojure.core :refer [GET POST defroutes]]
             [compojure.route :as route]
-            [bob.execution.core :refer [start logs-of cancel status-of gc]]
+            [bob.execution.core :refer [gc]]
             [bob.middleware :refer [ignore-trailing-slash]]
             [bob.util :refer [respond]]))
 
-(def status (respond "Bob's here!"))
-
-;; TODO: Can do better than this.
-(defn parse-int
-  [number]
-  (try (Integer/parseInt number)
-       (catch Exception _ 0)))
+(def status (respond "\uD83D\uDD28 Bob's here! \uD83D\uDD28"))
 
 (defroutes routes
   (GET "/" [] status)
-  (GET "/start/:id" [id] (start id))
-  (GET "/read/:id/:from/:count" [id from count] (logs-of id
-                                                         (parse-int from)
-                                                         (parse-int count)))
-  (GET "/cancel/:id" [id] (cancel id))
-  (GET "/status/:id" [id] (status-of id))
   (GET "/gc" [] (gc))
   (GET "/gc/all" [] (gc true))
   (route/not-found (respond "Took a wrong turn?")))
