@@ -14,10 +14,10 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.api.routes
-  (:require [ring.util.http-response :refer [ok not-found]]
-            [compojure.route :as route]
+  (:require [compojure.route :as route]
             [compojure.api.sweet :refer [api context GET undocumented]]
-            [schema.core :as s]
+            [bob.util :refer [respond]]
+            [bob.api.schemas :refer :all]
             [bob.execution.core :refer [gc]]
             [bob.api.middleware :refer [ignore-trailing-slash]]))
 
@@ -36,14 +36,14 @@
         :tags ["Bob's API"]
 
         (GET "/gc" []
-          :return s/Str
+          :return SimpleResponse
           :summary "Runs the garbage collection for Bob, reclaiming resources."
           (gc))
 
         (GET "/gc/all" []
-          :return s/Str
+          :return SimpleResponse
           :summary "Runs the full garbage collection for Bob, reclaiming all resources."
           (gc true)))
 
       (undocumented
-        (route/not-found (ok {:message "Took a wrong turn?"}))))))
+        (route/not-found (respond "Took a wrong turn?"))))))

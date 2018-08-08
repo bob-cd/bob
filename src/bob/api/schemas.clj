@@ -13,21 +13,7 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.execution.core
-  (:require [clojure.java.shell :refer [sh]]
-            [manifold.deferred :refer [let-flow]]
-            [failjure.core :as f]
-            [bob.util :refer [respond]]))
+(ns bob.api.schemas
+  (:require [schema.core :as s]))
 
-(defn gc
-  "Handler to clean up resources.
-  Removes all non running images and containers.
-  WILL CAUSE BUILD HISTORY LOSS!"
-  ([] (gc false))
-  ([all]
-   (let [base-args ["docker" "system" "prune" "-f"]
-         args      (if all (conj base-args "-a") base-args)]
-     (let-flow [result (f/ok-> (apply sh args))]
-       (respond (if (f/failed? result)
-                  (f/message result)
-                  "Ok"))))))
+(s/defschema SimpleResponse {:message s/Str})
