@@ -15,7 +15,7 @@
 
 (ns bob.main
   (:require [aleph.http :as http]
-            [bob.routes :refer [bob-routes]]
+            [bob.routes :refer [bob-api]]
             [bob.db.core :refer [init-db]])
   (:gen-class))
 
@@ -27,4 +27,4 @@
   [& _]
   (do (init-db)
       (println (format "Bob's listening on http://0.0.0.0:%d/" PORT))
-      (http/start-server bob-routes {:port PORT})))
+      (http/start-server bob-api {:port PORT})))

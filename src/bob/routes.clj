@@ -15,24 +15,37 @@
 
 (ns bob.routes
   (:require [clojure.string :refer [split]]
-            [ring.middleware.json :refer [wrap-json-response]]
-            [ring.middleware.params :as params]
-            [compojure.core :refer [GET POST defroutes]]
+            [ring.util.http-response :refer [ok not-found]]
             [compojure.route :as route]
+            [compojure.api.sweet :refer [api context GET undocumented]]
+            [schema.core :as s]
             [bob.execution.core :refer [gc]]
             [bob.middleware :refer [ignore-trailing-slash]]
             [bob.util :refer [respond]]))
 
-(def status (respond "\uD83D\uDD28 Bob's here! \uD83D\uDD28"))
+(def bob-api
+  (ignore-trailing-slash
+    (api
+      {:swagger
+       {:ui   "/"
+        :spec "/swagger.json"
+        :data {:info     {:title       "Bob the Builder"
+                          :description "Can we build it? \uD83D\uDD28"}
+               :consumes ["application/json"]
+               :produces ["application/json"]}}}
 
-(defroutes routes
-  (GET "/" [] status)
-  (GET "/gc" [] (gc))
-  (GET "/gc/all" [] (gc true))
-  (route/not-found (respond "Took a wrong turn?")))
+      (context "/api" []
+        :tags ["Bob's API"]
 
-(def bob-routes
-  (-> routes
-      (ignore-trailing-slash)
-      (wrap-json-response)
-      (params/wrap-params)))
+        (GET "/gc" []
+          :return s/Str
+          :summary "Runs the garbage collection for Bob, reclaiming resources."
+          (gc))
+
+        (GET "/gc/all" []
+          :return s/Str
+          :summary "Runs the full garbage collection for Bob, reclaiming all resources."
+          (gc true)))
+
+      (undocumented
+        (route/not-found (ok {:message "Took a wrong turn?"}))))))

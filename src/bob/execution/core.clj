@@ -28,4 +28,6 @@
    (let [base-args ["docker" "system" "prune" "-f"]
          args      (if all (conj base-args "-a") base-args)]
      (let-flow [result (f/ok-> (apply sh args))]
-       (respond result)))))
+       (if (f/failed? result)
+         (f/message result)
+         "Ok")))))
