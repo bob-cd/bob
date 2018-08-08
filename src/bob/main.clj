@@ -15,7 +15,7 @@
 
 (ns bob.main
   (:require [aleph.http :as http]
-            [bob.routes :refer [bob-api]]
+            [bob.api.routes :refer [bob-api]]
             [bob.db.core :refer [init-db]])
   (:gen-class))
 

@@ -15,7 +15,7 @@
 
 (ns bob.middleware-test
   (:require [clojure.test :refer :all]
-            [bob.middleware :refer :all]))
+            [bob.api.middleware :refer :all]))
 
 (defn handler [req] req)
 

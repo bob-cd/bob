@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.middleware)
+(ns bob.api.middleware)
 
 (defn ignore-trailing-slash
   "Middleware to ignore trailing slashes at the end of routes

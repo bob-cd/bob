@@ -13,15 +13,13 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.routes
-  (:require [clojure.string :refer [split]]
-            [ring.util.http-response :refer [ok not-found]]
+(ns bob.api.routes
+  (:require [ring.util.http-response :refer [ok not-found]]
             [compojure.route :as route]
             [compojure.api.sweet :refer [api context GET undocumented]]
             [schema.core :as s]
             [bob.execution.core :refer [gc]]
-            [bob.middleware :refer [ignore-trailing-slash]]
-            [bob.util :refer [respond]]))
+            [bob.api.middleware :refer [ignore-trailing-slash]]))
 
 (def bob-api
   (ignore-trailing-slash
