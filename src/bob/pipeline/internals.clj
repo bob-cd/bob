@@ -15,10 +15,11 @@
 
 (ns bob.pipeline.internals
   (:require [clojure.core.async :refer [go]]
+            [clojure.string :refer [split-lines]]
             [korma.db :refer [defdb]]
             [korma.core :refer [update set-fields where
                                 select insert values
-                                fields]]
+                                fields order]]
             [failjure.core :as f]
             [bob.db.core :refer [logs runs]]
             [bob.execution.internals :as e]
@@ -122,8 +123,8 @@
   "Stops a pipeline if running.
   Performs the following:
   - Sets the field *stopped* in the runs table to true such that exec-step won't reduce any further.
-  - Gets the *last_pid* field from the runs table,
-  - Checks if that container is running and kills it.
+  - Gets the *last_pid* field from the runs table.
+  - Checks if that container with that id is running; if yes, kills it.
   Returns Ok or any errors if any."
   [name number]
   (let [criteria {:pipeline name
@@ -147,3 +148,30 @@
                                (e/kill-container pid))]
         "Ok"
         (f/when-failed [err] (f/message err))))))
+
+(defn pipeline-logs
+  "Aggregates and reads the logs from all of the containers in a pipeline.
+  Performs the following:
+  - Fetch the run UUID of a pipeline of a group.
+  - Fetch all container ids associated with that UUID.
+  - Lazily read the streams from each and append and truncate the lines.
+  Returns the list of lines or errors if any."
+  [name number offset lines]
+  (f/attempt-all [run-id     (unsafe! (-> (select runs
+                                                  (fields [:id])
+                                                  (where {:pipeline name
+                                                          :number   number}))
+                                          (first)
+                                          (:id)))
+                  containers (unsafe! (->> (select logs
+                                                   (fields [:pid])
+                                                   (where {:run run-id})
+                                                   (order :id))
+                                           (map #(:pid %))))]
+    (->> containers
+         (pmap #(.readFully (e/log-stream-of %)))
+         (filter #(not (empty? %)))
+         (mapcat split-lines)
+         (drop (dec offset))
+         (take lines))
+    (f/when-failed [err] (f/message err))))

@@ -23,8 +23,8 @@
             [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
             [bob.execution.internals :refer [default-image]]
-            [bob.pipeline.internals :refer [exec-steps stop-pipeline]]
-            [bob.db.core :refer [pipelines steps runs]]
+            [bob.pipeline.internals :refer [exec-steps stop-pipeline pipeline-logs]]
+            [bob.db.core :refer [pipelines steps runs logs]]
             [bob.util :refer [respond unsafe! clob->str sh-tokenize!]]))
 
 (def name-of (memoize #(str %1 ":" %2)))
@@ -84,8 +84,8 @@
 
 ;; TODO: Unit test this?
 (defn status
-  "Fetches the status of a pipeline.
-  Returns the status or 404"
+  "Fetches the status of a particular run of a pipeline.
+  Returns the status or 404."
   [group name number]
   (let-flow [pipeline (name-of group name)
              status   (unsafe! (-> (select runs
@@ -101,9 +101,19 @@
 ;; TODO: Unit test this?
 (defn remove
   "Removes a pipeline.
-  Returns Ok or 404"
+  Returns Ok or 404."
   [group name]
   (let-flow [pipeline (name-of group name)
              _        (unsafe! (delete pipelines
-                                       (where {:name [= pipeline]})))]
+                                       (where {:name pipeline})))]
     (respond "Ok")))
+
+;; TODO: Unit test this?
+(defn logs-of
+  "Handler to fetch logs for a particular run of a pipeline.
+  Take the starting offset to read and the number of lines to read after it.
+  Returns logs as a list."
+  [group name number offset lines]
+  (let-flow [pipeline (name-of group name)
+             result   (pipeline-logs pipeline number offset lines)]
+    (respond result)))
