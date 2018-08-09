@@ -16,4 +16,7 @@
 (ns bob.api.schemas
   (:require [schema.core :as s]))
 
-(s/defschema SimpleResponse {:message s/Str})
+(s/defschema SimpleResponse {:message String})
+
+(s/defschema Pipeline {:steps [String]
+                       :image String})

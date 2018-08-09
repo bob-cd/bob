@@ -15,11 +15,13 @@
 
 (ns bob.api.routes
   (:require [compojure.route :as route]
-            [compojure.api.sweet :refer [api context GET undocumented]]
+            [compojure.api.sweet :refer [api context undocumented
+                                         GET POST]]
             [bob.util :refer [respond]]
             [bob.api.schemas :refer :all]
+            [bob.api.middleware :refer [ignore-trailing-slash]]
             [bob.execution.core :refer [gc]]
-            [bob.api.middleware :refer [ignore-trailing-slash]]))
+            [bob.pipeline.core :as p]))
 
 (def bob-api
   (ignore-trailing-slash
@@ -28,12 +30,24 @@
        {:ui   "/"
         :spec "/swagger.json"
         :data {:info     {:title       "Bob the Builder"
+                          :version     "0.1"
                           :description "The modular, extensible CI/CD platform."}
                :consumes ["application/json"]
                :produces ["application/json"]}}}
 
       (context "/api" []
         :tags ["Bob's API"]
+
+        (POST "/pipeline/:group/:name" []
+          :return SimpleResponse
+          :path-params [group
+                        :- String
+                        name
+                        :- String]
+          :body [pipeline Pipeline]
+          :summary "Creates a new pipeline in a group with the specified name.
+                   Takes list of steps and the base docker image as POST body."
+          (p/create group name (:steps pipeline) (:image pipeline)))
 
         (GET "/can-we-build-it" []
           :return SimpleResponse
