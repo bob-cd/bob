@@ -28,12 +28,17 @@
        {:ui   "/"
         :spec "/swagger.json"
         :data {:info     {:title       "Bob the Builder"
-                          :description "Can we build it? \uD83D\uDD28"}
+                          :description "The modular, extensible CI/CD platform."}
                :consumes ["application/json"]
                :produces ["application/json"]}}}
 
       (context "/api" []
         :tags ["Bob's API"]
+
+        (GET "/can-we-build-it" []
+          :return SimpleResponse
+          :summary "Runs health checks for Bob."
+          (respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28"))
 
         (GET "/gc" []
           :return SimpleResponse
