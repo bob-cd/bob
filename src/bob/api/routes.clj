@@ -16,7 +16,8 @@
 (ns bob.api.routes
   (:require [compojure.route :as route]
             [compojure.api.sweet :refer [api context undocumented
-                                         GET POST]]
+                                         GET POST DELETE]]
+            [schema.core :as s]
             [bob.util :refer [respond]]
             [bob.api.schemas :refer :all]
             [bob.api.middleware :refer [ignore-trailing-slash]]
@@ -48,6 +49,62 @@
           :summary "Creates a new pipeline in a group with the specified name.
                    Takes list of steps and the base docker image as POST body."
           (p/create group name (:steps pipeline) (:image pipeline)))
+
+        (GET "/pipeline/start/:group/:name" []
+          :return SimpleResponse
+          :path-params [group
+                        :- String
+                        name
+                        :- String]
+          :summary "Starts a pipeline in a group with the specified name."
+          (p/start group name))
+
+        (GET "/pipeline/stop/:group/:name/:number" []
+          :return SimpleResponse
+          :path-params [group
+                        :- String
+                        name
+                        :- String
+                        number
+                        :- s/Int]
+          :summary "Stops a pipeline run in a group with the specified name and number."
+          (p/stop group name number))
+
+        (GET "/pipeline/logs/:group/:name/:number/:offset/:lines" []
+          :return LogsResponse
+          :path-params [group
+                        :- String
+                        name
+                        :- String
+                        number
+                        :- s/Int
+                        offset
+                        :- s/Int
+                        lines
+                        :- s/Int]
+          :summary "Fetches logs for a pipeline run in a group with the specified
+                    name, number, starting offset and the number of lines."
+          (p/logs-of group name number offset lines))
+
+        (GET "/pipeline/status/:group/:name/:number" []
+          :return StatusResponse
+          :path-params [group
+                        :- String
+                        name
+                        :- String
+                        number
+                        :- s/Int]
+          :summary "Fetches the status of pipeline run in a group with the specified name and number."
+          (p/status group name number))
+
+        (DELETE "/pipeline/:group/:name" []
+          :return SimpleResponse
+          :path-params [group
+                        :- String
+                        name
+                        :- String]
+          :summary "Deletes a pipeline in a group with the specified name."
+          (p/remove group name))
 
         (GET "/can-we-build-it" []
           :return SimpleResponse

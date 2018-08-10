@@ -20,3 +20,7 @@
 
 (s/defschema Pipeline {:steps [String]
                        :image String})
+
+(s/defschema LogsResponse {:message [String]})
+
+(s/defschema StatusResponse {:message (s/enum :running :passed :failed)})
