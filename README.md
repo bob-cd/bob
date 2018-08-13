@@ -30,9 +30,7 @@
 
 Bob exposes a REST API which is self documented with [Swagger](https://swagger.io/).
 
-The API docs and a simple testing client can be located on **http://0.0.0.0:7777/**
-
-The actual API is on **http://0.0.0.0:7777/api/**
+The API docs and a simple testing client can be located on **http://localhost:7777/**
 
 ### Routes (all calls are standard HTTP requests)
 
