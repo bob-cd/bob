@@ -54,6 +54,9 @@
 (defentity runs
   (has-many logs))
 
+(defentity evars)
+
 (defentity pipelines
+  (has-many evars)
   (has-many steps)
   (has-many runs))

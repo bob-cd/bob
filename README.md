@@ -37,12 +37,16 @@ The actual API is on **http://0.0.0.0:7777/api/**
 ### Routes (all calls are standard HTTP requests)
 
 - **POST** on `/api/pipeline/<group>/<name>` creates a new pipeline in a group with the specified name.
-Takes list of steps and the base docker image as raw JSON POST body. 
+Takes list of steps and the base docker image and a list of environment vars as raw JSON POST body. 
 The steps need to be in the form of `cmd [args...]`
 Example of a post body:
 ```json
 {
   "image": "busybox:musl",
+  "vars": [
+    {"env": "test"},
+    {"url": "test.com"}
+  ],
   "steps": [
     "echo hello",
     "sh -c 'cat test.txt && echo test >> test.txt'"

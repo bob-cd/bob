@@ -16,14 +16,16 @@
 (ns bob.execution.internals
   (:require [failjure.core :as f]
             [bob.util :refer [unsafe! format-id]])
-  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam DockerClient$ListImagesParam)
+  (:import (com.spotify.docker.client DefaultDockerClient DockerClient$LogsParam
+                                      DockerClient$ListImagesParam LogStream)
            (com.spotify.docker.client.messages HostConfig ContainerConfig ContainerCreation
                                                ContainerState ContainerInfo)
            (java.util List)))
 
 (def default-image "debian:unstable-slim")
 
-(def docker ^DefaultDockerClient (.build (DefaultDockerClient/fromEnv)))
+(defonce docker
+         (.build (DefaultDockerClient/fromEnv)))
 
 (def host-config ^HostConfig (.build (HostConfig/builder)))
 
@@ -35,8 +37,9 @@
   "Checks if an image is present locally.
   Returns the name or the error if any."
   [name]
-  (let [result (unsafe! (.listImages docker (into-array DockerClient$ListImagesParam
-                                                        [(DockerClient$ListImagesParam/byName name)])))]
+  (let [result (unsafe! (.listImages ^DefaultDockerClient docker
+                                     (into-array DockerClient$ListImagesParam
+                                                 [(DockerClient$ListImagesParam/byName name)])))]
     (if (or (f/failed? result) (zero? (count result)))
       (f/fail "Failed to find %s" name)
       name)))
@@ -45,7 +48,7 @@
   "Kills a running container using SIGKILL.
   Returns the name or the error if any."
   [name]
-  (if (f/failed? (unsafe! (.killContainer docker name)))
+  (if (f/failed? (unsafe! (.killContainer ^DefaultDockerClient docker name)))
     (f/fail "Could not kill %s" name)
     name))
 
@@ -55,7 +58,7 @@
   [name]
   (if (and (f/failed? (has-image name))
            (f/failed? (unsafe! (do (println (format "Pulling %s" name))
-                                   (.pull docker name)
+                                   (.pull ^DefaultDockerClient docker name)
                                    (println (format "Pulled %s" name))))))
     (f/fail "Cannot pull %s" name)
     name))
@@ -63,9 +66,10 @@
 (defn config-of
   "Creates a container config of a container before the build.
   Returns the config object or the error if any."
-  [^String image ^List cmd]
+  [^String image ^List cmd ^List evars]
   (unsafe! (-> (ContainerConfig/builder)
                (.hostConfig host-config)
+               (.env evars)
                (.image image)
                (.cmd cmd)
                (.build))))
@@ -74,18 +78,18 @@
   "Builds a container.
   Takes the base image and the entry point command.
   Returns the id of the built container."
-  [^String image ^List cmd]
-  (unsafe! (let [config   ^ContainerConfig (config-of image cmd)
-                 creation ^ContainerCreation (.createContainer docker config)]
+  [^String image ^List cmd ^List evars]
+  (unsafe! (let [config   ^ContainerConfig (config-of image cmd evars)
+                 creation ^ContainerCreation (.createContainer ^DefaultDockerClient docker config)]
              (format-id (.id creation)))))
 
 (defn status-of
   "Returns the status of a container by id."
   [^String id]
-  (let [result ^ContainerInfo (unsafe! (.inspectContainer docker id))]
+  (let [result (unsafe! (.inspectContainer ^DefaultDockerClient docker id))]
     (if (f/failed? result)
       (f/message result)
-      (let [state ^ContainerState (.state result)]
+      (let [state ^ContainerState (.state ^ContainerInfo result)]
         {:running  (.running state)
          :exitCode (.exitCode state)}))))
 
@@ -93,8 +97,8 @@
   "Synchronously starts up a previously built container.
   Returns the id when complete or and error in case on non-zero exit."
   [^String id]
-  (f/attempt-all [_      (unsafe! (.startContainer docker id))
-                  _      (unsafe! (.waitContainer docker id))
+  (f/attempt-all [_      (unsafe! (.startContainer ^DefaultDockerClient docker id))
+                  _      (unsafe! (.waitContainer ^DefaultDockerClient docker id))
                   status (status-of id)]
     (if (zero? (:exitCode status))
       (format-id id)
@@ -103,5 +107,5 @@
 
 (defn log-stream-of
   "Fetches the lazy log stream from a running/dead container."
-  [name]
-  (unsafe! (.logs docker name log-params)))
+  ^LogStream [^String name]
+  (unsafe! (.logs ^DefaultDockerClient docker name log-params)))

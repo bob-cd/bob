@@ -24,29 +24,37 @@
             [failjure.core :as f]
             [bob.execution.internals :refer [default-image]]
             [bob.pipeline.internals :refer [exec-steps stop-pipeline pipeline-logs]]
-            [bob.db.core :refer [pipelines steps runs logs]]
+            [bob.db.core :refer [pipelines steps runs logs evars]]
             [bob.util :refer [respond unsafe! clob->str sh-tokenize!]]))
 
 (def name-of (memoize #(str %1 ":" %2)))
 
 (defn create
-  "Creates a new pipeline with the group, name and a list of steps and an optional
-  starting Docker image.
+  "Creates a new pipeline.
+  Takes the group, name, a list of steps, a list of environment vars
+  and an optional starting Docker image.
   The group defines a logical grouping of pipelines like dev or staging
   and the name is the name of the pipeline like build or test.
   Steps is a list of strings of the commands that need to be executed in sequence.
-  The steps are assumed to be BASH commands.
+  The steps are assumed to be valid BASH commands.
   Stores the pipeline info in the pipeline table, steps in steps table.
-  Returns Ok or error if any."
-  ([group name pipeline-steps] (create group name pipeline-steps default-image))
-  ([group name pipeline-steps image]
-   (let-flow [result (f/attempt-all [_ (unsafe! (insert pipelines (values {:name  (name-of group name)
-                                                                           :image image})))
-                                     _ (unsafe! (doseq [step pipeline-steps]
-                                                  (insert steps (values {:cmd      step
-                                                                         :pipeline (name-of group name)}))))]
-                       "Ok"
-                       (f/when-failed [err] (f/message err)))]
+  Returns Ok or the error if any."
+  ([group name pipeline-steps vars] (create group name pipeline-steps vars default-image))
+  ([group name pipeline-steps vars image]
+   (let-flow [pipeline (name-of group name)
+              pairs    (map #(hash-map :key (clojure.core/name (first (keys %)))
+                                       :value (first (vals %))
+                                       :pipeline pipeline)
+                            vars)
+              result   (f/attempt-all [_ (unsafe! (insert pipelines (values {:name  pipeline
+                                                                             :image image})))
+                                       _ (when (not= (count pairs) 0)
+                                           (unsafe! (insert evars (values pairs))))
+                                       _ (unsafe! (doseq [step pipeline-steps]
+                                                    (insert steps (values {:cmd      step
+                                                                           :pipeline pipeline}))))]
+                         "Ok"
+                         (f/when-failed [err] (f/message err)))]
      (respond result))))
 
 ;; TODO: Unit test this?
@@ -62,11 +70,17 @@
                                                             :id (:id %))
                                                  steps)
                                       image (unsafe! (-> (select pipelines
-                                                                 (fields [:image])
+                                                                 (fields :image)
                                                                  (where {:name pipeline}))
                                                          (first)
-                                                         (:image)))]
-                        (do (exec-steps image steps pipeline)
+                                                         (:image)))
+                                      vars  (unsafe! (->> (select evars
+                                                                  (fields :key :value)
+                                                                  (where {:pipeline pipeline}))
+                                                          (map #(format "%s=%s"
+                                                                        (:key %)
+                                                                        (:value %)))))]
+                        (do (exec-steps image steps pipeline vars)
                             "Ok")
                         (f/when-failed [err] (f/message err)))]
     (respond result)))
@@ -89,7 +103,7 @@
   [group name number]
   (let-flow [pipeline (name-of group name)
              status   (unsafe! (-> (select runs
-                                           (fields [:status])
+                                           (fields :status)
                                            (where {:pipeline pipeline
                                                    :number   number}))
                                    (first)

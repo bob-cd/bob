@@ -24,7 +24,8 @@
             [bob.db.core :refer [logs runs]]
             [bob.execution.internals :as e]
             [bob.util :refer [unsafe! format-id get-id]])
-  (:import (java.util List)))
+  (:import (java.util List)
+           (com.spotify.docker.client DefaultDockerClient)))
 
 ;; TODO: Reduce and optimize DB interactions to a single place
 
@@ -46,21 +47,22 @@
   Works by saving the last container state in a diffed image and
   creating a new container from it, thereby managing state externally.
   Returns the new container id or errors if any."
-  [^String id ^List next-command]
+  [^String id ^List next-command ^List evars]
   (let [repo (format "%s/%d" id (System/currentTimeMillis))
         tag  "latest"]
-    (f/attempt-all [_ (unsafe! (.commitContainer e/docker
+    (f/attempt-all [_ (unsafe! (.commitContainer ^DefaultDockerClient e/docker
                                                  id
                                                  repo
                                                  tag
-                                                 (e/config-of (-> e/docker
+                                                 (e/config-of (-> ^DefaultDockerClient e/docker
                                                                   (.inspectContainer id)
                                                                   (.config)
                                                                   (.image))
-                                                              next-command)
+                                                              next-command
+                                                              evars)
                                                  nil
                                                  nil))]
-      (e/build (format "%s:%s" repo tag) next-command)
+      (e/build (format "%s:%s" repo tag) next-command evars)
       (f/when-failed [err] err))))
 
 (defn- exec-step
@@ -70,16 +72,16 @@
   Stops the reduce if the pipeline stop has been signalled or any
   non-zero step outcome.
   Returns the next state or errors if any."
-  [run-id id step]
+  [run-id id step evars]
   (let [stopped? (unsafe! (-> (select runs
-                                      (fields [:stopped])
+                                      (fields :stopped)
                                       (where {:id run-id}))
                               (first)
                               (:stopped)))]
     (if (or stopped?
             (f/failed? id))
       (reduced id)
-      (f/attempt-all [result (f/ok-> (next-step id (:cmd step))
+      (f/attempt-all [result (f/ok-> (next-step id (:cmd step) evars)
                                      (update-pid run-id)
                                      (e/run))]
         result
@@ -99,17 +101,17 @@
   "Implements the sequential execution of the list of steps with a starting image.
   Dispatches asynchronously and uses a composition of the above functions.
   Returns the final id or errors if any."
-  [^String image ^List steps ^String name]
+  [^String image ^List steps ^String name ^List evars]
   (let [run-id (get-id)]
     (go (f/attempt-all [_  (unsafe! (insert runs (values {:id       run-id
                                                           :number   (next-build-number-of name)
                                                           :pipeline name
                                                           :status   "running"})))
                         id (f/ok-> (e/pull image)
-                                   (e/build (:cmd (first steps)))
+                                   (e/build (:cmd (first steps)) evars)
                                    (update-pid run-id)
                                    (e/run))
-                        id (reduce (partial exec-step run-id) id (rest steps))
+                        id (reduce (partial exec-step run-id evars) id (rest steps))
                         _  (unsafe! (update runs
                                             (set-fields {:status "passed"})
                                             (where {:id run-id})))]
@@ -130,7 +132,7 @@
   (let [criteria {:pipeline name
                   :number   number}
         status   (unsafe! (-> (select runs
-                                      (fields [:status])
+                                      (fields :status)
                                       (where criteria))
                               (first)
                               (:status)))]
@@ -139,7 +141,7 @@
                                               (set-fields {:stopped true})
                                               (where criteria)))
                       pid    (unsafe! (-> (select runs
-                                                  (fields [:last_pid])
+                                                  (fields :last_pid)
                                                   (where criteria))
                                           (first)
                                           (:last_pid)))
@@ -158,13 +160,13 @@
   Returns the list of lines or errors if any."
   [name number offset lines]
   (f/attempt-all [run-id     (unsafe! (-> (select runs
-                                                  (fields [:id])
+                                                  (fields :id)
                                                   (where {:pipeline name
                                                           :number   number}))
                                           (first)
                                           (:id)))
                   containers (unsafe! (->> (select logs
-                                                   (fields [:pid])
+                                                   (fields :pid)
                                                    (where {:run run-id})
                                                    (order :id))
                                            (map #(:pid %))))]

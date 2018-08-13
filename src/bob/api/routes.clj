@@ -47,8 +47,9 @@
                         :- String]
           :body [pipeline Pipeline]
           :summary "Creates a new pipeline in a group with the specified name.
-                   Takes list of steps and the base docker image as POST body."
-          (p/create group name (:steps pipeline) (:image pipeline)))
+                   Takes list of steps, the base docker image and a list of environment vars
+                   as POST body."
+          (p/create group name (:steps pipeline) (:vars pipeline) (:image pipeline)))
 
         (GET "/pipeline/start/:group/:name" []
           :return SimpleResponse

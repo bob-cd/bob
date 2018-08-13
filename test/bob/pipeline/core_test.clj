@@ -47,7 +47,7 @@
       {:datasource data-source
        :naming     {:keys   str/lower-case
                     :fields str/upper-case}})
-    (create "dev" "test" valid-steps "test:image")
+    (create "dev" "test" valid-steps [] "test:image")
     (is (= (first (select pipelines)) {:image "test:image", :name "dev:test"}))
     (is (= (->> (select steps)
                 (map #(update-in % [:cmd] clob->str)))
