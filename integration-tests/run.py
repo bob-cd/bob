@@ -69,9 +69,19 @@ def run_tests():
                 expected = json.loads(res.read().decode("utf-8"))
 
                 assert expected == test["response"]
+        elif test["method"] == "POST":
+            data = json.dumps(test["data"]).encode('utf8')
+            req = request.Request(
+                url, data, {"Content-Type": "application/json"}
+            )
+
+            with request.urlopen(req) as res:
+                expected = json.loads(res.read().decode("utf-8"))
+
+                assert expected == test["response"]
         else:
             raise Exception(
-                "Unknown method {} at test {}.".format(
+                "Unknown request method {} at test {}.".format(
                     test["method"], test["name"]
                 )
             )

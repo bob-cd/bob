@@ -49,7 +49,8 @@ Example of a post body:
   ],
   "steps": [
     "echo hello",
-    "sh -c 'cat test.txt && echo test >> test.txt'"
+    "sh -c 'touch test.txt && echo $env >> test.txt'",
+    "cat test.txt"
   ]
 }
 ```
