@@ -1,0 +1,15 @@
+{
+  "host": "localhost",
+  "port": 7777,
+  "protocol": "http",
+  "tests": [
+    {
+      "name": "Status Check",
+      "path": "/api/can-we-build-it",
+      "method": "GET",
+      "response": {
+        "message": "Yes we can! 🔨 🔨"
+      }
+    }
+  ]
+}

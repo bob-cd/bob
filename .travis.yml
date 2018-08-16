@@ -23,3 +23,6 @@ language: clojure
 jdk:
   - oraclejdk9
   - oraclejdk10
+
+after_success:
+  - python3 integration-tests/run.py
