@@ -51,7 +51,7 @@
                    as POST body."
           (p/create group name (:steps pipeline) (:vars pipeline) (:image pipeline)))
 
-        (GET "/pipeline/start/:group/:name" []
+        (POST "/pipeline/start/:group/:name" []
           :return SimpleResponse
           :path-params [group
                         :- String
@@ -60,7 +60,7 @@
           :summary "Starts a pipeline in a group with the specified name."
           (p/start group name))
 
-        (GET "/pipeline/stop/:group/:name/:number" []
+        (POST "/pipeline/stop/:group/:name/:number" []
           :return SimpleResponse
           :path-params [group
                         :- String

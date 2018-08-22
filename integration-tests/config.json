@@ -39,7 +39,8 @@
     {
       "name": "Pipeline start",
       "path": "/api/pipeline/start/dev/test",
-      "method": "GET",
+      "method": "POST",
+      "data": {},
       "response": {
         "message": "Ok"
       }
