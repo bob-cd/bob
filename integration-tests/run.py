@@ -17,6 +17,7 @@
 
 import json
 import subprocess
+import sys
 from urllib import request
 from urllib.error import URLError
 from urllib.parse import urljoin
@@ -74,9 +75,7 @@ def run_tests():
             req = request.Request(url)
 
             with request.urlopen(req) as res:
-                expected = json.loads(res.read().decode("utf-8"))
-
-                assert expected == test["response"]
+                response = json.loads(res.read().decode("utf-8"))
         elif test["method"] == "POST":
             data = json.dumps(test["data"]).encode("utf8")
             req = request.Request(
@@ -84,15 +83,26 @@ def run_tests():
             )
 
             with request.urlopen(req) as res:
-                expected = json.loads(res.read().decode("utf-8"))
-
-                assert expected == test["response"]
+                response = json.loads(res.read().decode("utf-8"))
         else:
-            raise Exception(
-                "Unknown request method {} at test {}.".format(
+            sys.stderr.write(
+                "Unknown request method {} at test {}.\n".format(
                     test["method"], test["name"]
                 )
             )
+
+            sys.exit(1)
+
+        try:
+            assert response == test["response"]
+        except AssertionError:
+            sys.stderr.write(
+                "{} failed with response {}".format(
+                    test["name"], json.dumps(response, indent=2)
+                )
+            )
+
+            sys.exit(1)
 
         print("{} passed.".format(test["name"]))
 

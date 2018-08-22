@@ -48,12 +48,20 @@
       "name": "Pipeline logs",
       "path": "/api/pipeline/logs/dev/test/1/0/10",
       "method": "GET",
-      "wait": 20,
+      "wait": 25,
       "response": {
         "message": [
           "hello",
           "test"
         ]
+      }
+    },
+    {
+      "name": "Pipeline status",
+      "path": "/api/pipeline/status/dev/test/1",
+      "method": "GET",
+      "response": {
+        "message": "passed"
       }
     }
   ]
