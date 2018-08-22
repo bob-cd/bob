@@ -72,7 +72,7 @@
   Stops the reduce if the pipeline stop has been signalled or any
   non-zero step outcome.
   Returns the next state or errors if any."
-  [run-id id step evars]
+  [run-id evars id step]
   (let [stopped? (unsafe! (-> (select runs
                                       (fields :stopped)
                                       (where {:id run-id}))
