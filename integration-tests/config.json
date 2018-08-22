@@ -35,6 +35,14 @@
       "response": {
         "message": "Ok"
       }
+    },
+    {
+      "name": "Pipeline start",
+      "path": "/api/pipeline/start/dev/test",
+      "method": "GET",
+      "response": {
+        "message": "Ok"
+      }
     }
   ]
 }
