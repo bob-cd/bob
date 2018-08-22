@@ -18,6 +18,7 @@
 import json
 import subprocess
 import sys
+from optparse import OptionParser
 from urllib import request
 from urllib.error import URLError
 from urllib.parse import urljoin
@@ -108,7 +109,19 @@ def run_tests():
 
 
 if __name__ == "__main__":
-    start_bob()
+    parser = OptionParser()
+    parser.add_option(
+        "--no-start",
+        action="store_true",
+        dest="no_start",
+        default=False,
+        help="Don't start a local bob instance.",
+    )
+
+    options, _ = parser.parse_args()
+
+    if not options.no_start:
+        start_bob()
 
     wait_for_it()
 
