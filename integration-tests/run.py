@@ -62,6 +62,14 @@ def run_tests():
 
         url = urljoin(BASE_URL, test["path"])
 
+        if "wait" in test:
+            print(
+                "Waiting for {} seconds before {}...".format(
+                    test["wait"], test["name"]
+                )
+            )
+            time.sleep(test["wait"])
+
         if test["method"] == "GET":
             req = request.Request(url)
 
@@ -70,7 +78,7 @@ def run_tests():
 
                 assert expected == test["response"]
         elif test["method"] == "POST":
-            data = json.dumps(test["data"]).encode('utf8')
+            data = json.dumps(test["data"]).encode("utf8")
             req = request.Request(
                 url, data, {"Content-Type": "application/json"}
             )

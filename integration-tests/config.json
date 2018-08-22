@@ -43,6 +43,18 @@
       "response": {
         "message": "Ok"
       }
+    },
+    {
+      "name": "Pipeline logs",
+      "path": "/api/pipeline/logs/dev/test/1/0/10",
+      "method": "GET",
+      "wait": 20,
+      "response": {
+        "message": [
+          "hello",
+          "test"
+        ]
+      }
     }
   ]
 }
