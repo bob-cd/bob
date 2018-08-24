@@ -112,12 +112,12 @@
           :summary "Runs health checks for Bob."
           (respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28"))
 
-        (GET "/gc" []
+        (POST "/gc" []
           :return SimpleResponse
           :summary "Runs the garbage collection for Bob, reclaiming resources."
           (gc))
 
-        (GET "/gc/all" []
+        (POST "/gc/all" []
           :return SimpleResponse
           :summary "Runs the full garbage collection for Bob, reclaiming all resources."
           (gc true)))

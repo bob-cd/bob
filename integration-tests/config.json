@@ -72,6 +72,24 @@
       "response": {
         "message": "Ok"
       }
+    },
+    {
+      "name": "Bob GC",
+      "path": "/api/gc",
+      "method": "POST",
+      "data": {},
+      "response": {
+        "message": "Ok"
+      }
+    },
+    {
+      "name": "Bob Full GC",
+      "path": "/api/gc/all",
+      "method": "POST",
+      "data": {},
+      "response": {
+        "message": "Ok"
+      }
     }
   ]
 }
