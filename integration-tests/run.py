@@ -74,17 +74,16 @@ def run_tests():
 
         if test["method"] == "GET":
             req = request.Request(url)
-
-            with request.urlopen(req) as res:
-                response = json.loads(res.read().decode("utf-8"))
         elif test["method"] == "POST":
             data = json.dumps(test["data"]).encode("utf8")
             req = request.Request(
-                url, data, {"Content-Type": "application/json"}
+                url, data=data, headers={"Content-Type": "application/json"}
             )
-
-            with request.urlopen(req) as res:
-                response = json.loads(res.read().decode("utf-8"))
+        elif test["method"] == "DELETE":
+            req = request.Request(
+                url, headers={"Content-Type": "application/json"}
+            )
+            req.get_method = lambda: "DELETE"
         else:
             sys.stderr.write(
                 "Unknown request method {} at test {}.\n".format(
@@ -94,7 +93,12 @@ def run_tests():
 
             sys.exit(1)
 
+        response = {}
+
         try:
+            with request.urlopen(req) as res:
+                response = json.loads(res.read().decode("utf-8"))
+
             assert response == test["response"]
         except AssertionError:
             sys.stderr.write(

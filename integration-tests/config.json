@@ -64,6 +64,14 @@
       "response": {
         "message": "passed"
       }
+    },
+    {
+      "name": "Pipeline deletion",
+      "path": "/api/pipeline/dev/test",
+      "method": "DELETE",
+      "response": {
+        "message": "Ok"
+      }
     }
   ]
 }
