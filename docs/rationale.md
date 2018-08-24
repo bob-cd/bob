@@ -1,4 +1,4 @@
-### Some of the (non exhaustive) reasons of why Bob
+## Some of the (non exhaustive) reasons of why Bob
 
 I am primarily a server side dev dealing with a lot for DevOps tools almost everyday and specially CI servers. Some
 of the pain points I see in systems like Jenkins and GoCD are:
