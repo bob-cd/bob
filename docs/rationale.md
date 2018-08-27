@@ -5,7 +5,7 @@ of the pain points I see in systems like Jenkins and GoCD are:
 
 - The plugin architecture. They are mainly to be extended via JARs which are loaded by the main process. This presents the following issues:
   - Bugs and vulnerabilities in the plugin. Most if not all of the plugins we use for these systems are the primary root cause for much of the CVEs. Also a badly written plugin can bring the whole thing down.
-  - We absolutely have to use a JVM language to write the plugins.
+  - We absolutely have to use a JVM language to write the plugins if the CI is in Java.
   - We are limited by the API provided by the main system to do stuff like get resources and orchestrate the artifacts around.
 - Monolithic, large and complex. IMO these systems have grown to a stage where they have a complex UX and requires a good amount of learning curve to use properly.
 - The UI is merged with the back-end source hence pretty much providing an opinionated view of the CI infra and to control it. Building mobile interfaces or accessing on them can be tricky.
@@ -18,7 +18,7 @@ Hence bob is what I was thinking. This is a **VERY** new project and haven't rea
 features what I think it should have:
 - Use GPL and be FOSS
 - Have a very small core with a limited feature set. And be opinionated ONLY about them.
-  - Jobs (direct commands like shell)
+  - Steps (direct commands like shell)
   - Pipeline (Collection of Jobs which can consume artifacts from other pipelines)
   - Environment (Key value store associated with either Jobs and/or Pipelines)
   - Resources (Things like source code or artifacts produced by pipelines)
@@ -32,7 +32,7 @@ features what I think it should have:
   - Things like getting stuff from a VCS can be a plugin which can abstract away the type like Github or Bitbucket and do stuff like auth and finally give bob the direct resource URL.
   - Stuff like how to build an artifact like debs or RPMs can be plugins as well whose commands can be fed in as a task.
   - Plugins to automate the provisioning of a cloud instance or bare metal system to be able to execute tasks via SSH (Ansible way) and also clean up and when done.
-  - Infra plugins like Terraform based stuff which can provision entire cloud infra to support bob and his agents.
+  - Infra plugins like Terraform based stuff which can provision entire cloud infra to support Bob.
 - Scale via multiple servers and share loads and resources
 
 And this is a project born out of my frustration and is VERY new. 😄
