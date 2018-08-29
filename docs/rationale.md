@@ -105,7 +105,7 @@ stable:
           - "gpg --output bob.sig --sign bob*-standalone.jar"
     -
       upload:
-        image: debain:latest
+        image: debian:latest
         auto: False
         resources:
           -
