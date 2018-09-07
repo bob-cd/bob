@@ -62,3 +62,8 @@
   (testing "tokenizing a Shell command"
     (is (= (sh-tokenize! "sh -c \"while sleep 1; do echo ${RANDOM}; done\"")
            ["sh" "-c" "while sleep 1; do echo ${RANDOM}; done"]))))
+
+(deftest shell-arg-tokenize-test
+  (testing "tokenizing a Shell command with double quote message in the middle of the command"
+    (is (= (sh-tokenize! "sort -t \"\t\" -k2 test > test-sorted")
+           ["sort" "-t" "\t" "-k2" "test" ">" "test-sorted"]))))
