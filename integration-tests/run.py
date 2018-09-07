@@ -15,17 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import sys
+import time
 import json
 import subprocess
-import sys
 from optparse import OptionParser
 from urllib import request
 from urllib.error import URLError
 from urllib.parse import urljoin
 
-import time
 
-with open("integration-tests/config.json") as json_data:
+CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
+CONFIG_FILE = os.path.join(CURRENT_DIR, "config.json")
+
+with open(CONFIG_FILE) as json_data:
     CONFIG = json.load(json_data)
 
 BASE_URL = "{}://{}:{}".format(
