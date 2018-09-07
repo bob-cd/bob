@@ -19,7 +19,7 @@
             [korma.core :refer [defentity table has-many
                                 insert values where
                                 select fields order
-                                delete]]
+                                delete join]]
             [manifold.deferred :refer [let-flow]]
             [failjure.core :as f]
             [bob.execution.internals :refer [default-image]]
@@ -131,3 +131,17 @@
   (let-flow [pipeline (name-of group name)
              result   (pipeline-logs pipeline number offset lines)]
     (respond result)))
+
+;; TODO: Unit test this?
+(defn running-pipelines
+  "Collects all pipeline names that have status 'running'.
+  Returns pipeline names as a list."
+  []
+  (let [pipeline-names (unsafe! (->> (select pipelines
+                                            (fields :name)
+                                            (where {:runs.status "running"})
+                                            (join runs (= :runs.pipeline :name)))
+                                     (map #(:name %))))]
+    (if (empty? pipeline-names)
+      (not-found {:message "No running pipelines"})
+      (respond pipeline-names))))
