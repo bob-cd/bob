@@ -76,7 +76,7 @@
                                           (recur (rest cmd) escaped? :normal current-arg args)
                                           (recur (rest cmd) escaped? state (str current-arg char) args))
                           :double-quote (case char
-                                          \" (recur cmd escaped? :normal current-arg args)
+                                          \" (recur (rest cmd) escaped? :normal current-arg args)
                                           \\ (let [next (second cmd)]
                                                (if (or (= next \")
                                                        (= next \\))
