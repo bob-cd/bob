@@ -137,11 +137,11 @@
   "Collects all pipeline names that have status 'running'.
   Returns pipeline names as a list."
   []
-  (let [pipeline-names (unsafe! (->> (select pipelines
-                                            (fields :name)
-                                            (where {:runs.status "running"})
-                                            (join runs (= :runs.pipeline :name)))
-                                     (map #(:name %))))]
+  (let-flow [pipeline-names (unsafe! (->> (select pipelines
+                                                 (fields :name)
+                                                 (where {:runs.status "running"})
+                                                 (join runs (= :runs.pipeline :name)))
+                                          (map #(:name %))))]
     (if (empty? pipeline-names)
       (not-found {:message "No running pipelines"})
       (respond pipeline-names))))
