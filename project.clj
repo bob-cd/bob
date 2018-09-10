@@ -21,7 +21,7 @@
                  [org.clojure/core.async "0.4.474"]
                  [manifold "0.1.8"]
                  [aleph "0.4.6"]
-                 [ring "1.6.3"]
+                 [ring "1.7.0"]
                  [ring/ring-json "0.4.0"]
                  [compojure "1.6.1"]
                  [com.fasterxml.jackson.core/jackson-core "2.9.6"]
@@ -40,7 +40,6 @@
   :plugins [[lein-ancient "0.6.15"]
             [lein-kibit "0.1.6"]
             [jonase/eastwood "0.2.9"]]
-  :java-source-paths ["src/bob/java"]
   :global-vars {*warn-on-reflection* true}
   :main bob.main
   :jar-name "bob.jar"
