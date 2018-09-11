@@ -46,6 +46,17 @@
       }
     },
     {
+      "name": "Find running pipeline names",
+      "path": "/api/pipeline/status/running",
+      "method": "GET",
+      "data": {},
+      "response": {
+        "message": [
+          "dev:test"
+        ]
+      }
+    },
+    {
       "name": "Pipeline logs",
       "path": "/api/pipeline/logs/dev/test/1/0/10",
       "method": "GET",

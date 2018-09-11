@@ -107,6 +107,11 @@
           :summary "Deletes a pipeline in a group with the specified name."
           (p/remove group name))
 
+        (GET "/pipeline/status/running" []
+          :return LogsResponse
+          :summary "Returns list of the running pipeline names"
+          (p/running-pipelines))
+
         (GET "/can-we-build-it" []
           :return SimpleResponse
           :summary "Runs health checks for Bob."
