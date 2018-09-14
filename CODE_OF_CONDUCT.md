@@ -39,8 +39,8 @@ behavior is not welcome.
 These are the policies for upholding our community's standards of conduct. If
 you feel that a thread needs moderation, feel free to raise an issue here.
 
-1. Remarks that violate the standards of conduct, including hateful, hurtful, 
-oppressive, or exclusionary remarks, are not allowed. (Cursing is allowed, 
+1. Remarks that violate the standards of conduct, including hateful, hurtful,
+oppressive, or exclusionary remarks, are not allowed. (Cursing is allowed,
 but never targeting another user, and never in a hateful manner.)
 
 2. Remarks that moderators find inappropriate, whether listed in the code of
