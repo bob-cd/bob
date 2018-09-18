@@ -30,6 +30,11 @@
           "sleep 10",
           "sh -c 'touch test.txt && echo $env >> test.txt'",
           "cat test.txt"
+        ],
+        "artifacts": [
+          {
+            "test-jar": "/tmp/test.jar"
+          }
         ]
       },
       "response": {

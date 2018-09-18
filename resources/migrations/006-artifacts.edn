@@ -13,20 +13,10 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.api.schemas
-  (:require [schema.core :as s])
-  (:import (clojure.lang Keyword)))
-
-(s/defschema SimpleResponse {:message String})
-
-(s/defschema Pipeline {:steps [String]
-                       :image String
-                       :vars  [{Keyword String}]
-                       :artifacts [{Keyword String}]})
-
-(s/defschema LogsResponse {:message [String]})
-
-(s/defschema StatusResponse {:message (s/enum :running :passed :failed)})
-
-(s/defschema RunningResponse {:message [{:group String
-                                         :name  String}]})
+{:up   ["CREATE TABLE artifacts (id       INTEGER AUTO_INCREMENT,
+                                 key      VARCHAR(50) NOT NULL,
+                                 value    VARCHAR(100) DEFAULT NULL,
+                                 pipeline VARCHAR(100) NOT NULL,
+                                 PRIMARY KEY(id, pipeline),
+                                 FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]
+ :down ["DROP TABLE artifacts;"]}
