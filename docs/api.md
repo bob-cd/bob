@@ -123,6 +123,17 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | ---- | ----------- | ------ |
 | 200 |  | [StatusResponse](#statusresponse) |
 
+### /api/pipeline/status/running
+---
+##### ***GET***
+**Summary:** Returns list of the running pipeline names.
+
+**Responses**
+
+| Code | Description | Schema |
+| ---- | ----------- | ------ |
+| 200 |  | [RunningResponse](#runningresponse) |
+
 ### /api/can-we-build-it
 ---
 ##### ***GET***
@@ -178,6 +189,19 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | PipelineVars | object |  |  |
+
+### RunningResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| message | [ [RunningResponseMessage](#runningresponsemessage) ] |  | Yes |
+
+### RunningResponseMessage
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| group | string |  | Yes |
+| name | string |  | Yes |
 
 ### SimpleResponse
 

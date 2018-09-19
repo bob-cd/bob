@@ -52,7 +52,10 @@
       "data": {},
       "response": {
         "message": [
-          "dev:test"
+          {
+            "group": "dev",
+            "name": "test"
+          }
         ]
       }
     },

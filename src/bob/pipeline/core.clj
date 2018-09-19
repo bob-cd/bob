@@ -138,10 +138,13 @@
   Returns pipeline names as a list."
   []
   (let-flow [pipeline-names (unsafe! (->> (select pipelines
-                                                 (fields :name)
-                                                 (where {:runs.status "running"})
-                                                 (join runs (= :runs.pipeline :name)))
+                                                  (fields :name)
+                                                  (where {:runs.status "running"})
+                                                  (join runs (= :runs.pipeline :name)))
                                           (map #(:name %))))]
     (if (empty? pipeline-names)
       (not-found {:message "No running pipelines"})
-      (respond pipeline-names))))
+      (respond (->> pipeline-names
+                    (map #(clojure.string/split % #":"))
+                    (map #(hash-map :group (first %)
+                                    :name (second %))))))))
