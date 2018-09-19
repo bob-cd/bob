@@ -24,7 +24,7 @@
                  [ring "1.7.0"]
                  [ring/ring-json "0.4.0"]
                  [compojure "1.6.1"]
-                 [com.fasterxml.jackson.core/jackson-core "2.9.6"]
+                 [com.fasterxml.jackson.core/jackson-core "2.9.7"]
                  [com.spotify/docker-client "8.13.0"]
                  [failjure "1.3.0"]
                  [com.h2database/h2 "1.4.197"]
