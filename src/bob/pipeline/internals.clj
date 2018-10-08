@@ -97,8 +97,7 @@
                                                                      :number   (next-build-number-of name)
                                                                      :pipeline name
                                                                      :status   "running"})))
-                          id (f/ok-> (e/pull image)
-                                     (e/build (:cmd (first steps)) evars)
+                          id (f/ok-> (e/build image (:cmd (first steps)) evars)
                                      (update-pid run-id)
                                      (e/run))
                           id (reduce (partial exec-step run-id evars) id (rest steps))
@@ -167,3 +166,12 @@
          (drop (dec offset))
          (take lines))
     (f/when-failed [err] (f/message err))))
+
+(defn image-of
+  "Returns the image associated with the pipeline."
+  [pipeline]
+  (u/unsafe! (-> (k/select db/pipelines
+                           (k/fields :image)
+                           (k/where {:name pipeline}))
+                 (first)
+                 (:image))))

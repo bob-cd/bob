@@ -19,10 +19,15 @@
 
 (s/defschema SimpleResponse {:message String})
 
+(s/defschema Resource {:name   String
+                       :params {Keyword String}
+                       :type   (s/enum :plugin)})
+
 (s/defschema Pipeline {:steps     [String]
                        :image     String
                        :vars      {Keyword String}
-                       :artifacts {Keyword String}})
+                       :artifacts {Keyword String}
+                       :resources [Resource]})
 
 (s/defschema LogsResponse {:message [String]})
 

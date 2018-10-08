@@ -64,7 +64,10 @@
 (k/defentity plugins
   (k/has-many plugin-params))
 
+(k/defentity resources)
+
 (k/defentity pipelines
+  (k/has-many resources)
   (k/has-many evars)
   (k/has-many steps)
   (k/has-many runs)

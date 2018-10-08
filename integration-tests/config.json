@@ -12,6 +12,17 @@
       }
     },
     {
+      "name": "Plugin registration",
+      "path": "/api/plugin/github",
+      "method": "POST",
+      "data": {
+        "url": "http://localhost:8000/r1"
+      },
+      "response": {
+        "message": "Ok"
+      }
+    },
+    {
       "name": "Pipeline creation",
       "path": "/api/pipeline/dev/test",
       "method": "POST",
@@ -29,7 +40,8 @@
         ],
         "artifacts": {
           "test-jar": "/tmp/test.jar"
-        }
+        },
+        "resources": []
       },
       "response": {
         "message": "Ok"
@@ -87,28 +99,17 @@
       }
     },
     {
-      "name": "Plugin registration",
-      "path": "/api/plugin/register/myplug",
-      "method": "POST",
-      "data": {
-        "url": "https://my.plugin.com"
-      },
-      "response": {
-        "message": "Ok"
-      }
-    },
-    {
       "name": "Plugin listing",
       "path": "/api/plugins",
       "method": "GET",
       "response": {
-        "message": ["myplug"]
+        "message": ["github"]
       }
     },
     {
       "name": "Plugin deletion",
-      "path": "/api/plugin/unregister/myplug",
-      "method": "POST",
+      "path": "/api/plugin/github",
+      "method": "DELETE",
       "data": {},
       "response": {
         "message": "Ok"
