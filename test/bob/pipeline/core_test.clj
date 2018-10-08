@@ -21,7 +21,7 @@
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :refer [migrate]]
             [hikari-cp.core :refer [make-datasource]]
-            [bob.db.core :refer [pipelines steps artifacts]]
+            [bob.db.core :refer [pipelines steps artifacts resources plugin-params]]
             [bob.pipeline.core :refer [create]]
             [bob.util :refer [clob->str]]))
 
@@ -42,6 +42,11 @@
 
 (def valid-artifacts {:test-jar "/path/to/jar"})
 
+(def valid-resources [{:name   "github"
+                       :params {:url    "https://test.com"
+                                :branch "master"}
+                       :type   :plugin}])
+
 (deftest create-test
   (testing "Creating a valid pipeline"
     (migrate migration-config)
@@ -49,11 +54,24 @@
       {:datasource data-source
        :naming     {:keys   str/lower-case
                     :fields str/upper-case}})
-    @(create "dev" "test" valid-steps [] valid-artifacts "test:image")
+    @(create "dev" "test" valid-steps [] valid-artifacts valid-resources "test:image")
     (is (= (first (select pipelines)) {:image "test:image", :name "dev:test"}))
     (is (= (first (select artifacts
                           (fields :name :path :pipeline)))
            {:name "test-jar" :path "/path/to/jar" :pipeline "dev:test"}))
+    (is (= (first (select resources))
+           {:name     "github"
+            :type     "plugin"
+            :pipeline "dev:test"}))
+    (is (= (select plugin-params)
+           [{:plugin  "github"
+             :key      "url"
+             :value    "https://test.com"
+             :pipeline "dev:test"}
+            {:plugin   "github"
+             :key      "branch"
+             :value    "master"
+             :pipeline "dev:test"}]))
     (is (= (->> (select steps)
                 (map #(update-in % [:cmd] clob->str)))
            (list {:cmd "echo 1 >> state.txt" :id 1 :pipeline "dev:test"}

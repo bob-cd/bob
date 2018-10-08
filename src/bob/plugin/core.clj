@@ -44,37 +44,36 @@
   (d/let-flow [plugins (util/unsafe! (k/select db/plugins
                                                (k/fields :name)))]
     (util/respond
-     (if (f/failed? plugins)
-       []
-       (map #(:name %) plugins)))))
+      (if (f/failed? plugins)
+        []
+        (map #(:name %) plugins)))))
 
 (defn add-params
   "Saves the map of GET params to be sent to the plugin."
-  [name params]
-  (let [result (util/unsafe! (k/insert db/plugin-params
-                                       (k/values (map #(hash-map :key (clojure.core/name (first %))
-                                                                 :value (last %)
-                                                                 :plugin name)
-                                                      params))))]
-    (if (f/failed? result)
-      (f/message result)
-      "Ok")))
+  [name params pipeline]
+  (when (not (empty? params))
+    (k/insert db/plugin-params
+              (k/values (map #(hash-map :key (clojure.core/name (first %))
+                                        :value (last %)
+                                        :plugin name
+                                        :pipeline pipeline)
+                             params)))))
 
 (defn url-of
   "Generates a GET URL for the plugin."
-  [name]
+  [name pipeline]
   (let [url    (-> (k/select db/plugins
                              (k/where {:name name})
                              (k/fields :url))
                    (first)
                    (:url))
         params (k/select db/plugin-params
-                         (k/where {:plugin name})
+                         (k/where {:plugin   name
+                                   :pipeline pipeline})
                          (k/fields :key :value))]
-    (if (nil? url)
-      nil
-      (format "%s/bob_request?%s"
-              url
-              (clojure.string/join
-               "&"
-               (map #(format "%s=%s" (:key %) (:value %)) params))))))
+    (format "%s/bob_request?%s"
+            url
+            (clojure.string/join
+              "&"
+              (map #(format "%s=%s" (:key %) (:value %))
+                   params)))))

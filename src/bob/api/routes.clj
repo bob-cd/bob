@@ -55,6 +55,7 @@
             (:steps pipeline)
             (:vars pipeline)
             (:artifacts pipeline)
+            (:resources pipeline)
             (:image pipeline)))
 
         (rest/POST "/pipeline/start/:group/:name" []
@@ -118,7 +119,7 @@
           :summary "Returns list of the running pipeline names."
           (p/running-pipelines))
 
-        (rest/POST "/plugin/register/:name" []
+        (rest/POST "/plugin/:name" []
           :return schema/SimpleResponse
           :path-params [name
                         :- String]
@@ -126,7 +127,7 @@
           :summary "Registers a new plugin with a unique name and its attributes."
           (plug/register name (:url attrs)))
 
-        (rest/POST "/plugin/unregister/:name" []
+        (rest/DELETE "/plugin/:name" []
           :return schema/SimpleResponse
           :path-params [name
                         :- String]

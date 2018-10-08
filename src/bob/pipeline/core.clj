@@ -18,12 +18,15 @@
             [korma.core :as k]
             [manifold.deferred :as d]
             [failjure.core :as f]
-            [bob.execution.internals :as e]
+            [bob.plugin.core :as plug]
             [bob.pipeline.internals :as p]
             [bob.db.core :as db]
-            [bob.util :as u]))
+            [bob.util :as u]
+            [bob.resource.core :as r]))
 
-(def name-of (memoize #(str %1 ":" %2)))
+(defn name-of
+  [group name]
+  (format "%s:%s" group name))
 
 (defn create
   "Creates a new pipeline.
@@ -34,7 +37,8 @@
   - a list of steps
   - a map of environment vars
   - a map of artifacts
-  - an optional starting Docker image.
+  - a list of resources
+  - a starting Docker image.
 
   The group defines a logical grouping of pipelines like dev or staging
   and the name is the name of the pipeline like build or test.
@@ -42,30 +46,40 @@
   The steps are assumed to be valid shell commands.
 
   Returns Ok or the error if any."
-  ([group name pipeline-steps vars pipeline-artifacts]
-   (create group name pipeline-steps vars pipeline-artifacts e/default-image))
-  ([group name pipeline-steps vars pipeline-artifacts image]
-   (d/let-flow [pipeline       (name-of group name)
-                vars-pairs     (map #(hash-map :key (clojure.core/name (first %))
-                                               :value (last %)
-                                               :pipeline pipeline)
-                                    vars)
-                artifact-pairs (map #(hash-map :name (clojure.core/name (first %))
-                                               :path (last %)
-                                               :pipeline pipeline)
-                                    pipeline-artifacts)
-                result         (f/attempt-all [_ (u/unsafe! (k/insert db/pipelines (k/values {:name  pipeline
-                                                                                              :image image})))
-                                               _ (when (not (empty? vars-pairs))
-                                                   (u/unsafe! (k/insert db/evars (k/values vars-pairs))))
-                                               _ (when (not (empty? artifact-pairs))
-                                                   (u/unsafe! (k/insert db/artifacts (k/values artifact-pairs))))
-                                               _ (u/unsafe! (doseq [step pipeline-steps]
-                                                              (k/insert db/steps (k/values {:cmd      step
-                                                                                            :pipeline pipeline}))))]
-                                 "Ok"
-                                 (f/when-failed [err] (f/message err)))]
-     (u/respond result))))
+  [group name pipeline-steps vars pipeline-artifacts resources image]
+  (d/let-flow [pipeline       (name-of group name)
+               vars-pairs     (map #(hash-map :key (clojure.core/name (first %))
+                                              :value (last %)
+                                              :pipeline pipeline)
+                                   vars)
+               artifact-pairs (map #(hash-map :name (clojure.core/name (first %))
+                                              :path (last %)
+                                              :pipeline pipeline)
+                                   pipeline-artifacts)
+               result         (f/attempt-all [_ (u/unsafe! (k/insert db/pipelines (k/values {:name  pipeline
+                                                                                             :image image})))
+                                              _ (u/unsafe! (doseq [resource resources]
+                                                             (let [{name   :name
+                                                                    params :params
+                                                                    type   :type} resource]
+                                                               (plug/add-params name params pipeline)
+                                                               (k/insert db/resources
+                                                                         (k/values {:name     name
+                                                                                    :type     (clojure.core/name type)
+                                                                                    :pipeline pipeline})))))
+                                              _ (when (not (empty? vars-pairs))
+                                                  (u/unsafe! (k/insert db/evars (k/values vars-pairs))))
+                                              _ (when (not (empty? artifact-pairs))
+                                                  (u/unsafe! (k/insert db/artifacts (k/values artifact-pairs))))
+                                              _ (u/unsafe! (doseq [step pipeline-steps]
+                                                             (k/insert db/steps (k/values {:cmd      step
+                                                                                           :pipeline pipeline}))))]
+                                (u/respond "Ok")
+                                (f/when-failed [err]
+                                  (u/unsafe! (k/delete db/pipelines
+                                                       (k/where {:name name})))
+                                  (res/bad-request {:message (f/message err)})))]
+    result))
 
 ;; TODO: Unit test this?
 (defn start
@@ -73,28 +87,25 @@
   Returns Ok or any starting errors."
   [group name]
   (d/let-flow [pipeline (name-of group name)
-               result   (f/attempt-all [steps (u/unsafe! (k/select db/steps
+               result   (f/attempt-all [image (r/mount-resources pipeline)
+                                        steps (u/unsafe! (k/select db/steps
                                                                    (k/where {:pipeline pipeline})
                                                                    (k/order :id)))
                                         steps (map #(hash-map :cmd (u/clob->str (:cmd %))
                                                               :id (:id %))
                                                    steps)
-                                        image (u/unsafe! (-> (k/select db/pipelines
-                                                                       (k/fields :image)
-                                                                       (k/where {:name pipeline}))
-                                                             (first)
-                                                             (:image)))
                                         vars  (u/unsafe! (->> (k/select db/evars
                                                                         (k/fields :key :value)
                                                                         (k/where {:pipeline pipeline}))
                                                               (map #(hash-map
                                                                       (keyword (:key %)) (:value %)))
                                                               (into {})))]
-
                           (do (p/exec-steps image steps pipeline vars)
-                              "Ok")
-                          (f/when-failed [err] (f/message err)))]
-    (u/respond result)))
+                              (u/respond "Ok"))
+                          (f/when-failed [err]
+                            (res/bad-request
+                              {:message (f/message err)})))]
+    result))
 
 ;; TODO: Unit test this?
 (defn stop
