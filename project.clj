@@ -39,7 +39,7 @@
                  [ch.qos.logback/logback-classic "1.2.3"]]  ;; For sane logging in the 21st century
   :plugins [[lein-ancient "0.6.15"]
             [lein-kibit "0.1.6"]
-            [jonase/eastwood "0.2.9"]]
+            [jonase/eastwood "0.3.1"]]
   :global-vars {*warn-on-reflection* true}
   :main bob.main
   :jar-name "bob.jar"
