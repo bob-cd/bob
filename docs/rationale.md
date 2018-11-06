@@ -19,8 +19,8 @@ features what I think it should have:
 - Use GPL and be FOSS
 - Have a very small core with a limited feature set. And be opinionated ONLY about them.
   - Steps (direct commands like shell)
-  - Pipeline (Collection of Jobs which can consume artifacts from other pipelines)
-  - Environment (Key value store associated with either Jobs and/or Pipelines)
+  - Pipeline (Collection of steps which can consume artifacts from other pipelines)
+  - Environment (Key value store associated with either steps and/or Pipelines)
   - Resources (Things like source code or artifacts produced by pipelines)
   - Artifacts (Something built by a Pipeline)
 - Expose the above feature set entirely via an API, hence allow any client to configure/control it. Also not be affected by bugs in it.
