@@ -29,13 +29,6 @@
 
 (def name-of (memoize #(str %1 ":" %2)))
 
-(defn pairs-of
-  [entity pipeline]
-  (map #(hash-map :key (name (first (keys %)))
-                  :value (first (vals %))
-                  :pipeline pipeline)
-       entity))
-
 (defn create
   "Creates a new pipeline.
   Takes the group, name, a list of steps, a list of environment vars
@@ -50,8 +43,14 @@
    (create group name pipeline-steps vars pipeline-artifacts default-image))
   ([group name pipeline-steps vars pipeline-artifacts image]
    (let-flow [pipeline       (name-of group name)
-              vars-pairs     (pairs-of vars pipeline)
-              artifact-pairs (pairs-of pipeline-artifacts pipeline)
+              vars-pairs     (map #(hash-map :key (clojure.core/name (first (keys %)))
+                                             :value (first (vals %))
+                                             :pipeline pipeline)
+                                  vars)
+              artifact-pairs (map #(hash-map :name (clojure.core/name (first (keys %)))
+                                             :path (first (vals %))
+                                             :pipeline pipeline)
+                                  pipeline-artifacts)
               result         (f/attempt-all [_ (unsafe! (insert pipelines (values {:name  pipeline
                                                                                    :image image})))
                                              _ (when (not= (count vars-pairs) 0)

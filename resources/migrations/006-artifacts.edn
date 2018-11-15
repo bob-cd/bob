@@ -14,8 +14,8 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 {:up   ["CREATE TABLE artifacts (id       INTEGER AUTO_INCREMENT,
-                                 key      VARCHAR(50) NOT NULL,
-                                 value    VARCHAR(100) DEFAULT NULL,
+                                 name     VARCHAR(50) NOT NULL,
+                                 path     VARCHAR(100) DEFAULT NULL,
                                  pipeline VARCHAR(100) NOT NULL,
                                  PRIMARY KEY(id, pipeline),
                                  FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]
