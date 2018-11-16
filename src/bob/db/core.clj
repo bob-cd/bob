@@ -56,7 +56,10 @@
 
 (defentity evars)
 
+(defentity artifacts)
+
 (defentity pipelines
   (has-many evars)
   (has-many steps)
-  (has-many runs))
+  (has-many runs)
+  (has-many artifacts))

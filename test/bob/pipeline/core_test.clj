@@ -21,7 +21,7 @@
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :refer [migrate]]
             [hikari-cp.core :refer [make-datasource]]
-            [bob.db.core :refer [pipelines steps]]
+            [bob.db.core :refer [pipelines steps artifacts]]
             [bob.pipeline.core :refer [create]]
             [bob.util :refer [clob->str]]))
 
@@ -40,6 +40,8 @@
                   "echo 3 >> state.txt"
                   "cat state.txt"])
 
+(def valid-artifacts [{:test-jar "/path/to/jar"}])
+
 (deftest create-test
   (testing "Creating a valid pipeline"
     (migrate migration-config)
@@ -47,8 +49,11 @@
       {:datasource data-source
        :naming     {:keys   str/lower-case
                     :fields str/upper-case}})
-    (create "dev" "test" valid-steps [] "test:image")
+    @(create "dev" "test" valid-steps [] valid-artifacts "test:image")
     (is (= (first (select pipelines)) {:image "test:image", :name "dev:test"}))
+    (is (= (first (select artifacts
+                          (fields :name :path :pipeline)))
+           {:name "test-jar" :path "/path/to/jar" :pipeline "dev:test"}))
     (is (= (->> (select steps)
                 (map #(update-in % [:cmd] clob->str)))
            (list {:cmd "echo 1 >> state.txt" :id 1 :pipeline "dev:test"}

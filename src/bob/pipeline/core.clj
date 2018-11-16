@@ -24,7 +24,7 @@
             [failjure.core :as f]
             [bob.execution.internals :refer [default-image]]
             [bob.pipeline.internals :refer [exec-steps stop-pipeline pipeline-logs]]
-            [bob.db.core :refer [pipelines steps runs logs evars]]
+            [bob.db.core :refer [pipelines steps runs logs evars artifacts]]
             [bob.util :refer [respond unsafe! clob->str sh-tokenize!]]))
 
 (def name-of (memoize #(str %1 ":" %2)))
@@ -39,22 +39,29 @@
   The steps are assumed to be valid BASH commands.
   Stores the pipeline info in the pipeline table, steps in steps table.
   Returns Ok or the error if any."
-  ([group name pipeline-steps vars] (create group name pipeline-steps vars default-image))
-  ([group name pipeline-steps vars image]
-   (let-flow [pipeline (name-of group name)
-              pairs    (map #(hash-map :key (clojure.core/name (first (keys %)))
-                                       :value (first (vals %))
-                                       :pipeline pipeline)
-                            vars)
-              result   (f/attempt-all [_ (unsafe! (insert pipelines (values {:name  pipeline
-                                                                             :image image})))
-                                       _ (when (not= (count pairs) 0)
-                                           (unsafe! (insert evars (values pairs))))
-                                       _ (unsafe! (doseq [step pipeline-steps]
-                                                    (insert steps (values {:cmd      step
-                                                                           :pipeline pipeline}))))]
-                         "Ok"
-                         (f/when-failed [err] (f/message err)))]
+  ([group name pipeline-steps vars pipeline-artifacts]
+   (create group name pipeline-steps vars pipeline-artifacts default-image))
+  ([group name pipeline-steps vars pipeline-artifacts image]
+   (let-flow [pipeline       (name-of group name)
+              vars-pairs     (map #(hash-map :key (clojure.core/name (first (keys %)))
+                                             :value (first (vals %))
+                                             :pipeline pipeline)
+                                  vars)
+              artifact-pairs (map #(hash-map :name (clojure.core/name (first (keys %)))
+                                             :path (first (vals %))
+                                             :pipeline pipeline)
+                                  pipeline-artifacts)
+              result         (f/attempt-all [_ (unsafe! (insert pipelines (values {:name  pipeline
+                                                                                   :image image})))
+                                             _ (when (not= (count vars-pairs) 0)
+                                                 (unsafe! (insert evars (values vars-pairs))))
+                                             _ (when (not= (count artifact-pairs) 0)
+                                                 (unsafe! (insert artifacts (values artifact-pairs))))
+                                             _ (unsafe! (doseq [step pipeline-steps]
+                                                          (insert steps (values {:cmd      step
+                                                                                 :pipeline pipeline}))))]
+                               "Ok"
+                               (f/when-failed [err] (f/message err)))]
      (respond result))))
 
 ;; TODO: Unit test this?
