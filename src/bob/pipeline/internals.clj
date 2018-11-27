@@ -21,11 +21,11 @@
                                 select insert values
                                 fields order]]
             [failjure.core :as f]
+            [clj-docker-client.core :as docker]
             [bob.db.core :refer [logs runs]]
             [bob.execution.internals :as e]
             [bob.util :refer [unsafe! format-id get-id]])
-  (:import (java.util List)
-           (com.spotify.docker.client DefaultDockerClient)))
+  (:import (java.util List)))
 
 ;; TODO: Reduce and optimize DB interactions to a single place
 
@@ -50,18 +50,12 @@
   [^String id ^List next-command ^List evars]
   (let [repo (format "%s/%d" id (System/currentTimeMillis))
         tag  "latest"]
-    (f/attempt-all [_ (unsafe! (.commitContainer ^DefaultDockerClient e/docker
-                                                 id
-                                                 repo
-                                                 tag
-                                                 (e/config-of (-> ^DefaultDockerClient e/docker
-                                                                  (.inspectContainer id)
-                                                                  (.config)
-                                                                  (.image))
-                                                              next-command
-                                                              evars)
-                                                 nil
-                                                 nil))]
+    (f/attempt-all [_ (unsafe! (docker/commit-container
+                                 e/conn
+                                 id
+                                 repo
+                                 tag
+                                 next-command))]
       (e/build (format "%s:%s" repo tag) next-command evars)
       (f/when-failed [err] err))))
 
@@ -146,7 +140,7 @@
                                           (first)
                                           (:last_pid)))
                       status (e/status-of pid)
-                      _      (when (status :running)
+                      _      (when (status :running?)
                                (e/kill-container pid))]
         "Ok"
         (f/when-failed [err] (f/message err))))))
@@ -171,9 +165,9 @@
                                                    (order :id))
                                            (map #(:pid %))))]
     (->> containers
-         (pmap #(.readFully (e/log-stream-of %)))
-         (filter #(not (empty? %)))
-         (mapcat split-lines)
+         (map #(e/log-stream-of %))
+         (filter #(not (nil? %)))
+         (flatten)
          (drop (dec offset))
          (take lines))
     (f/when-failed [err] (f/message err))))

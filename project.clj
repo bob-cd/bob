@@ -25,7 +25,6 @@
                  [ring/ring-json "0.4.0"]
                  [compojure "1.6.1"]
                  [com.fasterxml.jackson.core/jackson-core "2.9.7"]
-                 [com.spotify/docker-client "8.14.3"]
                  [failjure "1.3.0"]
                  [com.h2database/h2 "1.4.197"]
                  [ragtime "0.7.2"]
@@ -33,6 +32,7 @@
                  [hikari-cp "2.6.0"]
                  [metosin/compojure-api "1.1.12"]
                  [prismatic/schema "1.1.9"]
+                 [lispyclouds/clj-docker-client "0.1.7"]
                  [javax.xml.bind/jaxb-api "2.3.0"]          ;; For Aleph's XML dependency, Java 8 compat
                  [io.netty/netty-all "4.1.25.Final"]        ;; Forced Netty version for Java 9+ compat
                  [javax.activation/activation "1.1.1"]      ;; Java 9+ compat for XML bindings
