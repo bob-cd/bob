@@ -25,7 +25,7 @@
             [bob.execution.internals :refer [default-image]]
             [bob.pipeline.internals :refer [exec-steps stop-pipeline pipeline-logs]]
             [bob.db.core :refer [pipelines steps runs logs evars artifacts]]
-            [bob.util :refer [respond unsafe! clob->str sh-tokenize!]]))
+            [bob.util :refer [respond unsafe! clob->str]]))
 
 (def name-of (memoize #(str %1 ":" %2)))
 
@@ -73,7 +73,7 @@
              result   (f/attempt-all [steps (unsafe! (select steps
                                                              (where {:pipeline pipeline})
                                                              (order :id)))
-                                      steps (map #(hash-map :cmd (sh-tokenize! (clob->str (:cmd %)))
+                                      steps (map #(hash-map :cmd (clob->str (:cmd %))
                                                             :id (:id %))
                                                  steps)
                                       image (unsafe! (-> (select pipelines
@@ -84,9 +84,10 @@
                                       vars  (unsafe! (->> (select evars
                                                                   (fields :key :value)
                                                                   (where {:pipeline pipeline}))
-                                                          (map #(format "%s=%s"
-                                                                        (:key %)
-                                                                        (:value %)))))]
+                                                          (map #(hash-map
+                                                                  (keyword (:key %)) (:value %)))
+                                                          (into {})))]
+
                         (do (exec-steps image steps pipeline vars)
                             "Ok")
                         (f/when-failed [err] (f/message err)))]
