@@ -85,7 +85,7 @@
                                                                   (fields :key :value)
                                                                   (where {:pipeline pipeline}))
                                                           (map #(hash-map
-                                                                  keyword (:key %)) (:value %))
+                                                                  (keyword (:key %)) (:value %)))
                                                           (into {})))]
 
                         (do (exec-steps image steps pipeline vars)
