@@ -19,37 +19,31 @@ jobs:
   build:
     working_directory: ~/bob
     docker:
-    - image: circleci/clojure:latest
+      - image: circleci/clojure:latest
 
     steps:
-    - checkout
-    - restore_cache:
-        key: bob-{{ checksum "project.clj" }}
-    - run: lein deps
-    - save_cache:
-        paths:
-        - ~/.m2
-        key: bob-{{ checksum "project.clj" }}
-    - run: lein do test, uberjar
-    - store_artifacts:
-        path: target/bob-standalone.jar
-        destination: bob-standalone.jar
+      - checkout
+      - run: lein deps
+      - run: lein do test, uberjar
+      - store_artifacts:
+          path: target/bob-standalone.jar
+          destination: bob-standalone.jar
 
   test:
     machine: true
 
     steps:
-    - checkout
-    - run: pyenv install 3.6.2
-    - run: pyenv local 3.6.2
-    - run: python3 integration-tests/run.py
+      - checkout
+      - run: pyenv install 3.6.2
+      - run: pyenv local 3.6.2
+      - run: python3 integration-tests/run.py
 
 workflows:
   version: 2
 
   build-and-test:
     jobs:
-    - build
-    - test:
-        requires:
-        - build
+      - build
+      - test:
+          requires:
+            - build
