@@ -18,7 +18,7 @@
   :license {:name "GPL 3.0"
             :url  "https://www.gnu.org/licenses/gpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [org.clojure/core.async "0.4.474"]
+                 [org.clojure/core.async "0.4.490"]
                  [manifold "0.1.8"]
                  [aleph "0.4.6"]
                  [ring "1.7.1"]
@@ -32,14 +32,12 @@
                  [hikari-cp "2.6.0"]
                  [metosin/compojure-api "1.1.12"]
                  [prismatic/schema "1.1.9"]
-                 [lispyclouds/clj-docker-client "0.1.7"]
+                 [lispyclouds/clj-docker-client "0.1.8"]
                  [javax.xml.bind/jaxb-api "2.3.0"]          ;; For Aleph's XML dependency, Java 8 compat
                  [io.netty/netty-all "4.1.25.Final"]        ;; Forced Netty version for Java 9+ compat
                  [javax.activation/activation "1.1.1"]      ;; Java 9+ compat for XML bindings
                  [ch.qos.logback/logback-classic "1.2.3"]]  ;; For sane logging in the 21st century
-  :plugins [[lein-ancient "0.6.15"]
-            [lein-kibit "0.1.6"]
-            [jonase/eastwood "0.3.1"]]
+  :plugins [[lein-ancient "0.6.15"]]
   :global-vars {*warn-on-reflection* true}
   :main bob.main
   :jar-name "bob.jar"

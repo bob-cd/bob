@@ -57,7 +57,7 @@
   Takes the base image and the entry point command.
   Returns the id of the built container."
   [^String image ^String cmd evars]
-  (unsafe! (docker/create conn image cmd evars)))
+  (unsafe! (docker/create conn image cmd evars {})))
 
 (defn status-of
   "Returns the status of a container by id."
