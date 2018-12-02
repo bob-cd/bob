@@ -19,10 +19,10 @@
 
 (s/defschema SimpleResponse {:message String})
 
-(s/defschema Pipeline {:steps [String]
-                       :image String
-                       :vars  [{Keyword String}]
-                       :artifacts [{Keyword String}]})
+(s/defschema Pipeline {:steps     [String]
+                       :image     String
+                       :vars      {Keyword String}
+                       :artifacts {Keyword String}})
 
 (s/defschema LogsResponse {:message [String]})
 
@@ -30,3 +30,7 @@
 
 (s/defschema RunningResponse {:message [{:group String
                                          :name  String}]})
+
+(s/defschema PluginAttributes {:url String})
+
+(s/defschema PluginResponse {:message [String]})

@@ -31,31 +31,38 @@
 
 (defn create
   "Creates a new pipeline.
-  Takes the group, name, a list of steps, a list of environment vars
-  and an optional starting Docker image.
+
+  Takes the following:
+  - group
+  - name
+  - a list of steps
+  - a map of environment vars
+  - a map of artifacts
+  - an optional starting Docker image.
+
   The group defines a logical grouping of pipelines like dev or staging
   and the name is the name of the pipeline like build or test.
   Steps is a list of strings of the commands that need to be executed in sequence.
-  The steps are assumed to be valid BASH commands.
-  Stores the pipeline info in the pipeline table, steps in steps table.
+  The steps are assumed to be valid shell commands.
+
   Returns Ok or the error if any."
   ([group name pipeline-steps vars pipeline-artifacts]
    (create group name pipeline-steps vars pipeline-artifacts default-image))
   ([group name pipeline-steps vars pipeline-artifacts image]
    (let-flow [pipeline       (name-of group name)
-              vars-pairs     (map #(hash-map :key (clojure.core/name (first (keys %)))
-                                             :value (first (vals %))
+              vars-pairs     (map #(hash-map :key (clojure.core/name (first %))
+                                             :value (last %)
                                              :pipeline pipeline)
                                   vars)
-              artifact-pairs (map #(hash-map :name (clojure.core/name (first (keys %)))
-                                             :path (first (vals %))
+              artifact-pairs (map #(hash-map :name (clojure.core/name (first %))
+                                             :path (last %)
                                              :pipeline pipeline)
                                   pipeline-artifacts)
               result         (f/attempt-all [_ (unsafe! (insert pipelines (values {:name  pipeline
                                                                                    :image image})))
-                                             _ (when (not= (count vars-pairs) 0)
+                                             _ (when (not (empty? vars-pairs))
                                                  (unsafe! (insert evars (values vars-pairs))))
-                                             _ (when (not= (count artifact-pairs) 0)
+                                             _ (when (not (empty? artifact-pairs))
                                                  (unsafe! (insert artifacts (values artifact-pairs))))
                                              _ (unsafe! (doseq [step pipeline-steps]
                                                           (insert steps (values {:cmd      step

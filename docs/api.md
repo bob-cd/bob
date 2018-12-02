@@ -12,8 +12,8 @@ The API docs and a simple testing client can be located on **http://localhost:77
 ---
 ##### ***POST***
 **Summary:** Creates a new pipeline in a group with the specified name.
-                   Takes list of steps, the base docker image and a list of environment vars
-                   as POST body.
+                   Takes list of steps, the base docker image, a list of environment vars
+                   and a list of artifacts generated from pipeline as POST body.
 
 **Parameters**
 
@@ -134,6 +134,52 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | ---- | ----------- | ------ |
 | 200 |  | [RunningResponse](#runningresponse) |
 
+### /api/plugin/register/{name}
+---
+##### ***POST***
+**Summary:** Registers a new plugin with a unique name and its attributes.
+
+**Parameters**
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| name | path |  | Yes | string |
+| PluginAttributes | body |  | Yes | [PluginAttributes](#pluginattributes) |
+
+**Responses**
+
+| Code | Description | Schema |
+| ---- | ----------- | ------ |
+| 200 |  | [SimpleResponse](#simpleresponse) |
+
+### /api/plugin/unregister/{name}
+---
+##### ***POST***
+**Summary:** Un-registers a new plugin with a unique name and URL.
+
+**Parameters**
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| name | path |  | Yes | string |
+
+**Responses**
+
+| Code | Description | Schema |
+| ---- | ----------- | ------ |
+| 200 |  | [SimpleResponse](#simpleresponse) |
+
+### /api/plugins
+---
+##### ***GET***
+**Summary:** Lists all registered plugins by name.
+
+**Responses**
+
+| Code | Description | Schema |
+| ---- | ----------- | ------ |
+| 200 |  | [PluginResponse](#pluginresponse) |
+
 ### /api/can-we-build-it
 ---
 ##### ***GET***
@@ -182,13 +228,32 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | ---- | ---- | ----------- | -------- |
 | steps | [ string ] |  | Yes |
 | image | string |  | Yes |
-| vars | [ [PipelineVars](#pipelinevars) ] |  | Yes |
+| vars | [PipelineVars](#pipelinevars) |  | Yes |
+| artifacts | [PipelineArtifacts](#pipelineartifacts) |  | Yes |
+
+### PipelineArtifacts
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| PipelineArtifacts | object |  |  |
 
 ### PipelineVars
 
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | PipelineVars | object |  |  |
+
+### PluginAttributes
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| url | string |  | Yes |
+
+### PluginResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| message | [ string ] |  | Yes |
 
 ### RunningResponse
 

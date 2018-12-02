@@ -18,7 +18,7 @@
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :refer [migrate]]
             [korma.db :refer [defdb]]
-            [korma.core :refer [defentity has-many]]
+            [korma.core :refer [defentity has-many table]]
             [hikari-cp.core :refer [make-datasource]])
   (:import (java.io File)))
 
@@ -57,6 +57,12 @@
 (defentity evars)
 
 (defentity artifacts)
+
+(defentity plugin-params
+  (table :plugin_params))
+
+(defentity plugins
+  (has-many plugin-params))
 
 (defentity pipelines
   (has-many evars)

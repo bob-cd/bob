@@ -17,25 +17,19 @@
       "method": "POST",
       "data": {
         "image": "busybox:musl",
-        "vars": [
-          {
-            "env": "test"
-          },
-          {
-            "url": "test.com"
-          }
-        ],
+        "vars": {
+          "env": "test",
+          "url": "test.com"
+        },
         "steps": [
           "echo hello",
           "sleep 10",
           "sh -c 'touch test.txt && echo $env >> test.txt'",
           "cat test.txt"
         ],
-        "artifacts": [
-          {
-            "test-jar": "/tmp/test.jar"
-          }
-        ]
+        "artifacts": {
+          "test-jar": "/tmp/test.jar"
+        }
       },
       "response": {
         "message": "Ok"
@@ -90,6 +84,42 @@
       "method": "DELETE",
       "response": {
         "message": "Ok"
+      }
+    },
+    {
+      "name": "Plugin registration",
+      "path": "/api/plugin/register/myplug",
+      "method": "POST",
+      "data": {
+        "url": "https://my.plugin.com"
+      },
+      "response": {
+        "message": "Ok"
+      }
+    },
+    {
+      "name": "Plugin listing",
+      "path": "/api/plugins",
+      "method": "GET",
+      "response": {
+        "message": ["myplug"]
+      }
+    },
+    {
+      "name": "Plugin deletion",
+      "path": "/api/plugin/unregister/myplug",
+      "method": "POST",
+      "data": {},
+      "response": {
+        "message": "Ok"
+      }
+    },
+    {
+      "name": "Blank Plugin listing",
+      "path": "/api/plugins",
+      "method": "GET",
+      "response": {
+        "message": []
       }
     },
     {
