@@ -40,7 +40,7 @@
                   "echo 3 >> state.txt"
                   "cat state.txt"])
 
-(def valid-artifacts [{:test-jar "/path/to/jar"}])
+(def valid-artifacts {:test-jar "/path/to/jar"})
 
 (deftest create-test
   (testing "Creating a valid pipeline"

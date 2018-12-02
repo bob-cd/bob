@@ -22,7 +22,8 @@
             [bob.api.schemas :refer :all]
             [bob.api.middleware :refer [ignore-trailing-slash]]
             [bob.execution.core :refer [gc]]
-            [bob.pipeline.core :as p]))
+            [bob.pipeline.core :as p]
+            [bob.plugin.core :as plug]))
 
 (def bob-api
   (ignore-trailing-slash
@@ -49,7 +50,13 @@
           :summary "Creates a new pipeline in a group with the specified name.
                    Takes list of steps, the base docker image, a list of environment vars
                    and a list of artifacts generated from pipeline as POST body."
-          (p/create group name (:steps pipeline) (:vars pipeline) (:artifacts pipeline) (:image pipeline)))
+          (p/create
+            group
+            name
+            (:steps pipeline)
+            (:vars pipeline)
+            (:artifacts pipeline)
+            (:image pipeline)))
 
         (POST "/pipeline/start/:group/:name" []
           :return SimpleResponse
@@ -111,6 +118,26 @@
           :return RunningResponse
           :summary "Returns list of the running pipeline names."
           (p/running-pipelines))
+
+        (POST "/plugin/register/:name" []
+          :return SimpleResponse
+          :path-params [name
+                        :- String]
+          :body [attrs PluginAttributes]
+          :summary "Registers a new plugin with a unique name and its attributes."
+          (plug/register name (:url attrs)))
+
+        (POST "/plugin/unregister/:name" []
+          :return SimpleResponse
+          :path-params [name
+                        :- String]
+          :summary "Un-registers a new plugin with a unique name and URL."
+          (plug/un-register name))
+
+        (GET "/plugins" []
+          :return PluginResponse
+          :summary "Lists all registered plugins by name."
+          (plug/all-plugins))
 
         (GET "/can-we-build-it" []
           :return SimpleResponse
