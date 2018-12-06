@@ -19,21 +19,28 @@ jobs:
   build:
     working_directory: ~/bob
     docker:
-      - image: circleci/clojure:latest
+      - image: clojure:boot
 
     steps:
       - checkout
-      - run: lein deps
-      - run: lein do test, uberjar
+      - run: boot test build
       - store_artifacts:
           path: target/bob-standalone.jar
           destination: bob-standalone.jar
 
   test:
-    machine: true
+    machine:
+      java:
+        version: oraclejdk10
+
+    environment:
+      _JAVA_OPTIONS: "-Xms512m -Xmx1024m"
+      BOOT_WATCHERS_DISABLE: "yes"
 
     steps:
       - checkout
+      - run: curl -L https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh -o ~/bin/boot
+      - run: chmod +x ~/bin/boot
       - run: pyenv install 3.6.2
       - run: pyenv local 3.6.2
       - run: python3 integration-tests/run.py

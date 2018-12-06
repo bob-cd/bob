@@ -40,7 +40,7 @@ BASE_URL = "{}://{}:{}".format(
 def start_bob():
     # TODO: Store PID and kill it post test.
 
-    subprocess.Popen(["lein", "run"])
+    subprocess.Popen(["boot", "run"])
     print("Started bob.")
 
 
