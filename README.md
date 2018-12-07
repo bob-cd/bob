@@ -13,7 +13,7 @@
 ## Build requirements
 - Any OS supporting Java and Docker
 - JDK 8+ (latest preferred for optimal performance)
-- [Leiningen](https://leiningen.org/) 2.0+
+- [Boot](https://boot-clj.com/) 2.7+
 
 ## Running requirements
 - Any OS supporting Java and Docker
@@ -24,8 +24,8 @@
 - Clone this repository.
 - Install the Build requirements.
 - Following steps **need Docker**:
-    - Run `lein test` to run tests.
-    - Run `lein uberjar` to get the standalone JAR.
+    - Run `boot test` to run tests.
+    - Run `boot build` to get the standalone JAR.
     - Run `java -jar ./target/bob-standalone.jar` to start the server on port **7777**.
 
 ### Extensive Usage + API [docs](https://bob-cd.readthedocs.io/en/latest/)
