@@ -19,7 +19,7 @@
 
 (set-env! :resource-paths #{"resources" "src"}
           :source-paths   #{"test"}
-          :dependencies   '[[org.clojure/clojure "1.9.0"]
+          :dependencies   '[[org.clojure/clojure "1.10.0"]
                             [org.clojure/core.async "0.4.490"]
                             [manifold "0.1.8"]
                             [aleph "0.4.6"]
