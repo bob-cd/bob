@@ -21,8 +21,7 @@ services:
 language: java
 
 jdk:
-  - oraclejdk10
-  - oraclejdk11
+  - openjdk10
 
 cache:
   directories:
@@ -41,10 +40,3 @@ script: boot test
 
 after_success:
   - python3 integration-tests/run.py
-
-cache:
-  directories:
-  - $HOME/.m2
-  - $HOME/.boot/cache/bin
-  - $HOME/.boot/cache/lib
-  - $HOME/bin
