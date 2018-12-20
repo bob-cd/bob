@@ -28,4 +28,14 @@
     - Run `boot build` to get the standalone JAR.
     - Run `java -jar ./target/bob-standalone.jar` to start the server on port **7777**.
 
+## For Cursive users:
+This project is built using the Boot build tool which is unsupported on Cursive at the moment.
+
+### To get it running on Cursive using leiningen:
+- Install [Boot](https://boot-clj.com/) 2.7+.
+- Install [Leiningen](https://leiningen.org/) 2.8+.
+- Run `boot -d onetom/boot-lein-generate generate` to generate a `project.clj`.
+- Open up this directory in Cursive and it should work.
+- Happy development!
+
 ### Extensive Usage + API [docs](https://bob-cd.readthedocs.io/en/latest/)
