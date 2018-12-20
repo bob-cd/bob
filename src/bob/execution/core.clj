@@ -14,10 +14,10 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.execution.core
-  (:require [clojure.java.shell :refer [sh]]
-            [manifold.deferred :refer [let-flow]]
+  (:require [clojure.java.shell :as shell]
+            [manifold.deferred :as d]
             [failjure.core :as f]
-            [bob.util :refer [respond]]))
+            [bob.util :as u]))
 
 (defn gc
   "Handler to clean up resources.
@@ -27,7 +27,7 @@
   ([all]
    (let [base-args ["docker" "system" "prune" "-f"]
          args      (if all (conj base-args "-a") base-args)]
-     (let-flow [result (f/ok-> (apply sh args))]
-       (respond (if (f/failed? result)
-                  (f/message result)
-                  "Ok"))))))
+     (d/let-flow [result (f/ok-> (apply shell/sh args))]
+       (u/respond (if (f/failed? result)
+                    (f/message result)
+                    "Ok"))))))

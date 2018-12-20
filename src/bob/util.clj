@@ -14,8 +14,7 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.util
-  (:require [ring.util.http-response :refer [ok]]
-            [failjure.core :refer [failed?]])
+  (:require [ring.util.http-response :as res])
   (:import (java.sql Clob)
            (java.util UUID)))
 
@@ -33,7 +32,7 @@
 (defn respond
   "Simple decorator for wrapping a message in the response format."
   [msg]
-  (ok {:message msg}))
+  (res/ok {:message msg}))
 
 (defn format-id
   "Return docker container ids in the standard length"

@@ -15,9 +15,8 @@
 
 (ns bob.execution.internals
   (:require [failjure.core :as f]
-            [bob.util :refer [unsafe! format-id]]
-            [clj-docker-client.core :as docker])
-  (:import (java.util List)))
+            [bob.util :as u]
+            [clj-docker-client.core :as docker]))
 
 (def default-image "debian:unstable-slim")
 
@@ -27,8 +26,8 @@
   "Checks if an image is present locally.
   Returns the name or the error if any."
   [name]
-  (let [result (unsafe! (filter #(= (-> % :repo-tags)
-                                    [name]) (docker/image-ls conn)))]
+  (let [result (u/unsafe! (filter #(= (-> % :repo-tags)
+                                      [name]) (docker/image-ls conn)))]
     (if (or (f/failed? result) (zero? (count result)))
       (f/fail "Failed to find %s" name)
       name)))
@@ -37,7 +36,7 @@
   "Kills a running container using SIGKILL.
   Returns the name or the error if any."
   [name]
-  (if (f/failed? (unsafe! (docker/kill conn name)))
+  (if (f/failed? (u/unsafe! (docker/kill conn name)))
     (f/fail "Could not kill %s" name)
     name))
 
@@ -46,9 +45,9 @@
   Returns the name or the error if any."
   [name]
   (if (and (f/failed? (has-image name))
-           (f/failed? (unsafe! (do (println (format "Pulling %s" name))
-                                   (docker/pull conn name)
-                                   (println (format "Pulled %s" name))))))
+           (f/failed? (u/unsafe! (do (println (format "Pulling %s" name))
+                                     (docker/pull conn name)
+                                     (println (format "Pulled %s" name))))))
     (f/fail "Cannot pull %s" name)
     name))
 
@@ -57,12 +56,12 @@
   Takes the base image and the entry point command.
   Returns the id of the built container."
   [^String image ^String cmd evars]
-  (unsafe! (docker/create conn image cmd evars {})))
+  (u/unsafe! (docker/create conn image cmd evars {})))
 
 (defn status-of
   "Returns the status of a container by id."
   [^String id]
-  (let [result (unsafe! (docker/container-state conn id))]
+  (let [result (u/unsafe! (docker/container-state conn id))]
     (if (f/failed? result)
       (f/message result)
       ({:running  result
@@ -72,14 +71,14 @@
   "Synchronously starts up a previously built container.
   Returns the id when complete or and error in case on non-zero exit."
   [^String id]
-  (f/attempt-all [_      (unsafe! (docker/start conn id))
-                  status (unsafe! (docker/wait-container conn id))]
+  (f/attempt-all [_      (u/unsafe! (docker/start conn id))
+                  status (u/unsafe! (docker/wait-container conn id))]
     (if (zero? status)
-      (format-id id)
+      (u/format-id id)
       (f/fail "Abnormal exit."))
     (f/when-failed [err] err)))
 
 (defn log-stream-of
   "Fetches the lazy log stream from a running/dead container."
   [^String name]
-  (unsafe! (docker/logs conn name)))
+  (u/unsafe! (docker/logs conn name)))

@@ -15,8 +15,8 @@
 
 (ns bob.main
   (:require [aleph.http :as http]
-            [bob.api.routes :refer [bob-api]]
-            [bob.db.core :refer [init-db]])
+            [bob.api.routes :as routes]
+            [bob.db.core :as db])
   (:gen-class))
 
 (def PORT 7777)
@@ -25,6 +25,6 @@
   "Defines the entry point of Bob.
   Starts up the HTTP API on port *7777* by default."
   [& _]
-  (do (init-db)
+  (do (db/init-db)
       (println (format "Bob's listening on http://0.0.0.0:%d/" PORT))
-      (http/start-server bob-api {:port PORT})))
+      (http/start-server routes/bob-api {:port PORT})))

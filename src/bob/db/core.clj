@@ -16,10 +16,10 @@
 (ns bob.db.core
   (:require [clojure.string :as str]
             [ragtime.jdbc :as jdbc]
-            [ragtime.repl :refer [migrate]]
-            [korma.db :refer [defdb]]
-            [korma.core :refer [defentity has-many table]]
-            [hikari-cp.core :refer [make-datasource]])
+            [ragtime.repl :as repl]
+            [korma.db :as kdb]
+            [korma.core :as k]
+            [hikari-cp.core :as h])
   (:import (java.io File)))
 
 (def db-uri (format "jdbc:h2:file://%s"
@@ -29,8 +29,8 @@
 
 (def data-source
   (when-not *compile-files*
-    (make-datasource {:adapter "h2"
-                      :url     db-uri})))
+    (h/make-datasource {:adapter "h2"
+                        :url     db-uri})))
 
 (def migration-config
   (when-not *compile-files*
@@ -41,31 +41,31 @@
   "Initiates the data store for Bob by running all migrations
   stored in resources."
   []
-  (migrate migration-config))
+  (repl/migrate migration-config))
 
-(defdb _ {:datasource data-source
-          :naming     {:keys   str/lower-case
-                       :fields str/upper-case}})
+(kdb/defdb _ {:datasource data-source
+              :naming     {:keys   str/lower-case
+                           :fields str/upper-case}})
 
-(defentity steps)
+(k/defentity steps)
 
-(defentity logs)
+(k/defentity logs)
 
-(defentity runs
-  (has-many logs))
+(k/defentity runs
+  (k/has-many logs))
 
-(defentity evars)
+(k/defentity evars)
 
-(defentity artifacts)
+(k/defentity artifacts)
 
-(defentity plugin-params
-  (table :plugin_params))
+(k/defentity plugin-params
+  (k/table :plugin_params))
 
-(defentity plugins
-  (has-many plugin-params))
+(k/defentity plugins
+  (k/has-many plugin-params))
 
-(defentity pipelines
-  (has-many evars)
-  (has-many steps)
-  (has-many runs)
-  (has-many artifacts))
+(k/defentity pipelines
+  (k/has-many evars)
+  (k/has-many steps)
+  (k/has-many runs)
+  (k/has-many artifacts))

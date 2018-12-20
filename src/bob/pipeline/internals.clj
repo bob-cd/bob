@@ -14,17 +14,13 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.pipeline.internals
-  (:require [clojure.core.async :refer [go]]
-            [clojure.string :refer [split-lines]]
-            [korma.db :refer [defdb]]
-            [korma.core :refer [update set-fields where
-                                select insert values
-                                fields order]]
+  (:require [clojure.core.async :as a]
+            [korma.core :as k]
             [failjure.core :as f]
             [clj-docker-client.core :as docker]
-            [bob.db.core :refer [logs runs]]
+            [bob.db.core :as db]
             [bob.execution.internals :as e]
-            [bob.util :refer [unsafe! format-id get-id]])
+            [bob.util :as u])
   (:import (java.util List)))
 
 ;; TODO: Reduce and optimize DB interactions to a single place
@@ -34,11 +30,11 @@
   This is used to track the last executed container in logging as well as stopping.
   Returns pid or error if any."
   [pid run-id]
-  (f/attempt-all [_ (unsafe! (insert logs (values {:pid pid
-                                                   :run run-id})))
-                  _ (unsafe! (update runs
-                                     (set-fields {:last_pid pid})
-                                     (where {:id run-id})))]
+  (f/attempt-all [_ (u/unsafe! (k/insert db/logs (k/values {:pid pid
+                                                            :run run-id})))
+                  _ (u/unsafe! (k/update db/runs
+                                         (k/set-fields {:last_pid pid})
+                                         (k/where {:id run-id})))]
     pid
     (f/when-failed [err] err)))
 
@@ -50,12 +46,12 @@
   [^String id ^List next-command ^List evars]
   (let [repo (format "%s/%d" id (System/currentTimeMillis))
         tag  "latest"]
-    (f/attempt-all [_ (unsafe! (docker/commit-container
-                                 e/conn
-                                 id
-                                 repo
-                                 tag
-                                 next-command))]
+    (f/attempt-all [_ (u/unsafe! (docker/commit-container
+                                   e/conn
+                                   id
+                                   repo
+                                   tag
+                                   next-command))]
       (e/build (format "%s:%s" repo tag) next-command evars)
       (f/when-failed [err] err))))
 
@@ -67,11 +63,11 @@
   non-zero step outcome.
   Returns the next state or errors if any."
   [run-id evars id step]
-  (let [stopped? (unsafe! (-> (select runs
-                                      (fields :stopped)
-                                      (where {:id run-id}))
-                              (first)
-                              (:stopped)))]
+  (let [stopped? (u/unsafe! (-> (k/select db/runs
+                                          (k/fields :stopped)
+                                          (k/where {:id run-id}))
+                                (first)
+                                (:stopped)))]
     (if (or stopped?
             (f/failed? id))
       (reduced id)
@@ -84,8 +80,8 @@
 (defn- next-build-number-of
   "Generates a sequential build number for a pipeline."
   [name]
-  (f/attempt-all [result (unsafe! (last (select runs
-                                                (where {:pipeline name}))))]
+  (f/attempt-all [result (u/unsafe! (last (k/select db/runs
+                                                    (k/where {:pipeline name}))))]
     (if (nil? result)
       1
       (inc (result :number)))
@@ -96,24 +92,24 @@
   Dispatches asynchronously and uses a composition of the above functions.
   Returns the final id or errors if any."
   [^String image ^List steps ^String name ^List evars]
-  (let [run-id (get-id)]
-    (go (f/attempt-all [_  (unsafe! (insert runs (values {:id       run-id
-                                                          :number   (next-build-number-of name)
-                                                          :pipeline name
-                                                          :status   "running"})))
-                        id (f/ok-> (e/pull image)
-                                   (e/build (:cmd (first steps)) evars)
-                                   (update-pid run-id)
-                                   (e/run))
-                        id (reduce (partial exec-step run-id evars) id (rest steps))
-                        _  (unsafe! (update runs
-                                            (set-fields {:status "passed"})
-                                            (where {:id run-id})))]
-          id
-          (f/when-failed [err] (do (unsafe! (update runs
-                                                    (set-fields {:status "failed"})
-                                                    (where {:id run-id})))
-                                   (f/message err)))))))
+  (let [run-id (u/get-id)]
+    (a/go (f/attempt-all [_  (u/unsafe! (k/insert db/runs (k/values {:id       run-id
+                                                                     :number   (next-build-number-of name)
+                                                                     :pipeline name
+                                                                     :status   "running"})))
+                          id (f/ok-> (e/pull image)
+                                     (e/build (:cmd (first steps)) evars)
+                                     (update-pid run-id)
+                                     (e/run))
+                          id (reduce (partial exec-step run-id evars) id (rest steps))
+                          _  (u/unsafe! (k/update db/runs
+                                                  (k/set-fields {:status "passed"})
+                                                  (k/where {:id run-id})))]
+            id
+            (f/when-failed [err] (do (u/unsafe! (k/update db/runs
+                                                          (k/set-fields {:status "failed"})
+                                                          (k/where {:id run-id})))
+                                     (f/message err)))))))
 
 (defn stop-pipeline
   "Stops a pipeline if running.
@@ -125,20 +121,20 @@
   [name number]
   (let [criteria {:pipeline name
                   :number   number}
-        status   (unsafe! (-> (select runs
-                                      (fields :status)
-                                      (where criteria))
-                              (first)
-                              (:status)))]
+        status   (u/unsafe! (-> (k/select db/runs
+                                          (k/fields :status)
+                                          (k/where criteria))
+                                (first)
+                                (:status)))]
     (when (= status "running")
-      (f/attempt-all [_      (unsafe! (update runs
-                                              (set-fields {:stopped true})
-                                              (where criteria)))
-                      pid    (unsafe! (-> (select runs
-                                                  (fields :last_pid)
-                                                  (where criteria))
-                                          (first)
-                                          (:last_pid)))
+      (f/attempt-all [_      (u/unsafe! (k/update db/runs
+                                                  (k/set-fields {:stopped true})
+                                                  (k/where criteria)))
+                      pid    (u/unsafe! (-> (k/select db/runs
+                                                      (k/fields :last_pid)
+                                                      (k/where criteria))
+                                            (first)
+                                            (:last_pid)))
                       status (e/status-of pid)
                       _      (when (status :running?)
                                (e/kill-container pid))]
@@ -153,17 +149,17 @@
   - Lazily read the streams from each and append and truncate the lines.
   Returns the list of lines or errors if any."
   [name number offset lines]
-  (f/attempt-all [run-id     (unsafe! (-> (select runs
-                                                  (fields :id)
-                                                  (where {:pipeline name
-                                                          :number   number}))
-                                          (first)
-                                          (:id)))
-                  containers (unsafe! (->> (select logs
-                                                   (fields :pid)
-                                                   (where {:run run-id})
-                                                   (order :id))
-                                           (map #(:pid %))))]
+  (f/attempt-all [run-id     (u/unsafe! (-> (k/select db/runs
+                                                      (k/fields :id)
+                                                      (k/where {:pipeline name
+                                                                :number   number}))
+                                            (first)
+                                            (:id)))
+                  containers (u/unsafe! (->> (k/select db/logs
+                                                       (k/fields :pid)
+                                                       (k/where {:run run-id})
+                                                       (k/order :id))
+                                             (map #(:pid %))))]
     (->> containers
          (map #(e/log-stream-of %))
          (filter #(not (nil? %)))

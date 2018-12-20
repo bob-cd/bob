@@ -14,18 +14,14 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.pipeline.core
-  (:require [ring.util.response :refer [not-found]]
-            [korma.db :refer [defdb]]
-            [korma.core :refer [defentity table has-many
-                                insert values where
-                                select fields order
-                                delete join]]
-            [manifold.deferred :refer [let-flow]]
+  (:require [ring.util.response :as res]
+            [korma.core :as k]
+            [manifold.deferred :as d]
             [failjure.core :as f]
-            [bob.execution.internals :refer [default-image]]
-            [bob.pipeline.internals :refer [exec-steps stop-pipeline pipeline-logs]]
-            [bob.db.core :refer [pipelines steps runs logs evars artifacts]]
-            [bob.util :refer [respond unsafe! clob->str]]))
+            [bob.execution.internals :as e]
+            [bob.pipeline.internals :as p]
+            [bob.db.core :as db]
+            [bob.util :as u]))
 
 (def name-of (memoize #(str %1 ":" %2)))
 
@@ -47,95 +43,95 @@
 
   Returns Ok or the error if any."
   ([group name pipeline-steps vars pipeline-artifacts]
-   (create group name pipeline-steps vars pipeline-artifacts default-image))
+   (create group name pipeline-steps vars pipeline-artifacts e/default-image))
   ([group name pipeline-steps vars pipeline-artifacts image]
-   (let-flow [pipeline       (name-of group name)
-              vars-pairs     (map #(hash-map :key (clojure.core/name (first %))
-                                             :value (last %)
-                                             :pipeline pipeline)
-                                  vars)
-              artifact-pairs (map #(hash-map :name (clojure.core/name (first %))
-                                             :path (last %)
-                                             :pipeline pipeline)
-                                  pipeline-artifacts)
-              result         (f/attempt-all [_ (unsafe! (insert pipelines (values {:name  pipeline
-                                                                                   :image image})))
-                                             _ (when (not (empty? vars-pairs))
-                                                 (unsafe! (insert evars (values vars-pairs))))
-                                             _ (when (not (empty? artifact-pairs))
-                                                 (unsafe! (insert artifacts (values artifact-pairs))))
-                                             _ (unsafe! (doseq [step pipeline-steps]
-                                                          (insert steps (values {:cmd      step
-                                                                                 :pipeline pipeline}))))]
-                               "Ok"
-                               (f/when-failed [err] (f/message err)))]
-     (respond result))))
+   (d/let-flow [pipeline       (name-of group name)
+                vars-pairs     (map #(hash-map :key (clojure.core/name (first %))
+                                               :value (last %)
+                                               :pipeline pipeline)
+                                    vars)
+                artifact-pairs (map #(hash-map :name (clojure.core/name (first %))
+                                               :path (last %)
+                                               :pipeline pipeline)
+                                    pipeline-artifacts)
+                result         (f/attempt-all [_ (u/unsafe! (k/insert db/pipelines (k/values {:name  pipeline
+                                                                                              :image image})))
+                                               _ (when (not (empty? vars-pairs))
+                                                   (u/unsafe! (k/insert db/evars (k/values vars-pairs))))
+                                               _ (when (not (empty? artifact-pairs))
+                                                   (u/unsafe! (k/insert db/artifacts (k/values artifact-pairs))))
+                                               _ (u/unsafe! (doseq [step pipeline-steps]
+                                                              (k/insert db/steps (k/values {:cmd      step
+                                                                                            :pipeline pipeline}))))]
+                                 "Ok"
+                                 (f/when-failed [err] (f/message err)))]
+     (u/respond result))))
 
 ;; TODO: Unit test this?
 (defn start
   "Asynchronously starts a pipeline in a group by name.
   Returns Ok or any starting errors."
   [group name]
-  (let-flow [pipeline (name-of group name)
-             result   (f/attempt-all [steps (unsafe! (select steps
-                                                             (where {:pipeline pipeline})
-                                                             (order :id)))
-                                      steps (map #(hash-map :cmd (clob->str (:cmd %))
-                                                            :id (:id %))
-                                                 steps)
-                                      image (unsafe! (-> (select pipelines
-                                                                 (fields :image)
-                                                                 (where {:name pipeline}))
-                                                         (first)
-                                                         (:image)))
-                                      vars  (unsafe! (->> (select evars
-                                                                  (fields :key :value)
-                                                                  (where {:pipeline pipeline}))
-                                                          (map #(hash-map
-                                                                  (keyword (:key %)) (:value %)))
-                                                          (into {})))]
+  (d/let-flow [pipeline (name-of group name)
+               result   (f/attempt-all [steps (u/unsafe! (k/select db/steps
+                                                                   (k/where {:pipeline pipeline})
+                                                                   (k/order :id)))
+                                        steps (map #(hash-map :cmd (u/clob->str (:cmd %))
+                                                              :id (:id %))
+                                                   steps)
+                                        image (u/unsafe! (-> (k/select db/pipelines
+                                                                       (k/fields :image)
+                                                                       (k/where {:name pipeline}))
+                                                             (first)
+                                                             (:image)))
+                                        vars  (u/unsafe! (->> (k/select db/evars
+                                                                        (k/fields :key :value)
+                                                                        (k/where {:pipeline pipeline}))
+                                                              (map #(hash-map
+                                                                      (keyword (:key %)) (:value %)))
+                                                              (into {})))]
 
-                        (do (exec-steps image steps pipeline vars)
-                            "Ok")
-                        (f/when-failed [err] (f/message err)))]
-    (respond result)))
+                          (do (p/exec-steps image steps pipeline vars)
+                              "Ok")
+                          (f/when-failed [err] (f/message err)))]
+    (u/respond result)))
 
 ;; TODO: Unit test this?
 (defn stop
   "Stops a running pipeline with SIGKILL.
   Returns Ok or any stopping errors."
   [group name number]
-  (let-flow [pipeline (name-of group name)
-             result   (stop-pipeline pipeline number)]
+  (d/let-flow [pipeline (name-of group name)
+               result   (p/stop-pipeline pipeline number)]
     (if (nil? result)
-      (not-found {:message "Pipeline not running"})
-      (respond result))))
+      (res/not-found {:message "Pipeline not running"})
+      (u/respond result))))
 
 ;; TODO: Unit test this?
 (defn status
   "Fetches the status of a particular run of a pipeline.
   Returns the status or 404."
   [group name number]
-  (let-flow [pipeline (name-of group name)
-             status   (unsafe! (-> (select runs
-                                           (fields :status)
-                                           (where {:pipeline pipeline
-                                                   :number   number}))
-                                   (first)
-                                   (:status)))]
+  (d/let-flow [pipeline (name-of group name)
+               status   (u/unsafe! (-> (k/select db/runs
+                                                 (k/fields :status)
+                                                 (k/where {:pipeline pipeline
+                                                           :number   number}))
+                                       (first)
+                                       (:status)))]
     (if (nil? status)
-      (not-found {:message "No such pipeline"})
-      (respond status))))
+      (res/not-found {:message "No such pipeline"})
+      (u/respond status))))
 
 ;; TODO: Unit test this?
 (defn remove
   "Removes a pipeline.
   Returns Ok or 404."
   [group name]
-  (let-flow [pipeline (name-of group name)
-             _        (unsafe! (delete pipelines
-                                       (where {:name pipeline})))]
-    (respond "Ok")))
+  (d/let-flow [pipeline (name-of group name)
+               _        (u/unsafe! (k/delete db/pipelines
+                                             (k/where {:name pipeline})))]
+    (u/respond "Ok")))
 
 ;; TODO: Unit test this?
 (defn logs-of
@@ -143,23 +139,23 @@
   Take the starting offset to read and the number of lines to read after it.
   Returns logs as a list."
   [group name number offset lines]
-  (let-flow [pipeline (name-of group name)
-             result   (pipeline-logs pipeline number offset lines)]
-    (respond result)))
+  (d/let-flow [pipeline (name-of group name)
+               result   (p/pipeline-logs pipeline number offset lines)]
+    (u/respond result)))
 
 ;; TODO: Unit test this?
 (defn running-pipelines
   "Collects all pipeline names that have status 'running'.
   Returns pipeline names as a list."
   []
-  (let-flow [pipeline-names (unsafe! (->> (select pipelines
-                                                  (fields :name)
-                                                  (where {:runs.status "running"})
-                                                  (join runs (= :runs.pipeline :name)))
-                                          (map #(:name %))))]
+  (d/let-flow [pipeline-names (u/unsafe! (->> (k/select db/pipelines
+                                                        (k/fields :name)
+                                                        (k/where {:runs.status "running"})
+                                                        (k/join db/runs (= :runs.pipeline :name)))
+                                              (map #(:name %))))]
     (if (empty? pipeline-names)
-      (not-found {:message "No running pipelines"})
-      (respond (->> pipeline-names
-                    (map #(clojure.string/split % #":"))
-                    (map #(hash-map :group (first %)
-                                    :name (second %))))))))
+      (res/not-found {:message "No running pipelines"})
+      (u/respond (->> pipeline-names
+                      (map #(clojure.string/split % #":"))
+                      (map #(hash-map :group (first %)
+                                      :name (second %))))))))

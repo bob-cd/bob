@@ -15,19 +15,18 @@
 
 (ns bob.api.routes
   (:require [compojure.route :as route]
-            [compojure.api.sweet :refer [api context undocumented
-                                         GET POST DELETE]]
+            [compojure.api.sweet :as rest]
             [schema.core :as s]
-            [bob.util :refer [respond]]
-            [bob.api.schemas :refer :all]
-            [bob.api.middleware :refer [ignore-trailing-slash]]
-            [bob.execution.core :refer [gc]]
+            [bob.util :as u]
+            [bob.api.schemas :as schema]
+            [bob.api.middleware :as m]
+            [bob.execution.core :as e]
             [bob.pipeline.core :as p]
             [bob.plugin.core :as plug]))
 
 (def bob-api
-  (ignore-trailing-slash
-    (api
+  (m/ignore-trailing-slash
+    (rest/api
       {:swagger
        {:ui   "/"
         :spec "/swagger.json"
@@ -37,16 +36,16 @@
                :consumes ["application/json"]
                :produces ["application/json"]}}}
 
-      (context "/api" []
+      (rest/context "/api" []
         :tags ["Bob's API"]
 
-        (POST "/pipeline/:group/:name" []
-          :return SimpleResponse
+        (rest/POST "/pipeline/:group/:name" []
+          :return schema/SimpleResponse
           :path-params [group
                         :- String
                         name
                         :- String]
-          :body [pipeline Pipeline]
+          :body [pipeline schema/Pipeline]
           :summary "Creates a new pipeline in a group with the specified name.
                    Takes list of steps, the base docker image, a list of environment vars
                    and a list of artifacts generated from pipeline as POST body."
@@ -58,8 +57,8 @@
             (:artifacts pipeline)
             (:image pipeline)))
 
-        (POST "/pipeline/start/:group/:name" []
-          :return SimpleResponse
+        (rest/POST "/pipeline/start/:group/:name" []
+          :return schema/SimpleResponse
           :path-params [group
                         :- String
                         name
@@ -67,8 +66,8 @@
           :summary "Starts a pipeline in a group with the specified name."
           (p/start group name))
 
-        (POST "/pipeline/stop/:group/:name/:number" []
-          :return SimpleResponse
+        (rest/POST "/pipeline/stop/:group/:name/:number" []
+          :return schema/SimpleResponse
           :path-params [group
                         :- String
                         name
@@ -78,8 +77,8 @@
           :summary "Stops a pipeline run in a group with the specified name and number."
           (p/stop group name number))
 
-        (GET "/pipeline/logs/:group/:name/:number/:offset/:lines" []
-          :return LogsResponse
+        (rest/GET "/pipeline/logs/:group/:name/:number/:offset/:lines" []
+          :return schema/LogsResponse
           :path-params [group
                         :- String
                         name
@@ -94,8 +93,8 @@
                     name, number, starting offset and the number of lines."
           (p/logs-of group name number offset lines))
 
-        (GET "/pipeline/status/:group/:name/:number" []
-          :return StatusResponse
+        (rest/GET "/pipeline/status/:group/:name/:number" []
+          :return schema/StatusResponse
           :path-params [group
                         :- String
                         name
@@ -105,8 +104,8 @@
           :summary "Fetches the status of pipeline run in a group with the specified name and number."
           (p/status group name number))
 
-        (DELETE "/pipeline/:group/:name" []
-          :return SimpleResponse
+        (rest/DELETE "/pipeline/:group/:name" []
+          :return schema/SimpleResponse
           :path-params [group
                         :- String
                         name
@@ -114,45 +113,45 @@
           :summary "Deletes a pipeline in a group with the specified name."
           (p/remove group name))
 
-        (GET "/pipeline/status/running" []
-          :return RunningResponse
+        (rest/GET "/pipeline/status/running" []
+          :return schema/RunningResponse
           :summary "Returns list of the running pipeline names."
           (p/running-pipelines))
 
-        (POST "/plugin/register/:name" []
-          :return SimpleResponse
+        (rest/POST "/plugin/register/:name" []
+          :return schema/SimpleResponse
           :path-params [name
                         :- String]
-          :body [attrs PluginAttributes]
+          :body [attrs schema/PluginAttributes]
           :summary "Registers a new plugin with a unique name and its attributes."
           (plug/register name (:url attrs)))
 
-        (POST "/plugin/unregister/:name" []
-          :return SimpleResponse
+        (rest/POST "/plugin/unregister/:name" []
+          :return schema/SimpleResponse
           :path-params [name
                         :- String]
           :summary "Un-registers a new plugin with a unique name and URL."
           (plug/un-register name))
 
-        (GET "/plugins" []
-          :return PluginResponse
+        (rest/GET "/plugins" []
+          :return schema/PluginResponse
           :summary "Lists all registered plugins by name."
           (plug/all-plugins))
 
-        (GET "/can-we-build-it" []
-          :return SimpleResponse
+        (rest/GET "/can-we-build-it" []
+          :return schema/SimpleResponse
           :summary "Runs health checks for Bob."
-          (respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28"))
+          (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28"))
 
-        (POST "/gc" []
-          :return SimpleResponse
+        (rest/POST "/gc" []
+          :return schema/SimpleResponse
           :summary "Runs the garbage collection for Bob, reclaiming resources."
-          (gc))
+          (e/gc))
 
-        (POST "/gc/all" []
-          :return SimpleResponse
+        (rest/POST "/gc/all" []
+          :return schema/SimpleResponse
           :summary "Runs the full garbage collection for Bob, reclaiming all resources."
-          (gc true)))
+          (e/gc true)))
 
-      (undocumented
-        (route/not-found (respond "Took a wrong turn?"))))))
+      (rest/undocumented
+        (route/not-found (u/respond "Took a wrong turn?"))))))
