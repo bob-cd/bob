@@ -134,7 +134,7 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | ---- | ----------- | ------ |
 | 200 |  | [RunningResponse](#runningresponse) |
 
-### /api/plugin/register/{name}
+### /api/plugin/{name}
 ---
 ##### ***POST***
 **Summary:** Registers a new plugin with a unique name and its attributes.
@@ -152,9 +152,7 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | ---- | ----------- | ------ |
 | 200 |  | [SimpleResponse](#simpleresponse) |
 
-### /api/plugin/unregister/{name}
----
-##### ***POST***
+##### ***DELETE***
 **Summary:** Un-registers a new plugin with a unique name and URL.
 
 **Parameters**
@@ -230,12 +228,19 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | image | string |  | Yes |
 | vars | [PipelineVars](#pipelinevars) |  | Yes |
 | artifacts | [PipelineArtifacts](#pipelineartifacts) |  | Yes |
+| resources | [ [Resource](#resource) ] |  | Yes |
 
 ### PipelineArtifacts
 
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | PipelineArtifacts | object |  |  |
+
+### PipelineResourcesParams
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| PipelineResourcesParams | object |  |  |
 
 ### PipelineVars
 
@@ -254,6 +259,14 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | message | [ string ] |  | Yes |
+
+### Resource
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name | string |  | Yes |
+| params | [PipelineResourcesParams](#pipelineresourcesparams) |  | Yes |
+| type | string |  | Yes |
 
 ### RunningResponse
 
