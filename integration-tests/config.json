@@ -13,10 +13,10 @@
     },
     {
       "name": "Plugin registration",
-      "path": "/api/plugin/github",
+      "path": "/api/plugin/git",
       "method": "POST",
       "data": {
-        "url": "http://localhost:8000/r1"
+        "url": "http://localhost:8000"
       },
       "response": {
         "message": "Ok"
@@ -36,12 +36,22 @@
           "echo hello",
           "sleep 10",
           "sh -c 'touch test.txt && echo $env >> test.txt'",
-          "cat test.txt"
+          "cat test.txt",
+          "ls /tmp"
         ],
         "artifacts": {
           "test-jar": "/tmp/test.jar"
         },
-        "resources": []
+        "resources": [
+          {
+            "name": "git",
+            "type": "plugin",
+            "params": {
+              "repo": "https://github.com/bob-cd/bob",
+              "branch": "master"
+            }
+          }
+        ]
       },
       "response": {
         "message": "Ok"
@@ -73,12 +83,23 @@
     },
     {
       "name": "Pipeline logs",
-      "path": "/api/pipeline/logs/dev/test/1/0/10",
+      "path": "/api/pipeline/logs/dev/test/1/0/50",
       "method": "GET",
       "wait": 40,
       "response": {
         "message": [
           "hello",
+          "test",
+          "CODE_OF_CONDUCT.md",
+          "CONTRIBUTING.md",
+          "LICENSE",
+          "README.md",
+          "boot.properties",
+          "build.boot",
+          "docs",
+          "integration-tests",
+          "resources",
+          "src",
           "test"
         ]
       }
@@ -104,12 +125,14 @@
       "path": "/api/plugins",
       "method": "GET",
       "response": {
-        "message": ["github"]
+        "message": [
+          "git"
+        ]
       }
     },
     {
       "name": "Plugin deletion",
-      "path": "/api/plugin/github",
+      "path": "/api/plugin/git",
       "method": "DELETE",
       "data": {},
       "response": {

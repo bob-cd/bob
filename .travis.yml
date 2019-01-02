@@ -35,6 +35,9 @@ install:
   - export PATH=~/bin:$PATH
   - curl -L https://github.com/boot-clj/boot-bin/releases/download/latest/boot.sh -o ~/bin/boot
   - chmod +x ~/bin/boot
+  - git clone https://github.com/bob-cd/plugin-git
+  - docker build -t plugin-git plugin-git/
+  - docker run -p 8000:8000 -d --rm plugin-git
 
 script: boot test
 
