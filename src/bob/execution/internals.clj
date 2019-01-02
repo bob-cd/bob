@@ -64,8 +64,8 @@
   (let [result (u/unsafe! (docker/container-state conn id))]
     (if (f/failed? result)
       (f/message result)
-      ({:running  result
-        :exitCode result}))))
+      {:running?  (:running? result)
+       :exit-code (:exit-code result)})))
 
 (defn run
   "Synchronously starts up a previously built container.
