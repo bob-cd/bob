@@ -18,7 +18,8 @@
             [failjure.core :as f]
             [bob.pipeline.internals :as p]
             [bob.execution.internals :as e]
-            [bob.resource.internals :as r]))
+            [bob.resource.internals :as r]
+            [bob.util :as u]))
 
 (defn mount-resources
   "Creates the initial state of the build with a resource.
@@ -42,11 +43,12 @@
                     image   (p/image-of pipeline)
                     out-dir (r/fetch-resources (r/resources-of pipeline))
                     id      (r/initial-container-of out-dir image)
-                    image   (docker/commit-container
-                              e/conn
-                              id
-                              (format "%s/%d" id (System/currentTimeMillis))
-                              "latest"
-                              "sh")]
+                    image   (u/unsafe!
+                              (docker/commit-container
+                                e/conn
+                                id
+                                (format "%s/%d" id (System/currentTimeMillis))
+                                "latest"
+                                "sh"))]
       image
       (f/when-failed [err] err))))

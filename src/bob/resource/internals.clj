@@ -61,13 +61,13 @@
   Returns the absolute path of the expansion dir."
   [resources]
   (f/attempt-all [creation-args (into-array FileAttribute [])
-                  out-dir       (Files/createTempDirectory "out" creation-args)
-                  _             (->> resources
-                                     (map :url)
-                                     (pmap #(-> @(http/get %)
-                                                :body
-                                                (ZipInputStream.)))
-                                     (run! #(extract-zip! % out-dir)))]
+                  out-dir       (u/unsafe! (Files/createTempDirectory "out" creation-args))
+                  _             (u/unsafe! (->> resources
+                                                (map :url)
+                                                (pmap #(-> @(http/get %)
+                                                           :body
+                                                           (ZipInputStream.)))
+                                                (run! #(extract-zip! % out-dir))))]
     (str out-dir)
     (f/when-failed [err] err)))
 
@@ -78,10 +78,10 @@
    container and returns the id of the container. Deletes the temp folder
    after it."
   [^String path ^String image]
-  (f/attempt-all [img (docker/pull e/conn image)
-                  id  (docker/create e/conn img "sh" {} {})
-                  _   (docker/cp e/conn id path "/tmp")
-                  _   (rm-r! path true)]
+  (f/attempt-all [img (u/unsafe! (docker/pull e/conn image))
+                  id  (u/unsafe! (docker/create e/conn img "sh" {} {}))
+                  _   (u/unsafe! (docker/cp e/conn id path "/tmp"))
+                  _   (u/unsafe! (rm-r! path true))]
     id
     (f/when-failed [err] err)))
 
