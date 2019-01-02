@@ -18,8 +18,6 @@
             [bob.util :as u]
             [clj-docker-client.core :as docker]))
 
-(def default-image "debian:unstable-slim")
-
 (defonce conn (docker/connect))
 
 (defn- has-image

@@ -60,6 +60,7 @@
       "name": "Find running pipeline names",
       "path": "/api/pipeline/status/running",
       "method": "GET",
+      "wait": 10,
       "data": {},
       "response": {
         "message": [
