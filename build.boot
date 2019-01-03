@@ -17,6 +17,8 @@
 
 (def version "0.1.0")
 
+(set! *warn-on-reflection* true)
+
 (set-env! :resource-paths #{"resources" "src"}
           :source-paths   #{"test"}
           :dependencies   '[[org.clojure/clojure "1.10.0"]
