@@ -21,7 +21,7 @@
 
 (s/defschema Resource {:name   String
                        :params {Keyword String}
-                       :type   (s/enum :plugin)})
+                       :type   (s/enum :external)})
 
 (s/defschema Pipeline {:steps     [String]
                        :image     String
@@ -36,6 +36,6 @@
 (s/defschema RunningResponse {:message [{:group String
                                          :name  String}]})
 
-(s/defschema PluginAttributes {:url String})
+(s/defschema ResourceAttributes {:url String})
 
-(s/defschema PluginResponse {:message [String]})
+(s/defschema ResourceResponse {:message [String]})

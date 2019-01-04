@@ -58,17 +58,18 @@
 
 (k/defentity artifacts)
 
-(k/defentity plugin-params
-  (k/table :plugin_params))
-
-(k/defentity plugins
-  (k/has-many plugin-params))
-
 (k/defentity resources)
+
+(k/defentity resource-params
+  (k/table :resource_params))
 
 (k/defentity pipelines
   (k/has-many resources)
+  (k/has-many resource-params)
   (k/has-many evars)
   (k/has-many steps)
   (k/has-many runs)
   (k/has-many artifacts))
+
+(k/defentity external-resources
+  (k/table :external_resources))

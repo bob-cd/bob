@@ -13,6 +13,9 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-{:up   ["CREATE TABLE plugins (name VARCHAR(100) PRIMARY KEY,
-                               url  VARCHAR(200) NOT NULL);"]
- :down ["DROP TABLE plugins;"]}
+{:up   ["CREATE TABLE resource_params (name     VARCHAR(50) NOT NULL,
+                                       key      VARCHAR(10) NOT NULL,
+                                       value    VARCHAR(100) NOT NULL,
+                                       pipeline VARCHAR(100) NOT NULL,
+                                       FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]
+ :down ["DROP TABLE resource_params;"]}

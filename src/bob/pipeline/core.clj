@@ -18,11 +18,11 @@
             [korma.core :as k]
             [manifold.deferred :as d]
             [failjure.core :as f]
-            [bob.plugin.core :as plug]
             [bob.pipeline.internals :as p]
             [bob.db.core :as db]
             [bob.util :as u]
-            [bob.resource.core :as r]))
+            [bob.resource.core :as r]
+            [bob.resource.internals :as ri]))
 
 (defn name-of
   [group name]
@@ -62,7 +62,7 @@
                                                              (let [{name   :name
                                                                     params :params
                                                                     type   :type} resource]
-                                                               (plug/add-params name params pipeline)
+                                                               (ri/add-params name params pipeline)
                                                                (k/insert db/resources
                                                                          (k/values {:name     name
                                                                                     :type     (clojure.core/name type)

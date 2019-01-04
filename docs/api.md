@@ -134,17 +134,17 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | ---- | ----------- | ------ |
 | 200 |  | [RunningResponse](#runningresponse) |
 
-### /api/plugin/{name}
+### /api/external-resource/{name}
 ---
 ##### ***POST***
-**Summary:** Registers a new plugin with a unique name and its attributes.
+**Summary:** Registers an external resource with a unique name and its attributes.
 
 **Parameters**
 
 | Name | Located in | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
 | name | path |  | Yes | string |
-| PluginAttributes | body |  | Yes | [PluginAttributes](#pluginattributes) |
+| ResourceAttributes | body |  | Yes | [ResourceAttributes](#resourceattributes) |
 
 **Responses**
 
@@ -153,7 +153,7 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | 200 |  | [SimpleResponse](#simpleresponse) |
 
 ##### ***DELETE***
-**Summary:** Un-registers a new plugin with a unique name and URL.
+**Summary:** Un-registers an external resource with a unique name and URL.
 
 **Parameters**
 
@@ -167,16 +167,16 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | ---- | ----------- | ------ |
 | 200 |  | [SimpleResponse](#simpleresponse) |
 
-### /api/plugins
+### /api/external-resources
 ---
 ##### ***GET***
-**Summary:** Lists all registered plugins by name.
+**Summary:** Lists all registered external resources by name.
 
 **Responses**
 
 | Code | Description | Schema |
 | ---- | ----------- | ------ |
-| 200 |  | [PluginResponse](#pluginresponse) |
+| 200 |  | [ResourceResponse](#resourceresponse) |
 
 ### /api/can-we-build-it
 ---
@@ -248,18 +248,6 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | ---- | ---- | ----------- | -------- |
 | PipelineVars | object |  |  |
 
-### PluginAttributes
-
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| url | string |  | Yes |
-
-### PluginResponse
-
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| message | [ string ] |  | Yes |
-
 ### Resource
 
 | Name | Type | Description | Required |
@@ -267,6 +255,18 @@ The API docs and a simple testing client can be located on **http://localhost:77
 | name | string |  | Yes |
 | params | [PipelineResourcesParams](#pipelineresourcesparams) |  | Yes |
 | type | string |  | Yes |
+
+### ResourceAttributes
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| url | string |  | Yes |
+
+### ResourceResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| message | [ string ] |  | Yes |
 
 ### RunningResponse
 

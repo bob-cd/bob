@@ -22,7 +22,7 @@
             [bob.api.middleware :as m]
             [bob.execution.core :as e]
             [bob.pipeline.core :as p]
-            [bob.plugin.core :as plug]))
+            [bob.resource.core :as r]))
 
 (def bob-api
   (m/ignore-trailing-slash
@@ -119,25 +119,25 @@
           :summary "Returns list of the running pipeline names."
           (p/running-pipelines))
 
-        (rest/POST "/plugin/:name" []
+        (rest/POST "/external-resource/:name" []
           :return schema/SimpleResponse
           :path-params [name
                         :- String]
-          :body [attrs schema/PluginAttributes]
-          :summary "Registers a new plugin with a unique name and its attributes."
-          (plug/register name (:url attrs)))
+          :body [attrs schema/ResourceAttributes]
+          :summary "Registers an external resource with a unique name and its attributes."
+          (r/register-external-resource name (:url attrs)))
 
-        (rest/DELETE "/plugin/:name" []
+        (rest/DELETE "/external-resource/:name" []
           :return schema/SimpleResponse
           :path-params [name
                         :- String]
-          :summary "Un-registers a new plugin with a unique name and URL."
-          (plug/un-register name))
+          :summary "Un-registers an external resource with a unique name and URL."
+          (r/un-register-external-resource name))
 
-        (rest/GET "/plugins" []
-          :return schema/PluginResponse
-          :summary "Lists all registered plugins by name."
-          (plug/all-plugins))
+        (rest/GET "/external-resources" []
+          :return schema/ResourceResponse
+          :summary "Lists all registered external resources by name."
+          (r/all-external-resources))
 
         (rest/GET "/can-we-build-it" []
           :return schema/SimpleResponse

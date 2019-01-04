@@ -12,8 +12,8 @@
       }
     },
     {
-      "name": "Plugin registration",
-      "path": "/api/plugin/git",
+      "name": "External resource registration",
+      "path": "/api/external-resource/git",
       "method": "POST",
       "data": {
         "url": "http://localhost:8000"
@@ -45,7 +45,7 @@
         "resources": [
           {
             "name": "git",
-            "type": "plugin",
+            "type": "external",
             "params": {
               "repo": "https://github.com/bob-cd/bob",
               "branch": "master"
@@ -121,8 +121,8 @@
       }
     },
     {
-      "name": "Plugin listing",
-      "path": "/api/plugins",
+      "name": "External resource listing",
+      "path": "/api/external-resources",
       "method": "GET",
       "response": {
         "message": [
@@ -131,8 +131,8 @@
       }
     },
     {
-      "name": "Plugin deletion",
-      "path": "/api/plugin/git",
+      "name": "External resource deletion",
+      "path": "/api/external-resource/git",
       "method": "DELETE",
       "data": {},
       "response": {
@@ -140,8 +140,8 @@
       }
     },
     {
-      "name": "Blank Plugin listing",
-      "path": "/api/plugins",
+      "name": "Blank listing",
+      "path": "/api/external-resources",
       "method": "GET",
       "response": {
         "message": []

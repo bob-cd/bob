@@ -21,7 +21,7 @@
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :refer [migrate]]
             [hikari-cp.core :refer [make-datasource]]
-            [bob.db.core :refer [pipelines steps artifacts resources plugin-params]]
+            [bob.db.core :refer [pipelines steps artifacts resources resource-params]]
             [bob.pipeline.core :refer [create]]
             [bob.util :refer [clob->str]]))
 
@@ -42,10 +42,10 @@
 
 (def valid-artifacts {:test-jar "/path/to/jar"})
 
-(def valid-resources [{:name   "github"
+(def valid-resources [{:name   "git"
                        :params {:url    "https://test.com"
                                 :branch "master"}
-                       :type   :plugin}])
+                       :type   :external}])
 
 (deftest create-test
   (testing "Creating a valid pipeline"
@@ -60,15 +60,15 @@
                           (fields :name :path :pipeline)))
            {:name "test-jar" :path "/path/to/jar" :pipeline "dev:test"}))
     (is (= (first (select resources))
-           {:name     "github"
-            :type     "plugin"
+           {:name     "git"
+            :type     "external"
             :pipeline "dev:test"}))
-    (is (= (select plugin-params)
-           [{:plugin  "github"
+    (is (= (select resource-params)
+           [{:name     "git"
              :key      "url"
              :value    "https://test.com"
              :pipeline "dev:test"}
-            {:plugin   "github"
+            {:name     "git"
              :key      "branch"
              :value    "master"
              :pipeline "dev:test"}]))

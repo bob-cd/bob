@@ -20,8 +20,7 @@
             [clj-docker-client.core :as docker]
             [bob.db.core :as db]
             [bob.execution.internals :as e]
-            [bob.util :as u]
-            [bob.plugin.core :as plug])
+            [bob.util :as u])
   (:import (java.util.zip ZipInputStream)
            (java.io File)
            (java.nio.file Files)
@@ -85,21 +84,51 @@
     id
     (f/when-failed [err] err)))
 
-(defn resources-of
-  "Fetches all the resources of a pipeline, updating the URLs for bob."
+(defn add-params
+  "Saves the map of GET params to be sent to the resource."
+  [name params pipeline]
+  (when (not (empty? params))
+    (k/insert db/resource-params
+              (k/values (map #(hash-map :key (clojure.core/name (first %))
+                                        :value (last %)
+                                        :name name
+                                        :pipeline pipeline)
+                             params)))))
+
+(defn url-of
+  "Generates a GET URL for the external resource of a pipeline."
+  [name pipeline]
+  (let [url    (-> (k/select db/external-resources
+                             (k/where {:name name})
+                             (k/fields :url))
+                   (first)
+                   (:url))
+        params (k/select db/resource-params
+                         (k/where {:name     name
+                                   :pipeline pipeline})
+                         (k/fields :key :value))]
+    (format "%s/bob_request?%s"
+            url
+            (clojure.string/join
+              "&"
+              (map #(format "%s=%s" (:key %) (:value %))
+                   params)))))
+
+(defn external-resources-of
+  "Fetches all the external resources of a pipeline, updating the URLs for bob."
   [pipeline]
   (->> (k/select db/resources
-                 (k/fields :name :type :plugins.url)
-                 (k/join db/plugins
-                         (= :plugins.name :name))
+                 (k/fields :name :type :external_resources.url)
+                 (k/join db/external-resources
+                         (= :external_resources.name :name))
                  (k/where {:pipeline pipeline}))
        (map #(if (and (not (nil? (% :url)))
-                      (= (% :type) "plugin"))
+                      (= (% :type) "external"))
                (update-in % [:url] (fn [_]
-                                     (plug/url-of (% :name) pipeline)))
+                                     (url-of (% :name) pipeline)))
                %))))
 
-(defn invalid-resources
+(defn invalid-external-resources
   "Returns all the invalid resources of a pipeline.
 
   Checks if all the resources of a given pipeline:
@@ -107,6 +136,6 @@
   - Have a valid URL.
   - TODO: Check heathiness of the resources"
   [pipeline]
-  (->> (resources-of pipeline)
+  (->> (external-resources-of pipeline)
        (filter #(nil? (:url %)))
        (map #(:name %))))
