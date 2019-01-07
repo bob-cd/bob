@@ -77,10 +77,9 @@
    container and returns the id of the container. Deletes the temp folder
    after it."
   [^String path ^String image]
-  (f/attempt-all [img (u/unsafe! (docker/pull e/conn image))
-                  id  (u/unsafe! (docker/create e/conn img "sh" {} {}))
-                  _   (u/unsafe! (docker/cp e/conn id path "/tmp"))
-                  _   (u/unsafe! (rm-r! path true))]
+  (f/attempt-all [id (u/unsafe! (docker/create e/conn image "sh" {} {}))
+                  _  (u/unsafe! (docker/cp e/conn id path "/tmp"))
+                  _  (u/unsafe! (rm-r! path true))]
     id
     (f/when-failed [err] err)))
 
