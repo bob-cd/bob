@@ -129,7 +129,8 @@
                                                  (k/where {:pipeline pipeline
                                                            :number   number}))
                                        (first)
-                                       (:status)))]
+                                       (:status)
+                                       (keyword)))]
     (if (nil? status)
       (res/not-found {:message "No such pipeline"})
       (u/respond status))))
