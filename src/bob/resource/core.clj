@@ -56,7 +56,7 @@
   "Creates the initial state of the build with a resource.
 
   This works as follows:
-  - Pulls the image of the ppeline as this is the entrypoint for start.
+  - Pulls the image of the pipeline as this is the entrypoint for start.
   - Checks if all the resources are valid.
   - Downloads zip file(s) from the resource urls of the pipeline.
   - Expands them to a temp directory.

@@ -130,10 +130,8 @@
 (defn invalid-external-resources
   "Returns all the invalid resources of a pipeline.
 
-  Checks if all the resources of a given pipeline:
-
-  - Have a valid URL.
-  - TODO: Check heathiness of the resources"
+  Checks if all the resources of a given pipeline
+  have a valid URL."
   [pipeline]
   (->> (external-resources-of pipeline)
        (filter #(nil? (:url %)))
