@@ -20,7 +20,7 @@ import sys
 import time
 import json
 import subprocess
-from optparse import OptionParser
+from argparse import ArgumentParser
 from urllib import request
 from urllib.error import URLError
 from urllib.parse import urljoin
@@ -32,9 +32,7 @@ CONFIG_FILE = os.path.join(CURRENT_DIR, "config.json")
 with open(CONFIG_FILE) as json_data:
     CONFIG = json.load(json_data)
 
-BASE_URL = "{}://{}:{}".format(
-    CONFIG["protocol"], CONFIG["host"], CONFIG["port"]
-)
+BASE_URL = f"{CONFIG['protocol']}://{CONFIG['host']}:{CONFIG['port']}"
 
 
 def start_bob():
@@ -54,7 +52,7 @@ def wait_for_it():
             with request.urlopen(req) as _:
                 pass
         except (ConnectionRefusedError, URLError):
-            print("Waiting for bob at {}".format(BASE_URL))
+            print(f"Waiting for bob at {BASE_URL}")
             time.sleep(1)
 
             continue
@@ -64,16 +62,12 @@ def wait_for_it():
 
 def run_tests():
     for test in CONFIG["tests"]:
-        print("Testing {}.".format(test["name"]))
+        print(f'Testing {test["name"]}.')
 
         url = urljoin(BASE_URL, test["path"])
 
         if "wait" in test:
-            print(
-                "Waiting for {} seconds before {}...".format(
-                    test["wait"], test["name"]
-                )
-            )
+            print(f"Waiting for {test['wait']} seconds before {test['name']}.")
             time.sleep(test["wait"])
 
         if test["method"] == "GET":
@@ -90,9 +84,7 @@ def run_tests():
             req.get_method = lambda: "DELETE"
         else:
             sys.stderr.write(
-                "Unknown request method {} at test {}.\n".format(
-                    test["method"], test["name"]
-                )
+                f"Unknown request method {test['method']} at test {test['name']}.\n"
             )
 
             sys.exit(1)
@@ -106,27 +98,26 @@ def run_tests():
             assert response == test["response"]
         except AssertionError:
             sys.stderr.write(
-                "{} failed with response {}".format(
-                    test["name"], json.dumps(response, indent=2)
-                )
+                f"{test['name']} failed with response {json.dumps(response, indent=2)}"
             )
 
             sys.exit(1)
 
-        print("{} passed.".format(test["name"]))
+        print(f"{test['name']} passed.")
 
 
 if __name__ == "__main__":
-    parser = OptionParser()
-    parser.add_option(
+    parser = ArgumentParser()
+
+    parser.add_argument(
         "--no-start",
         action="store_true",
         dest="no_start",
         default=False,
-        help="Don't start a local bob instance.",
+        help="Don't start a local bob instance",
     )
 
-    options, _ = parser.parse_args()
+    options = parser.parse_args()
 
     if not options.no_start:
         start_bob()

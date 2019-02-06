@@ -45,3 +45,7 @@
   (.getSubString clob 1 (int (.length clob))))
 
 (defn get-id [] (str (UUID/randomUUID)))
+
+(defn name-of
+  [group name]
+  (format "%s:%s" group name))

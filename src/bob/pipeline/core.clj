@@ -24,10 +24,6 @@
             [bob.resource.core :as r]
             [bob.resource.internals :as ri]))
 
-(defn name-of
-  [group name]
-  (format "%s:%s" group name))
-
 (defn create
   "Creates a new pipeline.
 
@@ -47,7 +43,7 @@
 
   Returns Ok or the error if any."
   [group name pipeline-steps vars pipeline-artifacts resources image]
-  (d/let-flow [pipeline       (name-of group name)
+  (d/let-flow [pipeline   (u/name-of group name)
                vars-pairs     (map #(hash-map :key (clojure.core/name (first %))
                                               :value (last %)
                                               :pipeline pipeline)
@@ -86,7 +82,7 @@
   "Asynchronously starts a pipeline in a group by name.
   Returns Ok or any starting errors."
   [group name]
-  (d/let-flow [pipeline (name-of group name)
+  (d/let-flow [pipeline (u/name-of group name)
                result   (f/attempt-all [image (r/mount-resources pipeline)
                                         steps (u/unsafe! (k/select db/steps
                                                                    (k/where {:pipeline pipeline})
@@ -112,7 +108,7 @@
   "Stops a running pipeline with SIGKILL.
   Returns Ok or any stopping errors."
   [group name number]
-  (d/let-flow [pipeline (name-of group name)
+  (d/let-flow [pipeline (u/name-of group name)
                result   (p/stop-pipeline pipeline number)]
     (if (nil? result)
       (res/not-found {:message "Pipeline not running"})
@@ -123,7 +119,7 @@
   "Fetches the status of a particular run of a pipeline.
   Returns the status or 404."
   [group name number]
-  (d/let-flow [pipeline (name-of group name)
+  (d/let-flow [pipeline (u/name-of group name)
                status   (u/unsafe! (-> (k/select db/runs
                                                  (k/fields :status)
                                                  (k/where {:pipeline pipeline
@@ -140,7 +136,7 @@
   "Removes a pipeline.
   Returns Ok or 404."
   [group name]
-  (d/let-flow [pipeline (name-of group name)
+  (d/let-flow [pipeline (u/name-of group name)
                _        (u/unsafe! (k/delete db/pipelines
                                              (k/where {:name pipeline})))]
     (u/respond "Ok")))
@@ -151,7 +147,7 @@
   Take the starting offset to read and the number of lines to read after it.
   Returns logs as a list."
   [group name number offset lines]
-  (d/let-flow [pipeline (name-of group name)
+  (d/let-flow [pipeline (u/name-of group name)
                result   (p/pipeline-logs pipeline number offset lines)]
     (u/respond result)))
 
