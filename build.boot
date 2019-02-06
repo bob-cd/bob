@@ -19,8 +19,8 @@
 
 (set! *warn-on-reflection* true)
 
-(set-env! :resource-paths #{"resources" "src"}
-          :source-paths   #{"test"}
+(set-env! :resource-paths #{"resources"}
+          :source-paths   #{"src"}
           :dependencies   '[[org.clojure/clojure "1.10.0"]
                             [org.clojure/core.async "0.4.490"]
                             [manifold "0.1.8"]
