@@ -42,7 +42,7 @@
                             [javax.activation/activation "1.1.1"]       ;; Java 9+ compat for XML bindings
                             [ch.qos.logback/logback-classic "1.2.3"]    ;; For sane logging defaults
                             ;; Test
-                            [adzerk/boot-test "1.2.0" :scope "test"]
+                            [lambdaisland/kaocha-boot "0.0-14" :scope "test"]
                             [org.clojure/test.check "0.9.0" :scope "test"]
                             ;; Plugins
                             [boot-deps "0.1.9" :scope "test"]])
@@ -81,4 +81,4 @@
   (apply (resolve 'app/-main) args)
   (wait))
 
-(require '[adzerk.boot-test :refer [test]])
+(require '[kaocha.boot-task :refer [kaocha]])

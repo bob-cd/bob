@@ -24,7 +24,7 @@
 - Clone this repository.
 - Install the Build requirements.
 - Following steps **need Docker**:
-    - Run `boot test` to run tests.
+    - Run `boot kaocha` to run tests.
     - Run `boot build` to get the standalone JAR.
     - Run `java -jar ./target/bob-standalone.jar` to start the server on port **7777**.
 

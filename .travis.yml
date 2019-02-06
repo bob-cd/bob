@@ -40,7 +40,7 @@ install:
   - docker build -t resource-git resource-git/
   - docker run -p 8000:8000 -d --rm resource-git
 
-script: boot test
+script: boot kaocha
 
 after_success:
   - python3 integration-tests/run.py
