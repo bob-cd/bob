@@ -28,6 +28,15 @@
     - Run `boot build` to get the standalone JAR.
     - Run `java -jar ./target/bob-standalone.jar` to start the server on port **7777**.
 
+## Running integration tests:
+
+**A running Docker daemon is needed for this.**
+
+- Clone the git resource repo: https://github.com/bob-cd/resource-git
+- In that dir, run `docker build -t resource-git .` to build the image.
+- Run `docker run -p 8000:8000 --rm resource-git` to start a container.
+- In the bob repo run `python3 integration-tests/run.py` to run the integration tests. 
+
 ## For Cursive users:
 This project is built using the Boot build tool which is unsupported on Cursive at the moment.
 
