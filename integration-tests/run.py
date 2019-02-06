@@ -25,14 +25,15 @@ from urllib import request
 from urllib.error import URLError
 from urllib.parse import urljoin
 
-
 CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
 CONFIG_FILE = os.path.join(CURRENT_DIR, "config.json")
 
 with open(CONFIG_FILE) as json_data:
     CONFIG = json.load(json_data)
 
-BASE_URL = f"{CONFIG['protocol']}://{CONFIG['host']}:{CONFIG['port']}"
+BASE_URL = "{}://{}:{}".format(
+    CONFIG["protocol"], CONFIG["host"], CONFIG["port"]
+)
 
 
 def start_bob():
@@ -52,7 +53,7 @@ def wait_for_it():
             with request.urlopen(req) as _:
                 pass
         except (ConnectionRefusedError, URLError):
-            print(f"Waiting for bob at {BASE_URL}")
+            print("Waiting for bob at {}".format(BASE_URL))
             time.sleep(1)
 
             continue
@@ -62,12 +63,16 @@ def wait_for_it():
 
 def run_tests():
     for test in CONFIG["tests"]:
-        print(f'Testing {test["name"]}.')
+        print("Testing {}.".format(test["name"]))
 
         url = urljoin(BASE_URL, test["path"])
 
         if "wait" in test:
-            print(f"Waiting for {test['wait']} seconds before {test['name']}.")
+            print(
+                "Waiting for {} seconds before {}.".format(
+                    test["wait"], test["name"]
+                )
+            )
             time.sleep(test["wait"])
 
         if test["method"] == "GET":
@@ -84,7 +89,9 @@ def run_tests():
             req.get_method = lambda: "DELETE"
         else:
             sys.stderr.write(
-                f"Unknown request method {test['method']} at test {test['name']}.\n"
+                "Unknown request method {} at test {}.\n".format(
+                    test["method"], test["name"]
+                )
             )
 
             sys.exit(1)
@@ -98,12 +105,14 @@ def run_tests():
             assert response == test["response"]
         except AssertionError:
             sys.stderr.write(
-                f"{test['name']} failed with response {json.dumps(response, indent=2)}"
+                "{} failed with response {}".format(
+                    test["name"], json.dumps(response, indent=2)
+                )
             )
 
             sys.exit(1)
 
-        print(f"{test['name']} passed.")
+        print("{} passed.".format(test["name"]))
 
 
 if __name__ == "__main__":
