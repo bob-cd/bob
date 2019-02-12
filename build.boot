@@ -33,10 +33,10 @@
                             [com.h2database/h2 "1.4.197"]
                             [ragtime "0.8.0"]
                             [korma "0.5.0-RC1"]
-                            [hikari-cp "2.6.0"]
+                            [hikari-cp "2.7.0"]
                             [metosin/compojure-api "2.0.0-alpha28"]
                             [prismatic/schema "1.1.10"]
-                            [lispyclouds/clj-docker-client "0.1.12"]
+                            [lispyclouds/clj-docker-client "0.1.13"]
                             [javax.xml.bind/jaxb-api "2.3.0"]           ;; For Aleph's XML dependency, Java 8 compat
                             [io.netty/netty-all "4.1.25.Final"]         ;; Forced Netty version for Java 9+ compat
                             [javax.activation/activation "1.1.1"]       ;; Java 9+ compat for XML bindings
