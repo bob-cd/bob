@@ -24,8 +24,8 @@
   "Checks if an image is present locally.
   Returns the name or the error if any."
   [name]
-  (let [result (u/unsafe! (filter #(= (-> % :repo-tags)
-                                      [name]) (docker/image-ls conn)))]
+  (let [result (u/unsafe! (filter #(= (-> % :RepoTags) [name])
+                                  (docker/image-ls conn)))]
     (if (or (f/failed? result) (zero? (count result)))
       (f/fail "Failed to find %s" name)
       name)))
@@ -62,8 +62,8 @@
   (let [result (u/unsafe! (docker/container-state conn id))]
     (if (f/failed? result)
       (f/message result)
-      {:running?  (:running? result)
-       :exit-code (:exit-code result)})))
+      {:running?  (:Running result)
+       :exit-code (:ExitCode result)})))
 
 (defn run
   "Synchronously starts up a previously built container.
