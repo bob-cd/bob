@@ -55,19 +55,26 @@
                 (clojure.java.io/copy stream saveFile)))
             (recur (.getNextEntry stream))))))))
 
+;; TODO: Ugly shit, refactor soon.
 (defn fetch-resources
   "Downloads a resource(zip file) and expands it to a tmp dir.
   Returns the absolute path of the expansion dir."
   [resources]
   (f/attempt-all [creation-args (into-array FileAttribute [])
-                  out-dir       (u/unsafe! (Files/createTempDirectory "out" creation-args))
-                  _             (u/unsafe! (->> resources
-                                                (map :url)
-                                                (pmap #(-> @(http/get %)
-                                                           :body
-                                                           (ZipInputStream.)))
-                                                (run! #(extract-zip! % out-dir))))]
-    (str out-dir)
+                  out-dir       (str (Files/createTempDirectory "out" creation-args))
+                  _             (u/unsafe!
+                                  (->> resources
+                                       (map #(hash-map :dir (File. (str out-dir
+                                                                        File/separatorChar
+                                                                        (:name %)))
+                                                       :url (:url %)))
+                                       (pmap #(hash-map :stream (-> @(http/get (:url %))
+                                                                    :body
+                                                                    (ZipInputStream.))
+                                                        :dir (do (.mkdirs ^File (:dir %))
+                                                                 (str (:dir %)))))
+                                       (run! #(extract-zip! (:stream %) (:dir %)))))]
+    out-dir
     (f/when-failed [err] err)))
 
 (defn initial-container-of
@@ -77,33 +84,33 @@
    container and returns the id of the container. Deletes the temp folder
    after it."
   [^String path ^String image]
-  (f/attempt-all [id (u/unsafe! (docker/create e/conn image "sh" {} {}))
-                  _  (u/unsafe! (docker/cp e/conn id path "/tmp"))
+  (f/attempt-all [id (u/unsafe! (docker/run e/conn image "mkdir /resources" {} {}))
+                  _  (u/unsafe! (docker/cp e/conn id path "/resources"))
                   _  (u/unsafe! (rm-r! path true))]
     id
     (f/when-failed [err] err)))
 
 (defn add-params
   "Saves the map of GET params to be sent to the resource."
-  [name params pipeline]
+  [resource-name params pipeline]
   (when (not (empty? params))
     (k/insert db/resource-params
               (k/values (map #(hash-map :key (clojure.core/name (first %))
                                         :value (last %)
-                                        :name name
+                                        :name resource-name
                                         :pipeline pipeline)
                              params)))))
 
 (defn url-of
   "Generates a GET URL for the external resource of a pipeline."
-  [name pipeline]
+  [resource-name provider pipeline]
   (let [url    (-> (k/select db/external-resources
-                             (k/where {:name name})
+                             (k/where {:name provider})
                              (k/fields :url))
                    (first)
                    (:url))
         params (k/select db/resource-params
-                         (k/where {:name     name
+                         (k/where {:name     resource-name
                                    :pipeline pipeline})
                          (k/fields :key :value))]
     (format "%s/bob_request?%s"
@@ -117,14 +124,14 @@
   "Fetches all the external resources of a pipeline, updating the URLs for bob."
   [pipeline]
   (->> (k/select db/resources
-                 (k/fields :name :type :external_resources.url)
+                 (k/fields :resources.name :provider :external_resources.url)
                  (k/join db/external-resources
-                         (= :external_resources.name :name))
-                 (k/where {:pipeline pipeline}))
-       (map #(if (and (not (nil? (% :url)))
-                      (= (% :type) "external"))
+                         (= :external_resources.name :provider))
+                 (k/where {:pipeline pipeline
+                           :type     "external"}))
+       (map #(if (not (nil? (% :url)))
                (update-in % [:url] (fn [_]
-                                     (url-of (% :name) pipeline)))
+                                     (url-of (% :name) (% :provider) pipeline)))
                %))))
 
 (defn invalid-external-resources
@@ -136,3 +143,6 @@
   (->> (external-resources-of pipeline)
        (filter #(nil? (:url %)))
        (map #(:name %))))
+
+(comment
+  (external-resources-of "test:test"))

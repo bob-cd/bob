@@ -73,3 +73,6 @@
 
 (k/defentity external-resources
   (k/table :external_resources))
+
+(comment
+  (init-db))

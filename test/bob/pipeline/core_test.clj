@@ -42,10 +42,11 @@
 
 (def valid-artifacts {:test-jar "/path/to/jar"})
 
-(def valid-resources [{:name   "git"
-                       :params {:url    "https://test.com"
-                                :branch "master"}
-                       :type   :external}])
+(def valid-resources [{:name     "source"
+                       :provider "git"
+                       :params   {:url    "https://test.com"
+                                  :branch "master"}
+                       :type     "external"}])
 
 (deftest create-test
   (testing "Creating a valid pipeline"
@@ -60,15 +61,16 @@
                           (fields :name :path :pipeline)))
            {:name "test-jar" :path "/path/to/jar" :pipeline "dev:test"}))
     (is (= (first (select resources))
-           {:name     "git"
+           {:name     "source"
+            :provider "git"
             :type     "external"
             :pipeline "dev:test"}))
     (is (= (select resource-params)
-           [{:name     "git"
+           [{:name     "source"
              :key      "url"
              :value    "https://test.com"
              :pipeline "dev:test"}
-            {:name     "git"
+            {:name     "source"
              :key      "branch"
              :value    "master"
              :pipeline "dev:test"}]))

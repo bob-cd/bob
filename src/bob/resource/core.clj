@@ -61,7 +61,7 @@
   - Downloads zip file(s) from the resource urls of the pipeline.
   - Expands them to a temp directory.
   - Creates a container using the initial image.
-  - Copies over the contents to the dir `/tmp` inside the container.
+  - Copies over the contents to the dir `/resources` inside the container.
   - Creates an image from this container and returns its id or the error."
   [pipeline]
   (e/pull (p/image-of pipeline))
@@ -69,7 +69,7 @@
     (p/image-of pipeline)
     (f/attempt-all [invalid (r/invalid-external-resources pipeline)
                     _       (when (not (empty? invalid))
-                              (f/fail (str "Invalid resources, possibly not registered: "
+                              (f/fail (str "Invalid external resources, possibly not registered: "
                                            (clojure.string/join ", " invalid))))
                     image   (p/image-of pipeline)
                     out-dir (r/fetch-resources (r/external-resources-of pipeline))
@@ -83,3 +83,6 @@
                                 "sh"))]
       image
       (f/when-failed [err] err))))
+
+(comment
+  (register-external-resource "git" "http://localhost:8000"))

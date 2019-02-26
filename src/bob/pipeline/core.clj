@@ -43,7 +43,7 @@
 
   Returns Ok or the error if any."
   [group name pipeline-steps vars pipeline-artifacts resources image]
-  (d/let-flow [pipeline   (u/name-of group name)
+  (d/let-flow [pipeline       (u/name-of group name)
                vars-pairs     (map #(hash-map :key (clojure.core/name (first %))
                                               :value (last %)
                                               :pipeline pipeline)
@@ -55,14 +55,16 @@
                result         (f/attempt-all [_ (u/unsafe! (k/insert db/pipelines (k/values {:name  pipeline
                                                                                              :image image})))
                                               _ (u/unsafe! (doseq [resource resources]
-                                                             (let [{name   :name
-                                                                    params :params
-                                                                    type   :type} resource]
-                                                               (ri/add-params name params pipeline)
+                                                             (let [{name     :name
+                                                                    params   :params
+                                                                    type     :type
+                                                                    provider :provider} resource]
                                                                (k/insert db/resources
                                                                          (k/values {:name     name
-                                                                                    :type     (clojure.core/name type)
-                                                                                    :pipeline pipeline})))))
+                                                                                    :type     type
+                                                                                    :pipeline pipeline
+                                                                                    :provider provider}))
+                                                               (ri/add-params name params pipeline))))
                                               _ (when (not (empty? vars-pairs))
                                                   (u/unsafe! (k/insert db/evars (k/values vars-pairs))))
                                               _ (when (not (empty? artifact-pairs))
@@ -167,3 +169,24 @@
                       (map #(clojure.string/split % #":"))
                       (map #(hash-map :group (first %)
                                       :name (second %))))))))
+
+(comment
+  (create "test"
+          "test"
+          ["echo hello"]
+          {}
+          {}
+          [{:name     "source"
+            :type     "external"
+            :provider "git"
+            :params   {:repo   "https://github.com/bob-cd/bob",
+                       :branch "master"}}
+           {:name     "source2"
+            :type     "external"
+            :provider "git"
+            :params   {:repo   "https://github.com/lispyclouds/clj-docker-client",
+                       :branch "master"}}]
+          "busybox:musl")
+  (start "test" "test")
+  (status "test" "test" 1)
+  (remove "test" "test"))

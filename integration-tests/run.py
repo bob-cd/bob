@@ -108,13 +108,27 @@ def run_tests():
         print("{} passed.".format(test["name"]))
 
 
+def clean_up(gc_url, bob):
+    print("Cleaning up.")
+
+    request.Request(url)
+
+    bob.send_signal(signal.SIGTERM)
+
+    print("Tests failed, bob stopped.")
+
+
 if __name__ == "__main__":
     bob = subprocess.Popen(["boot", "run"])
     print("Bob started.")
 
     wait_for_it()
 
-    run_tests()
+    try:
+        run_tests()
+    except Exception as _:
+        clean_up(bob, urljoin(BASE_URL, "gc/all"))
+        sys.exit(-1)
 
     print("All checks passed!")
 

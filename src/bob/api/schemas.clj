@@ -19,9 +19,10 @@
 
 (s/defschema SimpleResponse {:message String})
 
-(s/defschema Resource {:name   String
-                       :params {Keyword String}
-                       :type   (s/enum :external)})
+(s/defschema Resource {:name     String
+                       :params   {Keyword String}
+                       :type     String
+                       :provider String})
 
 (s/defschema Pipeline {:steps     [String]
                        :image     String

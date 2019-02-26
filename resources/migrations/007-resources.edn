@@ -15,6 +15,7 @@
 
 {:up   ["CREATE TABLE resources (name     VARCHAR(50) NOT NULL,
                                  type     VARCHAR(8) NOT NULL,
+                                 provider VARCHAR(50) NOT NULL,
                                  pipeline VARCHAR(100) NOT NULL,
                                  PRIMARY KEY(name, pipeline),
                                  FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]

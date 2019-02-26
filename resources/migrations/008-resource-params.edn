@@ -17,5 +17,5 @@
                                        key      VARCHAR(10) NOT NULL,
                                        value    VARCHAR(100) NOT NULL,
                                        pipeline VARCHAR(100) NOT NULL,
-                                       FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]
+                                       FOREIGN KEY(name, pipeline) REFERENCES resources(name, pipeline) ON DELETE CASCADE);"]
  :down ["DROP TABLE resource_params;"]}
