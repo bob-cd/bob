@@ -111,7 +111,7 @@ def run_tests():
 def clean_up(gc_url, bob):
     print("Cleaning up.")
 
-    request.Request(url)
+    request.Request(gc_url)
 
     bob.send_signal(signal.SIGTERM)
 
