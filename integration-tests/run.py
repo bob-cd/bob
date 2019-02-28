@@ -127,7 +127,7 @@ if __name__ == "__main__":
     try:
         run_tests()
     except Exception as _:
-        clean_up(bob, urljoin(BASE_URL, "gc/all"))
+        clean_up(urljoin(BASE_URL, "gc/all"), bob)
         sys.exit(-1)
 
     print("All checks passed!")
