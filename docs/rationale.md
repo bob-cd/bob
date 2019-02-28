@@ -27,13 +27,8 @@ features what I think it should have:
 - Be agnostic of an UI
 - Be more extensible than great things like Concourse.ci
 - Accept the above stuff via an YAML as well
-- Build pretty much everything else via plugins:
-  - Have a set of core plugins (like Ansible)
-  - Things like getting stuff from a VCS can be a plugin which can abstract away the type like Github or Bitbucket and do stuff like auth and finally give bob the direct resource URL.
-  - Stuff like how to build an artifact like debs or RPMs can be plugins as well whose commands can be fed in as a task.
-  - Plugins to automate the provisioning of a cloud instance or bare metal system to be able to execute tasks via SSH (Ansible way) and also clean up and when done.
-  - Infra plugins like Terraform based stuff which can provision entire cloud infra to support Bob.
-- Scale via multiple servers and share loads and resources
+- Build pretty much everything else external resources or orchestrate via API
+- Scale via multiple federated bob instances(think Cassandra) and share loads and resources
 
 And this is a project born out of my frustration and is VERY new. 😄
 
@@ -42,78 +37,112 @@ Any and every help, suggestion is most welcome!
 #### A sample bob config:
 
 ```yaml
-dev:
+dev: # Group name
   pipelines:
     -
-      test:
-        image: clojure:latest
-        auto: True
+      test: # Pipeline name
+        image: 'clojure:latest'
         resources:
           -
-            plugin/github:
+            name: my-source-code
+            type: external
+            provider: git # See https://github.com/bob-cd/resource-git
+            params:
               branch: master
-              src: https://github.com/bob-cd/bob.git
+              url: 'https://github.com/bob-cd/bob.git'
         steps:
-          - "lein test"
-    -
-      build:
-        image: clojure:latest
-        artifacts:
           -
-            name: jar
-            path: ./target/bob*-standalone.jar
-        auto: True
+            in_parallel:
+              -
+                needs_resource: my-source-code # Gets pulled for the first time.
+                cmd: 'lein test :unit'
+              -
+                needs_resource: my-source-code # Cached
+                cmd: 'lein test :integration'
+    -
+      build_and_push:
+        image: 'clojure:latest'
+        auto: true
         env:
           password: test
           user: test
+        resources:
+          -
+            name: my-source-code
+            type: external
+            provider: git
+            params:
+              branch: master
+              url: 'https://github.com/bob-cd/bob.git'
+        artifacts:
+          -
+            name: jar
+            path: target/bob-standalone.jar
         steps:
-          - "lein uberjar"
+          -
+            in_parallel:
+              -
+                needs_resource: my-source-code
+                cmd: 'lein uberjar'
+              -
+                needs_resource: my-source-code
+                cmd: 'lein deploy clojars'
     -
       package:
-        image: debian:latest
+        image: 'debian:latest'
+        auto: true
+        resources:
+          -
+            name: my-jar
+            type: artifact
+            provider: 'dev:build_and_push'
         artifacts:
           -
             name: dev_installer
-            path: ./bob.zip
-        auto: True
-        resources:
-          -
-            pipeline/dev/build: jar
-          -
-            plugin/github:
-              branch: master
-              src: https://github.com/bob-cd/bob-conf.git
+            path: bob.deb
         steps:
-          - "zip -r bob.zip ."
           -
-            plugin/docker-image:
-              dir: "."
+            needs_resource: my-jar
+            cmd: 'make deb-package'
 stable:
   pipelines:
     -
       sign:
-      image: debian:latest
+        image: 'debian:latest'
         artifacts:
           -
-            name: bob_signature
-            path: ./bob.sig
-        auto: True
+            name: my-signature
+            path: bob.sig
         resources:
           -
-            pipeline/dev/build: jar
+            name: my-jar
+            type: artifact
+            provider: 'dev:build_and_push'
         steps:
-          - "gpg --output bob.sig --sign bob*-standalone.jar"
+          -
+            needs_resource: my-jar
+            cmd: 'gpg --output bob.sig --sign bob-standalone.jar'
     -
-      upload:
-        image: debian:latest
-        auto: False
+      deploy:
+        image: 'ansible:latest'
+        auto: false
         resources:
           -
-            pipeline/dev/build: jar
+            name: my-jar
+            type: artifact
+            provider: build_and_push
           -
-            pipeline/stable/sign: bob_signature
+            name: my-signature
+            type: artifact
+            provider: 'stable:sign'
         steps:
-          - "scp user@cdn.com *.sig"
-          - "scp user@cdn.com *.jar"
-
+          -
+            in_parallel:
+              -
+                needs_resource: my-signature
+                cmd: 'scp user@cdn.com *.sig'
+              -
+                needs_resource: my-jar
+                cmd: 'scp user@cdn.com *.jar'
+          - 'ansible deploy prod' # Doesn't need a resource
 ```

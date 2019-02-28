@@ -11,6 +11,8 @@
 
 ### [Why](https://github.com/bob-cd/bob/blob/master/docs/rationale.md) Bob
 
+## 🚧 This is a proof of concept and isn't fully functional yet. 🚧
+
 ## Build requirements
 - Any OS supporting Java and Docker
 - JDK 8+ (latest preferred for optimal performance)
@@ -36,7 +38,7 @@
 - Clone the git resource repo: https://github.com/bob-cd/resource-git
 - In that dir, run `docker build -t resource-git .` to build the image.
 - Run `docker run -p 8000:8000 --rm resource-git` to start a container.
-- In the bob repo run `python3 integration-tests/run.py` to run the integration tests. 
+- In the bob repo run `python3 integration-tests/run.py` to run the integration tests.
 
 ## For Cursive users:
 This project is built using the Boot build tool which is unsupported on Cursive at the moment.
