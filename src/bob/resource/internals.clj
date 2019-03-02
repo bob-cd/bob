@@ -55,39 +55,62 @@
                 (clojure.java.io/copy stream saveFile)))
             (recur (.getNextEntry stream))))))))
 
-;; TODO: Ugly shit, refactor soon.
-(defn fetch-resources
+(defn- url-of
+  "Generates a GET URL for the external resource of a pipeline."
+  [resource pipeline]
+  (let [url    (-> (k/select db/external-resources
+                             (k/where {:name (:provider resource)})
+                             (k/fields :url))
+                   (first)
+                   (:url))
+        params (k/select db/resource-params
+                         (k/where {:name     (:name resource)
+                                   :pipeline pipeline})
+                         (k/fields :key :value))]
+    (format "%s/bob_request?%s"
+            url
+            (clojure.string/join
+              "&"
+              (map #(format "%s=%s" (:key %) (:value %))
+                   params)))))
+
+(defn fetch-resource
   "Downloads a resource(zip file) and expands it to a tmp dir.
+
   Returns the absolute path of the expansion dir."
-  [resources]
+  [resource pipeline]
   (f/attempt-all [creation-args (into-array FileAttribute [])
                   out-dir       (str (Files/createTempDirectory "out" creation-args))
-                  _             (u/unsafe!
-                                  (->> resources
-                                       (map #(hash-map :dir (File. (str out-dir
-                                                                        File/separatorChar
-                                                                        (:name %)))
-                                                       :url (:url %)))
-                                       (pmap #(hash-map :stream (-> @(http/get (:url %))
-                                                                    :body
-                                                                    (ZipInputStream.))
-                                                        :dir (do (.mkdirs ^File (:dir %))
-                                                                 (str (:dir %)))))
-                                       (run! #(extract-zip! (:stream %) (:dir %)))))]
+                  dir           (File. (str out-dir File/separatorChar (:name resource)))
+                  _             (.mkdirs ^File dir)
+                  url           (url-of resource pipeline)
+                  stream        (-> @(http/get url)
+                                    :body
+                                    (ZipInputStream.))
+                  _             (extract-zip! stream dir)]
     out-dir
     (f/when-failed [err] err)))
 
-(defn initial-container-of
+(defn initial-image-of
   "Takes a path to a directory, name and image and builds the initial image.
-   This image is used by Bob as the starting image which holds the initial
-   state for the rest of the steps. Works by copying the contents to the
-   container and returns the id of the container. Deletes the temp folder
-   after it."
-  [^String path ^String image]
-  (f/attempt-all [id (u/unsafe! (docker/run e/conn image "mkdir /resources" {} {}))
-                  _  (u/unsafe! (docker/cp e/conn id path "/resources"))
+  This image is used by Bob as the starting image which holds the initial
+  state for the rest of the steps.
+
+  Works like this:
+  - Copy the contents to a container.
+  - Commit the container.
+  - Return the id of the committed image.
+  - Deletes the temp folder."
+  [path image cmd]
+  (f/attempt-all [id (u/unsafe! (docker/create e/conn image "" {} {}))
+                  _  (u/unsafe! (docker/cp e/conn id path "/root"))
                   _  (u/unsafe! (rm-r! path true))]
-    id
+    (docker/commit-container
+      e/conn
+      id
+      (format "%s/%d" id (System/currentTimeMillis))
+      "latest"
+      cmd)
     (f/when-failed [err] err)))
 
 (defn add-params
@@ -101,48 +124,19 @@
                                         :pipeline pipeline)
                              params)))))
 
-(defn url-of
-  "Generates a GET URL for the external resource of a pipeline."
-  [resource-name provider pipeline]
-  (let [url    (-> (k/select db/external-resources
-                             (k/where {:name provider})
-                             (k/fields :url))
-                   (first)
-                   (:url))
-        params (k/select db/resource-params
-                         (k/where {:name     resource-name
-                                   :pipeline pipeline})
-                         (k/fields :key :value))]
-    (format "%s/bob_request?%s"
-            url
-            (clojure.string/join
-              "&"
-              (map #(format "%s=%s" (:key %) (:value %))
-                   params)))))
-
-(defn external-resources-of
-  "Fetches all the external resources of a pipeline, updating the URLs for bob."
-  [pipeline]
-  (->> (k/select db/resources
-                 (k/fields :resources.name :provider :external_resources.url)
-                 (k/join db/external-resources
-                         (= :external_resources.name :provider))
-                 (k/where {:pipeline pipeline
-                           :type     "external"}))
-       (map #(if (not (nil? (% :url)))
-               (update-in % [:url] (fn [_]
-                                     (url-of (% :name) (% :provider) pipeline)))
-               %))))
-
-(defn invalid-external-resources
-  "Returns all the invalid resources of a pipeline.
-
-  Checks if all the resources of a given pipeline
-  have a valid URL."
-  [pipeline]
-  (->> (external-resources-of pipeline)
-       (filter #(nil? (:url %)))
-       (map #(:name %))))
+(defn valid-external-resource?
+  "Checks if the resource has a valid URL."
+  [resource]
+  (not (empty? (k/select db/external-resources
+                         (k/where {:name (:provider resource)
+                                   :url  [not= nil]})))))
 
 (comment
-  (external-resources-of "test:test"))
+  (def resource {:name     "source"
+                 :type     "external"
+                 :provider "git"
+                 :params   {}})
+  (valid-external-resource? resource)
+  (url-of resource "test:test")
+  (-> (fetch-resource resource "test:test")
+      (initial-image-of "busybox:musl")))

@@ -36,7 +36,7 @@
                             [hikari-cp "2.7.0"]
                             [metosin/compojure-api "2.0.0-alpha29"]
                             [prismatic/schema "1.1.10"]
-                            [lispyclouds/clj-docker-client "0.2.0"]
+                            [lispyclouds/clj-docker-client "0.2.1"]
                             [javax.xml.bind/jaxb-api "2.3.0"]           ;; For Aleph's XML dependency, Java 8 compat
                             [io.netty/netty-all "4.1.25.Final"]         ;; Forced Netty version for Java 9+ compat
                             [javax.activation/activation "1.1.1"]       ;; Java 9+ compat for XML bindings

@@ -20,8 +20,8 @@
             [clj-docker-client.core :as docker]
             [bob.db.core :as db]
             [bob.execution.internals :as e]
-            [bob.util :as u])
-  (:import (java.util List)))
+            [bob.util :as u]
+            [bob.resource.core :as r]))
 
 ;; TODO: Reduce and optimize DB interactions to a single place
 
@@ -38,22 +38,41 @@
     pid
     (f/when-failed [err] err)))
 
+(defn- resourceful-step
+  "Create a resource mounted image for a step if it needs it."
+  [step pipeline image]
+  (if (:needs_resource step)
+    (r/mounted-image-from (r/get-resource (:needs_resource step)
+                                          pipeline)
+                          pipeline
+                          image)
+    image))
+
+;; TODO: Extra container is created here with resources, see if can be avoided.
 (defn- next-step
   "Generates the next container from a previously run container.
   Works by saving the last container state in a diffed image and
   creating a new container from it, thereby managing state externally.
   Returns the new container id or errors if any."
-  [^String id ^List next-command ^List evars]
-  (let [repo (format "%s/%d" id (System/currentTimeMillis))
-        tag  "latest"]
-    (f/attempt-all [_ (u/unsafe! (docker/commit-container
-                                   e/conn
-                                   id
-                                   repo
-                                   tag
-                                   next-command))]
-      (e/build (format "%s:%s" repo tag) next-command evars)
-      (f/when-failed [err] err))))
+  [id step evars pipeline]
+  (f/attempt-all [image         (u/unsafe! (docker/commit-container
+                                             e/conn
+                                             (:id id)
+                                             (format "%s/%d" (:id id) (System/currentTimeMillis))
+                                             "latest"
+                                             (:cmd step)))
+                  resource      (:needs_resource step)
+                  mounted       (:mounted id)
+                  mount-needed? (not (some #{resource} mounted))
+                  image         (if mount-needed?
+                                  (resourceful-step step pipeline image)
+                                  image)
+                  result        {:id      (e/build image step evars)
+                                 :mounted mounted}]
+    (if mount-needed?
+      (update-in result [:mounted] conj resource)
+      result)
+    (f/when-failed [err] err)))
 
 (defn- exec-step
   "Reducer function to implement the sequential execution of steps.
@@ -62,19 +81,20 @@
   Stops the reduce if the pipeline stop has been signalled or any
   non-zero step outcome.
   Returns the next state or errors if any."
-  [run-id evars id step]
+  [run-id evars pipeline id step]
   (let [stopped? (u/unsafe! (-> (k/select db/runs
                                           (k/fields :stopped)
                                           (k/where {:id run-id}))
                                 (first)
                                 (:stopped)))]
     (if (or stopped?
-            (f/failed? id))
+            (f/failed? (:id id)))
       (reduced id)
-      (f/attempt-all [result (f/ok-> (next-step id (:cmd step) evars)
-                                     (update-pid run-id)
-                                     (e/run))]
-        result
+      (f/attempt-all [result (next-step id step evars pipeline)
+                      id     (update-pid (:id result) run-id)
+                      id     (e/run id)]
+        {:id      id
+         :mounted (:mounted result)}
         (f/when-failed [err] err)))))
 
 (defn- next-build-number-of
@@ -89,21 +109,33 @@
 
 (defn exec-steps
   "Implements the sequential execution of the list of steps with a starting image.
-  Dispatches asynchronously and uses a composition of the above functions.
+
+  - Dispatches asynchronously and uses a composition of the above functions.
+  - Takes and accumulator of current id and the mounted resources
+
   Returns the final id or errors if any."
-  [^String image ^List steps ^String name ^List evars]
-  (let [run-id (u/get-id)]
-    (a/go (f/attempt-all [_  (u/unsafe! (k/insert db/runs (k/values {:id       run-id
-                                                                     :number   (next-build-number-of name)
-                                                                     :pipeline name
-                                                                     :status   "running"})))
-                          id (f/ok-> (e/build image (:cmd (first steps)) evars)
-                                     (update-pid run-id)
-                                     (e/run))
-                          id (reduce (partial exec-step run-id evars) id (rest steps))
-                          _  (u/unsafe! (k/update db/runs
-                                                  (k/set-fields {:status "passed"})
-                                                  (k/where {:id run-id})))]
+  [image steps pipeline evars]
+  (let [run-id         (u/get-id)
+        first-step     (first steps)
+        first-resource (:needs_resource first-step)]
+    (a/go (f/attempt-all [_     (u/unsafe! (k/insert db/runs (k/values {:id       run-id
+                                                                        :number   (next-build-number-of pipeline)
+                                                                        :pipeline pipeline
+                                                                        :status   "running"})))
+                          image (e/pull image)
+                          image (resourceful-step first-step pipeline image)
+                          id    (f/ok-> (e/build image first-step evars)
+                                        (update-pid run-id)
+                                        (e/run))
+                          id    (reduce (partial exec-step run-id evars pipeline)
+                                        {:id      id
+                                         :mounted (if first-resource
+                                                    [first-resource]
+                                                    [])}
+                                        (rest steps))
+                          _     (u/unsafe! (k/update db/runs
+                                                     (k/set-fields {:status "passed"})
+                                                     (k/where {:id run-id})))]
             id
             (f/when-failed [err] (do (u/unsafe! (k/update db/runs
                                                           (k/set-fields {:status "failed"})
@@ -175,3 +207,9 @@
                            (k/where {:name pipeline}))
                  (first)
                  (:image))))
+
+(comment
+  (resourceful-step {:needs_resource "source"
+                     :cmd            "ls"}
+                    "test:test"
+                    "busybox:musl"))

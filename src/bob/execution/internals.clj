@@ -53,8 +53,15 @@
   "Builds a container.
   Takes the base image and the entry point command.
   Returns the id of the built container."
-  [^String image ^String cmd evars]
-  (u/unsafe! (docker/create conn image cmd evars {})))
+  [image step evars]
+  (let [resource    (:needs_resource step)
+        working-dir (when resource (str "/root/" resource))]
+    (u/unsafe! (docker/create conn
+                              image
+                              (:cmd step)
+                              evars
+                              {}
+                              working-dir))))
 
 (defn status-of
   "Returns the status of a container by id."
@@ -80,3 +87,9 @@
   "Fetches the lazy log stream from a running/dead container."
   [^String name]
   (u/unsafe! (docker/logs conn name)))
+
+(comment
+  (build "busybox:musl"
+         {:needs_resource "source"
+          :cmd            "ls"}
+         {}))

@@ -38,7 +38,9 @@
 (def valid-steps ["echo 1 >> state.txt"
                   "echo 2 >> state.txt"
                   "echo 3 >> state.txt"
-                  "cat state.txt"])
+                  "cat state.txt"
+                  {:needs_resource "source"
+                   :cmd            "ls"}])
 
 (def valid-artifacts {:test-jar "/path/to/jar"})
 
@@ -76,7 +78,23 @@
              :pipeline "dev:test"}]))
     (is (= (->> (select steps)
                 (map #(update-in % [:cmd] clob->str)))
-           (list {:cmd "echo 1 >> state.txt" :id 1 :pipeline "dev:test"}
-                 {:cmd "echo 2 >> state.txt" :id 2 :pipeline "dev:test"}
-                 {:cmd "echo 3 >> state.txt" :id 3 :pipeline "dev:test"}
-                 {:cmd "cat state.txt" :id 4 :pipeline "dev:test"})))))
+           (list {:cmd "echo 1 >> state.txt"
+                  :id 1
+                  :pipeline "dev:test"
+                  :needs_resource nil}
+                 {:cmd "echo 2 >> state.txt"
+                  :id 2
+                  :pipeline "dev:test"
+                  :needs_resource nil}
+                 {:cmd "echo 3 >> state.txt"
+                  :id 3
+                  :pipeline "dev:test"
+                  :needs_resource nil}
+                 {:cmd "cat state.txt"
+                  :id 4
+                  :pipeline "dev:test"
+                  :needs_resource nil}
+                 {:cmd "ls"
+                  :id 5
+                  :pipeline "dev:test"
+                  :needs_resource "source"})))))

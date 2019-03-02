@@ -37,7 +37,10 @@
           "sleep 10",
           "sh -c 'touch test.txt && echo $env >> test.txt'",
           "cat test.txt",
-          "ls /resources"
+          {
+            "needs_resource": "my-source",
+            "cmd": "ls"
+          }
         ],
         "artifacts": {
           "test-jar": "/tmp/test.jar"
@@ -100,8 +103,17 @@
         "message": [
           "hello",
           "test",
-          "another-source",
-          "my-source"
+          "CODE_OF_CONDUCT.md",
+          "CONTRIBUTING.md",
+          "LICENSE",
+          "README.md",
+          "boot.properties",
+          "build.boot",
+          "docs",
+          "integration-tests",
+          "resources",
+          "src",
+          "test"
         ]
       }
     },

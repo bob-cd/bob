@@ -15,13 +15,10 @@
 
 (ns bob.resource.core
   (:require [manifold.deferred :as d]
-            [clj-docker-client.core :as docker]
             [failjure.core :as f]
             [ring.util.http-response :as resp]
             [korma.core :as k]
             [bob.db.core :as db]
-            [bob.pipeline.internals :as p]
-            [bob.execution.internals :as e]
             [bob.resource.internals :as r]
             [bob.util :as u]))
 
@@ -48,41 +45,37 @@
   (d/let-flow [result (u/unsafe! (k/select db/external-resources
                                            (k/fields :name)))]
     (u/respond
-     (if (f/failed? result)
-       []
-       (map #(:name %) result)))))
+      (if (f/failed? result)
+        []
+        (map #(:name %) result)))))
 
-(defn mount-resources
-  "Creates the initial state of the build with a resource.
+(defn get-resource
+  [name pipeline]
+  (first (k/select db/resources
+                   (k/where {:name     name
+                             :pipeline pipeline}))))
+
+(defn mounted-image-from
+  "Mounts a resource prior to a step execution.
+
+  Returns the id of the resource mounted container.
 
   This works as follows:
-  - Pulls the image of the pipeline as this is the entrypoint for start.
-  - Checks if all the resources are valid.
-  - Downloads zip file(s) from the resource urls of the pipeline.
-  - Expands them to a temp directory.
-  - Creates a container using the initial image.
-  - Copies over the contents to the dir `/resources` inside the container.
-  - Creates an image from this container and returns its id or the error."
-  [pipeline]
-  (e/pull (p/image-of pipeline))
-  (if (empty? (r/external-resources-of pipeline))
-    (p/image-of pipeline)
-    (f/attempt-all [invalid (r/invalid-external-resources pipeline)
-                    _       (when (not (empty? invalid))
-                              (f/fail (str "Invalid external resources, possibly not registered: "
-                                           (clojure.string/join ", " invalid))))
-                    image   (p/image-of pipeline)
-                    out-dir (r/fetch-resources (r/external-resources-of pipeline))
-                    id      (r/initial-container-of out-dir image)
-                    image   (u/unsafe!
-                              (docker/commit-container
-                                e/conn
-                                id
-                                (format "%s/%d" id (System/currentTimeMillis))
-                                "latest"
-                                "sh"))]
-      image
-      (f/when-failed [err] err))))
+  - Checks if the resource is valid.
+  - Downloads zip file from the resource url.
+  - Expands it to a temp directory.
+  - Creates a container using the image.
+  - Copies over the contents to the home dir inside the container.
+  - Returns the id or the error."
+  [resource pipeline image]
+  (f/attempt-all [_       (when (not (r/valid-external-resource? resource))
+                            (f/fail (str "Invalid external resources, possibly not registered"
+                                         (:name resource))))
+                  out-dir (r/fetch-resource resource pipeline)]
+    (r/initial-image-of out-dir image (:cmd resource))
+    (f/when-failed [err] err)))
 
 (comment
+  (get-resource "source" "test:test")
+  (all-external-resources)
   (register-external-resource "git" "http://localhost:8000"))

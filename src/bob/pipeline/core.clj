@@ -21,7 +21,6 @@
             [bob.pipeline.internals :as p]
             [bob.db.core :as db]
             [bob.util :as u]
-            [bob.resource.core :as r]
             [bob.resource.internals :as ri]))
 
 (defn create
@@ -70,8 +69,11 @@
                                               _ (when (not (empty? artifact-pairs))
                                                   (u/unsafe! (k/insert db/artifacts (k/values artifact-pairs))))
                                               _ (u/unsafe! (doseq [step pipeline-steps]
-                                                             (k/insert db/steps (k/values {:cmd      step
-                                                                                           :pipeline pipeline}))))]
+                                                             (let [cmd            (if (map? step) (:cmd step) step)
+                                                                   needs_resource (if (map? step) (:needs_resource step) nil)]
+                                                               (k/insert db/steps (k/values {:cmd            cmd
+                                                                                             :needs_resource needs_resource
+                                                                                             :pipeline       pipeline})))))]
                                 (u/respond "Ok")
                                 (f/when-failed [err]
                                   (u/unsafe! (k/delete db/pipelines
@@ -85,13 +87,11 @@
   Returns Ok or any starting errors."
   [group name]
   (d/let-flow [pipeline (u/name-of group name)
-               result   (f/attempt-all [image (r/mount-resources pipeline)
+               result   (f/attempt-all [image (p/image-of pipeline)
                                         steps (u/unsafe! (k/select db/steps
                                                                    (k/where {:pipeline pipeline})
                                                                    (k/order :id)))
-                                        steps (map #(hash-map :cmd (u/clob->str (:cmd %))
-                                                              :id (:id %))
-                                                   steps)
+                                        steps (map #(update-in % [:cmd] u/clob->str) steps)
                                         vars  (u/unsafe! (->> (k/select db/evars
                                                                         (k/fields :key :value)
                                                                         (k/where {:pipeline pipeline}))
@@ -173,7 +173,9 @@
 (comment
   (create "test"
           "test"
-          ["echo hello"]
+          ["echo hello"
+           {:needs_resource "source"
+            :cmd            "ls"}]
           {}
           {}
           [{:name     "source"
@@ -188,5 +190,10 @@
                        :branch "master"}}]
           "busybox:musl")
   (start "test" "test")
+  (k/select db/pipelines)
+  (->> (k/select db/steps)
+       (map #(update-in % [:cmd] u/clob->str)))
+  (k/select db/resources)
   (status "test" "test" 1)
+  (logs-of "test" "test" 1 0 20)
   (remove "test" "test"))
