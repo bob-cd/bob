@@ -43,7 +43,7 @@
           }
         ],
         "artifacts": {
-          "test-jar": "/tmp/test.jar"
+          "output": "/root/my-source"
         },
         "resources": [
           {
@@ -124,6 +124,12 @@
       "response": {
         "message": "passed"
       }
+    },
+    {
+      "name": "Pipeline artifacts",
+      "path": "/api/pipeline/dev/test/1/artifact/output",
+      "method": "GET",
+      "raw_response": true
     },
     {
       "name": "Pipeline deletion",

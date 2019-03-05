@@ -22,7 +22,8 @@
             [bob.api.middleware :as m]
             [bob.execution.core :as e]
             [bob.pipeline.core :as p]
-            [bob.resource.core :as r]))
+            [bob.resource.core :as r]
+            [bob.artifact.core :as a]))
 
 (def bob-api
   (m/ignore-trailing-slash
@@ -138,6 +139,18 @@
           :return schema/ResourceResponse
           :summary "Lists all registered external resources by name."
           (r/all-external-resources))
+
+        (rest/GET "/pipeline/:group/:name/:number/artifact/:artifact-name" []
+          :summary "Returns the artifact archive of a pipeline"
+          :path-params [group
+                        :- String
+                        name
+                        :- String
+                        number
+                        :- s/Int
+                        artifact-name
+                        :- String]
+          (a/stream-artifact group name number artifact-name))
 
         (rest/GET "/can-we-build-it" []
           :return schema/SimpleResponse

@@ -93,9 +93,9 @@ def run_tests():
 
         try:
             with request.urlopen(req) as res:
-                response = json.loads(res.read().decode("utf-8"))
-
-            assert response == test["response"]
+                if "raw_response" not in test:
+                    response = json.loads(res.read().decode("utf-8"))
+                    assert response == test["response"]
         except AssertionError:
             sys.stderr.write(
                 "{} failed with response {}".format(
@@ -103,7 +103,7 @@ def run_tests():
                 )
             )
 
-            sys.exit(1)
+            raise Exception
 
         print("{} passed.".format(test["name"]))
 
@@ -126,7 +126,8 @@ if __name__ == "__main__":
 
     try:
         run_tests()
-    except Exception as _:
+    except Exception as e:
+        print(e)
         clean_up(urljoin(BASE_URL, "gc/all"), bob)
         sys.exit(-1)
 

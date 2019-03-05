@@ -177,7 +177,7 @@
            {:needs_resource "source"
             :cmd            "ls"}]
           {}
-          {}
+          {:source "/root/source"}
           [{:name     "source"
             :type     "external"
             :provider "git"
@@ -191,6 +191,7 @@
           "busybox:musl")
   (start "test" "test")
   (k/select db/pipelines)
+  (k/select db/artifacts)
   (->> (k/select db/steps)
        (map #(update-in % [:cmd] u/clob->str)))
   (k/select db/resources)
