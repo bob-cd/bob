@@ -24,10 +24,8 @@
                        :type     String
                        :provider String})
 
-(s/defschema ResourceStep {:needs_resource String
-                           :cmd String})
-
-(def Step (s/if map? ResourceStep String))
+(s/defschema Step {(s/required-key :cmd)            String
+                   (s/optional-key :needs_resource) String})
 
 (s/defschema Pipeline {:steps     [Step]
                        :image     String
@@ -45,8 +43,3 @@
 (s/defschema ResourceAttributes {:url String})
 
 (s/defschema ResourceResponse {:message [String]})
-
-(comment
-  (s/validate Step {:needs_resource "source"
-                    :cmd            "ls"})
-  (s/validate Step "echo hello"))

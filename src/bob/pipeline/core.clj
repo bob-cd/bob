@@ -69,8 +69,8 @@
                                               _ (when (not (empty? artifact-pairs))
                                                   (u/unsafe! (k/insert db/artifacts (k/values artifact-pairs))))
                                               _ (u/unsafe! (doseq [step pipeline-steps]
-                                                             (let [cmd            (if (map? step) (:cmd step) step)
-                                                                   needs_resource (if (map? step) (:needs_resource step) nil)]
+                                                             (let [{cmd            :cmd
+                                                                    needs_resource :needs_resource} step]
                                                                (k/insert db/steps (k/values {:cmd            cmd
                                                                                              :needs_resource needs_resource
                                                                                              :pipeline       pipeline})))))]

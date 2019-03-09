@@ -35,10 +35,10 @@
   {:datastore  (jdbc/sql-database {:connection-uri db-uri})
    :migrations (jdbc/load-resources "migrations")})
 
-(def valid-steps ["echo 1 >> state.txt"
-                  "echo 2 >> state.txt"
-                  "echo 3 >> state.txt"
-                  "cat state.txt"
+(def valid-steps [{:cmd "echo 1 >> state.txt"}
+                  {:cmd "echo 2 >> state.txt"}
+                  {:cmd "echo 3 >> state.txt"}
+                  {:cmd "cat state.txt"}
                   {:needs_resource "source"
                    :cmd            "ls"}])
 

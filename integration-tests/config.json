@@ -33,10 +33,18 @@
           "url": "test.com"
         },
         "steps": [
-          "echo hello",
-          "sleep 10",
-          "sh -c 'touch test.txt && echo $env >> test.txt'",
-          "cat test.txt",
+          {
+            "cmd": "echo hello"
+          },
+          {
+            "cmd": "sleep 10"
+          },
+          {
+            "cmd": "sh -c 'touch test.txt && echo $env >> test.txt'"
+          },
+          {
+            "cmd": "cat test.txt"
+          },
           {
             "needs_resource": "my-source",
             "cmd": "ls"
