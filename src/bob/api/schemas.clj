@@ -19,9 +19,11 @@
 
 (s/defschema SimpleResponse {:message String})
 
+(s/defschema SupportedResourceTypes (s/enum "external"))
+
 (s/defschema Resource {:name     String
                        :params   {Keyword String}
-                       :type     String
+                       :type     SupportedResourceTypes
                        :provider String})
 
 (s/defschema Step {(s/required-key :cmd)            String
