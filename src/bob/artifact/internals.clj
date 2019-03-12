@@ -18,8 +18,7 @@
             [clj-docker-client.core :as docker]
             [bob.execution.internals :as e]
             [bob.db.core :as db]
-            [bob.util :as u])
-  (:import (com.spotify.docker.client DefaultDockerClient)))
+            [bob.util :as u]))
 
 (defn get-stream-of
   "Fetches the TarStream of a path from a container."

@@ -30,7 +30,7 @@
       (res/bad-request {:message "No such artifact."})
       {:status  200
        :headers {"Content-Type"        "archive/tar"
-                 "Content-Disposition" (format "attachement; filename=%s.tar"
+                 "Content-Disposition" (format "attachment; filename=%s.tar"
                                                artifact)}
        :body    stream})))
 

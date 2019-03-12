@@ -33,7 +33,7 @@
                             [com.h2database/h2 "1.4.198"]
                             [ragtime "0.8.0"]
                             [korma "0.5.0-RC1"]
-                            [hikari-cp "2.7.0"]
+                            [hikari-cp "2.7.1"]
                             [metosin/compojure-api "2.0.0-alpha29"]
                             [prismatic/schema "1.1.10"]
                             [lispyclouds/clj-docker-client "0.2.2"]
