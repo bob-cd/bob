@@ -50,12 +50,11 @@ allowed on Docker.
 
 ## Running integration tests:
 
-**A running Docker daemon is needed for this.**
+**Docker needs to be installed for this**
 
-- Clone the git resource repo: https://github.com/bob-cd/resource-git
-- In that dir, run `docker build -t resource-git .` to build the image.
-- Run `docker run -p 8000:8000 --rm resource-git` to start a container.
-- In the bob repo run `python3 integration-tests/run.py` to run the integration tests.
+In the `integration-tests` dir, run:
+
+`docker-compose up --abort-on-container-exit integration-test`
 
 ## For Cursive users:
 This project is built using the Boot build tool which is unsupported on Cursive at the moment.
