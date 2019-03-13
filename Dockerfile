@@ -34,4 +34,4 @@ COPY bob-entrypoint.sh /opt
 RUN chmod +x /opt/bob-entrypoint.sh
 
 
-ENTRYPOINT ["bob-entrypoint.sh"]
+ENTRYPOINT ["/opt/bob-entrypoint.sh"]
