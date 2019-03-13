@@ -30,6 +30,23 @@
     - Run `boot kaocha` to run tests.
     - Run `boot build` to get the standalone JAR.
     - Run `java -jar ./target/bob-standalone.jar` to start the server on port **7777**.
+    
+## Running Bob in Docker
+Bob uses Docker as its engine to execute builds, but its now possible to run Bob _himself_ 
+inside Docker using [dind](https://hub.docker.com/_/docker).
+
+To use the latest pre-built image:
+- `docker pull bobcd/bob:latest`
+
+To build locally, in the root of this repo, run:
+- `docker build -t bobcd/bob:latest .`
+
+Then run the container:
+- `docker run --rm -it -p 7777:7777 --privileged bobcd/bob:latest`
+
+Bob will be up on the forwarded host port `7777` and can run normally.
+The `--privileged` flag is crucial as Bob uses system calls that are not usually
+allowed on Docker.
 
 ## Running integration tests:
 
