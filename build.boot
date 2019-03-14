@@ -30,7 +30,7 @@
                             [compojure "1.6.1"]
                             [com.fasterxml.jackson.core/jackson-core "2.9.8"]
                             [failjure "1.3.0"]
-                            [com.h2database/h2 "1.4.198"]
+                            [com.h2database/h2 "1.4.199"]
                             [ragtime "0.8.0"]
                             [korma "0.5.0-RC1"]
                             [hikari-cp "2.7.1"]

@@ -34,19 +34,22 @@ jobs:
           path: target/bob-standalone.jar
           destination: bob-standalone.jar
 
-  integration_test:
+  integration_test_deploy:
     machine: true
 
     steps:
       - checkout
-      - run: cd integration-tests && docker-compose up --abort-on-container-exit integration-tests
+      - run: "cd integration-tests && docker-compose up --abort-on-container-exit integration-tests"
+      - run: "docker login --username=${DOCKER_USER} --password=${DOCKER_PASS}"
+      - run: "docker push bobcd/bob:latest"
 
 workflows:
   version: 2
 
-  build_and_test:
+  build_test_deploy:
     jobs:
       - build_test
-      - integration_test:
+      - integration_test_deploy:
+          context: Docker
           requires:
             - build_test
