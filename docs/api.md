@@ -198,6 +198,28 @@ Lists all registered external resources by name.
 | ---- | ----------- | ------ |
 | 200 |  | [ResourceResponse](#resourceresponse) |
 
+### /api/pipeline/{group}/{name}/{number}/artifact/{artifact-name}
+
+#### GET
+##### Summary:
+
+Returns the artifact archive of a pipeline
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| group | path |  | Yes | string |
+| name | path |  | Yes | string |
+| number | path |  | Yes | long |
+| artifact-name | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| default |  |
+
 ### /api/can-we-build-it
 
 #### GET
@@ -250,7 +272,7 @@ Runs the full garbage collection for Bob, reclaiming all resources.
 
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
-| steps | [ string ] |  | Yes |
+| steps | [ [Step](#step) ] |  | Yes |
 | image | string |  | Yes |
 | vars | [PipelineVars](#pipelinevars) |  | Yes |
 | artifacts | [PipelineArtifacts](#pipelineartifacts) |  | Yes |
@@ -319,3 +341,10 @@ Runs the full garbage collection for Bob, reclaiming all resources.
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | message | string |  | Yes |
+
+#### Step
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| cmd | string |  | Yes |
+| needs_resource | string |  | No |
