@@ -25,7 +25,7 @@ FROM docker:dind
 
 WORKDIR /opt
 RUN apk add -u wget
-RUN wget "https://cdn.azul.com/zulu/bin/zulu11.29.11-ca-jdk11.0.2-linux_musl_x64.tar.gz"
+RUN wget "https://cdn.azul.com/zulu/bin/zulu12.1.3-ca-jdk12-linux_musl_x64.tar.gz"
 RUN tar -zxvf *.tar.gz
 RUN rm *.tar.gz
 RUN mv zulu* jdk
