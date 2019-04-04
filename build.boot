@@ -34,7 +34,7 @@
                             [ragtime "0.8.0"]
                             [korma "0.5.0-RC1"]
                             [hikari-cp "2.7.1"]
-                            [metosin/compojure-api "2.0.0-alpha29"]
+                            [metosin/compojure-api "2.0.0-alpha30"]
                             [prismatic/schema "1.1.10"]
                             [lispyclouds/clj-docker-client "0.2.2"]
                             [javax.xml.bind/jaxb-api "2.3.0"]           ;; For Aleph's XML dependency, Java 8 compat
