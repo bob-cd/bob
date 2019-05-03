@@ -1,3 +1,5 @@
+---
+
 #   This file is part of Bob.
 #
 #   Bob is free software: you can redistribute it and/or modify
@@ -17,7 +19,7 @@ version: "3"
 
 services:
   bob:
-    image: "bobcd/bob:latest"
+    image: "bobcd/bob"
     build: ".."
     privileged: true
     container_name: "bob"
@@ -34,12 +36,21 @@ services:
     networks:
       - bob_net
 
+  artifact-local:
+    image: "bobcd/artifact-local"
+    container_name: "artifact-local"
+    ports:
+      - "8001:8001"
+    networks:
+      - bob_net
+
   integration-tests:
-    image: "eykrehbein/strest:latest"
+    image: "eykrehbein/strest"
     container_name: "integration_tests"
     depends_on:
       - bob
       - resource-git
+      - artifact-local
     volumes:
       - ".:/app/data"
     entrypoint: "strest /app/data/bob-tests.strest.yaml"
