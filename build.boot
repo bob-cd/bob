@@ -61,9 +61,8 @@
        :file       (str project "-standalone.jar")})
 
 (def compiler-opts
-  {:disable-locals-clearing true
-   :direct-linking          true
-   :elide-meta              [:doc :file :line :added]})
+  {:direct-linking true
+   :elide-meta     [:doc :file :line :added]})
 
 (deftask build
   [d dir PATH #{str} "Directories to write to (target)."]
