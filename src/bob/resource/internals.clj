@@ -80,13 +80,13 @@
   Returns the absolute path of the expansion dir."
   [resource pipeline]
   (f/attempt-all [creation-args (into-array FileAttribute [])
-                  out-dir       (str (Files/createTempDirectory "out" creation-args))
+                  out-dir       (u/unsafe! (str (Files/createTempDirectory "out" creation-args)))
                   dir           (File. (str out-dir File/separatorChar (:name resource)))
-                  _             (.mkdirs ^File dir)
+                  _             (u/unsafe! (.mkdirs ^File dir))
                   url           (url-of resource pipeline)
-                  stream        (-> @(http/get url)
-                                    :body
-                                    (ZipInputStream.))
+                  stream        (u/unsafe! (-> @(http/get url)
+                                           :body
+                                           (ZipInputStream.)))
                   _             (extract-zip! stream dir)]
     out-dir
     (f/when-failed [err] err)))
