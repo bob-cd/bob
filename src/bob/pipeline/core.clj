@@ -31,7 +31,6 @@
   - name
   - a list of steps
   - a map of environment vars
-  - a map of artifacts
   - a list of resources
   - a starting Docker image.
 
@@ -41,44 +40,42 @@
   The steps are assumed to be valid shell commands.
 
   Returns Ok or the error if any."
-  [group name pipeline-steps vars pipeline-artifacts resources image]
-  (d/let-flow [pipeline       (u/name-of group name)
-               vars-pairs     (map #(hash-map :key (clojure.core/name (first %))
-                                              :value (last %)
-                                              :pipeline pipeline)
-                                   vars)
-               artifact-pairs (map #(hash-map :name (clojure.core/name (first %))
-                                              :path (last %)
-                                              :pipeline pipeline)
-                                   pipeline-artifacts)
-               result         (f/attempt-all [_ (u/unsafe! (k/insert db/pipelines (k/values {:name  pipeline
-                                                                                             :image image})))
-                                              _ (u/unsafe! (doseq [resource resources]
-                                                             (let [{name     :name
-                                                                    params   :params
-                                                                    type     :type
-                                                                    provider :provider} resource]
-                                                               (k/insert db/resources
-                                                                         (k/values {:name     name
-                                                                                    :type     type
-                                                                                    :pipeline pipeline
-                                                                                    :provider provider}))
-                                                               (ri/add-params name params pipeline))))
-                                              _ (when (not (empty? vars-pairs))
-                                                  (u/unsafe! (k/insert db/evars (k/values vars-pairs))))
-                                              _ (when (not (empty? artifact-pairs))
-                                                  (u/unsafe! (k/insert db/artifacts (k/values artifact-pairs))))
-                                              _ (u/unsafe! (doseq [step pipeline-steps]
-                                                             (let [{cmd            :cmd
-                                                                    needs_resource :needs_resource} step]
-                                                               (k/insert db/steps (k/values {:cmd            cmd
-                                                                                             :needs_resource needs_resource
-                                                                                             :pipeline       pipeline})))))]
-                                (u/respond "Ok")
-                                (f/when-failed [err]
-                                  (u/unsafe! (k/delete db/pipelines
-                                                       (k/where {:name name})))
-                                  (res/bad-request {:message (f/message err)})))]
+  [group name pipeline-steps vars resources image]
+  (d/let-flow [pipeline   (u/name-of group name)
+               vars-pairs (map #(hash-map :key (clojure.core/name (first %))
+                                          :value (last %)
+                                          :pipeline pipeline)
+                               vars)
+               result     (f/attempt-all [_ (u/unsafe! (k/insert db/pipelines (k/values {:name  pipeline
+                                                                                         :image image})))
+                                          _ (u/unsafe! (doseq [resource resources]
+                                                         (let [{name     :name
+                                                                params   :params
+                                                                type     :type
+                                                                provider :provider} resource]
+                                                           (k/insert db/resources
+                                                                     (k/values {:name     name
+                                                                                :type     type
+                                                                                :pipeline pipeline
+                                                                                :provider provider}))
+                                                           (ri/add-params name params pipeline))))
+                                          _ (when (not (empty? vars-pairs))
+                                              (u/unsafe! (k/insert db/evars (k/values vars-pairs))))
+                                          _ (u/unsafe! (doseq [step pipeline-steps]
+                                                         (let [{cmd                       :cmd
+                                                                needs-resource            :needs_resource
+                                                                {artifact-name :name
+                                                                 artifact-path :path} :produces_artifact} step]
+                                                           (k/insert db/steps (k/values {:cmd               cmd
+                                                                                         :needs_resource    needs-resource
+                                                                                         :produces_artifact artifact-name
+                                                                                         :artifact_path     artifact-path
+                                                                                         :pipeline          pipeline})))))]
+                            (u/respond "Ok")
+                            (f/when-failed [err]
+                                           (u/unsafe! (k/delete db/pipelines
+                                                                (k/where {:name name})))
+                                           (res/bad-request {:message (f/message err)})))]
     result))
 
 ;; TODO: Unit test this?
@@ -177,7 +174,6 @@
            {:needs_resource "source"
             :cmd            "ls"}]
           {}
-          {:source "/root/source"}
           [{:name     "source"
             :type     "external"
             :provider "git"
@@ -191,7 +187,6 @@
           "busybox:musl")
   (start "test" "test")
   (k/select db/pipelines)
-  (k/select db/artifacts)
   (->> (k/select db/steps)
        (map #(update-in % [:cmd] u/clob->str)))
   (k/select db/resources)

@@ -56,8 +56,6 @@
 
 (k/defentity evars)
 
-(k/defentity artifacts)
-
 (k/defentity resources)
 
 (k/defentity resource-params
@@ -68,11 +66,12 @@
   (k/has-many resource-params)
   (k/has-many evars)
   (k/has-many steps)
-  (k/has-many runs)
-  (k/has-many artifacts))
+  (k/has-many runs))
 
 (k/defentity external-resources
   (k/table :external_resources))
+
+(k/defentity config)
 
 (comment
   (init-db))

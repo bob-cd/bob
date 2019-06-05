@@ -21,7 +21,8 @@
             [bob.db.core :as db]
             [bob.execution.internals :as e]
             [bob.util :as u]
-            [bob.resource.core :as r]))
+            [bob.resource.core :as r]
+            [bob.artifact.core :as artifact]))
 
 ;; TODO: Reduce and optimize DB interactions to a single place
 
@@ -76,12 +77,18 @@
 
 (defn- exec-step
   "Reducer function to implement the sequential execution of steps.
+
   Used to reduce an initial state with the list of steps, executing
   them to the final state.
+
   Stops the reduce if the pipeline stop has been signalled or any
   non-zero step outcome.
+
+  Additionally uploads the artifact if produced in a step with the
+  PWD as the prefix.
+
   Returns the next state or errors if any."
-  [run-id evars pipeline id step]
+  [run-id evars pipeline number id step]
   (let [stopped? (u/unsafe! (-> (k/select db/runs
                                           (k/fields :stopped)
                                           (k/where {:id run-id}))
@@ -90,9 +97,20 @@
     (if (or stopped?
             (f/failed? (:id id)))
       (reduced id)
-      (f/attempt-all [result (next-step id step evars pipeline)
-                      id     (update-pid (:id result) run-id)
-                      id     (e/run id)]
+      (f/attempt-all [result       (next-step id step evars pipeline)
+                      id           (update-pid (:id result) run-id)
+                      id           (e/run id)
+                      [group name] (clojure.string/split pipeline #":")
+                      _            (if-let [artifact (:produces_artifact step)]
+                                     (artifact/upload-artifact group
+                                                               name
+                                                               number
+                                                               artifact
+                                                               id
+                                                               (str (get-in (docker/inspect e/conn id)
+                                                                            [:Config :WorkingDir])
+                                                                    "/"
+                                                                    (:artifact_path step))))]
         {:id      id
          :mounted (:mounted result)}
         (f/when-failed [err] err)))))
@@ -117,9 +135,10 @@
   [image steps pipeline evars]
   (let [run-id         (u/get-id)
         first-step     (first steps)
-        first-resource (:needs_resource first-step)]
+        first-resource (:needs_resource first-step)
+        number         (next-build-number-of pipeline)]
     (a/go (f/attempt-all [_     (u/unsafe! (k/insert db/runs (k/values {:id       run-id
-                                                                        :number   (next-build-number-of pipeline)
+                                                                        :number   number
                                                                         :pipeline pipeline
                                                                         :status   "running"})))
                           image (e/pull image)
@@ -127,7 +146,7 @@
                           id    (f/ok-> (e/build image first-step evars)
                                         (update-pid run-id)
                                         (e/run))
-                          id    (reduce (partial exec-step run-id evars pipeline)
+                          id    (reduce (partial exec-step run-id evars pipeline number)
                                         {:id      id
                                          :mounted (if first-resource
                                                     [first-resource]

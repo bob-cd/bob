@@ -21,7 +21,7 @@
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :refer [migrate]]
             [hikari-cp.core :refer [make-datasource]]
-            [bob.db.core :refer [pipelines steps artifacts resources resource-params]]
+            [bob.db.core :refer [pipelines steps resources resource-params]]
             [bob.pipeline.core :refer [create]]
             [bob.util :refer [clob->str]]))
 
@@ -38,11 +38,11 @@
 (def valid-steps [{:cmd "echo 1 >> state.txt"}
                   {:cmd "echo 2 >> state.txt"}
                   {:cmd "echo 3 >> state.txt"}
-                  {:cmd "cat state.txt"}
+                  {:cmd               "cat state.txt"
+                   :produces_artifact {:name "afile"
+                                       :path "target/file"}}
                   {:needs_resource "source"
                    :cmd            "ls"}])
-
-(def valid-artifacts {:test-jar "/path/to/jar"})
 
 (def valid-resources [{:name     "source"
                        :provider "git"
@@ -57,11 +57,8 @@
       {:datasource data-source
        :naming     {:keys   str/lower-case
                     :fields str/upper-case}})
-    @(create "dev" "test" valid-steps [] valid-artifacts valid-resources "test:image")
+    @(create "dev" "test" valid-steps {} valid-resources "test:image")
     (is (= (first (select pipelines)) {:image "test:image", :name "dev:test"}))
-    (is (= (first (select artifacts
-                          (fields :name :path :pipeline)))
-           {:name "test-jar" :path "/path/to/jar" :pipeline "dev:test"}))
     (is (= (first (select resources))
            {:name     "source"
             :provider "git"
@@ -78,23 +75,33 @@
              :pipeline "dev:test"}]))
     (is (= (->> (select steps)
                 (map #(update-in % [:cmd] clob->str)))
-           (list {:cmd "echo 1 >> state.txt"
-                  :id 1
-                  :pipeline "dev:test"
-                  :needs_resource nil}
-                 {:cmd "echo 2 >> state.txt"
-                  :id 2
-                  :pipeline "dev:test"
-                  :needs_resource nil}
-                 {:cmd "echo 3 >> state.txt"
-                  :id 3
-                  :pipeline "dev:test"
-                  :needs_resource nil}
-                 {:cmd "cat state.txt"
-                  :id 4
-                  :pipeline "dev:test"
-                  :needs_resource nil}
-                 {:cmd "ls"
-                  :id 5
-                  :pipeline "dev:test"
-                  :needs_resource "source"})))))
+           (list {:cmd               "echo 1 >> state.txt"
+                  :id                1
+                  :pipeline          "dev:test"
+                  :needs_resource    nil
+                  :produces_artifact nil
+                  :artifact_path     nil}
+                 {:cmd               "echo 2 >> state.txt"
+                  :id                2
+                  :pipeline          "dev:test"
+                  :needs_resource    nil
+                  :produces_artifact nil
+                  :artifact_path     nil}
+                 {:cmd               "echo 3 >> state.txt"
+                  :id                3
+                  :pipeline          "dev:test"
+                  :needs_resource    nil
+                  :produces_artifact nil
+                  :artifact_path     nil}
+                 {:cmd               "cat state.txt"
+                  :id                4
+                  :pipeline          "dev:test"
+                  :needs_resource    nil
+                  :produces_artifact "afile"
+                  :artifact_path     "target/file"}
+                 {:cmd               "ls"
+                  :id                5
+                  :pipeline          "dev:test"
+                  :needs_resource    "source"
+                  :produces_artifact nil
+                  :artifact_path     nil})))))

@@ -42,6 +42,20 @@ requests:
       - jsonpath: "content.message"
         expect: "Ok"
 
+  artifactStoreRegistration:
+    request:
+      url: "http://bob:7777/api/artifact-store/local"
+      method: "POST"
+      postData:
+        mimeType: "application/json"
+        text:
+          url: "http://artifact-local:8001"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "Ok"
+
   pipelineCreation:
     request:
       url: "http://bob:7777/api/pipeline/dev/test"
@@ -58,10 +72,14 @@ requests:
             - cmd: "sleep 10"
             - cmd: "sh -c 'touch test.txt && echo $env >> test.txt'"
             - cmd: "cat test.txt"
+              produces_artifact:
+                name: "afile"
+                path: "test.txt"
             - needs_resource: "my-source"
               cmd: "ls"
-          artifacts:
-            output: "/root/my-source"
+              produces_artifact:
+                name: "license-file"
+                path: "LICENSE"
           resources:
             - name: "my-source"
               type: "external"
@@ -144,7 +162,15 @@ requests:
 
   pipelineArtifacts:
     request:
-      url: "http://bob:7777/api/pipeline/dev/test/1/artifact/output"
+      url: "http://bob:7777/api/pipeline/dev/test/1/artifact/afile"
+      method: "GET"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+
+  pipelineArtifactsFromResource:
+    request:
+      url: "http://bob:7777/api/pipeline/dev/test/1/artifact/license-file"
       method: "GET"
     validate:
       - jsonpath: "status"
@@ -175,6 +201,28 @@ requests:
   externalResourceDeletion:
     request:
       url: "http://bob:7777/api/external-resource/git"
+      method: "DELETE"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "Ok"
+
+  artifactStoreListing:
+    request:
+      url: "http://bob:7777/api/artifact-store"
+      method: "GET"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect:
+          name: "local"
+          url: "http://artifact-local:8001"
+
+  artifactStoreDeletion:
+    request:
+      url: "http://bob:7777/api/artifact-store/local"
       method: "DELETE"
     validate:
       - jsonpath: "status"

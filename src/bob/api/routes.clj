@@ -28,14 +28,14 @@
 (def bob-api
   (m/ignore-trailing-slash
     (rest/api
-      {:swagger
-       {:ui   "/"
-        :spec "/swagger.json"
-        :data {:info     {:title       "Bob the Builder"
-                          :version     "0.1"
-                          :description "The modular, extensible CI/CD platform."}
-               :consumes ["application/json"]
-               :produces ["application/json"]}}}
+     {:swagger
+      {:ui   "/"
+       :spec "/swagger.json"
+       :data {:info     {:title       "Bob the Builder"
+                         :version     "0.1"
+                         :description "The modular, extensible CI/CD platform."}
+              :consumes ["application/json"]
+              :produces ["application/json"]}}}
 
       (rest/context "/api" []
         :tags ["Bob's API"]
@@ -55,7 +55,6 @@
             name
             (:steps pipeline)
             (:vars pipeline)
-            (:artifacts pipeline)
             (:resources pipeline)
             (:image pipeline)))
 
@@ -132,7 +131,7 @@
           :return schema/SimpleResponse
           :path-params [name
                         :- String]
-          :summary "Un-registers an external resource with a unique name and URL."
+          :summary "Un-registers an external resource with a unique name."
           (r/un-register-external-resource name))
 
         (rest/GET "/external-resources" []
@@ -152,6 +151,27 @@
                         :- String]
           (a/stream-artifact group name number artifact-name))
 
+        (rest/POST "/artifact-store/:name" []
+          :return schema/SimpleResponse
+          :path-params [name
+                        :- String]
+          :body [attrs schema/ArtifactStoreAttributes]
+          :summary "Registers an artifact store by a unique name and its URL."
+          (a/register-artifact-store name (:url attrs)))
+
+        (rest/DELETE "/artifact-store/:name" []
+          :return schema/SimpleResponse
+          :path-params [name
+                        :- String]
+          :summary "Un-registers an external resource with a unique name."
+          (a/un-register-artifact-store name))
+
+        (rest/GET "/artifact-store" []
+          :return schema/ArtifactStoreResponse
+          :summary "Lists the registered artifact store."
+          (a/get-registered-artifact-store))
+
+        ;; TODO: Actually do some health checks here.
         (rest/GET "/can-we-build-it" []
           :return schema/SimpleResponse
           :summary "Runs health checks for Bob."
