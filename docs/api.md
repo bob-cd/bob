@@ -1,12 +1,7 @@
-## REST API Reference
-
-Bob exposes a REST API which is self documented with [Swagger](https://swagger.io/).
+# Bob the Builder
+The modular, extensible CI/CD platform.
 
 ## Version: 0.1
-
-The API docs and a simple testing client can be located on **http://localhost:7777/**
-
-## Routes
 
 ### /api/pipeline/{group}/{name}
 
@@ -171,7 +166,7 @@ Registers an external resource with a unique name and its attributes.
 #### DELETE
 ##### Summary:
 
-Un-registers an external resource with a unique name and URL.
+Un-registers an external resource with a unique name.
 
 ##### Parameters
 
@@ -220,6 +215,56 @@ Returns the artifact archive of a pipeline
 | ---- | ----------- |
 | default |  |
 
+### /api/artifact-store/{name}
+
+#### POST
+##### Summary:
+
+Registers an artifact store by a unique name and its URL.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| name | path |  | Yes | string |
+| ArtifactStoreAttributes | body |  | Yes | [ArtifactStoreAttributes](#artifactstoreattributes) |
+
+##### Responses
+
+| Code | Description | Schema |
+| ---- | ----------- | ------ |
+| 200 |  | [SimpleResponse](#simpleresponse) |
+
+#### DELETE
+##### Summary:
+
+Un-registers an external resource with a unique name.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| name | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description | Schema |
+| ---- | ----------- | ------ |
+| 200 |  | [SimpleResponse](#simpleresponse) |
+
+### /api/artifact-store
+
+#### GET
+##### Summary:
+
+Lists the registered artifact store.
+
+##### Responses
+
+| Code | Description | Schema |
+| ---- | ----------- | ------ |
+| 200 |  | [ArtifactStoreResponse](#artifactstoreresponse) |
+
 ### /api/can-we-build-it
 
 #### GET
@@ -262,6 +307,32 @@ Runs the full garbage collection for Bob, reclaiming all resources.
 ### Models
 
 
+#### Artifact
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name | string |  | Yes |
+| path | string |  | Yes |
+
+#### ArtifactStoreAttributes
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| url | string |  | Yes |
+
+#### ArtifactStoreResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| message | [ArtifactStoreResponseMessage](#artifactstoreresponsemessage) |  | Yes |
+
+#### ArtifactStoreResponseMessage
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name | string |  | Yes |
+| url | string |  | Yes |
+
 #### LogsResponse
 
 | Name | Type | Description | Required |
@@ -275,14 +346,7 @@ Runs the full garbage collection for Bob, reclaiming all resources.
 | steps | [ [Step](#step) ] |  | Yes |
 | image | string |  | Yes |
 | vars | [PipelineVars](#pipelinevars) |  | Yes |
-| artifacts | [PipelineArtifacts](#pipelineartifacts) |  | Yes |
 | resources | [ [Resource](#resource) ] |  | Yes |
-
-#### PipelineArtifacts
-
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| PipelineArtifacts | object |  |  |
 
 #### PipelineResourcesParams
 
@@ -348,3 +412,4 @@ Runs the full garbage collection for Bob, reclaiming all resources.
 | ---- | ---- | ----------- | -------- |
 | cmd | string |  | Yes |
 | needs_resource | string |  | No |
+| produces_artifact | [Artifact](#artifact) |  | No |
