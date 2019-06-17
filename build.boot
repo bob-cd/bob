@@ -22,7 +22,7 @@
 (set-env! :resource-paths #{"resources"}
           :source-paths   #{"src"}
           :dependencies   '[[org.clojure/clojure "1.10.1"]
-                            [org.clojure/core.async "0.4.490"]
+                            [org.clojure/core.async "0.4.500"]
                             [manifold "0.1.8"]
                             [aleph "0.4.6"]
                             [ring "1.7.1"]
@@ -35,7 +35,7 @@
                             [korma "0.5.0-RC1"]
                             [hikari-cp "2.7.1"]
                             [metosin/compojure-api "2.0.0-alpha30"]
-                            [prismatic/schema "1.1.10"]
+                            [prismatic/schema "1.1.11"]
                             [lispyclouds/clj-docker-client "0.2.3"]
                             [javax.xml.bind/jaxb-api "2.3.0"]           ;; For Aleph's XML dependency, Java 8 compat
                             [io.netty/netty-all "4.1.36.Final"]         ;; Forced Netty version for Java 9+ compat
