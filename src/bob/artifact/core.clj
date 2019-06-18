@@ -22,7 +22,7 @@
             [clj-docker-client.core :as docker]
             [bob.util :as u]
             [bob.db.core :as db]
-            [bob.execution.internals :as e]))
+            [bob.states :as states]))
 
 (def artifact-prefix "artifact/")
 
@@ -70,8 +70,7 @@
   <URL of regsitered store>/bob_artifact/dev/test/1/jar"
   [group name number artifact]
   (if-let [{url :url} (get-artifact-store)]
-    (d/let-flow [pipeline  (u/name-of name group)
-                 fetch-url (clojure.string/join "/"
+    (d/let-flow [fetch-url (clojure.string/join "/"
                                                 [url
                                                  "bob_artifact"
                                                  group
@@ -93,7 +92,7 @@
   Returns a Failure object if failed."
   [group name number artifact run-id path]
   (if-let [{url :url} (get-artifact-store)]
-    (f/attempt-all [stream     (u/unsafe! (docker/stream-path e/conn run-id path))
+    (f/attempt-all [stream     (u/unsafe! (docker/stream-path states/docker-conn run-id path))
                     upload-url (clojure.string/join "/"
                                                     [url
                                                      "bob_artifact"
@@ -101,7 +100,7 @@
                                                      name
                                                      number
                                                      artifact])
-                    response   (u/unsafe! @(http/post upload-url
+                    _          (u/unsafe! @(http/post upload-url
                                                       {:multipart [{:name    "data" ;; Another API constraint
                                                                     :content stream}]}))]
       "Ok"

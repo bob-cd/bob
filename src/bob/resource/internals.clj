@@ -19,8 +19,8 @@
             [korma.core :as k]
             [clj-docker-client.core :as docker]
             [bob.db.core :as db]
-            [bob.execution.internals :as e]
-            [bob.util :as u])
+            [bob.util :as u]
+            [bob.states :as states])
   (:import (java.util.zip ZipInputStream)
            (java.io File)
            (java.nio.file Files)
@@ -102,11 +102,11 @@
   - Return the id of the committed image.
   - Deletes the temp folder."
   [path image cmd]
-  (f/attempt-all [id (u/unsafe! (docker/create e/conn image "" {} {}))
-                  _  (u/unsafe! (docker/cp e/conn id path "/root"))
+  (f/attempt-all [id (u/unsafe! (docker/create states/docker-conn image "" {} {}))
+                  _  (u/unsafe! (docker/cp states/docker-conn id path "/root"))
                   _  (u/unsafe! (rm-r! path true))]
     (docker/commit-container
-      e/conn
+      states/docker-conn
       id
       (format "%s/%d" id (System/currentTimeMillis))
       "latest"

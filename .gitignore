@@ -14,3 +14,4 @@ pom.xml.asc
 .DS_Store
 .nrepl-history
 project.clj
+.clj-kondo/.cache

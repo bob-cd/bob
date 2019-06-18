@@ -15,17 +15,16 @@
 
 (ns bob.execution.internals
   (:require [failjure.core :as f]
+            [clj-docker-client.core :as docker]
             [bob.util :as u]
-            [clj-docker-client.core :as docker]))
-
-(defonce conn (docker/connect))
+            [bob.states :as states]))
 
 (defn- has-image
   "Checks if an image is present locally.
   Returns the name or the error if any."
   [name]
   (let [result (u/unsafe! (filter #(= (-> % :RepoTags) [name])
-                                  (docker/image-ls conn)))]
+                                  (docker/image-ls states/docker-conn)))]
     (if (or (f/failed? result) (zero? (count result)))
       (f/fail "Failed to find %s" name)
       name)))
@@ -34,7 +33,7 @@
   "Kills a running container using SIGKILL.
   Returns the name or the error if any."
   [name]
-  (if (f/failed? (u/unsafe! (docker/kill conn name)))
+  (if (f/failed? (u/unsafe! (docker/kill states/docker-conn name)))
     (f/fail "Could not kill %s" name)
     name))
 
@@ -44,7 +43,7 @@
   [name]
   (if (and (f/failed? (has-image name))
            (f/failed? (u/unsafe! (do (println (format "Pulling %s" name))
-                                     (docker/pull conn name)
+                                     (docker/pull states/docker-conn name)
                                      (println (format "Pulled %s" name))))))
     (f/fail "Cannot pull %s" name)
     name))
@@ -56,7 +55,7 @@
   [image step evars]
   (let [resource    (:needs_resource step)
         working-dir (when resource (str "/root/" resource))]
-    (u/unsafe! (docker/create conn
+    (u/unsafe! (docker/create states/docker-conn
                               image
                               (:cmd step)
                               evars
@@ -66,7 +65,7 @@
 (defn status-of
   "Returns the status of a container by id."
   [^String id]
-  (let [result (u/unsafe! (docker/container-state conn id))]
+  (let [result (u/unsafe! (docker/container-state states/docker-conn id))]
     (if (f/failed? result)
       (f/message result)
       {:running?  (:Running result)
@@ -76,8 +75,8 @@
   "Synchronously starts up a previously built container.
   Returns the id when complete or and error in case on non-zero exit."
   [^String id]
-  (f/attempt-all [_      (u/unsafe! (docker/start conn id))
-                  status (u/unsafe! (docker/wait-container conn id))]
+  (f/attempt-all [_      (u/unsafe! (docker/start states/docker-conn id))
+                  status (u/unsafe! (docker/wait-container states/docker-conn id))]
     (if (zero? status)
       (u/format-id id)
       (f/fail "Abnormal exit."))
@@ -86,7 +85,7 @@
 (defn log-stream-of
   "Fetches the lazy log stream from a running/dead container."
   [^String name]
-  (u/unsafe! (docker/logs conn name)))
+  (u/unsafe! (docker/logs states/docker-conn name)))
 
 (comment
   (build "busybox:musl"

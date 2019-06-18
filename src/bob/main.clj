@@ -14,17 +14,32 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.main
-  (:require [aleph.http :as http]
-            [bob.api.routes :as routes]
-            [bob.db.core :as db])
+  (:require [mount.core :as m]
+            [aleph.http :as http]
+            [clojure.repl :as repl]
+            [bob.states :refer :all]
+            [bob.api.routes :as routes])
   (:gen-class))
 
 (def PORT 7777)
+
+;; TODO: It's here to avoid a cyclic import from routes, figure out a better way.
+(m/defstate server
+  :start (do (println (format "Bob's listening on http://0.0.0.0:%d/" PORT))
+             (http/start-server routes/bob-api {:port PORT}))
+  :stop  (do (println "Stopping HTTP...")
+             (.close server)))
+
+(defn shutdown!
+  [_]
+  (println "Bob's shutting down...")
+  (m/stop)
+  (shutdown-agents)
+  (System/exit 0))
 
 (defn -main
   "Defines the entry point of Bob.
   Starts up the HTTP API on port *7777* by default."
   [& _]
-  (do (db/init-db)
-      (println (format "Bob's listening on http://0.0.0.0:%d/" PORT))
-      (http/start-server routes/bob-api {:port PORT})))
+  (repl/set-break-handler! shutdown!)
+  (m/start))

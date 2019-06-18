@@ -22,7 +22,8 @@
             [bob.execution.internals :as e]
             [bob.util :as u]
             [bob.resource.core :as r]
-            [bob.artifact.core :as artifact]))
+            [bob.artifact.core :as artifact]
+            [bob.states :as states]))
 
 ;; TODO: Reduce and optimize DB interactions to a single place
 
@@ -57,7 +58,7 @@
   Returns the new container id or errors if any."
   [id step evars pipeline]
   (f/attempt-all [image         (u/unsafe! (docker/commit-container
-                                             e/conn
+                                             states/docker-conn
                                              (:id id)
                                              (format "%s/%d" (:id id) (System/currentTimeMillis))
                                              "latest"
@@ -107,7 +108,7 @@
                                                                number
                                                                artifact
                                                                id
-                                                               (str (get-in (docker/inspect e/conn id)
+                                                               (str (get-in (docker/inspect states/docker-conn id)
                                                                             [:Config :WorkingDir])
                                                                     "/"
                                                                     (:artifact_path step))))]

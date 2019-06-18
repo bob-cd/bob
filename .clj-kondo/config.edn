@@ -13,31 +13,8 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.db.core
-  (:require [korma.core :as k]))
-
-(k/defentity steps)
-
-(k/defentity logs)
-
-(k/defentity runs
-  (k/has-many logs))
-
-(k/defentity evars)
-
-(k/defentity resources)
-
-(k/defentity resource-params
-  (k/table :resource_params))
-
-(k/defentity pipelines
-  (k/has-many resources)
-  (k/has-many resource-params)
-  (k/has-many evars)
-  (k/has-many steps)
-  (k/has-many runs))
-
-(k/defentity external-resources
-  (k/table :external_resources))
-
-(k/defentity config)
+{:lint-as {manifold.deferred/let-flow clojure.core/let
+           mount.core/defstate        clojure.core/def
+           failjure.core/attempt-all  clojure.core/let
+           failjure.core/ok->         clojure.core/->
+           failjure.core/when-failed  clojure.core/fn}}
