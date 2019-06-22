@@ -16,34 +16,22 @@
 (ns bob.artifact.core
   (:require [aleph.http :as http]
             [manifold.deferred :as d]
-            [korma.core :as k]
             [ring.util.http-response :as res]
             [failjure.core :as f]
             [clj-docker-client.core :as docker]
             [bob.util :as u]
-            [bob.db.core :as db]
-            [bob.states :as states]))
+            [bob.states :as states]
+            [bob.artifact.db :as db]))
 
 (def artifact-prefix "artifact/")
-
-(defn- get-artifact-store
-  "Gets the artifact store and its URL."
-  []
-  (f/attempt-all [result (u/unsafe! (k/select db/config))
-                  store  (->> result
-                              (filter #(clojure.string/starts-with? (:name %) artifact-prefix))
-                              (first))]
-    (-> store
-        (update-in [:name] #(last (clojure.string/split % #"/")))
-        (clojure.set/rename-keys {:value :url}))
-    (f/when-failed [err] err)))
 
 (defn register-artifact-store
   "Registers an artifact store with an unique name and an URL."
   [name url]
-  (d/let-flow [result (u/unsafe! (k/insert db/config
-                                           (k/values {:name  (str artifact-prefix name)
-                                                      :value url})))]
+  (d/let-flow [result (u/unsafe! (db/register-artifact-store
+                                  states/db
+                                  {:name (str artifact-prefix name)
+                                   :url  url}))]
     (if (f/failed? result)
       (res/conflict "Artifact store already registered")
       (u/respond "Ok"))))
@@ -51,17 +39,19 @@
 (defn un-register-artifact-store
   "Unregisters an artifact-store resource by its name."
   [name]
-  (d/let-flow [_ (u/unsafe! (k/delete db/config
-                                      (k/where {:name (str artifact-prefix name)})))]
+  (d/let-flow [_ (db/un-register-artifact-store
+                  states/db
+                  {:name (str artifact-prefix name)})]
     (u/respond "Ok")))
 
 (defn get-registered-artifact-store
   "Gets the registered artifact store."
   []
-  (d/let-flow [result (u/unsafe! (get-artifact-store))]
+  (d/let-flow [result (u/unsafe! (db/get-artifact-store states/db))]
     (if (f/failed? result)
       (res/bad-request (f/message result))
-      (u/respond result))))
+      (u/respond (-> result
+                     (update-in [:name] #(last (clojure.string/split % #"/"))))))))
 
 (defn stream-artifact
   "Connects to the registered atrifact store and streams the artifact back if exists.
@@ -69,7 +59,7 @@
   Contrstucts the following URL to connect:
   <URL of regsitered store>/bob_artifact/dev/test/1/jar"
   [group name number artifact]
-  (if-let [{url :url} (get-artifact-store)]
+  (if-let [{url :url} (db/get-artifact-store states/db)]
     (d/let-flow [fetch-url (clojure.string/join "/"
                                                 [url
                                                  "bob_artifact"
@@ -91,7 +81,7 @@
 
   Returns a Failure object if failed."
   [group name number artifact run-id path]
-  (if-let [{url :url} (get-artifact-store)]
+  (if-let [{url :url} (db/get-artifact-store states/db)]
     (f/attempt-all [stream     (u/unsafe! (docker/stream-path states/docker-conn run-id path))
                     upload-url (clojure.string/join "/"
                                                     [url
@@ -108,11 +98,12 @@
     (f/fail "No artifact store registered")))
 
 (comment
-  @(register-artifact-store "s3" "http://localhost:8001")
+  (db/register-artifact-store states/db {:name "artifact/s3"
+                                         :url  "http://localhost:8001"})
 
-  @(get-registered-artifact-store)
+  (db/get-artifact-store states/db)
 
-  @(un-register-artifact-store "s3")
+  (db/un-register-artifact-store states/db {:name "artifact/s3"})
 
   (stream-artifact "dev" "test" "1" "jar")
 

@@ -16,7 +16,6 @@
 (ns bob.states
   (:require [mount.core :as m]
             [ragtime.repl :as repl]
-            [korma.db :as kdb]
             [ragtime.jdbc :as jdbc]
             [hikari-cp.core :as h]
             [clj-docker-client.core :as docker])
@@ -28,8 +27,10 @@
                          ".bob")))
 
 (m/defstate data-source
-  :start (h/make-datasource {:adapter "h2"
-                             :url     db-uri})
+  :start (let [data-source (h/make-datasource {:adapter "h2"
+                                               :url     db-uri})]
+           (defonce db {:datasource data-source})
+           data-source)
   :stop  (do (println "Stopping DB...")
              (h/close-datasource data-source)))
 
@@ -38,8 +39,7 @@
           :migrations (jdbc/load-resources "migrations")})
 
 (m/defstate database
-  :start (do (repl/migrate migration-config)
-             (kdb/defdb _ {:datasource data-source})))
+  :start (repl/migrate migration-config))
 
 (m/defstate docker-conn
   :start (docker/connect)

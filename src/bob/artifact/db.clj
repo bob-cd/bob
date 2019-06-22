@@ -13,31 +13,16 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.db.core
-  (:require [korma.core :as k]))
+(ns bob.artifact.db
+  (:require [hugsql.core :as sql]
+            [clojure.java.io :as io]))
 
-(k/defentity steps)
+(sql/def-db-fns (io/resource "sql/artifact.sql"))
 
-(k/defentity logs)
+(comment
+  (sql/def-sqlvec-fns (io/resource "sql/artifact.sql"))
 
-(k/defentity runs
-  (k/has-many logs))
+  (register-artifact-store-sqlvec {:name "artifact/s3"
+                                   :url  "http://localhost:8001"})
 
-(k/defentity evars)
-
-(k/defentity resources)
-
-(k/defentity resource-params
-  (k/table :resource_params))
-
-(k/defentity pipelines
-  (k/has-many resources)
-  (k/has-many resource-params)
-  (k/has-many evars)
-  (k/has-many steps)
-  (k/has-many runs))
-
-(k/defentity external-resources
-  (k/table :external_resources))
-
-(k/defentity config)
+  (un-register-artifact-store-sqlvec {:name "artifact/s3"}))

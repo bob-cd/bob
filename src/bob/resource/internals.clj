@@ -16,11 +16,10 @@
 (ns bob.resource.internals
   (:require [aleph.http :as http]
             [failjure.core :as f]
-            [korma.core :as k]
             [clj-docker-client.core :as docker]
-            [bob.db.core :as db]
             [bob.util :as u]
-            [bob.states :as states])
+            [bob.states :as states]
+            [bob.resource.db :as db])
   (:import (java.util.zip ZipInputStream)
            (java.io File)
            (java.nio.file Files)
@@ -58,15 +57,12 @@
 (defn- url-of
   "Generates a GET URL for the external resource of a pipeline."
   [resource pipeline]
-  (let [url    (-> (k/select db/external-resources
-                             (k/where {:name (:provider resource)})
-                             (k/fields :url))
-                   (first)
+  (let [url    (-> (db/external-resource-url states/db
+                                             {:name (:provider resource)})
                    (:url))
-        params (k/select db/resource-params
-                         (k/where {:name     (:name resource)
-                                   :pipeline pipeline})
-                         (k/fields :key :value))]
+        params (db/resource-params-of states/db
+                                      {:name     (:name resource)
+                                       :pipeline pipeline})]
     (format "%s/bob_request?%s"
             url
             (clojure.string/join
@@ -117,26 +113,29 @@
   "Saves the map of GET params to be sent to the resource."
   [resource-name params pipeline]
   (when (not (empty? params))
-    (k/insert db/resource-params
-              (k/values (map #(hash-map :key (clojure.core/name (first %))
-                                        :value (last %)
-                                        :name resource-name
-                                        :pipeline pipeline)
-                             params)))))
+    (db/insert-resource-params states/db
+                               {:params (map #(vector (clojure.core/name (first %))
+                                                      (last %)
+                                                      resource-name
+                                                      pipeline)
+                                             params)})))
 
 (defn valid-external-resource?
   "Checks if the resource has a valid URL."
   [resource]
-  (not (empty? (k/select db/external-resources
-                         (k/where {:name (:provider resource)
-                                   :url  [not= nil]})))))
+  (not (nil? (db/invalid-external-resources states/db
+                                            {:name (:provider resource)}))))
 
 (comment
-  (def resource {:name     "source"
+  (def resource {:name     "my-source"
                  :type     "external"
                  :provider "git"
                  :params   {}})
+
   (valid-external-resource? resource)
-  (url-of resource "test:test")
-  (-> (fetch-resource resource "test:test")
-      (initial-image-of "busybox:musl")))
+
+  (url-of resource "dev:test")
+
+  (->> (db/resource-params-of states/db
+                          {:name     "my-source"
+                           :pipeline "dev:test"})))

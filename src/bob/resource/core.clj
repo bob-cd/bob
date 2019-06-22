@@ -17,17 +17,17 @@
   (:require [manifold.deferred :as d]
             [failjure.core :as f]
             [ring.util.http-response :as resp]
-            [korma.core :as k]
-            [bob.db.core :as db]
             [bob.resource.internals :as r]
-            [bob.util :as u]))
+            [bob.util :as u]
+            [bob.resource.db :as db]
+            [bob.states :as states]))
 
 (defn register-external-resource
   "Registers an external resource with an unique name and an URL."
   [name url]
-  (d/let-flow [result (u/unsafe! (k/insert db/external-resources
-                                           (k/values {:name name
-                                                      :url  url})))]
+  (d/let-flow [result (u/unsafe! (db/insert-external-resource states/db
+                                                              {:name name
+                                                               :url  url}))]
     (if (f/failed? result)
       (resp/conflict "Resource already registered.")
       (u/respond "Ok"))))
@@ -35,25 +35,18 @@
 (defn un-register-external-resource
   "Unregisters an external resource by its name."
   [name]
-  (d/let-flow [_ (u/unsafe! (k/delete db/external-resources
-                                      (k/where {:name name})))]
+  (d/let-flow [_ (u/unsafe! (db/delete-external-resource states/db
+                                                         {:name name}))]
     (u/respond "Ok")))
 
 (defn all-external-resources
   "Lists all external resources by name."
   []
-  (d/let-flow [result (u/unsafe! (k/select db/external-resources
-                                           (k/fields :name)))]
+  (d/let-flow [result (u/unsafe! (db/external-resources states/db))]
     (u/respond
       (if (f/failed? result)
         []
         (map #(:name %) result)))))
-
-(defn get-resource
-  [name pipeline]
-  (first (k/select db/resources
-                   (k/where {:name     name
-                             :pipeline pipeline}))))
 
 (defn mounted-image-from
   "Mounts a resource prior to a step execution.
@@ -76,6 +69,12 @@
     (f/when-failed [err] err)))
 
 (comment
-  (get-resource "source" "test:test")
   (all-external-resources)
-  (register-external-resource "git" "http://localhost:8000"))
+
+  (register-external-resource "git" "http://localhost:8000")
+
+  (db/insert-external-resource states/db
+                               {:name "git"
+                                :url  "http://localhost:8000"})
+
+  (db/delete-external-resource states/db {:name "git"}))

@@ -112,7 +112,7 @@
                         name
                         :- String]
           :summary "Deletes a pipeline in a group with the specified name."
-          (p/remove group name))
+          (p/remove-pipeline group name))
 
         (rest/GET "/pipeline/status/running" []
           :return schema/RunningResponse

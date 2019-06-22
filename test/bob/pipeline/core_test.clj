@@ -15,13 +15,11 @@
 
 (ns bob.pipeline.core-test
   (:require [clojure.test :refer :all]
-            [clojure.string :as str]
-            [korma.db :refer [defdb]]
-            [korma.core :refer [select fields]]
             [ragtime.jdbc :as jdbc]
             [ragtime.repl :refer [migrate]]
             [hikari-cp.core :refer [make-datasource]]
-            [bob.db.core :refer [pipelines steps resources resource-params]]
+            [hugsql.core :as hsql]
+            [bob.states :as states]
             [bob.pipeline.core :refer [create]]
             [bob.util :refer [clob->str]]))
 
@@ -50,56 +48,65 @@
                                   :branch "master"}
                        :type     "external"}])
 
+(def db {:datasource data-source})
+
+(hsql/def-db-fns "bob/pipeline/test.sql")
+
 (deftest create-test
   (testing "Creating a valid pipeline"
     (migrate migration-config)
-    (defdb _
-      {:datasource data-source})
-    @(create "dev" "test" valid-steps {} valid-resources "test:image")
-    (is (= (first (select pipelines)) {:image "test:image", :name "dev:test"}))
-    (is (= (first (select resources))
-           {:name     "source"
+
+    (with-redefs [states/db db]
+      @(create "dev" "test" valid-steps {} valid-resources "test:image"))
+
+    (is (= {:image "test:image", :name "dev:test"}
+           (first (all-pipelines db))))
+
+    (is (= {:name     "source"
             :provider "git"
             :type     "external"
-            :pipeline "dev:test"}))
-    (is (= (select resource-params)
-           [{:name     "source"
+            :pipeline "dev:test"}
+           (first (all-resources db))))
+
+    (is (= [{:name     "source"
              :key      "url"
              :value    "https://test.com"
              :pipeline "dev:test"}
             {:name     "source"
              :key      "branch"
              :value    "master"
-             :pipeline "dev:test"}]))
-    (is (= (->> (select steps)
-                (map #(update-in % [:cmd] clob->str)))
-           (list {:cmd               "echo 1 >> state.txt"
-                  :id                1
-                  :pipeline          "dev:test"
-                  :needs_resource    nil
-                  :produces_artifact nil
-                  :artifact_path     nil}
-                 {:cmd               "echo 2 >> state.txt"
-                  :id                2
-                  :pipeline          "dev:test"
-                  :needs_resource    nil
-                  :produces_artifact nil
-                  :artifact_path     nil}
-                 {:cmd               "echo 3 >> state.txt"
-                  :id                3
-                  :pipeline          "dev:test"
-                  :needs_resource    nil
-                  :produces_artifact nil
-                  :artifact_path     nil}
-                 {:cmd               "cat state.txt"
-                  :id                4
-                  :pipeline          "dev:test"
-                  :needs_resource    nil
-                  :produces_artifact "afile"
-                  :artifact_path     "target/file"}
-                 {:cmd               "ls"
-                  :id                5
-                  :pipeline          "dev:test"
-                  :needs_resource    "source"
-                  :produces_artifact nil
-                  :artifact_path     nil})))))
+             :pipeline "dev:test"}]
+           (all-resource-params db)))
+
+    (is (= [{:cmd               "echo 1 >> state.txt"
+             :id                1
+             :pipeline          "dev:test"
+             :needs_resource    nil
+             :produces_artifact nil
+             :artifact_path     nil}
+            {:cmd               "echo 2 >> state.txt"
+             :id                2
+             :pipeline          "dev:test"
+             :needs_resource    nil
+             :produces_artifact nil
+             :artifact_path     nil}
+            {:cmd               "echo 3 >> state.txt"
+             :id                3
+             :pipeline          "dev:test"
+             :needs_resource    nil
+             :produces_artifact nil
+             :artifact_path     nil}
+            {:cmd               "cat state.txt"
+             :id                4
+             :pipeline          "dev:test"
+             :needs_resource    nil
+             :produces_artifact "afile"
+             :artifact_path     "target/file"}
+            {:cmd               "ls"
+             :id                5
+             :pipeline          "dev:test"
+             :needs_resource    "source"
+             :produces_artifact nil
+             :artifact_path     nil}]
+           (->> (all-steps db)
+                (map #(update-in % [:cmd] clob->str)))))))

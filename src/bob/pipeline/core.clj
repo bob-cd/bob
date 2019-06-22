@@ -15,13 +15,14 @@
 
 (ns bob.pipeline.core
   (:require [ring.util.response :as res]
-            [korma.core :as k]
             [manifold.deferred :as d]
             [failjure.core :as f]
             [bob.pipeline.internals :as p]
-            [bob.db.core :as db]
             [bob.util :as u]
-            [bob.resource.internals :as ri]))
+            [bob.resource.internals :as ri]
+            [bob.states :as states]
+            [bob.pipeline.db :as db]
+            [bob.resource.db :as rdb]))
 
 (defn create
   "Creates a new pipeline.
@@ -41,41 +42,43 @@
 
   Returns Ok or the error if any."
   [group name pipeline-steps vars resources image]
-  (d/let-flow [pipeline   (u/name-of group name)
-               vars-pairs (map #(hash-map :key (clojure.core/name (first %))
-                                          :value (last %)
-                                          :pipeline pipeline)
-                               vars)
-               result     (f/attempt-all [_ (u/unsafe! (k/insert db/pipelines (k/values {:name  pipeline
-                                                                                         :image image})))
-                                          _ (u/unsafe! (doseq [resource resources]
-                                                         (let [{name     :name
-                                                                params   :params
-                                                                type     :type
-                                                                provider :provider} resource]
-                                                           (k/insert db/resources
-                                                                     (k/values {:name     name
-                                                                                :type     type
-                                                                                :pipeline pipeline
-                                                                                :provider provider}))
-                                                           (ri/add-params name params pipeline))))
-                                          _ (when (not (empty? vars-pairs))
-                                              (u/unsafe! (k/insert db/evars (k/values vars-pairs))))
-                                          _ (u/unsafe! (doseq [step pipeline-steps]
-                                                         (let [{cmd                       :cmd
-                                                                needs-resource            :needs_resource
-                                                                {artifact-name :name
-                                                                 artifact-path :path} :produces_artifact} step]
-                                                           (k/insert db/steps (k/values {:cmd               cmd
-                                                                                         :needs_resource    needs-resource
-                                                                                         :produces_artifact artifact-name
-                                                                                         :artifact_path     artifact-path
-                                                                                         :pipeline          pipeline})))))]
-                            (u/respond "Ok")
-                            (f/when-failed [err]
-                                           (u/unsafe! (k/delete db/pipelines
-                                                                (k/where {:name name})))
-                                           (res/bad-request {:message (f/message err)})))]
+  (d/let-flow [pipeline (u/name-of group name)
+               evars    (map #(vector (clojure.core/name (first %))
+                                      (last %)
+                                      pipeline)
+                             vars)
+               result   (f/attempt-all [_ (u/unsafe! (db/insert-pipeline states/db
+                                                                         {:name  pipeline
+                                                                          :image image}))
+                                        _ (u/unsafe! (doseq [resource resources]
+                                                       (let [{name     :name
+                                                              params   :params
+                                                              type     :type
+                                                              provider :provider} resource]
+                                                         (rdb/insert-resource states/db
+                                                                              {:name     name
+                                                                               :type     type
+                                                                               :pipeline pipeline
+                                                                               :provider provider})
+                                                         (ri/add-params name params pipeline))))
+                                        _ (when (not (empty? evars))
+                                            (u/unsafe! (db/insert-evars states/db
+                                                                        {:evars evars})))
+                                        _ (u/unsafe! (doseq [step pipeline-steps]
+                                                       (let [{cmd                   :cmd
+                                                              needs-resource        :needs_resource
+                                                              {artifact-name :name
+                                                               artifact-path :path} :produces_artifact} step]
+                                                         (db/insert-step states/db
+                                                                         {:cmd               cmd
+                                                                          :needs_resource    needs-resource
+                                                                          :produces_artifact artifact-name
+                                                                          :artifact_path     artifact-path
+                                                                          :pipeline          pipeline}))))]
+                          (u/respond "Ok")
+                          (f/when-failed [err]
+                            (do (u/unsafe! (db/delete-pipeline states/db {:name pipeline}))
+                                (res/bad-request {:message (f/message err)}))))]
     result))
 
 ;; TODO: Unit test this?
@@ -85,13 +88,11 @@
   [group name]
   (d/let-flow [pipeline (u/name-of group name)
                result   (f/attempt-all [image (p/image-of pipeline)
-                                        steps (u/unsafe! (k/select db/steps
-                                                                   (k/where {:pipeline pipeline})
-                                                                   (k/order :id)))
+                                        steps (u/unsafe! (db/ordered-steps states/db
+                                                                           {:pipeline pipeline}))
                                         steps (map #(update-in % [:cmd] u/clob->str) steps)
-                                        vars  (u/unsafe! (->> (k/select db/evars
-                                                                        (k/fields :key :value)
-                                                                        (k/where {:pipeline pipeline}))
+                                        vars  (u/unsafe! (->> (db/evars-by-pipeline states/db
+                                                                                    {:pipeline pipeline})
                                                               (map #(hash-map
                                                                       (keyword (:key %)) (:value %)))
                                                               (into {})))]
@@ -119,11 +120,9 @@
   Returns the status or 404."
   [group name number]
   (d/let-flow [pipeline (u/name-of group name)
-               status   (u/unsafe! (-> (k/select db/runs
-                                                 (k/fields :status)
-                                                 (k/where {:pipeline pipeline
-                                                           :number   number}))
-                                       (first)
+               status   (u/unsafe! (-> (db/status-of states/db
+                                                     {:pipeline pipeline
+                                                      :number   number})
                                        (:status)
                                        (keyword)))]
     (if (nil? status)
@@ -131,13 +130,13 @@
       (u/respond status))))
 
 ;; TODO: Unit test this?
-(defn remove
+(defn remove-pipeline
   "Removes a pipeline.
   Returns Ok or 404."
   [group name]
   (d/let-flow [pipeline (u/name-of group name)
-               _        (u/unsafe! (k/delete db/pipelines
-                                             (k/where {:name pipeline})))]
+               _        (u/unsafe! (db/delete-pipeline states/db
+                                                       {:name pipeline}))]
     (u/respond "Ok")))
 
 ;; TODO: Unit test this?
@@ -155,10 +154,7 @@
   "Collects all pipeline names that have status 'running'.
   Returns pipeline names as a list."
   []
-  (d/let-flow [pipeline-names (u/unsafe! (->> (k/select db/pipelines
-                                                        (k/fields :name)
-                                                        (k/where {:runs.status "running"})
-                                                        (k/join db/runs (= :runs.pipeline :name)))
+  (d/let-flow [pipeline-names (u/unsafe! (->> (db/running-pipelines states/db)
                                               (map #(:name %))))]
     (if (empty? pipeline-names)
       (res/not-found {:message "No running pipelines"})
@@ -186,10 +182,6 @@
                        :branch "master"}}]
           "busybox:musl")
   (start "test" "test")
-  (k/select db/pipelines)
-  (->> (k/select db/steps)
-       (map #(update-in % [:cmd] u/clob->str)))
-  (k/select db/resources)
-  (status "test" "test" 1)
+  (status "dev" "test" 1)
   (logs-of "test" "test" 1 0 20)
-  (remove "test" "test"))
+  (remove-pipeline "test" "test"))
