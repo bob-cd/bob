@@ -13,8 +13,8 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-{:up   ["CREATE TABLE logs (id  INTEGER AUTO_INCREMENT,
-                            run VARCHAR(36) NOT NULL,
-                            pid VARCHAR(12) DEFAULT NULL,
-                            FOREIGN KEY(run) REFERENCES runs(id) ON DELETE CASCADE);"]
+{:up   ["CREATE TABLE \"logs\" (\"id\"  INTEGER AUTO_INCREMENT,
+                                \"run\" VARCHAR(36) NOT NULL,
+                                \"pid\" VARCHAR(12) DEFAULT NULL,
+                                FOREIGN KEY(\"run\") REFERENCES \"runs\"(\"id\") ON DELETE CASCADE);"]
  :down ["DROP TABLE logs;"]}

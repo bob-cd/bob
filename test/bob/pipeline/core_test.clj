@@ -54,9 +54,7 @@
   (testing "Creating a valid pipeline"
     (migrate migration-config)
     (defdb _
-      {:datasource data-source
-       :naming     {:keys   str/lower-case
-                    :fields str/upper-case}})
+      {:datasource data-source})
     @(create "dev" "test" valid-steps {} valid-resources "test:image")
     (is (= (first (select pipelines)) {:image "test:image", :name "dev:test"}))
     (is (= (first (select resources))

@@ -13,9 +13,9 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-{:up   ["CREATE TABLE resource_params (name     VARCHAR(50) NOT NULL,
-                                       key      VARCHAR(10) NOT NULL,
-                                       value    VARCHAR(100) NOT NULL,
-                                       pipeline VARCHAR(100) NOT NULL,
-                                       FOREIGN KEY(name, pipeline) REFERENCES resources(name, pipeline) ON DELETE CASCADE);"]
+{:up   ["CREATE TABLE \"resource_params\" (\"name\"     VARCHAR(50) NOT NULL,
+                                           \"key\"      VARCHAR(10) NOT NULL,
+                                           \"value\"    VARCHAR(100) NOT NULL,
+                                           \"pipeline\" VARCHAR(100) NOT NULL,
+                                           FOREIGN KEY(\"name\", \"pipeline\") REFERENCES \"resources\"(\"name\", \"pipeline\") ON DELETE CASCADE);"]
  :down ["DROP TABLE resource_params;"]}

@@ -13,10 +13,10 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-{:up   ["CREATE TABLE evars (id       INTEGER AUTO_INCREMENT,
-                             key      VARCHAR(50) NOT NULL,
-                             value    VARCHAR(12) DEFAULT NULL,
-                             pipeline VARCHAR(100) NOT NULL,
-                             PRIMARY KEY(id, pipeline),
-                             FOREIGN KEY(pipeline) REFERENCES pipelines(name) ON DELETE CASCADE);"]
+{:up   ["CREATE TABLE \"evars\" (\"id\"       INTEGER AUTO_INCREMENT,
+                                 \"key\"      VARCHAR(50) NOT NULL,
+                                 \"value\"    VARCHAR(12) DEFAULT NULL,
+                                 \"pipeline\" VARCHAR(100) NOT NULL,
+                                 PRIMARY KEY(\"id\", \"pipeline\"),
+                                 FOREIGN KEY(\"pipeline\") REFERENCES \"pipelines\"(\"name\") ON DELETE CASCADE);"]
  :down ["DROP TABLE evars;"]}

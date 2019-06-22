@@ -17,7 +17,6 @@
   (:require [mount.core :as m]
             [ragtime.repl :as repl]
             [korma.db :as kdb]
-            [clojure.string :as str]
             [ragtime.jdbc :as jdbc]
             [hikari-cp.core :as h]
             [clj-docker-client.core :as docker])
@@ -40,9 +39,8 @@
 
 (m/defstate database
   :start (do (repl/migrate migration-config)
-             (kdb/defdb _ {:datasource data-source
-                           :naming     {:keys   str/lower-case
-                                        :fields str/upper-case}})))
+             (kdb/defdb _ {:datasource data-source})))
+
 (m/defstate docker-conn
   :start (docker/connect)
   :stop  (do (println "Closing docker connection...")
