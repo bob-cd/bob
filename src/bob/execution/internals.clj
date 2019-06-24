@@ -19,11 +19,11 @@
             [bob.util :as u]
             [bob.states :as states]))
 
-(defn- has-image
+(defn has-image
   "Checks if an image is present locally.
   Returns the name or the error if any."
   [name]
-  (let [result (u/unsafe! (filter #(= (-> % :RepoTags) [name])
+  (let [result (u/unsafe! (filter #(= (:RepoTags %) [name])
                                   (docker/image-ls states/docker-conn)))]
     (if (or (f/failed? result) (zero? (count result)))
       (f/fail "Failed to find %s" name)
@@ -67,7 +67,7 @@
   [^String id]
   (let [result (u/unsafe! (docker/container-state states/docker-conn id))]
     (if (f/failed? result)
-      (f/message result)
+      result
       {:running?  (:Running result)
        :exit-code (:ExitCode result)})))
 
