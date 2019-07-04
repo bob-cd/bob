@@ -65,7 +65,7 @@
                             (f/fail (str "Invalid external resources, possibly not registered"
                                          (:name resource))))
                   out-dir (r/fetch-resource resource pipeline)]
-    (r/initial-image-of out-dir image (:cmd resource))
+    (r/initial-image-of out-dir image nil)
     (f/when-failed [err] err)))
 
 (comment

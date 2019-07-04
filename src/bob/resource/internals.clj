@@ -54,7 +54,7 @@
                 (clojure.java.io/copy stream saveFile)))
             (recur (.getNextEntry stream))))))))
 
-(defn- url-of
+(defn url-of
   "Generates a GET URL for the external resource of a pipeline."
   [resource pipeline]
   (let [url    (-> (db/external-resource-url states/db
