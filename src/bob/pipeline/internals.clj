@@ -41,7 +41,7 @@
     pid
     (f/when-failed [err] err)))
 
-(defn- resourceful-step
+(defn resourceful-step
   "Create a resource mounted image for a step if it needs it."
   [step pipeline image]
   (if (:needs_resource step)
@@ -53,7 +53,7 @@
     image))
 
 ;; TODO: Extra container is created here with resources, see if can be avoided.
-(defn- next-step
+(defn next-step
   "Generates the next container from a previously run container.
   Works by saving the last container state in a diffed image and
   creating a new container from it, thereby managing state externally.
@@ -67,7 +67,9 @@
                                              (:cmd step)))
                   resource      (:needs_resource step)
                   mounted       (:mounted id)
-                  mount-needed? (not (some #{resource} mounted))
+                  mount-needed? (if (nil? resource)
+                                  false
+                                  (not (some #{resource} mounted)))
                   image         (if mount-needed?
                                   (resourceful-step step pipeline image)
                                   image)
@@ -78,14 +80,14 @@
       result)
     (f/when-failed [err] err)))
 
-(defn- exec-step
+(defn exec-step
   "Reducer function to implement the sequential execution of steps.
 
   Used to reduce an initial state with the list of steps, executing
   them to the final state.
 
   Stops the reduce if the pipeline stop has been signalled or any
-  non-zero step outcome.
+  step has a non-zero exit.
 
   Additionally uploads the artifact if produced in a step with the
   PWD as the prefix.
@@ -116,7 +118,7 @@
          :mounted (:mounted result)}
         (f/when-failed [err] err)))))
 
-(defn- next-build-number-of
+(defn next-build-number-of
   "Generates a sequential build number for a pipeline."
   [name]
   (f/attempt-all [result (u/unsafe! (last (db/pipeline-runs states/db {:pipeline name})))]
@@ -161,7 +163,7 @@
               (do (u/unsafe! (db/update-run states/db
                                             {:status "failed"
                                              :id     run-id}))
-                  (f/message err)))))))
+                  err))))))
 
 (defn stop-pipeline
   "Stops a pipeline if running.
