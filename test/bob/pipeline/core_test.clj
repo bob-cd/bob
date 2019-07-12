@@ -15,98 +15,303 @@
 
 (ns bob.pipeline.core-test
   (:require [clojure.test :refer :all]
-            [ragtime.jdbc :as jdbc]
-            [ragtime.repl :refer [migrate]]
-            [hikari-cp.core :refer [make-datasource]]
-            [hugsql.core :as hsql]
-            [bob.states :as states]
-            [bob.pipeline.core :refer [create]]
-            [bob.util :refer [clob->str]]))
+            [bob.test-utils :as tu]
+            [bob.pipeline.core :refer :all]
+            [bob.pipeline.internals :as p]
+            [bob.pipeline.db :as db]
+            [bob.resource.db :as rdb]
+            [bob.resource.internals :as ri])
+  (:import (javax.sql.rowset.serial SerialClob)))
 
-(def db-uri "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
+(deftest pipeline-creation
+  (testing "successfully create a pipeline with used resources and evars"
+    (with-redefs-fn {#'db/insert-pipeline  (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:name  "dev:test"
+                                                   :image "img"}
+                                                  args)))
+                     #'rdb/insert-resource (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:name     "src"
+                                                   :type     "external"
+                                                   :pipeline "dev:test"
+                                                   :provider "git"}
+                                                  args)))
+                     #'ri/add-params       (fn [& args]
+                                             (tu/check-and-fail
+                                              #(= ["src"
+                                                   {:url    "https://test.com"
+                                                    :branch "master"}
+                                                   "dev:test"]
+                                                  args)))
+                     #'db/insert-evars     (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:evars [["k1" "v1" "dev:test"]]}
+                                                  args)))
+                     #'db/insert-step      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:cmd               "hello"
+                                                   :needs_resource    "src"
+                                                   :produces_artifact "jar"
+                                                   :artifact_path     "path"
+                                                   :pipeline          "dev:test"}
+                                                  args)))
+                     #'db/delete-pipeline  (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))}
+      #(is (= "Ok"
+              (-> @(create "dev"
+                           "test"
+                           [{:cmd               "hello"
+                             :needs_resource    "src"
+                             :produces_artifact {:name "jar"
+                                                 :path "path"}}]
+                           {:k1 "v1"}
+                           [{:name     "src"
+                             :provider "git"
+                             :params   {:url    "https://test.com"
+                                        :branch "master"}
+                             :type     "external"}]
+                           "img")
+                  :body
+                  :message)))))
 
-(def data-source
-  (make-datasource {:adapter "h2"
-                    :url     db-uri}))
+  (testing "successfully create a pipeline without resources and with evars"
+    (with-redefs-fn {#'db/insert-pipeline  (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:name  "dev:test"
+                                                   :image "img"}
+                                                  args)))
+                     #'rdb/insert-resource (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))
+                     #'ri/add-params       (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))
+                     #'db/insert-evars     (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:evars [["k1" "v1" "dev:test"]]}
+                                                  args)))
+                     #'db/insert-step      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:cmd               "hello"
+                                                   :needs_resource    nil
+                                                   :produces_artifact "jar"
+                                                   :artifact_path     "path"
+                                                   :pipeline          "dev:test"}
+                                                  args)))
+                     #'db/delete-pipeline  (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))}
+      #(is (= "Ok"
+              (-> @(create "dev"
+                           "test"
+                           [{:cmd               "hello"
+                             :produces_artifact {:name "jar"
+                                                 :path "path"}}]
+                           {:k1 "v1"}
+                           []
+                           "img")
+                  :body
+                  :message)))))
 
-(def migration-config
-  {:datastore  (jdbc/sql-database {:connection-uri db-uri})
-   :migrations (jdbc/load-resources "migrations")})
+  (testing "successfully create a pipeline without resources or evars"
+    (with-redefs-fn {#'db/insert-pipeline  (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:name  "dev:test"
+                                                   :image "img"}
+                                                  args)))
+                     #'rdb/insert-resource (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))
+                     #'ri/add-params       (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))
+                     #'db/insert-evars     (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))
+                     #'db/insert-step      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:cmd               "hello"
+                                                   :needs_resource    nil
+                                                   :produces_artifact "jar"
+                                                   :artifact_path     "path"
+                                                   :pipeline          "dev:test"}
+                                                  args)))
+                     #'db/delete-pipeline  (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))}
+      #(is (= "Ok"
+              (-> @(create "dev"
+                           "test"
+                           [{:cmd               "hello"
+                             :produces_artifact {:name "jar"
+                                                 :path "path"}}]
+                           {}
+                           []
+                           "img")
+                  :body
+                  :message)))))
 
-(def valid-steps [{:cmd "echo 1 >> state.txt"}
-                  {:cmd "echo 2 >> state.txt"}
-                  {:cmd "echo 3 >> state.txt"}
-                  {:cmd               "cat state.txt"
-                   :produces_artifact {:name "afile"
-                                       :path "target/file"}}
-                  {:needs_resource "source"
-                   :cmd            "ls"}])
+  (testing "unsuccessfully create a pipeline"
+    (with-redefs-fn {#'db/insert-pipeline  (fn [& _]
+                                             (throw (Exception. "shizzz")))
+                     #'rdb/insert-resource (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))
+                     #'ri/add-params       (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))
+                     #'db/insert-evars     (fn [& _]
+                                             (throw (Exception. "this shouldn't be called")))
+                     #'db/insert-step      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:cmd               "hello"
+                                                   :needs_resource    nil
+                                                   :produces_artifact "jar"
+                                                   :artifact_path     "path"
+                                                   :pipeline          "dev:test"}
+                                                  args)))
+                     #'db/delete-pipeline  (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= {:pipeline "dev:test"}
+                                                  args)))}
+      #(is (= "shizzz"
+              (-> @(create "dev"
+                           "test"
+                           [{:cmd               "hello"
+                             :produces_artifact {:name "jar"
+                                                 :path "path"}}]
+                           {}
+                           []
+                           "img")
+                  :body
+                  :message))))))
 
-(def valid-resources [{:name     "source"
-                       :provider "git"
-                       :params   {:url    "https://test.com"
-                                  :branch "master"}
-                       :type     "external"}])
+(deftest pipeline-start
+  (testing "successfully start a pipeline"
+    (with-redefs-fn {#'p/image-of           (fn [pipeline]
+                                              (tu/check-and-fail
+                                               #(= "dev:test" pipeline))
+                                              "img")
+                     #'db/ordered-steps     (fn [_ args]
+                                              (tu/check-and-fail
+                                               #(= {:pipeline "dev:test"}
+                                                   args))
+                                              [{:cmd (SerialClob. (.toCharArray "test"))}])
+                     #'db/evars-by-pipeline (fn [_ args]
+                                              (tu/check-and-fail
+                                               #(= {:pipeline "dev:test"}
+                                                   args))
+                                              [{:key "k1" :value "v1"}])
+                     #'p/exec-steps         (fn [& args]
+                                              (tu/check-and-fail
+                                               #(= ["img" [{:cmd "test"}] "dev:test" {:k1 "v1"}]
+                                                   args)))}
+      #(is (= "Ok" (-> @(start "dev" "test")
+                       :body
+                       :message)))))
 
-(def db {:datasource data-source})
+  (testing "unsuccessfully start a pipeline"
+    (with-redefs-fn {#'p/image-of           (fn [pipeline]
+                                              (tu/check-and-fail
+                                               #(= "dev:test" pipeline))
+                                              "img")
+                     #'db/ordered-steps     (fn [& _]
+                                              (throw (Exception. "shizzz")))
+                     #'db/evars-by-pipeline (fn [_ args]
+                                              (tu/check-and-fail
+                                               #(= {:pipeline "dev:test"}
+                                                   args))
+                                              [{:key "k1" :value "v1"}])
+                     #'p/exec-steps         (fn [& args]
+                                              (tu/check-and-fail
+                                               #(= ["img" [{:cmd "test"}] "dev:test" {:k1 "v1"}]
+                                                   args)))}
+      #(is (= "shizzz" (-> @(start "dev" "test")
+                           :body
+                           :message))))))
 
-(hsql/def-db-fns "bob/pipeline/test.sql")
+(deftest pipeline-stop
+  (testing "successfully stopping a pipeline"
+    (with-redefs-fn {#'p/stop-pipeline (fn [pipeline number]
+                                         (tu/check-and-fail
+                                          #(and (= "dev:test" pipeline)
+                                                (= 1 number)))
+                                         "Ok")}
+      #(is (= "Ok" (-> @(stop "dev" "test" 1)
+                       :body
+                       :message)))))
 
-(deftest create-test
-  (testing "Creating a valid pipeline"
-    (migrate migration-config)
+  (testing "unsuccessfully stopping a pipeline"
+    (with-redefs-fn {#'p/stop-pipeline (constantly nil)}
+      #(is (= "Pipeline not running" (-> @(stop "dev" "test" 1)
+                                         :body
+                                         :message))))))
 
-    (with-redefs [states/db db]
-      @(create "dev" "test" valid-steps {} valid-resources "test:image"))
+(deftest pipeline-status
+  (testing "successful status fetch"
+    (with-redefs-fn {#'db/status-of (fn [_ args]
+                                      (tu/check-and-fail
+                                       #(= {:pipeline "dev:test"
+                                            :number   1}
+                                           args))
+                                      {:status "running"})}
+      #(is (= :running
+              (-> @(status "dev" "test" 1)
+                  :body
+                  :message)))))
 
-    (is (= {:image "test:image", :name "dev:test"}
-           (first (all-pipelines db))))
+  (testing "unsuccessful status fetch"
+    (with-redefs-fn {#'db/status-of (constantly nil)}
+      #(is (= "No such pipeline"
+              (-> @(status "dev" "test" 1)
+                  :body
+                  :message))))))
 
-    (is (= {:name     "source"
-            :provider "git"
-            :type     "external"
-            :pipeline "dev:test"}
-           (first (all-resources db))))
+(deftest pipeline-remove
+  (testing "successful pipeline removal"
+    (with-redefs-fn {#'db/delete-pipeline (fn [_ args]
+                                            (tu/check-and-fail
+                                             #(= {:pipeline "dev:test"}
+                                                 args)))}
+      #(is (= "Ok"
+              (-> @(remove-pipeline "dev" "test")
+                  :body
+                  :message)))))
 
-    (is (= [{:name     "source"
-             :key      "url"
-             :value    "https://test.com"
-             :pipeline "dev:test"}
-            {:name     "source"
-             :key      "branch"
-             :value    "master"
-             :pipeline "dev:test"}]
-           (all-resource-params db)))
+  (testing "suppressed unsuccessful pipeline removal"
+    (with-redefs-fn {#'db/delete-pipeline (fn [& _]
+                                            (throw (Exception. "shizzz")))}
+      #(is (= "Ok"
+              (-> @(remove-pipeline "dev" "test")
+                  :body
+                  :message))))))
 
-    (is (= [{:cmd               "echo 1 >> state.txt"
-             :id                1
-             :pipeline          "dev:test"
-             :needs_resource    nil
-             :produces_artifact nil
-             :artifact_path     nil}
-            {:cmd               "echo 2 >> state.txt"
-             :id                2
-             :pipeline          "dev:test"
-             :needs_resource    nil
-             :produces_artifact nil
-             :artifact_path     nil}
-            {:cmd               "echo 3 >> state.txt"
-             :id                3
-             :pipeline          "dev:test"
-             :needs_resource    nil
-             :produces_artifact nil
-             :artifact_path     nil}
-            {:cmd               "cat state.txt"
-             :id                4
-             :pipeline          "dev:test"
-             :needs_resource    nil
-             :produces_artifact "afile"
-             :artifact_path     "target/file"}
-            {:cmd               "ls"
-             :id                5
-             :pipeline          "dev:test"
-             :needs_resource    "source"
-             :produces_artifact nil
-             :artifact_path     nil}]
-           (->> (all-steps db)
-                (map #(update-in % [:cmd] clob->str)))))))
+(deftest pipeline-logs
+  (testing "successful logs fetch"
+    (with-redefs-fn {#'p/pipeline-logs (fn [pipeline number offset lines]
+                                         (tu/check-and-fail
+                                          #(and (= "dev:test" pipeline)
+                                                (= 1 number)
+                                                (= 0 offset)
+                                                (= 100 lines)))
+                                         ["line1" "line2"])}
+      #(is (= ["line1" "line2"]
+              (-> @(logs-of "dev" "test" 1 0 100)
+                  :body
+                  :message)))))
+
+  (testing "unsuccessful logs fetch"
+    (with-redefs-fn {#'p/pipeline-logs (constantly "shizzz")}
+      #(is (= "shizzz"
+              (-> @(logs-of "dev" "test" 1 0 100)
+                  :body
+                  :message))))))
+
+(deftest fetch-running-pipelines
+  (testing "successfully fetch running pipeline"
+    (with-redefs-fn {#'db/running-pipelines (constantly [{:name "dev:test"}
+                                                         {:name "bev:best"}])}
+      #(is (= [{:group "dev" :name "test"}
+               {:group "bev" :name "best"}]
+              (-> @(running-pipelines)
+                  :body
+                  :message)))))
+
+  (testing "unsuccessfully fetch running pipeline"
+    (with-redefs-fn {#'db/running-pipelines (constantly [])}
+      #(is (= "No running pipelines"
+              (-> @(running-pipelines)
+                  :body
+                  :message))))))

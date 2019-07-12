@@ -51,10 +51,7 @@
                                                                          {:name  pipeline
                                                                           :image image}))
                                         _ (u/unsafe! (doseq [resource resources]
-                                                       (let [{name     :name
-                                                              params   :params
-                                                              type     :type
-                                                              provider :provider} resource]
+                                                       (let [{:keys [name params type provider]} resource]
                                                          (rdb/insert-resource states/db
                                                                               {:name     name
                                                                                :type     type
@@ -81,7 +78,6 @@
                                 (res/bad-request {:message (f/message err)}))))]
     result))
 
-;; TODO: Unit test this?
 (defn start
   "Asynchronously starts a pipeline in a group by name.
   Returns Ok or any starting errors."
@@ -103,7 +99,6 @@
                               {:message (f/message err)})))]
     result))
 
-;; TODO: Unit test this?
 (defn stop
   "Stops a running pipeline with SIGKILL.
   Returns Ok or any stopping errors."
@@ -114,7 +109,6 @@
       (res/not-found {:message "Pipeline not running"})
       (u/respond result))))
 
-;; TODO: Unit test this?
 (defn status
   "Fetches the status of a particular run of a pipeline.
   Returns the status or 404."
@@ -129,7 +123,6 @@
       (res/not-found {:message "No such pipeline"})
       (u/respond status))))
 
-;; TODO: Unit test this?
 (defn remove-pipeline
   "Removes a pipeline.
   Returns Ok or 404."
@@ -139,7 +132,6 @@
                                                        {:name pipeline}))]
     (u/respond "Ok")))
 
-;; TODO: Unit test this?
 (defn logs-of
   "Handler to fetch logs for a particular run of a pipeline.
   Take the starting offset to read and the number of lines to read after it.
@@ -149,7 +141,6 @@
                result   (p/pipeline-logs pipeline number offset lines)]
     (u/respond result)))
 
-;; TODO: Unit test this?
 (defn running-pipelines
   "Collects all pipeline names that have status 'running'.
   Returns pipeline names as a list."
