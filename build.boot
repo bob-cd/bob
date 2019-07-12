@@ -32,7 +32,7 @@
                             [failjure "1.3.0"]
                             [com.h2database/h2 "1.4.199"]
                             [ragtime "0.8.0"]
-                            [hikari-cp "2.7.1"]
+                            [hikari-cp "2.8.0"]
                             [com.layerware/hugsql "0.4.9"]
                             [metosin/compojure-api "2.0.0-alpha30"]
                             [prismatic/schema "1.1.11"]

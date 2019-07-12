@@ -86,7 +86,7 @@
                :body    :stuff}
               @(stream-artifact "dev" "test" 1 "afile")))))
 
-  (testing "artifcat store not registered"
+  (testing "artifact store not registered"
     (with-redefs-fn {#'db/get-artifact-store (constantly nil)}
       #(is (= "No artifact store registered"
               (-> (stream-artifact "dev" "test" 1 "afile")
@@ -120,7 +120,7 @@
       #(is (= "Ok"
               (upload-artifact "dev" "test" 1 "afile" "1" "/path")))))
 
-  (testing "artifcat store not registered"
+  (testing "artifact store not registered"
     (with-redefs-fn {#'db/get-artifact-store (constantly nil)}
       #(let [result (upload-artifact "dev" "test" 1 "afile" "1" "/path")]
          (is (and (f/failed? result)

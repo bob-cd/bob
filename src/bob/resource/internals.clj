@@ -81,8 +81,8 @@
                   _             (u/unsafe! (.mkdirs ^File dir))
                   url           (url-of resource pipeline)
                   stream        (u/unsafe! (-> @(http/get url)
-                                           :body
-                                           (ZipInputStream.)))
+                                               :body
+                                               (ZipInputStream.)))
                   _             (extract-zip! stream dir)]
     out-dir
     (f/when-failed [err] err)))

@@ -12,6 +12,7 @@
 ### [Why](https://github.com/bob-cd/bob/blob/master/docs/rationale.md) Bob
 
 ## 🚧 This is a proof of concept and isn't fully functional yet. 🚧
+See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the roadmap and planned work.
 
 ## Build requirements
 - Any OS supporting Java and Docker
@@ -30,9 +31,9 @@
     - Run `boot kaocha` to run tests.
     - Run `boot build` to get the standalone JAR.
     - Run `java -jar ./target/bob-standalone.jar` to start the server on port **7777**.
-    
+
 ## Running Bob in Docker
-Bob uses Docker as its engine to execute builds, but its now possible to run Bob _himself_ 
+Bob uses Docker as its engine to execute builds, but its now possible to run Bob
 inside Docker using [dind](https://hub.docker.com/_/docker).
 
 To use the latest pre-built image:
