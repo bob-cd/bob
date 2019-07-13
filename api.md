@@ -1,3 +1,10 @@
+---
+layout: default
+title: REST API
+nav_order: 2
+permalink: /api
+---
+
 # Bob the Builder
 The modular, extensible CI/CD platform.
 

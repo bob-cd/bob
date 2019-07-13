@@ -1,3 +1,10 @@
+---
+layout: default
+title: Why Bob
+nav_order: 1
+permalink: /why-bob
+---
+
 ## Some of the (non exhaustive) reasons of why Bob
 
 I am primarily a server side dev dealing with a lot for DevOps tools almost everyday and specially CI servers. Some
@@ -34,4 +41,4 @@ And this is a project born out of my frustration and is VERY new. 😄
 
 Any and every help, suggestion is most welcome!
 
-#### A sample bob config can be found [here](https://github.com/bob-cd/wendy/blob/master/docs/build.toml) 
+#### A sample bob config can be found [here](https://github.com/bob-cd/wendy/blob/master/docs/build.toml)

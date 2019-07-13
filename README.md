@@ -67,4 +67,4 @@ This project is built using the Boot build tool which is unsupported on Cursive 
 - Open up this directory in Cursive and it should work.
 - Happy development!
 
-### Extensive Usage + API [docs](https://bob-cd.readthedocs.io/en/latest/)
+### Extensive Usage + API [docs](https://bob-cd.github.io/bob)
