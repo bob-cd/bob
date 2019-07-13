@@ -7,64 +7,16 @@
 
 # Bob the Builder
 
-## This is what CI/CD should've been.
+Source for https://bob-cd.github.io/bob
 
-### [Why](https://github.com/bob-cd/bob/blob/master/docs/rationale.md) Bob
-
-## 🚧 This is a proof of concept and isn't fully functional yet. 🚧
 See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the roadmap and planned work.
 
-## Build requirements
-- Any OS supporting Java and Docker
-- JDK 8+ (latest preferred for optimal performance)
-- [Boot](https://boot-clj.com/) 2.7+
+## Local build requirements
+- Ruby 2.1.0+
+- [Bundler](https://bundler.io/)
 
-## Running requirements
-- Any OS supporting Java and Docker
-- JRE 8+ (latest preferred for optimal performance)
-- Docker (latest preferred for optimal performance)
-
-## Testing, building and running
+## Locally building and running
 - Clone this repository.
 - Install the Build requirements.
-- Following steps **need Docker**:
-    - Run `boot kaocha` to run tests.
-    - Run `boot build` to get the standalone JAR.
-    - Run `java -jar ./target/bob-standalone.jar` to start the server on port **7777**.
-
-## Running Bob in Docker
-Bob uses Docker as its engine to execute builds, but its now possible to run Bob
-inside Docker using [dind](https://hub.docker.com/_/docker).
-
-To use the latest pre-built image:
-- `docker pull bobcd/bob:latest`
-
-To build locally, in the root of this repo, run:
-- `docker build -t bobcd/bob:latest .`
-
-Then run the container:
-- `docker run --rm -it -p 7777:7777 --privileged bobcd/bob:latest`
-
-Bob will be up on the forwarded host port `7777` and can run normally.
-The `--privileged` flag is crucial as Bob uses system calls that are not usually
-allowed on Docker.
-
-## Running integration tests:
-
-**Docker needs to be installed for this**
-
-In the `integration-tests` dir, run:
-
-`docker-compose up --abort-on-container-exit integration-test`
-
-## For Cursive users:
-This project is built using the Boot build tool which is unsupported on Cursive at the moment.
-
-### To get it running on Cursive using leiningen:
-- Install [Boot](https://boot-clj.com/) 2.7+.
-- Install [Leiningen](https://leiningen.org/) 2.8+.
-- Run `boot -d onetom/boot-lein-generate generate` to generate a `project.clj`.
-- Open up this directory in Cursive and it should work.
-- Happy development!
-
-### Extensive Usage + API [docs](https://bob-cd.github.io/bob)
+- Run `bundle install` to install deps.
+- Run `bundle exec jekyll serve` to fire up the server on http://127.0.0.1:4000
