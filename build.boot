@@ -53,7 +53,7 @@
  pom {:project     project
       :version     version
       :description "This is what CI/CD should've been."
-      :url         "https://bob-cd.readthedocs.io/en/latest/"
+      :url         "https://bob-cd.github.io/bob"
       :scm         {:url "https://github.com/bob-cd/bob"}
       :license     {"GPL 3.0"
                     "https://www.gnu.org/licenses/gpl-3.0.en.html"}}
