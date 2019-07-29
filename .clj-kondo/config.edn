@@ -16,5 +16,6 @@
 {:lint-as {manifold.deferred/let-flow clojure.core/let
            mount.core/defstate        clojure.core/def
            failjure.core/attempt-all  clojure.core/let
+           failjure.core/try-all      clojure.core/let
            failjure.core/ok->         clojure.core/->
            failjure.core/when-failed  clojure.core/fn}}

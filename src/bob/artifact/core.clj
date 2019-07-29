@@ -28,10 +28,10 @@
 (defn register-artifact-store
   "Registers an artifact store with an unique name and an URL."
   [name url]
-  (d/let-flow [result (u/unsafe! (db/register-artifact-store
-                                  states/db
-                                  {:name (str artifact-prefix name)
-                                   :url  url}))]
+  (d/let-flow [result (f/try* (db/register-artifact-store
+                                states/db
+                                {:name (str artifact-prefix name)
+                                 :url  url}))]
     (if (f/failed? result)
       (res/conflict "Artifact store already registered")
       (u/respond "Ok"))))
@@ -40,14 +40,14 @@
   "Unregisters an artifact-store resource by its name."
   [name]
   (d/let-flow [_ (db/un-register-artifact-store
-                  states/db
-                  {:name (str artifact-prefix name)})]
+                   states/db
+                   {:name (str artifact-prefix name)})]
     (u/respond "Ok")))
 
 (defn get-registered-artifact-store
   "Gets the registered artifact store."
   []
-  (d/let-flow [result (u/unsafe! (db/get-artifact-store states/db))]
+  (d/let-flow [result (f/try* (db/get-artifact-store states/db))]
     (if (f/failed? result)
       (res/bad-request (f/message result))
       (u/respond (-> result
@@ -82,17 +82,17 @@
   Returns a Failure object if failed."
   [group name number artifact run-id path]
   (if-let [{url :url} (db/get-artifact-store states/db)]
-    (f/attempt-all [stream     (u/unsafe! (docker/stream-path states/docker-conn run-id path))
-                    upload-url (clojure.string/join "/"
-                                                    [url
-                                                     "bob_artifact"
-                                                     group
-                                                     name
-                                                     number
-                                                     artifact])
-                    _          (u/unsafe! @(http/post upload-url
-                                                      {:multipart [{:name    "data" ;; Another API constraint
-                                                                    :content stream}]}))]
+    (f/try-all [stream     (docker/stream-path states/docker-conn run-id path)
+                upload-url (clojure.string/join "/"
+                                                [url
+                                                 "bob_artifact"
+                                                 group
+                                                 name
+                                                 number
+                                                 artifact])
+                _          @(http/post upload-url
+                                       {:multipart [{:name    "data" ;; Another API constraint
+                                                     :content stream}]})]
       "Ok"
       (f/when-failed [err] err))
     (f/fail "No artifact store registered")))

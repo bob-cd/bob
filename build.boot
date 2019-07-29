@@ -29,7 +29,7 @@
                             [ring/ring-json "0.4.0"]
                             [compojure "1.6.1"]
                             [com.fasterxml.jackson.core/jackson-core "2.9.9"]
-                            [failjure "1.4.0"]
+                            [failjure "1.5.0"]
                             [com.h2database/h2 "1.4.199"]
                             [ragtime "0.8.0"]
                             [hikari-cp "2.8.0"]

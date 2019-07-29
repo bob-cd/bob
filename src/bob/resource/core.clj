@@ -25,9 +25,9 @@
 (defn register-external-resource
   "Registers an external resource with an unique name and an URL."
   [name url]
-  (d/let-flow [result (u/unsafe! (db/insert-external-resource states/db
-                                                              {:name name
-                                                               :url  url}))]
+  (d/let-flow [result (f/try* (db/insert-external-resource states/db
+                                                           {:name name
+                                                            :url  url}))]
     (if (f/failed? result)
       (resp/conflict "Resource already registered.")
       (u/respond "Ok"))))
@@ -35,14 +35,14 @@
 (defn un-register-external-resource
   "Unregisters an external resource by its name."
   [name]
-  (d/let-flow [_ (u/unsafe! (db/delete-external-resource states/db
-                                                         {:name name}))]
+  (d/let-flow [_ (f/try* (db/delete-external-resource states/db
+                                                      {:name name}))]
     (u/respond "Ok")))
 
 (defn all-external-resources
   "Lists all external resources by name."
   []
-  (d/let-flow [result (u/unsafe! (db/external-resources states/db))]
+  (d/let-flow [result (f/try* (db/external-resources states/db))]
     (u/respond
       (if (f/failed? result)
         []
@@ -61,10 +61,10 @@
   - Copies over the contents to the home dir inside the container.
   - Returns the id or the error."
   [resource pipeline image]
-  (f/attempt-all [_       (when (not (r/valid-external-resource? resource))
-                            (f/fail (str "Invalid external resources, possibly not registered"
-                                         (:name resource))))
-                  out-dir (r/fetch-resource resource pipeline)]
+  (f/try-all [_       (when (not (r/valid-external-resource? resource))
+                        (f/fail (str "Invalid external resources, possibly not registered"
+                                     (:name resource))))
+              out-dir (r/fetch-resource resource pipeline)]
     (r/initial-image-of out-dir image nil)
     (f/when-failed [err] err)))
 

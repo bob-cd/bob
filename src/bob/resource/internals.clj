@@ -28,7 +28,7 @@
 (defn- rm-r!
   "Recursively deletes a directory."
   [dir & [silently]]
-  (u/unsafe!
+  (f/try*
     (letfn [(delete-f [^File file]
               (when (.isDirectory file)
                 (doseq [child-file (.listFiles file)]
@@ -39,7 +39,7 @@
 (defn- extract-zip!
   "Takes a java.util.zip.ZipInputStream `zip-stream` and extracts the content to the `out-dir`."
   [^ZipInputStream zip-stream out-dir]
-  (u/unsafe!
+  (f/try*
     (with-open [stream zip-stream]
       (loop [entry (.getNextEntry stream)]
         (when entry
@@ -75,15 +75,15 @@
 
   Returns the absolute path of the expansion dir."
   [resource pipeline]
-  (f/attempt-all [creation-args (into-array FileAttribute [])
-                  out-dir       (u/unsafe! (str (Files/createTempDirectory "out" creation-args)))
-                  dir           (File. (str out-dir File/separatorChar (:name resource)))
-                  _             (u/unsafe! (.mkdirs ^File dir))
-                  url           (url-of resource pipeline)
-                  stream        (u/unsafe! (-> @(http/get url)
-                                               :body
-                                               (ZipInputStream.)))
-                  _             (extract-zip! stream dir)]
+  (f/try-all [creation-args (into-array FileAttribute [])
+              out-dir       (str (Files/createTempDirectory "out" creation-args))
+              dir           (File. (str out-dir File/separatorChar (:name resource)))
+              _             (.mkdirs ^File dir)
+              url           (url-of resource pipeline)
+              stream        (-> @(http/get url)
+                                :body
+                                (ZipInputStream.))
+              _             (extract-zip! stream dir)]
     out-dir
     (f/when-failed [err] err)))
 
@@ -98,9 +98,9 @@
   - Return the id of the committed image.
   - Deletes the temp folder."
   [path image cmd]
-  (f/attempt-all [id (u/unsafe! (docker/create states/docker-conn image "" {} {}))
-                  _  (u/unsafe! (docker/cp states/docker-conn id path "/root"))
-                  _  (u/unsafe! (rm-r! path true))]
+  (f/try-all [id (docker/create states/docker-conn image "" {} {})
+              _  (docker/cp states/docker-conn id path "/root")
+              _  (rm-r! path true)]
     (docker/commit-container
       states/docker-conn
       id
@@ -137,5 +137,5 @@
   (url-of resource "dev:test")
 
   (->> (db/resource-params-of states/db
-                          {:name     "my-source"
-                           :pipeline "dev:test"})))
+                              {:name     "my-source"
+                               :pipeline "dev:test"})))

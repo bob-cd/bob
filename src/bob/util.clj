@@ -20,15 +20,6 @@
 
 (def id-length 12)
 
-(defmacro unsafe!
-  "Monad to wrap around potentially side effecting expression(s).
-  Either it catches the exception if thrown returns it as a value
-  or the result of the computation if successful."
-  [& body]
-  `(try
-     ~@body
-     (catch Exception e# e#)))
-
 (defn respond
   "Simple decorator for wrapping a message in the response format."
   [msg]

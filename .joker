@@ -17,6 +17,7 @@
   [failjure.core/attempt-all
    failjure.core/when-failed
    failjure.core/ok->
+   failjure.core/try-all
    manifold.deferred/let-flow
    mount.core/defstate]
  :known-namespaces

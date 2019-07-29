@@ -38,12 +38,6 @@
   (prop/for-all [msg (s/gen ::container-id)]
     (<= (count (format-id msg)) id-length)))
 
-(deftest perform-test
-  (testing "Monadic handling of success"
-    (is (= (unsafe! (/ 4 2)) 2)))
-  (testing "Monadic handling of exception"
-    (is (instance? Exception (unsafe! (/ 4 0))))))
-
 (deftest clob-str-test
   (testing "Conversion of a Clob to String"
     (is (= (clob->str (SerialClob. (.toCharArray "test")))

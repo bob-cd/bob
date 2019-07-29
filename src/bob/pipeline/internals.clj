@@ -32,12 +32,12 @@
   This is used to track the last executed container in logging as well as stopping.
   Returns pid or error if any."
   [pid run-id]
-  (f/attempt-all [_ (u/unsafe! (db/insert-log-entry states/db
-                                                    {:pid pid
-                                                     :run run-id}))
-                  _ (u/unsafe! (db/update-runs states/db
-                                               {:pid pid
-                                                :id  run-id}))]
+  (f/try-all [_ (db/insert-log-entry states/db
+                                     {:pid pid
+                                      :run run-id})
+              _ (db/update-runs states/db
+                                {:pid pid
+                                 :id  run-id})]
     pid
     (f/when-failed [err] err)))
 
@@ -59,22 +59,22 @@
   creating a new container from it, thereby managing state externally.
   Returns the new container id or errors if any."
   [id step evars pipeline]
-  (f/attempt-all [image         (u/unsafe! (docker/commit-container
-                                             states/docker-conn
-                                             (:id id)
-                                             (format "%s/%d" (:id id) (System/currentTimeMillis))
-                                             "latest"
-                                             (:cmd step)))
-                  resource      (:needs_resource step)
-                  mounted       (:mounted id)
-                  mount-needed? (if (nil? resource)
-                                  false
-                                  (not (some #{resource} mounted)))
-                  image         (if mount-needed?
-                                  (resourceful-step step pipeline image)
-                                  image)
-                  result        {:id      (e/build image step evars)
-                                 :mounted mounted}]
+  (f/try-all [image         (docker/commit-container
+                              states/docker-conn
+                              (:id id)
+                              (format "%s/%d" (:id id) (System/currentTimeMillis))
+                              "latest"
+                              (:cmd step))
+              resource      (:needs_resource step)
+              mounted       (:mounted id)
+              mount-needed? (if (nil? resource)
+                              false
+                              (not (some #{resource} mounted)))
+              image         (if mount-needed?
+                              (resourceful-step step pipeline image)
+                              image)
+              result        {:id      (e/build image step evars)
+                             :mounted mounted}]
     (if mount-needed?
       (update-in result [:mounted] conj resource)
       result)
@@ -94,26 +94,26 @@
 
   Returns the next state or errors if any."
   [run-id evars pipeline number id step]
-  (let [stopped? (u/unsafe! (-> (db/run-stopped? states/db
-                                                 {:id run-id})
-                                (:stopped)))]
+  (let [stopped? (f/try* (-> (db/run-stopped? states/db
+                                              {:id run-id})
+                             (:stopped)))]
     (if (or stopped?
             (f/failed? (:id id)))
       (reduced id)
-      (f/attempt-all [result       (next-step id step evars pipeline)
-                      id           (update-pid (:id result) run-id)
-                      id           (e/run id)
-                      [group name] (clojure.string/split pipeline #":")
-                      _            (if-let [artifact (:produces_artifact step)]
-                                     (artifact/upload-artifact group
-                                                               name
-                                                               number
-                                                               artifact
-                                                               id
-                                                               (str (get-in (docker/inspect states/docker-conn id)
-                                                                            [:Config :WorkingDir])
-                                                                    "/"
-                                                                    (:artifact_path step))))]
+      (f/try-all [result (next-step id step evars pipeline)
+                  id     (update-pid (:id result) run-id)
+                  id     (e/run id)
+                  [group name] (clojure.string/split pipeline #":")
+                  _      (if-let [artifact (:produces_artifact step)]
+                           (artifact/upload-artifact group
+                                                     name
+                                                     number
+                                                     artifact
+                                                     id
+                                                     (str (get-in (docker/inspect states/docker-conn id)
+                                                                  [:Config :WorkingDir])
+                                                          "/"
+                                                          (:artifact_path step))))]
         {:id      id
          :mounted (:mounted result)}
         (f/when-failed [err] err)))))
@@ -121,7 +121,7 @@
 (defn next-build-number-of
   "Generates a sequential build number for a pipeline."
   [name]
-  (f/attempt-all [result (u/unsafe! (last (db/pipeline-runs states/db {:pipeline name})))]
+  (f/try-all [result (last (db/pipeline-runs states/db {:pipeline name}))]
     (if (nil? result)
       1
       (inc (result :number)))
@@ -139,30 +139,30 @@
         first-step     (first steps)
         first-resource (:needs_resource first-step)
         number         (next-build-number-of pipeline)]
-    (a/go (f/attempt-all [_     (u/unsafe! (db/insert-run states/db
-                                                          {:id       run-id
-                                                           :number   number
-                                                           :pipeline pipeline
-                                                           :status   "running"}))
-                          image (e/pull image)
-                          image (resourceful-step first-step pipeline image)
-                          id    (f/ok-> (e/build image first-step evars)
-                                        (update-pid run-id)
-                                        (e/run))
-                          id    (reduce (partial exec-step run-id evars pipeline number)
-                                        {:id      id
-                                         :mounted (if first-resource
-                                                    [first-resource]
-                                                    [])}
-                                        (rest steps))
-                          _     (u/unsafe! (db/update-run states/db
-                                                          {:status "passed"
-                                                           :id     run-id}))]
+    (a/go (f/try-all [_     (db/insert-run states/db
+                                           {:id       run-id
+                                            :number   number
+                                            :pipeline pipeline
+                                            :status   "running"})
+                      image (e/pull image)
+                      image (resourceful-step first-step pipeline image)
+                      id    (f/ok-> (e/build image first-step evars)
+                                    (update-pid run-id)
+                                    (e/run))
+                      id    (reduce (partial exec-step run-id evars pipeline number)
+                                    {:id      id
+                                     :mounted (if first-resource
+                                                [first-resource]
+                                                [])}
+                                    (rest steps))
+                      _     (db/update-run states/db
+                                           {:status "passed"
+                                            :id     run-id})]
             id
             (f/when-failed [err]
-              (do (u/unsafe! (db/update-run states/db
-                                            {:status "failed"
-                                             :id     run-id}))
+              (do (f/try* (db/update-run states/db
+                                         {:status "failed"
+                                          :id     run-id}))
                   err))))))
 
 (defn stop-pipeline
@@ -175,15 +175,15 @@
   [name number]
   (let [criteria {:pipeline name
                   :number   number}
-        status   (u/unsafe! (-> (db/status-of states/db criteria)
-                                (:status)))]
+        status   (f/try* (-> (db/status-of states/db criteria)
+                             (:status)))]
     (when (= status "running")
-      (f/attempt-all [_      (u/unsafe! (db/stop-run states/db criteria))
-                      pid    (u/unsafe! (-> (db/pid-of-run states/db criteria)
-                                            (:last_pid)))
-                      status (e/status-of pid)
-                      _      (when (status :running?)
-                               (e/kill-container pid))]
+      (f/try-all [_      (db/stop-run states/db criteria)
+                  pid    (-> (db/pid-of-run states/db criteria)
+                             (:last_pid))
+                  status (e/status-of pid)
+                  _      (when (status :running?)
+                           (e/kill-container pid))]
         "Ok"
         (f/when-failed [err] (f/message err))))))
 
@@ -195,13 +195,13 @@
   - Lazily read the streams from each and append and truncate the lines.
   Returns the list of lines or errors if any."
   [name number offset lines]
-  (f/attempt-all [run-id     (u/unsafe! (-> (db/run-id-of states/db
-                                                          {:pipeline name
-                                                           :number   number})
-                                            (:id)))
-                  containers (u/unsafe! (->> (db/container-ids states/db
-                                                              {:run-id run-id})
-                                             (map #(:pid %))))]
+  (f/try-all [run-id     (-> (db/run-id-of states/db
+                                           {:pipeline name
+                                            :number   number})
+                             (:id))
+              containers (->> (db/container-ids states/db
+                                                {:run-id run-id})
+                              (map #(:pid %)))]
     (->> containers
          (map #(e/log-stream-of %))
          (filter #(not (nil? %)))
@@ -213,8 +213,8 @@
 (defn image-of
   "Returns the image associated with the pipeline."
   [pipeline]
-  (u/unsafe! (-> (db/image-of states/db {:name pipeline})
-                 (:image))))
+  (f/try* (-> (db/image-of states/db {:name pipeline})
+              (:image))))
 
 (comment
   (resourceful-step {:needs_resource "source"
@@ -235,7 +235,7 @@
                     "busybox:musl")
 
   (exec-steps "busybox:musl"
-              (->>(db/ordered-steps states/db {:pipeline "dev:test"})
-                  (map #(update-in % [:cmd] u/clob->str)))
+              (->> (db/ordered-steps states/db {:pipeline "dev:test"})
+                   (map #(update-in % [:cmd] u/clob->str)))
               "dev:test"
               {}))
