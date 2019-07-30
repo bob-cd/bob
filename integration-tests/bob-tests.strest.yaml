@@ -30,7 +30,7 @@ requests:
 
   externalResourceRegistration:
     request:
-      url: "http://bob:7777/api/external-resource/git"
+      url: "http://bob:7777/api/external-resources/git"
       method: "POST"
       postData:
         mimeType: "application/json"
@@ -44,7 +44,7 @@ requests:
 
   artifactStoreRegistration:
     request:
-      url: "http://bob:7777/api/artifact-store/local"
+      url: "http://bob:7777/api/artifact-stores/local"
       method: "POST"
       postData:
         mimeType: "application/json"
@@ -58,7 +58,7 @@ requests:
 
   pipelineCreation:
     request:
-      url: "http://bob:7777/api/pipeline/dev/test"
+      url: "http://bob:7777/api/pipelines/groups/dev/names/test"
       method: "POST"
       postData:
         mimeType: "application/json"
@@ -101,7 +101,7 @@ requests:
 
   pipelineStart:
     request:
-      url: "http://bob:7777/api/pipeline/start/dev/test"
+      url: "http://bob:7777/api/pipelines/start/groups/dev/names/test"
       method: "POST"
     validate:
       - jsonpath: "status"
@@ -109,23 +109,9 @@ requests:
       - jsonpath: "content.message"
         expect: "Ok"
 
-  runningPipelineNames:
-    request:
-      url: "http://bob:7777/api/pipeline/status/running"
-      method: "GET"
-    delay: 10000
-    validate:
-      - jsonpath: "status"
-        expect: 200
-      - jsonpath: "content"
-        expect:
-          message:
-            - group: "dev"
-              name: "test"
-
   pipelineLogs:
     request:
-      url: "http://bob:7777/api/pipeline/logs/dev/test/1/0/50"
+      url: "http://bob:7777/api/pipelines/logs/groups/dev/names/test/number/1/offset/0/lines/50"
       method: "GET"
     delay: 40000
     validate:
@@ -152,7 +138,7 @@ requests:
 
   pipelineStatus:
     request:
-      url: "http://bob:7777/api/pipeline/status/dev/test/1"
+      url: "http://bob:7777/api/pipelines/status/groups/dev/names/test/number/1"
       method: "GET"
     validate:
       - jsonpath: "status"
@@ -162,7 +148,7 @@ requests:
 
   pipelineArtifacts:
     request:
-      url: "http://bob:7777/api/pipeline/dev/test/1/artifact/afile"
+      url: "http://bob:7777/api/pipelines/groups/dev/names/test/number/1/artifacts/afile"
       method: "GET"
     validate:
       - jsonpath: "status"
@@ -170,7 +156,7 @@ requests:
 
   pipelineArtifactsFromResource:
     request:
-      url: "http://bob:7777/api/pipeline/dev/test/1/artifact/license-file"
+      url: "http://bob:7777/api/pipelines/groups/dev/names/test/number/1/artifacts/license-file"
       method: "GET"
     validate:
       - jsonpath: "status"
@@ -178,7 +164,7 @@ requests:
 
   pipelineDeletion:
     request:
-      url: "http://bob:7777/api/pipeline/dev/test"
+      url: "http://bob:7777/api/pipelines/groups/dev/names/test"
       method: "DELETE"
     validate:
       - jsonpath: "status"
@@ -200,7 +186,7 @@ requests:
 
   externalResourceDeletion:
     request:
-      url: "http://bob:7777/api/external-resource/git"
+      url: "http://bob:7777/api/external-resources/git"
       method: "DELETE"
     validate:
       - jsonpath: "status"
@@ -210,7 +196,7 @@ requests:
 
   artifactStoreListing:
     request:
-      url: "http://bob:7777/api/artifact-store"
+      url: "http://bob:7777/api/artifact-stores"
       method: "GET"
     validate:
       - jsonpath: "status"
@@ -222,7 +208,7 @@ requests:
 
   artifactStoreDeletion:
     request:
-      url: "http://bob:7777/api/artifact-store/local"
+      url: "http://bob:7777/api/artifact-stores/local"
       method: "DELETE"
     validate:
       - jsonpath: "status"

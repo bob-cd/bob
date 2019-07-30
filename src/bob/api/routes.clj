@@ -27,165 +27,160 @@
 
 (def bob-api
   (m/ignore-trailing-slash
-    (rest/api
-     {:swagger
-      {:ui   "/"
-       :spec "/swagger.json"
-       :data {:info     {:title       "Bob the Builder"
-                         :version     "0.1"
-                         :description "The modular, extensible CI/CD platform."}
-              :consumes ["application/json"]
-              :produces ["application/json"]}}}
+   (rest/api
+    {:swagger
+     {:ui   "/"
+      :spec "/swagger.json"
+      :data {:info     {:title       "Bob the Builder"
+                        :version     "0.1"
+                        :description "The modular, extensible CI/CD platform."}
+             :consumes ["application/json"]
+             :produces ["application/json"]}}}
 
-      (rest/context "/api" []
-        :tags ["Bob's API"]
+    (rest/context "/api" []
+      :tags ["Bob's API"]
 
-        (rest/POST "/pipeline/:group/:name" []
-          :return schema/SimpleResponse
-          :path-params [group
-                        :- String
-                        name
-                        :- String]
-          :body [pipeline schema/Pipeline]
-          :summary "Creates a new pipeline in a group with the specified name.
+      (rest/POST "/pipelines/groups/:group/names/:name" []
+        :return schema/SimpleResponse
+        :path-params [group
+                      :- String
+                      name
+                      :- String]
+        :body [pipeline schema/Pipeline]
+        :summary "Creates a new pipeline in a group with the specified name.
                    Takes list of steps, the base docker image, a list of environment vars
                    and a list of artifacts generated from pipeline as POST body."
-          (p/create
-            group
-            name
-            (:steps pipeline)
-            (:vars pipeline)
-            (:resources pipeline)
-            (:image pipeline)))
+        (p/create
+         group
+         name
+         (:steps pipeline)
+         (:vars pipeline)
+         (:resources pipeline)
+         (:image pipeline)))
 
-        (rest/POST "/pipeline/start/:group/:name" []
-          :return schema/SimpleResponse
-          :path-params [group
-                        :- String
-                        name
-                        :- String]
-          :summary "Starts a pipeline in a group with the specified name."
-          (p/start group name))
+      (rest/POST "/pipelines/start/groups/:group/names/:name" []
+        :return schema/SimpleResponse
+        :path-params [group
+                      :- String
+                      name
+                      :- String]
+        :summary "Starts a pipeline in a group with the specified name."
+        (p/start group name))
 
-        (rest/POST "/pipeline/stop/:group/:name/:number" []
-          :return schema/SimpleResponse
-          :path-params [group
-                        :- String
-                        name
-                        :- String
-                        number
-                        :- s/Int]
-          :summary "Stops a pipeline run in a group with the specified name and number."
-          (p/stop group name number))
+      (rest/POST "/pipelines/stop/groups/:group/names/:name/number/:number" []
+        :return schema/SimpleResponse
+        :path-params [group
+                      :- String
+                      name
+                      :- String
+                      number
+                      :- s/Int]
+        :summary "Stops a pipeline run in a group with the specified name and number."
+        (p/stop group name number))
 
-        (rest/GET "/pipeline/logs/:group/:name/:number/:offset/:lines" []
-          :return schema/LogsResponse
-          :path-params [group
-                        :- String
-                        name
-                        :- String
-                        number
-                        :- s/Int
-                        offset
-                        :- s/Int
-                        lines
-                        :- s/Int]
-          :summary "Fetches logs for a pipeline run in a group with the specified
+      (rest/GET "/pipelines/logs/groups/:group/names/:name/number/:number/offset/:offset/lines/:lines" []
+        :return schema/LogsResponse
+        :path-params [group
+                      :- String
+                      name
+                      :- String
+                      number
+                      :- s/Int
+                      offset
+                      :- s/Int
+                      lines
+                      :- s/Int]
+        :summary "Fetches logs for a pipeline run in a group with the specified
                     name, number, starting offset and the number of lines."
-          (p/logs-of group name number offset lines))
+        (p/logs-of group name number offset lines))
 
-        (rest/GET "/pipeline/status/:group/:name/:number" []
-          :return schema/StatusResponse
-          :path-params [group
-                        :- String
-                        name
-                        :- String
-                        number
-                        :- s/Int]
-          :summary "Fetches the status of pipeline run in a group with the specified name and number."
-          (p/status group name number))
+      (rest/GET "/pipelines/status/groups/:group/names/:name/number/:number" []
+        :return schema/StatusResponse
+        :path-params [group
+                      :- String
+                      name
+                      :- String
+                      number
+                      :- s/Int]
+        :summary "Fetches the status of pipeline run in a group with the specified name and number."
+        (p/status group name number))
 
-        (rest/DELETE "/pipeline/:group/:name" []
-          :return schema/SimpleResponse
-          :path-params [group
-                        :- String
-                        name
-                        :- String]
-          :summary "Deletes a pipeline in a group with the specified name."
-          (p/remove-pipeline group name))
+      (rest/DELETE "/pipelines/groups/:group/names/:name" []
+        :return schema/SimpleResponse
+        :path-params [group
+                      :- String
+                      name
+                      :- String]
+        :summary "Deletes a pipeline in a group with the specified name."
+        (p/remove-pipeline group name))
 
-        (rest/GET "/pipeline/status/running" []
-          :return schema/RunningResponse
-          :summary "Returns list of the running pipeline names."
-          (p/running-pipelines))
+      (rest/POST "/external-resources/:name" []
+        :return schema/SimpleResponse
+        :path-params [name
+                      :- String]
+        :body [attrs schema/ResourceAttributes]
+        :summary "Registers an external resource with a unique name and its attributes."
+        (r/register-external-resource name (:url attrs)))
 
-        (rest/POST "/external-resource/:name" []
-          :return schema/SimpleResponse
-          :path-params [name
-                        :- String]
-          :body [attrs schema/ResourceAttributes]
-          :summary "Registers an external resource with a unique name and its attributes."
-          (r/register-external-resource name (:url attrs)))
+      (rest/DELETE "/external-resources/:name" []
+        :return schema/SimpleResponse
+        :path-params [name
+                      :- String]
+        :summary "Un-registers an external resource with a unique name."
+        (r/un-register-external-resource name))
 
-        (rest/DELETE "/external-resource/:name" []
-          :return schema/SimpleResponse
-          :path-params [name
-                        :- String]
-          :summary "Un-registers an external resource with a unique name."
-          (r/un-register-external-resource name))
+      (rest/GET "/external-resources" []
+        :return schema/ResourceResponse
+        :summary "Lists all registered external resources by name."
+        (r/all-external-resources))
 
-        (rest/GET "/external-resources" []
-          :return schema/ResourceResponse
-          :summary "Lists all registered external resources by name."
-          (r/all-external-resources))
+      (rest/GET "/pipelines/groups/:group/names/:name/number/:number/artifacts/:artifact-name" []
+        :summary "Returns the artifact archive of a pipeline"
+        :path-params [group
+                      :- String
+                      name
+                      :- String
+                      number
+                      :- s/Int
+                      artifact-name
+                      :- String]
+        (a/stream-artifact group name number artifact-name))
 
-        (rest/GET "/pipeline/:group/:name/:number/artifact/:artifact-name" []
-          :summary "Returns the artifact archive of a pipeline"
-          :path-params [group
-                        :- String
-                        name
-                        :- String
-                        number
-                        :- s/Int
-                        artifact-name
-                        :- String]
-          (a/stream-artifact group name number artifact-name))
+      (rest/POST "/artifact-stores/:name" []
+        :return schema/SimpleResponse
+        :path-params [name
+                      :- String]
+        :body [attrs schema/ArtifactStoreAttributes]
+        :summary "Registers an artifact store by a unique name and its URL."
+        (a/register-artifact-store name (:url attrs)))
 
-        (rest/POST "/artifact-store/:name" []
-          :return schema/SimpleResponse
-          :path-params [name
-                        :- String]
-          :body [attrs schema/ArtifactStoreAttributes]
-          :summary "Registers an artifact store by a unique name and its URL."
-          (a/register-artifact-store name (:url attrs)))
+      (rest/DELETE "/artifact-stores/:name" []
+        :return schema/SimpleResponse
+        :path-params [name
+                      :- String]
+        :summary "Un-registers an external resource with a unique name."
+        (a/un-register-artifact-store name))
 
-        (rest/DELETE "/artifact-store/:name" []
-          :return schema/SimpleResponse
-          :path-params [name
-                        :- String]
-          :summary "Un-registers an external resource with a unique name."
-          (a/un-register-artifact-store name))
+      (rest/GET "/artifact-stores" []
+        :return schema/ArtifactStoreResponse
+        :summary "Lists the registered artifact store."
+        (a/get-registered-artifact-store))
 
-        (rest/GET "/artifact-store" []
-          :return schema/ArtifactStoreResponse
-          :summary "Lists the registered artifact store."
-          (a/get-registered-artifact-store))
+      ;; TODO: Actually do some health checks here.
+      (rest/GET "/can-we-build-it" []
+        :return schema/SimpleResponse
+        :summary "Runs health checks for Bob."
+        (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28"))
 
-        ;; TODO: Actually do some health checks here.
-        (rest/GET "/can-we-build-it" []
-          :return schema/SimpleResponse
-          :summary "Runs health checks for Bob."
-          (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28"))
+      (rest/POST "/gc" []
+        :return schema/SimpleResponse
+        :summary "Runs the garbage collection for Bob, reclaiming resources."
+        (e/gc))
 
-        (rest/POST "/gc" []
-          :return schema/SimpleResponse
-          :summary "Runs the garbage collection for Bob, reclaiming resources."
-          (e/gc))
+      (rest/POST "/gc/all" []
+        :return schema/SimpleResponse
+        :summary "Runs the full garbage collection for Bob, reclaiming all resources."
+        (e/gc true)))
 
-        (rest/POST "/gc/all" []
-          :return schema/SimpleResponse
-          :summary "Runs the full garbage collection for Bob, reclaiming all resources."
-          (e/gc true)))
-
-      (rest/undocumented
-        (route/not-found (u/respond "Took a wrong turn?"))))))
+    (rest/undocumented
+     (route/not-found (u/respond "Took a wrong turn?"))))))

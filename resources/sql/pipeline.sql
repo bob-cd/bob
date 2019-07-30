@@ -47,11 +47,6 @@ LIMIT 1;
 DELETE FROM "pipelines"
 WHERE "name"=:name;
 
--- :name running-pipelines :query :many
-SELECT "name" FROM "pipelines"
-JOIN "runs" ON "runs"."pipeline"="name"
-WHERE "runs"."status"='running';
-
 -- :name insert-log-entry :insert :1
 INSERT INTO "logs" ("pid", "run")
 VALUES (:pid, :run);

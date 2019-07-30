@@ -141,19 +141,6 @@
                result   (p/pipeline-logs pipeline number offset lines)]
     (u/respond result)))
 
-(defn running-pipelines
-  "Collects all pipeline names that have status 'running'.
-  Returns pipeline names as a list."
-  []
-  (d/let-flow [pipeline-names (f/try* (->> (db/running-pipelines states/db)
-                                           (map #(:name %))))]
-    (if (empty? pipeline-names)
-      (res/not-found {:message "No running pipelines"})
-      (u/respond (->> pipeline-names
-                      (map #(clojure.string/split % #":"))
-                      (map #(hash-map :group (first %)
-                                      :name (second %))))))))
-
 (comment
   (create "test"
           "test"

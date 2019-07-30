@@ -49,8 +49,6 @@
 
   (delete-pipeline-sqlvec {:name "test"})
 
-  (running-pipelines-sqlvec)
-
   (insert-log-entry-sqlvec {:pid "aaa" :run "abcd"})
 
   (update-runs-sqlvec {:pid "aaa" :id "aaaaa"})

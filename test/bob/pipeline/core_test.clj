@@ -298,20 +298,3 @@
               (-> @(logs-of "dev" "test" 1 0 100)
                   :body
                   :message))))))
-
-(deftest fetch-running-pipelines
-  (testing "successfully fetch running pipeline"
-    (with-redefs-fn {#'db/running-pipelines (constantly [{:name "dev:test"}
-                                                         {:name "bev:best"}])}
-      #(is (= [{:group "dev" :name "test"}
-               {:group "bev" :name "best"}]
-              (-> @(running-pipelines)
-                  :body
-                  :message)))))
-
-  (testing "unsuccessfully fetch running pipeline"
-    (with-redefs-fn {#'db/running-pipelines (constantly [])}
-      #(is (= "No running pipelines"
-              (-> @(running-pipelines)
-                  :body
-                  :message))))))
