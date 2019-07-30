@@ -130,7 +130,6 @@ requests:
             - "bob-entrypoint.sh"
             - "boot.properties"
             - "build.boot"
-            - "docs"
             - "integration-tests"
             - "resources"
             - "src"
