@@ -10,7 +10,7 @@ The modular, extensible CI/CD platform.
 
 ## Version: 0.1
 
-### /api/pipeline/{group}/{name}
+### /api/pipelines/groups/{group}/names/{name}
 
 #### POST
 ##### Summary:
@@ -51,7 +51,7 @@ Deletes a pipeline in a group with the specified name.
 | ---- | ----------- | ------ |
 | 200 |  | [SimpleResponse](#simpleresponse) |
 
-### /api/pipeline/start/{group}/{name}
+### /api/pipelines/start/groups/{group}/names/{name}
 
 #### POST
 ##### Summary:
@@ -71,7 +71,7 @@ Starts a pipeline in a group with the specified name.
 | ---- | ----------- | ------ |
 | 200 |  | [SimpleResponse](#simpleresponse) |
 
-### /api/pipeline/stop/{group}/{name}/{number}
+### /api/pipelines/stop/groups/{group}/names/{name}/number/{number}
 
 #### POST
 ##### Summary:
@@ -92,7 +92,7 @@ Stops a pipeline run in a group with the specified name and number.
 | ---- | ----------- | ------ |
 | 200 |  | [SimpleResponse](#simpleresponse) |
 
-### /api/pipeline/logs/{group}/{name}/{number}/{offset}/{lines}
+### /api/pipelines/logs/groups/{group}/names/{name}/number/{number}/offset/{offset}/lines/{lines}
 
 #### GET
 ##### Summary:
@@ -116,7 +116,7 @@ Fetches logs for a pipeline run in a group with the specified
 | ---- | ----------- | ------ |
 | 200 |  | [LogsResponse](#logsresponse) |
 
-### /api/pipeline/status/{group}/{name}/{number}
+### /api/pipelines/status/groups/{group}/names/{name}/number/{number}
 
 #### GET
 ##### Summary:
@@ -137,20 +137,7 @@ Fetches the status of pipeline run in a group with the specified name and number
 | ---- | ----------- | ------ |
 | 200 |  | [StatusResponse](#statusresponse) |
 
-### /api/pipeline/status/running
-
-#### GET
-##### Summary:
-
-Returns list of the running pipeline names.
-
-##### Responses
-
-| Code | Description | Schema |
-| ---- | ----------- | ------ |
-| 200 |  | [RunningResponse](#runningresponse) |
-
-### /api/external-resource/{name}
+### /api/external-resources/{name}
 
 #### POST
 ##### Summary:
@@ -200,7 +187,7 @@ Lists all registered external resources by name.
 | ---- | ----------- | ------ |
 | 200 |  | [ResourceResponse](#resourceresponse) |
 
-### /api/pipeline/{group}/{name}/{number}/artifact/{artifact-name}
+### /api/pipelines/groups/{group}/names/{name}/number/{number}/artifacts/{artifact-name}
 
 #### GET
 ##### Summary:
@@ -222,7 +209,7 @@ Returns the artifact archive of a pipeline
 | ---- | ----------- |
 | default |  |
 
-### /api/artifact-store/{name}
+### /api/artifact-stores/{name}
 
 #### POST
 ##### Summary:
@@ -259,7 +246,7 @@ Un-registers an external resource with a unique name.
 | ---- | ----------- | ------ |
 | 200 |  | [SimpleResponse](#simpleresponse) |
 
-### /api/artifact-store
+### /api/artifact-stores
 
 #### GET
 ##### Summary:
@@ -387,19 +374,6 @@ Runs the full garbage collection for Bob, reclaiming all resources.
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | message | [ string ] |  | Yes |
-
-#### RunningResponse
-
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| message | [ [RunningResponseMessage](#runningresponsemessage) ] |  | Yes |
-
-#### RunningResponseMessage
-
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| group | string |  | Yes |
-| name | string |  | Yes |
 
 #### SimpleResponse
 
