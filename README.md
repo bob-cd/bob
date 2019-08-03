@@ -9,7 +9,7 @@
 
 ## This is what CI/CD should've been.
 
-### [Why](https://github.com/bob-cd/bob/blob/master/docs/rationale.md) Bob
+### [Why](https://bob-cd.github.io/bob/why-bob) Bob
 
 ## 🚧 This is a proof of concept and isn't fully functional yet. 🚧
 See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the roadmap and planned work.
@@ -55,7 +55,7 @@ allowed on Docker.
 
 In the `integration-tests` dir, run:
 
-`docker-compose up --abort-on-container-exit integration-test`
+`docker-compose up --abort-on-container-exit`
 
 ## For Cursive users:
 This project is built using the Boot build tool which is unsupported on Cursive at the moment.

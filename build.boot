@@ -57,7 +57,6 @@
       :scm         {:url "https://github.com/bob-cd/bob"}
       :license     {"GPL 3.0"
                     "https://www.gnu.org/licenses/gpl-3.0.en.html"}}
- repl {:init-ns    'bob.main}
  jar  {:main       'bob.main
        :file       (str project "-standalone.jar")})
 
