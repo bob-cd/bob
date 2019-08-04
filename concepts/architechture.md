@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Architechture
+title: Architecture
 nav_order: 2
 has_children: true
 has_toc: false
-description: "Architechture"
-permalink: /architechture
+description: "Architecture"
+permalink: /architecture
 ---
 
 # Bob's Internals

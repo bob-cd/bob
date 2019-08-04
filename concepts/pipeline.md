@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Pipeline
-parent: Architechture
+parent: Architecture
 nav_order: 1
 description: "Pipelines"
 permalink: /concepts/pipeline
@@ -48,13 +48,13 @@ Example:
     - `path`: String, Required: This is the path relative to the command being executed
     where the expected artifact will be produced. Bob will stream the artifact to the
     registered artifact provider. The path must exist.
-    - `name`: String, Required: This the unique name with which the artifact will be uploaded
+    - `name`: String, Required: This is the unique name with which the artifact will be uploaded
     to the artifact provider.
 
 Example:
 ```json
 {
-  "prodcues_artifact": {
+  "produces_artifact": {
     "path": "target/app.jar",
     "name": "app-jar"
   }
@@ -125,7 +125,7 @@ Example:
 ]
 ```
 
-The provider is a Resource Provider which to be registered before this pipeline is to be started.
+The provider is a Resource Provider which is to be registered before this pipeline is started.
 
 Full working pipeline example:
 ```json

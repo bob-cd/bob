@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Resource
-parent: Architechture
+parent: Architecture
 nav_order: 1
 description: "Resources"
 permalink: /concepts/resource

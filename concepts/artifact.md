@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Artifact
-parent: Architechture
+parent: Architecture
 nav_order: 3
 description: "Artifact"
 permalink: /concepts/artifact
