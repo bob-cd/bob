@@ -25,10 +25,7 @@ simple than easy.
 
 ## Quick Start with Docker
 ```bash
-# Pull the latest built image
-docker pull bobcd/bob
-
-# Start a container locally on port 7777
+# Start a bob container locally on port 7777
 # The --privileged flag is necessary as Bob itself uses Docker internally
 docker run -it -p 7777:7777 --privileged --name bob bobcd/bob
 
