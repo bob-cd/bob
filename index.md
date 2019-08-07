@@ -21,6 +21,9 @@ build loads? _Teach_ Bob something it can't do yet? Just talk to Bob's REST API.
 Bob lets you be in control of the whole process by allowing itself to be more
 simple than easy.
 
+Bob is intended to be a _low-level_ building block to allow users to _build_ their
+own CI/CD platform. Think of Bob as a **CI Engine**
+
 ## 🚧 This is a proof of concept and isn't ready for serious consumption yet! 🚧
 
 ## Quick Start with Docker
@@ -37,5 +40,3 @@ Use a reference CLI like [Wendy](https://github.com/bob-cd/wendy) or something o
 your own as Bob talks over plain REST and off you go!
 
 ### Bob is a fully GPLv3+ licensed FOSS and any and every contribution is much appreciated!
-
-#### Choose one of the topics to your left to know more about Bob.

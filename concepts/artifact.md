@@ -36,7 +36,7 @@ An Artifact Provider is Bob's way of abstracting the kind of storage needed to s
 is akin to an abstract object store where Bob can store and retrieve artifacts.
 
 An artifact provider is any system which has the following properties:
-- It is a web server
+- It is a web server.
 - It is reachable from the network that Bob is in.
 - Exposes an endpoint at `/bob_request/<path>` which:
   - When a `GET` request is made on it, the corresponding artifact is sent back.
@@ -54,9 +54,9 @@ An artifact provider is any system which has the following properties:
 
 A reference artifact store which implements storage using local file system can be [found](https://github.com/bob-cd/artifact-local)
 
-This addresses the following issues:
+This gives the following advantages:
 - Bob now doesn't have to care about _how_ to store an artifact.
-- Using an artifact store, details like auth, permissions etc can be offloaded outside of Bob.
+- Using an artifact store details like auth, permissions etc can be offloaded outside of Bob.
 - Multiple instances of Bob can share an Artifact store.
 - Artifacts are preserved regardless of Bob's availability.
 - The Artifact store can be written an any language and be registered at runtime with Bob.
@@ -75,7 +75,7 @@ Here <name> is the unique name with which Bob identifies this. The url must be r
 
 Conversely a `DELETE` request on `/api/artifact-stores/<name>` un-registers it from Bob.
 
-To list the registed store make a `GET` request on `/api/artifact-stores`.
+To list the registered store make a `GET` request on `/api/artifact-stores`.
 
 To retrieve an artifact from a pipeline run:
 - Make a `GET` request on `/api/pipelines/groups/<group-name>/names/<pipeline-name>/number/<run-number>/artifacts/<artifact-name>`.
