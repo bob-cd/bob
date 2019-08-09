@@ -20,8 +20,7 @@
             [bob.pipeline.internals :as p]
             [bob.pipeline.db :as db]
             [bob.resource.db :as rdb]
-            [bob.resource.internals :as ri])
-  (:import (javax.sql.rowset.serial SerialClob)))
+            [bob.resource.internals :as ri]))
 
 (deftest pipeline-creation
   (testing "successfully create a pipeline with used resources and evars"
@@ -188,7 +187,7 @@
                                               (tu/check-and-fail
                                                #(= {:pipeline "dev:test"}
                                                    args))
-                                              [{:cmd (SerialClob. (.toCharArray "test"))}])
+                                              [{:cmd "test"}])
                      #'db/evars-by-pipeline (fn [_ args]
                                               (tu/check-and-fail
                                                #(= {:pipeline "dev:test"}

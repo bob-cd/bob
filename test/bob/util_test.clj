@@ -19,8 +19,7 @@
             [clojure.test.check.properties :as prop]
             [clojure.spec.alpha :as s]
             [clojure.test :refer [deftest testing is]]
-            [bob.util :refer :all])
-  (:import (javax.sql.rowset.serial SerialClob)))
+            [bob.util :refer :all]))
 
 (defspec respond-returns-a-ring-response
   100
@@ -37,11 +36,6 @@
   100
   (prop/for-all [msg (s/gen ::container-id)]
     (<= (count (format-id msg)) id-length)))
-
-(deftest clob-str-test
-  (testing "Conversion of a Clob to String"
-    (is (= (clob->str (SerialClob. (.toCharArray "test")))
-           "test"))))
 
 (def UUID-pattern #"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 

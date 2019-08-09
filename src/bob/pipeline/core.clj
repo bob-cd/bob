@@ -86,7 +86,6 @@
                result   (f/try-all [image (p/image-of pipeline)
                                     steps (db/ordered-steps states/db
                                                             {:pipeline pipeline})
-                                    steps (map #(update-in % [:cmd] u/clob->str) steps)
                                     vars  (->> (db/evars-by-pipeline states/db
                                                                      {:pipeline pipeline})
                                                (map #(hash-map

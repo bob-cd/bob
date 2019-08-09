@@ -235,7 +235,6 @@
                     "busybox:musl")
 
   (exec-steps "busybox:musl"
-              (->> (db/ordered-steps states/db {:pipeline "dev:test"})
-                   (map #(update-in % [:cmd] u/clob->str)))
+              (db/ordered-steps states/db {:pipeline "dev:test"})
               "dev:test"
               {}))

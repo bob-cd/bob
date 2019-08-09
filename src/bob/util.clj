@@ -15,8 +15,7 @@
 
 (ns bob.util
   (:require [ring.util.http-response :as res])
-  (:import (java.sql Clob)
-           (java.util UUID)))
+  (:import (java.util UUID)))
 
 (def id-length 12)
 
@@ -29,11 +28,6 @@
   "Return docker container ids in the standard length"
   [^String id]
   (subs id 0 id-length))
-
-(defn clob->str
-  "Transforms a Java Clob object to a Java String"
-  [^Clob clob]
-  (.getSubString clob 1 (int (.length clob))))
 
 (defn get-id [] (str (UUID/randomUUID)))
 
