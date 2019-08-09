@@ -9,22 +9,20 @@ permalink: /
 # Bob the Builder: This is what CI/CD should've been.
 
 Born out of a personal frustration of the usage of most of the CI/CD offerings,
-Bob tries to be the least in your way and be a CI/CD platform rather than a tool
-allowing you to construct the testing and delivery platform the way you want.
+Bob tries to be the least in your way and be a _CI/CD platform rather than just a tool_.
 
-Bob significantly differs from the other established offerings in the fact that it
+Bob significantly differs from most of the other CI tooling in the fact that it
 consists of a very small, simple and opinionated core designed to be solid, less
-changing and extensible externally. **Bob has no notion of workers or plugins.**
+changing and extensible externally.
 
-Want pipelines as code? Deploy to Kubernetes? Scale automatically to handle large
-build loads? _Teach_ Bob something it can't do yet? Just talk to Bob's REST API.
-Bob lets you be in control of the whole process by allowing itself to be more
-simple than easy.
+Want pipelines as code? Scale automatically to handle large build loads?
+_Teach_ Bob something it can't do yet? Just talk to Bob's REST API.
+Bob makes CI/CD [easy **and simple**](https://www.infoq.com/presentations/Simple-Made-Easy/).
 
 Bob is intended to be a _low-level_ building block to allow users to _build_ their
 own CI/CD platform. Think of Bob as a **CI Engine**
 
-## 🚧 This is a proof of concept and isn't ready for serious consumption yet! 🚧
+## 🚧 This is still in its pre-alpha stages. 🚧
 
 ## Quick Start with Docker
 ```bash
