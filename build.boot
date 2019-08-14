@@ -45,7 +45,7 @@
                             [ch.qos.logback/logback-classic "1.2.3"]    ;; For sane logging defaults
                             ;; Test
                             [lambdaisland/kaocha-boot "0.0-14" :scope "test"]
-                            [org.clojure/test.check "0.9.0" :scope "test"]
+                            [org.clojure/test.check "0.10.0" :scope "test"]
                             ;; Plugins
                             [boot-deps "0.1.9" :scope "test"]])
 

@@ -24,30 +24,27 @@ See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the road
 - JRE 8+ (latest preferred for optimal performance)
 - Docker (latest preferred for optimal performance)
 
-## Testing, building and running
+## Testing, building and running locally
 - Clone this repository.
 - Install the Build requirements.
 - Following steps **need Docker**:
     - Run `boot kaocha` to run tests.
-    - Run `boot build` to get the standalone JAR.
-    - Run `java -jar ./target/bob-standalone.jar` to start the server on port **7777**.
+    - Start a PostgreSQL server instance locally on port 5432.
+    - Ensure a DB `bob` and a user `bob` exists on the DB.
+    - Optionally if Resources and Artifacts are to be used follow the instuctions in the Resources [doc](https://bob-cd.github.io/bob/concepts/resource) and Artifacts [doc](https://bob-cd.github.io/bob/concepts/artifact) respectively.
+    - Run `boot run` to start the server on port **7777**.
 
 ## Running Bob in Docker
 Bob uses Docker as its engine to execute builds, but its now possible to run Bob
 inside Docker using [dind](https://hub.docker.com/_/docker).
 
-To use the latest pre-built image:
-- `docker pull bobcd/bob:latest`
+To use the provided docker-compose file, in the root dir of the project, run:
 
-To build locally, in the root of this repo, run:
-- `docker build -t bobcd/bob:latest .`
+`docker-compose up bob`
 
-Then run the container:
-- `docker run --rm -it -p 7777:7777 --privileged bobcd/bob:latest`
-
-Bob will be up on the forwarded host port `7777` and can run normally.
-The `--privileged` flag is crucial as Bob uses system calls that are not usually
-allowed on Docker.
+Bob will be up on the forwarded host port `7777` along with a PostgreSQL server, the reference artifact store and the resource provider.
+Bob needs the `privileged` flag as it uses system Docker in Docker to function.
+A reference CLI like [Wendy](https://github.com/bob-cd/wendy) may be used to talk to Bob.
 
 ## Running integration tests:
 
@@ -55,7 +52,7 @@ allowed on Docker.
 
 In the `integration-tests` dir, run:
 
-`docker-compose up --abort-on-container-exit`
+`docker-compose up --abort-on-container-exit integration-tests`
 
 ## For Cursive users:
 This project is built using the Boot build tool which is unsupported on Cursive at the moment.

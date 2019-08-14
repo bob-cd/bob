@@ -130,6 +130,7 @@ requests:
             - "bob-entrypoint.sh"
             - "boot.properties"
             - "build.boot"
+            - "docker-compose.yaml"
             - "integration-tests"
             - "resources"
             - "src"
