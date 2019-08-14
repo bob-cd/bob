@@ -26,9 +26,12 @@ own CI/CD platform. Think of Bob as a **CI Engine**
 
 ## Quick Start with Docker
 ```bash
-# Start a bob container locally on port 7777
+# Clone the source repo:
+git clone https://github.com/bob-cd/bob
+
+# Use docker-compose to bring up the cluster
 # The --privileged flag is necessary as Bob itself uses Docker internally
-docker run -it -p 7777:7777 --privileged --name bob bobcd/bob
+cd bob && docker-compose up bob
 
 # ...loads of output...
 # wait for Bob's listening on http://0.0.0.0:7777/
