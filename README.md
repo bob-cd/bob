@@ -29,8 +29,15 @@ See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the road
 - Install the Build requirements.
 - Following steps **need Docker**:
     - Run `boot kaocha` to run tests.
-    - Start a PostgreSQL server instance locally on port 5432.
-    - Ensure a DB `bob` and a user `bob` exists on the DB.
+    - Start a PostgreSQL server instance locally on port 5432, and ensure a DB `bob` and a user `bob` exists on the DB.
+
+      ```bash
+        docker run --name bob-db \
+          -p 5432:5432 \
+          -e POSTGRES_DB=bob \
+          -e POSTGRES_USER=bob \
+          -d postgres
+      ```
     - Optionally if Resources and Artifacts are to be used follow the instuctions in the Resources [doc](https://bob-cd.github.io/bob/concepts/resource) and Artifacts [doc](https://bob-cd.github.io/bob/concepts/artifact) respectively.
     - Run `boot run` to start the server on port **7777**.
 
