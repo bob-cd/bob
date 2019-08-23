@@ -49,8 +49,6 @@
 
   (delete-pipeline-sqlvec {:name "test"})
 
-  (insert-log-entry-sqlvec {:pid "aaa" :run "abcd"})
-
   (update-runs-sqlvec {:pid "aaa" :id "aaaaa"})
 
   (run-stopped?-sqlvec {:id "aaa"})
@@ -70,6 +68,7 @@
 
   (run-id-of-sqlvec {:pipeline "test" :number 1})
 
-  (container-ids-sqlvec {:run-id "aa"})
+  (image-of-sqlvec {:name "aa"})
 
-  (image-of-sqlvec {:name "aa"}))
+  (upsert-log-sqlvec {:run     "aa"
+                      :content "test"}))

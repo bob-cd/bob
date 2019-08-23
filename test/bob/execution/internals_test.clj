@@ -79,41 +79,33 @@
 (deftest container-runs
   (testing "successful run"
     (let [id "11235813213455"]
-      (with-redefs-fn {#'docker/start          (fn [_ cid]
-                                                 (tu/check-and-fail
-                                                  #(= id cid)))
-                       #'docker/wait-container (fn [_ cid]
-                                                 (tu/check-and-fail
-                                                  #(= id cid))
-                                                 0)}
-        #(is (= "112358132134" (run id))))))
+      (with-redefs-fn {#'docker/start     (fn [_ cid]
+                                            (tu/check-and-fail
+                                             #(= id cid)))
+                       #'docker/logs-live (constantly true)
+                       #'docker/inspect   (fn [_ cid]
+                                            (tu/check-and-fail
+                                             #(= id cid))
+                                            {:State {:ExitCode 0}})}
+        #(is (= "112358132134" (run id "run-id"))))))
 
   (testing "successful run, non-zero exit"
     (let [id "11235813213455"]
-      (with-redefs-fn {#'docker/start          (fn [_ cid]
-                                                 (tu/check-and-fail
-                                                  #(= id cid)))
-                       #'docker/wait-container (fn [_ cid]
-                                                 (tu/check-and-fail
-                                                  #(= id cid))
-                                                 1)}
-        #(let [result (run id)]
+      (with-redefs-fn {#'docker/start     (fn [_ cid]
+                                            (tu/check-and-fail
+                                             #(= id cid)))
+                       #'docker/logs-live (constantly true)
+                       #'docker/inspect   (fn [_ cid]
+                                            (tu/check-and-fail
+                                             #(= id cid))
+                                            {:State {:ExitCode 1}})}
+        #(let [result (run id "run-id")]
            (is (and (f/failed? result)
                     (= "Abnormal exit."
                        (f/message result))))))))
 
   (testing "unsuccessful run"
-    (with-redefs-fn {#'docker/start          (constantly nil)
-                     #'docker/wait-container (fn [_ _] (throw (Exception. "Failed")))}
-      #(is (f/failed? (run "id"))))))
-
-(deftest container-logs
-  (testing "successful log fetch"
-    (with-redefs-fn {#'docker/logs (fn [_ name]
-                                     (tu/check-and-fail
-                                      #(= "id" name)))}
-      #(is (nil? (log-stream-of "id")))))
-
-  (testing "unsuccessful log fetch"
-    (with-redefs-fn {#'docker/logs (fn [_ _] (throw (Exception. "Failed")))}
-      #(is (f/failed? (log-stream-of "id"))))))
+    (with-redefs-fn {#'docker/start     (constantly nil)
+                     #'docker/logs-live (constantly true)
+                     #'docker/inspect   (fn [_ _] (throw (Exception. "Failed")))}
+      #(is (f/failed? (run "id" "run-id"))))))

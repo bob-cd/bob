@@ -84,7 +84,7 @@
                                 :body
                                 (ZipInputStream.))
               _             (extract-zip! stream dir)]
-    out-dir
+    (.getAbsolutePath dir)
     (f/when-failed [err] err)))
 
 (defn initial-image-of

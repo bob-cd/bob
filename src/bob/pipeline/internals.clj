@@ -32,10 +32,7 @@
   This is used to track the last executed container in logging as well as stopping.
   Returns pid or error if any."
   [pid run-id]
-  (f/try-all [_ (db/insert-log-entry states/db
-                                     {:pid pid
-                                      :run run-id})
-              _ (db/update-runs states/db
+  (f/try-all [_ (db/update-runs states/db
                                 {:pid pid
                                  :id  run-id})]
     pid
@@ -100,20 +97,20 @@
     (if (or stopped?
             (f/failed? (:id id)))
       (reduced id)
-      (f/try-all [result (next-step id step evars pipeline)
-                  id     (update-pid (:id result) run-id)
-                  id     (e/run id)
+      (f/try-all [result       (next-step id step evars pipeline)
+                  id           (update-pid (:id result) run-id)
+                  id           (e/run id run-id)
                   [group name] (clojure.string/split pipeline #":")
-                  _      (if-let [artifact (:produces_artifact step)]
-                           (artifact/upload-artifact group
-                                                     name
-                                                     number
-                                                     artifact
-                                                     id
-                                                     (str (get-in (docker/inspect states/docker-conn id)
-                                                                  [:Config :WorkingDir])
-                                                          "/"
-                                                          (:artifact_path step))))]
+                  _            (when-let [artifact (:produces_artifact step)]
+                                 (artifact/upload-artifact group
+                                                           name
+                                                           number
+                                                           artifact
+                                                           id
+                                                           (str (get-in (docker/inspect states/docker-conn id)
+                                                                        [:Config :WorkingDir])
+                                                                "/"
+                                                                (:artifact_path step))))]
         {:id      id
          :mounted (:mounted result)}
         (f/when-failed [err] err)))))
@@ -148,7 +145,7 @@
                       image (resourceful-step first-step pipeline image)
                       id    (f/ok-> (e/build image first-step evars)
                                     (update-pid run-id)
-                                    (e/run))
+                                    (e/run run-id))
                       id    (reduce (partial exec-step run-id evars pipeline number)
                                     {:id      id
                                      :mounted (if first-resource
@@ -195,17 +192,13 @@
   - Lazily read the streams from each and append and truncate the lines.
   Returns the list of lines or errors if any."
   [name number offset lines]
-  (f/try-all [run-id     (-> (db/run-id-of states/db
-                                           {:pipeline name
-                                            :number   number})
-                             (:id))
-              containers (->> (db/container-ids states/db
-                                                {:run-id run-id})
-                              (map #(:pid %)))]
-    (->> containers
-         (map #(e/log-stream-of %))
-         (filter #(not (nil? %)))
-         (flatten)
+  (f/try-all [run-id (-> (db/run-id-of states/db
+                                       {:pipeline name
+                                        :number   number})
+                         (:id))
+              logs   (:content (db/logs-of states/db {:run-id run-id}))]
+    (->> logs
+         (clojure.string/split-lines)
          (drop (dec offset))
          (take lines))
     (f/when-failed [err] (f/message err))))

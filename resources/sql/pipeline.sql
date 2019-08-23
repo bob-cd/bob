@@ -47,10 +47,6 @@ LIMIT 1;
 DELETE FROM "pipelines"
 WHERE "name"=:name;
 
--- :name insert-log-entry :insert :1
-INSERT INTO "logs" ("pid", "run")
-VALUES (:pid, :run);
-
 -- :name update-runs :execute :1
 UPDATE "runs"
 SET "last_pid"=:pid
@@ -86,11 +82,16 @@ WHERE "pipeline"=:pipeline AND "number"=:number;
 SELECT "id" FROM "runs"
 WHERE "pipeline"=:pipeline AND "number"=:number;
 
--- :name container-ids :query :many
-SELECT "pid" FROM "logs"
-WHERE "run"=:run-id
-ORDER BY "id";
-
 -- :name image-of :query :1
 SELECT "image" FROM "pipelines"
 WHERE "name"=:name;
+
+-- :name upsert-log :insert :1
+INSERT INTO "logs" ("run", "content")
+VALUES (:run, :content)
+ON CONFLICT ("run")
+DO UPDATE SET "content" = "logs"."content" || E'\n' || EXCLUDED.content;
+
+-- :name logs-of :query :1
+SELECT "content" FROM "logs"
+WHERE "run"=:run-id;

@@ -13,8 +13,7 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-{:up   ["CREATE TABLE \"logs\" (\"id\"  SERIAL,
-                                \"run\" TEXT NOT NULL,
-                                \"pid\" TEXT DEFAULT NULL,
+{:up   ["CREATE TABLE \"logs\" (\"run\" TEXT PRIMARY KEY,
+                                \"content\" TEXT DEFAULT '',
                                 FOREIGN KEY(\"run\") REFERENCES \"runs\"(\"id\") ON DELETE CASCADE);"]
  :down ["DROP TABLE logs;"]}

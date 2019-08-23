@@ -36,7 +36,7 @@
                             [com.layerware/hugsql "0.4.9"]
                             [metosin/compojure-api "2.0.0-alpha30"]
                             [prismatic/schema "1.1.12"]
-                            [lispyclouds/clj-docker-client "0.2.3"]
+                            [lispyclouds/clj-docker-client "0.3.1"]
                             [mount "0.1.16"]
                             [environ "1.1.0"]
                             [javax.xml.bind/jaxb-api "2.3.0"]           ;; For Aleph's XML dependency, Java 8 compat

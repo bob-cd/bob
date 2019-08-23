@@ -17,7 +17,8 @@
   (:require [failjure.core :as f]
             [clj-docker-client.core :as docker]
             [bob.util :as u]
-            [bob.states :as states]))
+            [bob.states :as states]
+            [bob.pipeline.db :as db]))
 
 (defn has-image
   "Checks if an image is present locally.
@@ -74,18 +75,19 @@
 (defn run
   "Synchronously starts up a previously built container.
   Returns the id when complete or and error in case on non-zero exit."
-  [^String id]
+  [id run-id]
   (f/try-all [_      (docker/start states/docker-conn id)
-              status (docker/wait-container states/docker-conn id)]
+              _      (docker/logs-live states/docker-conn
+                                       id
+                                       #(db/upsert-log states/db {:run     run-id
+                                                                  :content %}))
+              status (-> (docker/inspect states/docker-conn id)
+                         :State
+                         :ExitCode)]
     (if (zero? status)
       (u/format-id id)
       (f/fail "Abnormal exit."))
     (f/when-failed [err] err)))
-
-(defn log-stream-of
-  "Fetches the lazy log stream from a running/dead container."
-  [^String name]
-  (f/try* (docker/logs states/docker-conn name)))
 
 (comment
   (build "busybox:musl"

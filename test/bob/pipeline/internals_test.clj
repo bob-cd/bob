@@ -29,25 +29,15 @@
 
 (deftest pid-updates
   (testing "successful container id update"
-    (with-redefs-fn {#'db/insert-log-entry (fn [_ args]
-                                             (tu/check-and-fail
-                                              #(= {:pid "p1"
-                                                   :run "r1"}
-                                                  args)))
-                     #'db/update-runs      (fn [_ args]
-                                             (tu/check-and-fail
-                                              #(= {:pid "p1"
-                                                   :id  "r1"}
-                                                  args)))}
+    (with-redefs-fn {#'db/update-runs (fn [_ args]
+                                        (tu/check-and-fail
+                                         #(= {:pid "p1"
+                                              :id  "r1"}
+                                             args)))}
       #(is (= "p1" (update-pid "p1" "r1")))))
 
   (testing "unsuccessful container id update"
-    (with-redefs-fn {#'db/insert-log-entry #(throw (Exception. "nope"))
-                     #'db/update-runs      (fn [_ args]
-                                             (tu/check-and-fail
-                                              #(= {:pid "p1"
-                                                   :id  "r1"}
-                                                  args)))}
+    (with-redefs-fn {#'db/update-runs (fn [& _] (throw (Exception. "nope")))}
       #(is (f/failed? (update-pid "p1" "r1"))))))
 
 (deftest mounted-images
@@ -139,9 +129,10 @@
                                                      #(and (= "id" id)
                                                            (= "id" run-id)))
                                                     "id")
-                       #'e/run                    (fn [id]
+                       #'e/run                    (fn [id run-id]
                                                     (tu/check-and-fail
-                                                     #(= "id" id))
+                                                     #(and (= "id" id)
+                                                           (= "id" run-id)))
                                                     "id")
                        #'docker/inspect           (fn [_ id]
                                                     (tu/check-and-fail
@@ -178,9 +169,10 @@
                                                      #(and (= "id" id)
                                                            (= "id" run-id)))
                                                     "id")
-                       #'e/run                    (fn [id]
+                       #'e/run                    (fn [id run-id]
                                                     (tu/check-and-fail
-                                                     #(= "id" id))
+                                                     #(and (= "id" id)
+                                                           (= "id" run-id)))
                                                     "id")
                        #'docker/inspect           (fn [_ id]
                                                     (tu/check-and-fail
@@ -281,9 +273,10 @@
                                                  #(and (= "id" id)
                                                        (= "run-id" run-id)))
                                                 "id")
-                       #'e/run                (fn [id]
+                       #'e/run                (fn [id run-id]
                                                 (tu/check-and-fail
-                                                 #(= "id" id))
+                                                 #(and (= "id" id)
+                                                       (= "run-id" run-id)))
                                                 "id")
                        #'reduce               (fn [pred accum steps]
                                                 (tu/check-and-fail
@@ -341,9 +334,10 @@
                                                  #(and (= "id" id)
                                                        (= "run-id" run-id)))
                                                 "id")
-                       #'e/run                (fn [id]
+                       #'e/run                (fn [id run-id]
                                                 (tu/check-and-fail
-                                                 #(= "id" id))
+                                                 #(and (= "id" id)
+                                                       (= "run-id" run-id)))
                                                 "id")
                        #'reduce               (fn [pred accum steps]
                                                 (tu/check-and-fail
@@ -446,31 +440,21 @@
 
 (deftest logging-pipeline
   (testing "successfully fetch logs"
-    (with-redefs-fn {#'db/run-id-of     (fn [_ args]
-                                          (tu/check-and-fail
-                                           #(= {:pipeline "test"
-                                                :number   1}
-                                               args))
-                                          {:id "run-id"})
-                     #'db/container-ids (fn [_ args]
-                                          (tu/check-and-fail
-                                           #(= {:run-id "run-id"}
-                                               args))
-                                          [{:pid "1"}
-                                           {:pid "2"}])
-                     #'e/log-stream-of  (fn [id]
-                                          (tu/check-and-fail
-                                           #(or (= "1" id)
-                                                (= "2" id)))
-                                          (case id
-                                            "1" "log1"
-                                            "2" "log2"))}
+    (with-redefs-fn {#'db/run-id-of (fn [_ args]
+                                      (tu/check-and-fail
+                                       #(= {:pipeline "test"
+                                            :number   1}
+                                           args))
+                                      {:id "run-id"})
+                     #'db/logs-of   (fn [_ args]
+                                      (tu/check-and-fail
+                                       #(= {:run-id "run-id"}
+                                           args))
+                                      {:content "log1\nlog2"})}
       #(is (= ["log1" "log2"] (pipeline-logs "test" 1 0 2)))))
 
   (testing "unsuccessfully fetch logs"
-    (with-redefs-fn {#'db/run-id-of     (fn [& _] (throw (Exception. "nope")))
-                     #'db/container-ids (fn [& _] (throw (Exception. "nope")))
-                     #'e/log-stream-of  (fn [& _] (throw (Exception. "nope")))}
+    (with-redefs-fn {#'db/run-id-of    (fn [& _] (throw (Exception. "nope")))}
       #(is (= "nope" (pipeline-logs "test" 1 0 2))))))
 
 (deftest pipeline-image-fetch

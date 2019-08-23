@@ -33,10 +33,10 @@
                    (s/optional-key :needs_resource)    String
                    (s/optional-key :produces_artifact) Artifact})
 
-(s/defschema Pipeline {:steps     [Step]
-                       :image     String
-                       :vars      {Keyword String}
-                       :resources [Resource]})
+(s/defschema Pipeline {:steps                      [Step]
+                       :image                      String
+                       (s/optional-key :vars)      {Keyword String}
+                       (s/optional-key :resources) [Resource]})
 
 (s/defschema LogsResponse {:message [String]})
 
