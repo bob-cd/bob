@@ -18,6 +18,7 @@
             [compojure.api.sweet :as rest]
             [schema.core :as s]
             [bob.util :as u]
+            [bob.api.health-check :as hc]
             [bob.api.schemas :as schema]
             [bob.api.middleware :as m]
             [bob.pipeline.core :as p]
@@ -167,11 +168,10 @@
         :summary "Lists the registered artifact store."
         (a/get-registered-artifact-stores))
 
-      ;; TODO: Actually do some health checks here.
       (rest/GET "/can-we-build-it" []
         :return schema/SimpleResponse
         :summary "Runs health checks for Bob."
-        (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28")))
+        (hc/health-check))
 
     (rest/undocumented
      (route/not-found (u/respond "Took a wrong turn?"))))))
