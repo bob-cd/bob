@@ -15,3 +15,6 @@ pom.xml.asc
 .nrepl-history
 project.clj
 .clj-kondo/.cache
+strest_history.json
+kind
+.kube

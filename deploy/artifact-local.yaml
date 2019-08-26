@@ -1,0 +1,49 @@
+#   This file is part of Bob.
+#
+#   Bob is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Bob is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: artifact-local
+spec:
+  ports:
+    - port: 8001
+  selector:
+    app: artifact-local
+  clusterIP: None
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: artifact-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: artifact-local
+  template:
+    metadata:
+      labels:
+        app: artifact-local
+    spec:
+      containers:
+        - image: bobcd/artifact-local
+          name: artifact-local
+          ports:
+            - containerPort: 8001

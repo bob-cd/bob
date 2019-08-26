@@ -66,6 +66,7 @@
    :elide-meta     [:doc :file :line :added]})
 
 (deftask build
+  "Perform a full AOT Uberjar build"
   [d dir PATH #{str} "Directories to write to (target)."]
   (binding [clojure.core/*compiler-options* compiler-opts]
     (let [dir (if (seq dir) dir #{"target"})]
@@ -76,6 +77,7 @@
             (target :dir dir)))))
 
 (deftask run
+  "Start -main"
   [a args ARG [str] "CLI args to Bob."]
   (require '[bob.main :as app])
   (apply (resolve 'app/-main) args)

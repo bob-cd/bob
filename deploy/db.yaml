@@ -1,0 +1,93 @@
+#   This file is part of Bob.
+#
+#   Bob is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Bob is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: bob-db
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/data"
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bob-db
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: bob-db
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: bob-db
+  clusterIP: None
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bob-db
+spec:
+  selector:
+    matchLabels:
+      app: bob-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bob-db
+    spec:
+      containers:
+      - image: postgres:alpine
+        name: bob-db
+        env:
+          - name: POSTGRES_USER
+            value: bob
+          - name: POSTGRES_DB
+            value: bob
+        ports:
+          - containerPort: 5432
+        volumeMounts:
+          - name: bob-db-persistent-storage
+            mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: bob-db-persistent-storage
+          persistentVolumeClaim:
+            claimName: bob-db
