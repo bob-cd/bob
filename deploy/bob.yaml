@@ -1,0 +1,67 @@
+#   This file is part of Bob.
+#
+#   Bob is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Bob is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: bob-lb
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 7777
+      protocol: TCP
+      targetPort: 7777
+  selector:
+    app: bob
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bob
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bob
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: bob
+    spec:
+      containers:
+        - image: bobcd/bob
+          name: bob
+          securityContext:
+            privileged: true
+          env:
+            - name: BOB_DB_HOST
+              value: "bob-db"
+            - name: BOB_DB_PORT
+              value: "5432"
+            - name: BOB_DB_USER
+              value: "bob"
+            - name: BOB_DB_NAME
+              value: "bob"
+          ports:
+            - containerPort: 7777
