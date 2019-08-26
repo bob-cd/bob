@@ -16,6 +16,8 @@ _site
 *~
 *.temp
 *.tmp
+.nrepl-*
+*.iml
 
 # OS or Editor folders
 .DS_Store
@@ -38,3 +40,5 @@ validation-report.json
 # Folders to ignore
 node_modules
 vendor
+deploy
+target
