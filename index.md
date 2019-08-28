@@ -40,4 +40,4 @@ cd bob && docker-compose up bob
 Use a reference CLI like [Wendy](https://github.com/bob-cd/wendy) or something of
 your own as Bob talks over plain REST and off you go!
 
-### Bob is a fully GPLv3+ licensed FOSS and any and every contribution is much appreciated!
+### Bob can be found on [Github](https://github.com/bob-cd/bob) and is fully GPLv3+ licensed FOSS and any and every contribution is much appreciated!
