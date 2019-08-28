@@ -42,3 +42,5 @@ node_modules
 vendor
 deploy
 target
+.kube
+integration-tests
