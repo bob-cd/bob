@@ -17,7 +17,7 @@
   (:require [aleph.http :as http]
             [failjure.core :as f]
             [clj-docker-client.core :as docker]
-            [bob.util :as u]
+            [taoensso.timbre :as log]
             [bob.states :as states]
             [bob.resource.db :as db])
   (:import (java.util.zip ZipInputStream)
@@ -28,6 +28,7 @@
 (defn- rm-r!
   "Recursively deletes a directory."
   [dir & [silently]]
+  (log/debugf "Deleting directory %s" dir)
   (f/try*
     (letfn [(delete-f [^File file]
               (when (.isDirectory file)
@@ -39,6 +40,7 @@
 (defn- extract-zip!
   "Takes a java.util.zip.ZipInputStream `zip-stream` and extracts the content to the `out-dir`."
   [^ZipInputStream zip-stream out-dir]
+  (log/debugf "Extracting zip file to %s" out-dir)
   (f/try*
     (with-open [stream zip-stream]
       (loop [entry (.getNextEntry stream)]
@@ -80,12 +82,17 @@
               dir           (File. (str out-dir File/separatorChar (:name resource)))
               _             (.mkdirs ^File dir)
               url           (url-of resource pipeline)
+              _             (log/infof "Fetching resource %s from %s"
+                                       (:name resource)
+                                       url)
               stream        (-> @(http/get url)
                                 :body
                                 (ZipInputStream.))
               _             (extract-zip! stream dir)]
-    (.getAbsolutePath dir)
-    (f/when-failed [err] err)))
+    (.getAbsolutePath ^File dir)
+    (f/when-failed [err]
+      (log/errorf "Failed to fetch resource: %s" (f/message err))
+      err)))
 
 (defn initial-image-of
   "Takes a path to a directory, name and image and builds the initial image.
@@ -98,21 +105,27 @@
   - Return the id of the committed image.
   - Deletes the temp folder."
   [path image cmd]
-  (f/try-all [id (docker/create states/docker-conn image "" {} {})
+  (f/try-all [_  (log/debug "Creating container for resource mount")
+              id (docker/create states/docker-conn image "" {} {})
+              _  (log/debug "Copying resources to container")
               _  (docker/cp states/docker-conn id path "/root")
               _  (rm-r! path true)]
-    (docker/commit-container
-      states/docker-conn
-      id
-      (format "%s/%d" id (System/currentTimeMillis))
-      "latest"
-      cmd)
-    (f/when-failed [err] err)))
+    (do (log/debug "Commiting resourceful container")
+        (docker/commit-container
+         states/docker-conn
+         id
+         (format "%s/%d" id (System/currentTimeMillis))
+         "latest"
+         cmd))
+    (f/when-failed [err]
+      (log/errorf "Failed to create initial image: %s" (f/message err))
+      err)))
 
 (defn add-params
   "Saves the map of GET params to be sent to the resource."
   [resource-name params pipeline]
-  (when (not (empty? params))
+  (when (seq params)
+    (log/debugf "Adding params %s for resource %s" params resource-name)
     (db/insert-resource-params states/db
                                {:params (map #(vector (clojure.core/name (first %))
                                                       (last %)
@@ -123,8 +136,8 @@
 (defn valid-external-resource?
   "Checks if the resource has a valid URL."
   [resource]
-  (not (nil? (db/invalid-external-resources states/db
-                                            {:name (:provider resource)}))))
+  (some? (db/invalid-external-resources states/db
+                                        {:name (:provider resource)})))
 
 (comment
   (def resource {:name     "my-source"

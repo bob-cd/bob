@@ -18,6 +18,7 @@
             [failjure.core :as f]
             [clj-docker-client.core :as docker]
             [clojure.core.async :as a]
+            [taoensso.timbre :as log]
             [bob.test-utils :as tu]
             [bob.pipeline.internals :refer :all]
             [bob.util :as u]
@@ -236,6 +237,7 @@
 
 (deftest steps-execution
   (testing "successful steps execution with first resource"
+    (log/merge-config! {:level :report})
     (let [first-step {:cmd            "hello"
                       :needs_resource "src"}]
       (with-redefs-fn {#'u/get-id             (constantly "run-id")
@@ -279,6 +281,9 @@
                                                        (= "run-id" run-id)))
                                                 "id")
                        #'reduce               (fn [pred accum steps]
+                                                (println "PRED >>> " pred)
+                                                (println "ACCUM >>> " accum)
+                                                (println "STEPS >>> " steps)
                                                 (tu/check-and-fail
                                                  #(and (fn? pred)
                                                        (= {:id      "id"
@@ -299,6 +304,7 @@
 
   (testing "successful steps execution without first resource"
     (let [first-step {:cmd "hello"}]
+      (log/merge-config! {:level :report})
       (with-redefs-fn {#'u/get-id             (constantly "run-id")
                        #'next-build-number-of (fn [name]
                                                 (tu/check-and-fail
@@ -359,6 +365,7 @@
                                         {})))))))
 
   (testing "unsuccessful steps execution"
+    (log/merge-config! {:level :report})
     (let [first-step {:cmd "hello"}
           nein       (fn [& _] (throw (Exception. "shouldn't be called")))]
       (with-redefs-fn {#'u/get-id             (constantly "run-id")

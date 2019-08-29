@@ -17,6 +17,7 @@
   (:require [clojure.core.async :as a]
             [failjure.core :as f]
             [clj-docker-client.core :as docker]
+            [taoensso.timbre :as log]
             [bob.execution.internals :as e]
             [bob.util :as u]
             [bob.resource.core :as r]
@@ -25,18 +26,21 @@
             [bob.pipeline.db :as db]
             [bob.resource.db :as rdb]))
 
-;; TODO: Reduce and optimize DB interactions to a single place
-
 (defn update-pid
-  "Sets the current container id to both logs and runs tables.
+  "Sets the current container id in the runs tables.
   This is used to track the last executed container in logging as well as stopping.
   Returns pid or error if any."
   [pid run-id]
-  (f/try-all [_ (db/update-runs states/db
+  (f/try-all [_ (log/debugf "Updating pid %s for run id %s"
+                            pid
+                            run-id)
+              _ (db/update-runs states/db
                                 {:pid pid
                                  :id  run-id})]
     pid
-    (f/when-failed [err] err)))
+    (f/when-failed [err]
+      (log/errorf "Failed to update pid: %s" (f/message err))
+      err)))
 
 (defn resourceful-step
   "Create a resource mounted image for a step if it needs it."
@@ -56,12 +60,13 @@
   creating a new container from it, thereby managing state externally.
   Returns the new container id or errors if any."
   [id step evars pipeline]
-  (f/try-all [image         (docker/commit-container
-                              states/docker-conn
-                              (:id id)
-                              (format "%s/%d" (:id id) (System/currentTimeMillis))
-                              "latest"
-                              (:cmd step))
+  (f/try-all [_             (log/debugf "Commiting container: %s" (:id id))
+              image         (docker/commit-container
+                             states/docker-conn
+                             (:id id)
+                             (format "%s/%d" (:id id) (System/currentTimeMillis))
+                             "latest"
+                             (:cmd step))
               resource      (:needs_resource step)
               mounted       (:mounted id)
               mount-needed? (if (nil? resource)
@@ -71,11 +76,14 @@
                               (resourceful-step step pipeline image)
                               image)
               result        {:id      (e/build image step evars)
-                             :mounted mounted}]
+                             :mounted mounted}
+              _             (log/debugf "Built a resourceful container: %s" (:id id))]
     (if mount-needed?
       (update-in result [:mounted] conj resource)
       result)
-    (f/when-failed [err] err)))
+    (f/when-failed [err]
+      (log/errorf "Next step creation failed: %s" (f/message err))
+      err)))
 
 (defn exec-step
   "Reducer function to implement the sequential execution of steps.
@@ -97,7 +105,10 @@
     (if (or stopped?
             (f/failed? (:id id)))
       (reduced id)
-      (f/try-all [result       (next-step id step evars pipeline)
+      (f/try-all [_            (log/infof "Executing step %s in pipeline %s"
+                                          step
+                                          pipeline)
+                  result       (next-step id step evars pipeline)
                   id           (update-pid (:id result) run-id)
                   id           (e/run id run-id)
                   [group name] (clojure.string/split pipeline #":")
@@ -113,7 +124,9 @@
                                                                 (:artifact_path step))))]
         {:id      id
          :mounted (:mounted result)}
-        (f/when-failed [err] err)))))
+        (f/when-failed [err]
+          (log/errorf "Failed to exec step: %s" step)
+          err)))))
 
 (defn next-build-number-of
   "Generates a sequential build number for a pipeline."
@@ -122,7 +135,11 @@
     (if (nil? result)
       1
       (inc (result :number)))
-    (f/when-failed [err] err)))
+    (f/when-failed [err]
+      (log/errorf "Error generating build number for %s: %s"
+                  name
+                  (f/message err))
+      err)))
 
 (defn exec-steps
   "Implements the sequential execution of the list of steps with a starting image.
@@ -136,7 +153,8 @@
         first-step     (first steps)
         first-resource (:needs_resource first-step)
         number         (next-build-number-of pipeline)]
-    (a/go (f/try-all [_     (db/insert-run states/db
+    (a/go (f/try-all [_     (log/infof "Starting new run %d for %s" number pipeline)
+                      _     (db/insert-run states/db
                                            {:id       run-id
                                             :number   number
                                             :pipeline pipeline
@@ -152,15 +170,19 @@
                                                 [first-resource]
                                                 [])}
                                     (rest steps))
+                      _     (log/infof "Marking run %d for %s as passed" number pipeline)
                       _     (db/update-run states/db
                                            {:status "passed"
                                             :id     run-id})]
             id
             (f/when-failed [err]
-              (do (f/try* (db/update-run states/db
-                                         {:status "failed"
-                                          :id     run-id}))
-                  err))))))
+              (log/infof "Marking run %d for %s as failed with reason: %s"
+                         number
+                         pipeline
+                         (f/message err))
+              (f/try* (db/update-run states/db
+                                     {:status "failed"
+                                      :id     run-id})))))))
 
 (defn stop-pipeline
   "Stops a pipeline if running.
@@ -175,6 +197,7 @@
         status   (f/try* (-> (db/status-of states/db criteria)
                              (:status)))]
     (when (= status "running")
+      (log/debugf "Stopping run %d of pipeline %s" number name)
       (f/try-all [_      (db/stop-run states/db criteria)
                   pid    (-> (db/pid-of-run states/db criteria)
                              (:last_pid))
@@ -182,26 +205,32 @@
                   _      (when (status :running?)
                            (e/kill-container pid))]
         "Ok"
-        (f/when-failed [err] (f/message err))))))
+        (f/when-failed [err]
+          (log/errorf "Failed to stop pipeline: %s" (f/message err))
+          (f/message err))))))
 
 (defn pipeline-logs
-  "Aggregates and reads the logs from all of the containers in a pipeline.
-  Performs the following:
-  - Fetch the run UUID of a pipeline of a group.
-  - Fetch all container ids associated with that UUID.
-  - Lazily read the streams from each and append and truncate the lines.
+  "Fetches all the logs from from a particular run-id split by lines.
+
+  Can be paginated with offset and number of lines.
+
   Returns the list of lines or errors if any."
   [name number offset lines]
-  (f/try-all [run-id (-> (db/run-id-of states/db
+  (f/try-all [_      (log/debugf "Fetching logs for pipeline %s" name)
+              run-id (-> (db/run-id-of states/db
                                        {:pipeline name
                                         :number   number})
                          (:id))
-              logs   (:content (db/logs-of states/db {:run-id run-id}))]
+              logs   (:content (db/logs-of states/db {:run-id run-id}))
+              _      (when (nil? logs)
+                       (f/fail "Unable to fetch logs for this run"))]
     (->> logs
          (clojure.string/split-lines)
          (drop (dec offset))
          (take lines))
-    (f/when-failed [err] (f/message err))))
+    (f/when-failed [err]
+      (log/errorf "Failed to fetch logs for pipeline %s: %s" name (f/message err))
+      (f/message err))))
 
 (defn image-of
   "Returns the image associated with the pipeline."

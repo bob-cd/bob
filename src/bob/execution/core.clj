@@ -17,6 +17,7 @@
   (:require [clojure.java.shell :as shell]
             [manifold.deferred :as d]
             [failjure.core :as f]
+            [taoensso.timbre :as log]
             [bob.util :as u]))
 
 (defn gc
@@ -27,7 +28,9 @@
   ([all]
    (let [base-args ["docker" "system" "prune" "-f"]
          args      (if all (conj base-args "-a") base-args)]
-     (d/let-flow [result (f/ok-> (apply shell/sh args))]
+     (d/let-flow [_      (log/info "Performing GC")
+                  result (f/ok-> (apply shell/sh args))]
        (u/respond (if (f/failed? result)
-                    (f/message result)
+                    (do (log/errorf "Error performing GC: %s" (f/message result))
+                        (f/message result))
                     "Ok"))))))

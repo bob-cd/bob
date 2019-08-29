@@ -19,7 +19,8 @@
             [ragtime.jdbc :as jdbc]
             [hikari-cp.core :as h]
             [clj-docker-client.core :as docker]
-            [environ.core :as env]))
+            [environ.core :as env]
+            [taoensso.timbre :as log]))
 
 (defonce db-host (get env/env :bob-db-host "localhost"))
 (defonce db-port (Integer/parseInt (get env/env :bob-db-port "5432")))
@@ -34,7 +35,7 @@
                                                :port-number   db-port})]
            (defonce db {:datasource data-source})
            data-source)
-  :stop  (do (println "Stopping DB...")
+  :stop  (do (log/info "Stopping DB")
              (h/close-datasource data-source)))
 
 (m/defstate migration-config
@@ -50,7 +51,7 @@
 
 (m/defstate docker-conn
   :start (docker/connect)
-  :stop  (do (println "Closing docker connection...")
+  :stop  (do (log/info "Closing docker connection")
              (docker/disconnect docker-conn)))
 
 (comment

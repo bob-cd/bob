@@ -17,6 +17,7 @@
   (:require [ring.util.response :as res]
             [manifold.deferred :as d]
             [failjure.core :as f]
+            [taoensso.timbre :as log]
             [bob.pipeline.internals :as p]
             [bob.util :as u]
             [bob.resource.internals :as ri]
@@ -47,11 +48,19 @@
                                       (last %)
                                       pipeline)
                              vars)
-               result   (f/try-all [_ (db/insert-pipeline states/db
+               result   (f/try-all [_ (log/debugf "Inserting pipeline %s" name)
+                                    _ (db/insert-pipeline states/db
                                                           {:name  pipeline
                                                            :image image})
                                     _ (doseq [resource resources]
                                         (let [{:keys [name params type provider]} resource]
+                                          (log/debugf "Inserting resource:
+                                                       name: %s
+                                                       type: %s
+                                                       provider: %s"
+                                                      name
+                                                      type
+                                                      provider)
                                           (rdb/insert-resource states/db
                                                                {:name     name
                                                                 :type     type
@@ -59,6 +68,7 @@
                                                                 :provider provider})
                                           (ri/add-params name params pipeline)))
                                     _ (when (seq evars)
+                                        (log/debugf "Inserting environment vars: %s" (into [] evars))
                                         (f/try* (db/insert-evars states/db
                                                                  {:evars evars})))
                                     _ (doseq [step pipeline-steps]
@@ -66,6 +76,13 @@
                                                needs-resource        :needs_resource
                                                {artifact-name :name
                                                 artifact-path :path} :produces_artifact} step]
+                                          (log/debugf "Inserting step:
+                                                       cmd: %s
+                                                       needs resource: %s
+                                                       produces artifact: %s"
+                                                      cmd
+                                                      needs-resource
+                                                      (:produces_artifact step))
                                           (db/insert-step states/db
                                                           {:cmd               cmd
                                                            :needs_resource    needs-resource
@@ -74,7 +91,9 @@
                                                            :pipeline          pipeline})))]
                           (u/respond "Ok")
                           (f/when-failed [err]
-                            (do (f/try* (db/delete-pipeline states/db {:name pipeline}))
+                            (do (log/errorf "Pipeline creation failed: %s
+                                             Rolling back." (f/message err))
+                                (f/try* (db/delete-pipeline states/db {:name pipeline}))
                                 (res/bad-request {:message (f/message err)}))))]
     result))
 
@@ -91,9 +110,11 @@
                                                (map #(hash-map
                                                        (keyword (:key %)) (:value %)))
                                                (into {}))]
-                          (do (p/exec-steps image steps pipeline vars)
+                          (do (log/infof "Starting pipeline %s" pipeline)
+                              (p/exec-steps image steps pipeline vars)
                               (u/respond "Ok"))
                           (f/when-failed [err]
+                            (log/errorf "Error starting pipeline: %s" (f/message err))
                             (res/bad-request
                               {:message (f/message err)})))]
     result))
@@ -105,7 +126,8 @@
   (d/let-flow [pipeline (u/name-of group name)
                result   (p/stop-pipeline pipeline number)]
     (if (nil? result)
-      (res/not-found {:message "Pipeline not running"})
+      (do (log/warn "Attempt to stop an invalid pipeline")
+          (res/not-found {:message "Pipeline not running"}))
       (u/respond result))))
 
 (defn status
@@ -119,7 +141,8 @@
                                     (:status)
                                     (keyword)))]
     (if (nil? status)
-      (res/not-found {:message "No such pipeline"})
+      (do (log/warn "Attempt to fetch status for an invalid pipeline")
+          (res/not-found {:message "No such pipeline"}))
       (u/respond status))))
 
 (defn remove-pipeline

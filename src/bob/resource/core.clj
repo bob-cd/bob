@@ -17,6 +17,7 @@
   (:require [manifold.deferred :as d]
             [failjure.core :as f]
             [ring.util.http-response :as resp]
+            [taoensso.timbre :as log]
             [bob.resource.internals :as r]
             [bob.util :as u]
             [bob.resource.db :as db]
@@ -29,15 +30,18 @@
                                                            {:name name
                                                             :url  url}))]
     (if (f/failed? result)
-      (resp/conflict "Resource already registered.")
-      (u/respond "Ok"))))
+      (do (log/errorf "Could not register Resource Provider: %s" (f/message result))
+          (resp/conflict "Resource Provider may already be registered"))
+      (do (log/infof "Registered Resource Provider %s at %s" name url)
+          (u/respond "Ok")))))
 
 (defn un-register-external-resource
   "Unregisters an external resource by its name."
   [name]
   (d/let-flow [_ (f/try* (db/delete-external-resource states/db
                                                       {:name name}))]
-    (u/respond "Ok")))
+    (do (log/infof "Un-registered Resource Provider %s" name)
+        (u/respond "Ok"))))
 
 (defn all-external-resources
   "Lists all external resources by name."
@@ -66,7 +70,9 @@
                                      (:name resource))))
               out-dir (r/fetch-resource resource pipeline)]
     (r/initial-image-of out-dir image nil)
-    (f/when-failed [err] err)))
+    (f/when-failed [err]
+      (log/errorf "Failed to generate mounted image: %s" (f/message err))
+      err)))
 
 (comment
   (all-external-resources)

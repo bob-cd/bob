@@ -19,6 +19,7 @@
             [ring.util.http-response :as res]
             [failjure.core :as f]
             [clj-docker-client.core :as docker]
+            [taoensso.timbre :as log]
             [bob.util :as u]
             [bob.states :as states]
             [bob.artifact.db :as db]))
@@ -33,8 +34,10 @@
                                 {:name (str artifact-prefix name)
                                  :url  url}))]
     (if (f/failed? result)
-      (res/conflict "Artifact store already registered")
-      (u/respond "Ok"))))
+      (do (log/errorf "Could not register Artifact Store: %s" (f/message result))
+          (res/conflict "Artifact Store may already be registered"))
+      (do (log/infof "Registered Artifact Store %s at %s" name url)
+          (u/respond "Ok")))))
 
 (defn un-register-artifact-store
   "Unregisters an artifact-store resource by its name."
@@ -42,16 +45,19 @@
   (d/let-flow [_ (db/un-register-artifact-store
                    states/db
                    {:name (str artifact-prefix name)})]
-    (u/respond "Ok")))
+    (do (log/infof "Un-registered Artifact Store %s" name)
+        (u/respond "Ok"))))
 
 (defn get-registered-artifact-store
   "Gets the registered artifact store."
   []
   (d/let-flow [result (f/try* (db/get-artifact-store states/db))]
     (if (f/failed? result)
-      (res/bad-request (f/message result))
+      (do (log/errorf "Could not get Artifact Store details: %s" (f/message result))
+          (res/bad-request (f/message result)))
       (u/respond (-> result
-                     (update-in [:name] #(last (clojure.string/split % #"/"))))))))
+                     (update-in [:name]
+                                #(last (clojure.string/split % #"/"))))))))
 
 (defn stream-artifact
   "Connects to the registered atrifact store and streams the artifact back if exists.
@@ -67,14 +73,21 @@
                                                  name
                                                  number
                                                  artifact])
+                 _         (log/infof "Fetching artifact %s for pipeline %s run %d from %s"
+                                      artifact
+                                      name
+                                      number
+                                      fetch-url)
                  data      (http/get fetch-url {:throw-exceptions false})]
       (if (= 200 (:status data))
         {:status  200
          :headers {"Content-Type"        "application/tar"
                    "Content-Disposition" (format "attachment; filename=%s.tar" artifact)}
          :body    (:body data)}
-        (res/not-found "No such artifact")))
-    (res/bad-request "No artifact store registered")))
+        (do (log/errorf "Error fetching artifact: %s" data)
+            (res/not-found "No such artifact"))))
+    (do (log/error "Error locating Artifact Store")
+        (res/bad-request "No artifact store registered"))))
 
 (defn upload-artifact
   "Opens up a stream to the path in a container by id and POSTs it to the artifact store.
@@ -90,12 +103,20 @@
                                                  name
                                                  number
                                                  artifact])
+                _          (log/infof "Uploading artifact %s for pipeline %s run %d to %s"
+                                      artifact
+                                      name
+                                      number
+                                      upload-url)
                 _          @(http/post upload-url
                                        {:multipart [{:name    "data" ;; Another API constraint
                                                      :content stream}]})]
       "Ok"
-      (f/when-failed [err] err))
-    (f/fail "No artifact store registered")))
+      (f/when-failed [err]
+        (log/errorf "Error in uploading artifact: %s" (f/message err))
+        err))
+    (do (log/error "Error locating Artifact Store")
+        (f/fail "No artifact store registered"))))
 
 (comment
   (db/register-artifact-store states/db {:name "artifact/s3"
@@ -111,4 +132,6 @@
               {:multipart [{:name    "data"
                             :content (clojure.java.io/input-stream "build.boot")}]})
 
-  (upload-artifact "dev" "test" "1" "hosts" "92c6692a6471" "/etc/hosts"))
+  (upload-artifact "dev" "test" "1" "hosts" "92c6692a6471" "/etc/hosts")
+
+  (log/errorf "Shizzz %s" "Oh noes!"))

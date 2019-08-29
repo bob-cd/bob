@@ -17,6 +17,7 @@
   (:require [mount.core :as m]
             [aleph.http :as http]
             [clojure.repl :as repl]
+            [taoensso.timbre :as log]
             [bob.states :refer :all]
             [bob.api.routes :as routes])
   (:gen-class))
@@ -25,14 +26,14 @@
 
 ;; TODO: It's here to avoid a cyclic import from routes, figure out a better way.
 (m/defstate server
-  :start (do (println (format "Bob's listening on http://0.0.0.0:%d/" PORT))
+  :start (do (log/infof "Bob's listening on http://0.0.0.0:%d/" PORT)
              (http/start-server routes/bob-api {:port PORT}))
-  :stop  (do (println "Stopping HTTP...")
+  :stop  (do (log/info "Stopping HTTP")
              (.close server)))
 
 (defn shutdown!
   [_]
-  (println "Bob's shutting down...")
+  (log/info "Bob's shutting down")
   (m/stop)
   (shutdown-agents)
   (System/exit 0))

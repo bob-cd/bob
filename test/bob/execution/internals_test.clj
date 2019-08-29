@@ -58,7 +58,6 @@
     (with-redefs-fn {#'has-image   (constantly (f/fail "Failed"))
                      #'docker/pull (fn [_ _] (throw (Exception. "Failed")))}
       #(let [result (pull "img")]
-         (println result)
          (is (and (f/failed? result)
                   (= "Cannot pull img"
                      (f/message result))))))))

@@ -39,10 +39,10 @@
                             [lispyclouds/clj-docker-client "0.3.1"]
                             [mount "0.1.16"]
                             [environ "1.1.0"]
+                            [com.taoensso/timbre "4.10.0"]
                             [javax.xml.bind/jaxb-api "2.3.0"]           ;; For Aleph's XML dependency, Java 8 compat
                             [io.netty/netty-all "4.1.36.Final"]         ;; Forced Netty version for Java 9+ compat
                             [javax.activation/activation "1.1.1"]       ;; Java 9+ compat for XML bindings
-                            [ch.qos.logback/logback-classic "1.2.3"]    ;; For sane logging defaults
                             ;; Test
                             [lambdaisland/kaocha-boot "0.0-14" :scope "test"]
                             [org.clojure/test.check "0.10.0" :scope "test"]

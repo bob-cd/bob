@@ -96,7 +96,6 @@
     (with-redefs-fn {#'db/get-artifact-store (constantly {:url "bob-url"})
                      #'http/get              (constantly {:status 404})}
       #(let [result @(stream-artifact "dev" "test" 1 "afile")]
-         (println result)
          (is (and (= 404 (:status result))
                   (= "No such artifact" (:body result))))))))
 
