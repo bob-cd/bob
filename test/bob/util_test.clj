@@ -24,9 +24,16 @@
 (defspec respond-returns-a-ring-response
   100
   (prop/for-all [msg gen/string]
-    (= (respond msg) {:body    {:message msg}
-                      :headers {}
-                      :status  200})))
+                (= (respond msg) {:body    {:message msg}
+                                  :headers {}
+                                  :status  200})))
+
+(defspec respond-returns-service-unavailable
+  100
+  (prop/for-all [msg gen/string]
+                (= (service-unavailable msg) {:body    {:message msg}
+                                              :headers {}
+                                              :status  503})))
 
 (s/def ::container-id
   (s/and string?
