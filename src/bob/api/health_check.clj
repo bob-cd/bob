@@ -38,7 +38,7 @@
   (d/let-flow [result (f/try-all [_ (docker-health-check)
                                   _ (pg-health-check)]
                                  (u/respond "Yes, we can! \uD83D\uDD28 \uD83D\uDD28")
-                                 (f/when-failed [err] (u/service-unavailable (:message err))))]
+                                 (f/when-failed [err] (u/service-unavailable "Docker or Postgres unavailable")))]
               result))
 
 (comment
