@@ -74,7 +74,8 @@
                                                         (= "hello" cmd)))
                                                  "img")
                      #'resourceful-step        (constantly "img")
-                     #'e/build                 (constantly "id")}
+                     #'e/build                 (constantly "id")
+                     #'docker/rm               (constantly nil)}
       #(is (= {:id      "id"
                :mounted ["source"]}
               (next-step {:id "id" :mounted []}
@@ -92,7 +93,8 @@
                                                         (= "hello" cmd)))
                                                  "img")
                      #'resourceful-step        (constantly "img")
-                     #'e/build                 (constantly "id")}
+                     #'e/build                 (constantly "id")
+                     #'docker/rm               (constantly nil)}
       #(is (= {:id      "id"
                :mounted []}
               (next-step {:id "id" :mounted []}
@@ -281,9 +283,6 @@
                                                        (= "run-id" run-id)))
                                                 "id")
                        #'reduce               (fn [pred accum steps]
-                                                (println "PRED >>> " pred)
-                                                (println "ACCUM >>> " accum)
-                                                (println "STEPS >>> " steps)
                                                 (tu/check-and-fail
                                                  #(and (fn? pred)
                                                        (= {:id      "id"
@@ -296,7 +295,8 @@
                                                 (tu/check-and-fail
                                                  #(= {:status "passed"
                                                       :id     "run-id"}
-                                                     args)))}
+                                                     args)))
+                       #'docker/rm            (constantly nil)}
         #(is (= "id" (a/<!! (exec-steps "img"
                                         [first-step {:cmd "hello2"}]
                                         "test"
@@ -358,7 +358,8 @@
                                                 (tu/check-and-fail
                                                  #(= {:status "passed"
                                                       :id     "run-id"}
-                                                     args)))}
+                                                     args)))
+                       #'docker/rm            (constantly nil)}
         #(is (= "id" (a/<!! (exec-steps "img"
                                         [first-step {:cmd "hello2"}]
                                         "test"

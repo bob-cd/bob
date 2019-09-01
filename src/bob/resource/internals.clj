@@ -105,18 +105,21 @@
   - Return the id of the committed image.
   - Deletes the temp folder."
   [path image cmd]
-  (f/try-all [_  (log/debug "Creating container for resource mount")
-              id (docker/create states/docker-conn image "" {} {})
-              _  (log/debug "Copying resources to container")
-              _  (docker/cp states/docker-conn id path "/root")
-              _  (rm-r! path true)]
-    (do (log/debug "Commiting resourceful container")
-        (docker/commit-container
-         states/docker-conn
-         id
-         (format "%s/%d" id (System/currentTimeMillis))
-         "latest"
-         cmd))
+  (f/try-all [_                 (log/debug "Creating temp container for resource mount")
+              id                (docker/create states/docker-conn image "" {} {})
+              _                 (log/debug "Copying resources to container")
+              _                 (docker/cp states/docker-conn id path "/root")
+              _                 (rm-r! path true)
+              _                 (log/debug "Commiting resourceful container")
+              provisioned-image (docker/commit-container
+                                 states/docker-conn
+                                 id
+                                 (format "%s/%d" id (System/currentTimeMillis))
+                                 "latest"
+                                 cmd)
+              _                 (log/debug "Removing temp container")
+              _                 (docker/rm states/docker-conn id)]
+    provisioned-image
     (f/when-failed [err]
       (log/errorf "Failed to create initial image: %s" (f/message err))
       err)))

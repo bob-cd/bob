@@ -53,7 +53,6 @@
                           image)
     image))
 
-;; TODO: Extra container is created here with resources, see if can be avoided.
 (defn next-step
   "Generates the next container from a previously run container.
   Works by saving the last container state in a diffed image and
@@ -67,6 +66,8 @@
                              (format "%s/%d" (:id id) (System/currentTimeMillis))
                              "latest"
                              (:cmd step))
+              _             (log/debug "Removing commited container")
+              _             (docker/rm states/docker-conn (:id id))
               resource      (:needs_resource step)
               mounted       (:mounted id)
               mount-needed? (if (nil? resource)
@@ -110,7 +111,11 @@
                                           pipeline)
                   result       (next-step id step evars pipeline)
                   id           (update-pid (:id result) run-id)
-                  id           (e/run id run-id)
+                  id           (let [result (e/run id run-id)]
+                                 (when (f/failed? result)
+                                   (log/debugf "Removing failed container %s" id)
+                                   (docker/rm states/docker-conn id))
+                                 result)
                   [group name] (clojure.string/split pipeline #":")
                   _            (when-let [artifact (:produces_artifact step)]
                                  (artifact/upload-artifact group
@@ -170,6 +175,8 @@
                                                 [first-resource]
                                                 [])}
                                     (rest steps))
+                      _     (log/debug "Removing last successful container")
+                      _     (docker/rm states/docker-conn (:id id))
                       _     (log/infof "Marking run %d for %s as passed" number pipeline)
                       _     (db/update-run states/db
                                            {:status "passed"
