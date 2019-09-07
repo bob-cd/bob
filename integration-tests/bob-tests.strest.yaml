@@ -227,23 +227,3 @@ requests:
       - jsonpath: "content"
         expect:
           message: []
-
-  gc:
-    request:
-      url: "http://bob:7777/api/gc"
-      method: "POST"
-    validate:
-      - jsonpath: "status"
-        expect: 200
-      - jsonpath: "content.message"
-        expect: "Ok"
-
-  fullGc:
-    request:
-      url: "http://bob:7777/api/gc/all"
-      method: "POST"
-    validate:
-      - jsonpath: "status"
-        expect: 200
-      - jsonpath: "content.message"
-        expect: "Ok"

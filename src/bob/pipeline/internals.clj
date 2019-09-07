@@ -26,6 +26,27 @@
             [bob.pipeline.db :as db]
             [bob.resource.db :as rdb]))
 
+;; TODO: Simpler solution, see if it can be improved
+(def ^:private images-produced (atom {}))
+
+(defn mark-image-for-gc
+  [image run-id]
+  (let [images-of-build (get @images-produced run-id)
+        new-images      (if (some #{image} images-of-build)
+                          images-of-build
+                          (cons image images-of-build))]
+    (swap! images-produced
+           assoc
+           run-id
+           (if (nil? new-images) (list image) new-images))))
+
+(defn gc-images
+  [run-id]
+  (log/debugf "Deleting all images for run %s" run-id)
+  (f/try* (run! #(docker/image-rm states/docker-conn %)
+                (get @images-produced run-id)))
+  (swap! images-produced dissoc run-id))
+
 (defn update-pid
   "Sets the current container id in the runs tables.
   This is used to track the last executed container in logging as well as stopping.
@@ -58,27 +79,29 @@
   Works by saving the last container state in a diffed image and
   creating a new container from it, thereby managing state externally.
   Returns the new container id or errors if any."
-  [id step evars pipeline]
-  (f/try-all [_             (log/debugf "Commiting container: %s" (:id id))
+  [build-state step evars pipeline run-id]
+  (f/try-all [_             (log/debugf "Commiting container: %s" (:id build-state))
               image         (docker/commit-container
                              states/docker-conn
-                             (:id id)
-                             (format "%s/%d" (:id id) (System/currentTimeMillis))
+                             (:id build-state)
+                             (format "%s/%d" (:id build-state) (System/currentTimeMillis))
                              "latest"
                              (:cmd step))
+              _             (mark-image-for-gc image run-id)
               _             (log/debug "Removing commited container")
-              _             (docker/rm states/docker-conn (:id id))
+              _             (docker/rm states/docker-conn (:id build-state))
               resource      (:needs_resource step)
-              mounted       (:mounted id)
+              mounted       (:mounted build-state)
               mount-needed? (if (nil? resource)
                               false
                               (not (some #{resource} mounted)))
               image         (if mount-needed?
                               (resourceful-step step pipeline image)
                               image)
+              _             (mark-image-for-gc image run-id)
               result        {:id      (e/build image step evars)
                              :mounted mounted}
-              _             (log/debugf "Built a resourceful container: %s" (:id id))]
+              _             (log/debugf "Built a resourceful container: %s" (:id build-state))]
     (if mount-needed?
       (update-in result [:mounted] conj resource)
       result)
@@ -99,17 +122,17 @@
   PWD as the prefix.
 
   Returns the next state or errors if any."
-  [run-id evars pipeline number id step]
+  [run-id evars pipeline number build-state step]
   (let [stopped? (f/try* (-> (db/run-stopped? states/db
                                               {:id run-id})
                              (:stopped)))]
     (if (or stopped?
-            (f/failed? (:id id)))
-      (reduced id)
+            (f/failed? (:id build-state)))
+      (reduced build-state)
       (f/try-all [_            (log/infof "Executing step %s in pipeline %s"
                                           step
                                           pipeline)
-                  result       (next-step id step evars pipeline)
+                  result       (next-step build-state step evars pipeline run-id)
                   id           (update-pid (:id result) run-id)
                   id           (let [result (e/run id run-id)]
                                  (when (f/failed? result)
@@ -158,35 +181,39 @@
         first-step     (first steps)
         first-resource (:needs_resource first-step)
         number         (next-build-number-of pipeline)]
-    (a/go (f/try-all [_     (log/infof "Starting new run %d for %s" number pipeline)
-                      _     (db/insert-run states/db
-                                           {:id       run-id
-                                            :number   number
-                                            :pipeline pipeline
-                                            :status   "running"})
-                      image (e/pull image)
-                      image (resourceful-step first-step pipeline image)
-                      id    (f/ok-> (e/build image first-step evars)
-                                    (update-pid run-id)
-                                    (e/run run-id))
-                      id    (reduce (partial exec-step run-id evars pipeline number)
-                                    {:id      id
-                                     :mounted (if first-resource
-                                                [first-resource]
-                                                [])}
-                                    (rest steps))
-                      _     (log/debug "Removing last successful container")
-                      _     (docker/rm states/docker-conn (:id id))
-                      _     (log/infof "Marking run %d for %s as passed" number pipeline)
-                      _     (db/update-run states/db
-                                           {:status "passed"
-                                            :id     run-id})]
+    (a/go (f/try-all [_           (log/infof "Starting new run %d for %s" number pipeline)
+                      _           (db/insert-run states/db
+                                                 {:id       run-id
+                                                  :number   number
+                                                  :pipeline pipeline
+                                                  :status   "running"})
+                      image       (e/pull image)
+                      _           (mark-image-for-gc image run-id)
+                      image       (resourceful-step first-step pipeline image)
+                      _           (mark-image-for-gc image run-id)
+                      id          (f/ok-> (e/build image first-step evars)
+                                          (update-pid run-id)
+                                          (e/run run-id))
+                      build-state (reduce (partial exec-step run-id evars pipeline number)
+                                          {:id      id
+                                           :mounted (if first-resource
+                                                      [first-resource]
+                                                      [])}
+                                          (rest steps))
+                      _           (log/debug "Removing last successful container")
+                      _           (docker/rm states/docker-conn (:id build-state))
+                      _           (log/infof "Marking run %d for %s as passed" number pipeline)
+                      _           (gc-images run-id)
+                      _           (db/update-run states/db
+                                                 {:status "passed"
+                                                  :id     run-id})]
             id
             (f/when-failed [err]
               (log/infof "Marking run %d for %s as failed with reason: %s"
                          number
                          pipeline
                          (f/message err))
+              (gc-images run-id)
               (f/try* (db/update-run states/db
                                      {:status "failed"
                                       :id     run-id})))))))
@@ -210,7 +237,12 @@
                              (:last_pid))
                   status (e/status-of pid)
                   _      (when (status :running?)
-                           (e/kill-container pid))]
+                           (log/debugf "Killing container %s" pid)
+                           (e/kill-container pid)
+                           (docker/rm states/docker-conn pid))
+                  run-id (-> (db/run-id-of states/db criteria)
+                             (:id))
+                  _      (gc-images run-id)]
         "Ok"
         (f/when-failed [err]
           (log/errorf "Failed to stop pipeline: %s" (f/message err))

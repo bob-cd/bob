@@ -28,6 +28,32 @@
             [bob.execution.internals :as e]
             [bob.artifact.core :as artifact]))
 
+(deftest image-mark-and-sweep-test
+  (log/merge-config! {:level :report})
+  (testing "marking an image for the first time"
+    (is (= {"build1" (list "image1")}
+           (mark-image-for-gc "image1" "build1"))))
+
+  (testing "marking the same image is idempotent"
+    (is (= {"build1" (list "image1")}
+           (mark-image-for-gc "image1" "build1"))))
+
+  (testing "marking a new image for the same build"
+    (is (= {"build1" (list "image2" "image1")}
+           (mark-image-for-gc "image2" "build1"))))
+
+  (testing "marking a new image for another same build"
+    (is (= {"build1" (list "image2" "image1")
+            "build2" (list "image1")}
+           (mark-image-for-gc "image1" "build2"))))
+
+  (testing "sweep images for build1"
+    (with-redefs-fn {#'docker/image-rm (fn [_ image]
+                                         (tu/check-and-fail
+                                          #(some #{image} ["image1" "image2"])))}
+      #(is (= {"build2" (list "image1")}
+              (gc-images "build1"))))))
+
 (deftest pid-updates
   (testing "successful container id update"
     (with-redefs-fn {#'db/update-runs (fn [_ args]
@@ -75,14 +101,16 @@
                                                  "img")
                      #'resourceful-step        (constantly "img")
                      #'e/build                 (constantly "id")
-                     #'docker/rm               (constantly nil)}
+                     #'docker/rm               (constantly nil)
+                     #'mark-image-for-gc       (constantly nil)}
       #(is (= {:id      "id"
                :mounted ["source"]}
               (next-step {:id "id" :mounted []}
                          {:needs_resource "source"
                           :cmd            "hello"}
                          {}
-                         "test")))))
+                         "test"
+                         "run-id")))))
 
   (testing "next image generation without resource mount"
     (with-redefs-fn {#'docker/commit-container (fn [_ id repo tag cmd]
@@ -94,22 +122,26 @@
                                                  "img")
                      #'resourceful-step        (constantly "img")
                      #'e/build                 (constantly "id")
-                     #'docker/rm               (constantly nil)}
+                     #'docker/rm               (constantly nil)
+                     #'mark-image-for-gc       (constantly nil)}
       #(is (= {:id      "id"
                :mounted []}
               (next-step {:id "id" :mounted []}
                          {:cmd "hello"}
                          {}
-                         "test")))))
+                         "test"
+                         "run-id")))))
 
   (testing "failed next image generation"
     (with-redefs-fn {#'docker/commit-container #(throw (Exception. "nope"))
                      #'resourceful-step        (constantly "img")
-                     #'e/build                 (constantly "id")}
+                     #'e/build                 (constantly "id")
+                     #'mark-image-for-gc       (constantly nil)}
       #(is (f/failed? (next-step {:id "id" :mounted []}
                                  {:cmd "hello"}
                                  {}
-                                 "test"))))))
+                                 "test"
+                                 "run-id"))))))
 
 (deftest single-step-execution
   (testing "successful step execution with artifact upload"
@@ -119,12 +151,13 @@
                                                     (tu/check-and-fail
                                                      #(= {:id "id"} args))
                                                     {:stopped false})
-                       #'next-step                (fn [id step evars pipeline]
+                       #'next-step                (fn [id step evars pipeline run-id]
                                                     (tu/check-and-fail
                                                      #(and (= {:id "id"} id)
                                                            (= step test-step)
                                                            (= {} evars)
-                                                           (= "dev:test" pipeline)))
+                                                           (= "dev:test" pipeline)
+                                                           (= "id" run-id)))
                                                     {:id      "id"
                                                      :mounted []})
                        #'update-pid               (fn [id run-id]
@@ -159,12 +192,13 @@
                                                     (tu/check-and-fail
                                                      #(= {:id "id"} args))
                                                     {:stopped false})
-                       #'next-step                (fn [id step evars pipeline]
+                       #'next-step                (fn [id step evars pipeline run-id]
                                                     (tu/check-and-fail
                                                      #(and (= {:id "id"} id)
                                                            (= step test-step)
                                                            (= {} evars)
-                                                           (= "dev:test" pipeline)))
+                                                           (= "dev:test" pipeline)
+                                                           (= "id" run-id)))
                                                     {:id      "id"
                                                      :mounted []})
                        #'update-pid               (fn [id run-id]
@@ -296,7 +330,8 @@
                                                  #(= {:status "passed"
                                                       :id     "run-id"}
                                                      args)))
-                       #'docker/rm            (constantly nil)}
+                       #'docker/rm            (constantly nil)
+                       #'mark-image-for-gc    (constantly nil)}
         #(is (= "id" (a/<!! (exec-steps "img"
                                         [first-step {:cmd "hello2"}]
                                         "test"
@@ -359,7 +394,8 @@
                                                  #(= {:status "passed"
                                                       :id     "run-id"}
                                                      args)))
-                       #'docker/rm            (constantly nil)}
+                       #'docker/rm            (constantly nil)
+                       #'mark-image-for-gc    (constantly nil)}
         #(is (= "id" (a/<!! (exec-steps "img"
                                         [first-step {:cmd "hello2"}]
                                         "test"
@@ -387,7 +423,8 @@
                        #'update-pid           nein
                        #'e/run                nein
                        #'reduce               nein
-                       #'db/update-run        nein}
+                       #'db/update-run        nein
+                       #'mark-image-for-gc    nein}
         #(is (f/failed? (a/<!! (exec-steps "img"
                                            [first-step {:cmd "hello2"}]
                                            "test"
@@ -414,7 +451,15 @@
                                             {:running? true})
                        #'e/kill-container (fn [pid]
                                             (tu/check-and-fail
-                                             #(= "pid" pid)))}
+                                             #(= "pid" pid)))
+                       #'docker/rm        (constantly nil)
+                       #'db/run-id-of     (fn [_ args]
+                                            (tu/check-and-fail
+                                             #(= criteria args))
+                                            {:id "run-id"})
+                       #'gc-images        (fn [run-id]
+                                            (tu/check-and-fail
+                                             #(= "run-id" run-id)))}
         #(is (= "Ok" (stop-pipeline "test" 1))))))
 
   (testing "unsuccessfully stop a running pipeline"

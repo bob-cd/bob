@@ -20,7 +20,6 @@
             [bob.util :as u]
             [bob.api.schemas :as schema]
             [bob.api.middleware :as m]
-            [bob.execution.core :as e]
             [bob.pipeline.core :as p]
             [bob.resource.core :as r]
             [bob.artifact.core :as a]))
@@ -170,17 +169,7 @@
       (rest/GET "/can-we-build-it" []
         :return schema/SimpleResponse
         :summary "Runs health checks for Bob."
-        (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28"))
-
-      (rest/POST "/gc" []
-        :return schema/SimpleResponse
-        :summary "Runs the garbage collection for Bob, reclaiming resources."
-        (e/gc))
-
-      (rest/POST "/gc/all" []
-        :return schema/SimpleResponse
-        :summary "Runs the full garbage collection for Bob, reclaiming all resources."
-        (e/gc true)))
+        (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28")))
 
     (rest/undocumented
      (route/not-found (u/respond "Took a wrong turn?"))))))

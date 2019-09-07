@@ -36,7 +36,7 @@
                             [com.layerware/hugsql "0.4.9"]
                             [metosin/compojure-api "2.0.0-alpha30"]
                             [prismatic/schema "1.1.12"]
-                            [lispyclouds/clj-docker-client "0.3.1"]
+                            [lispyclouds/clj-docker-client "0.3.2"]
                             [mount "0.1.16"]
                             [environ "1.1.0"]
                             [com.taoensso/timbre "4.10.0"]
