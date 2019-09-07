@@ -272,32 +272,6 @@ Runs health checks for Bob.
 | ---- | ----------- | ------ |
 | 200 |  | [SimpleResponse](#simpleresponse) |
 
-### /api/gc
-
-#### POST
-##### Summary:
-
-Runs the garbage collection for Bob, reclaiming resources.
-
-##### Responses
-
-| Code | Description | Schema |
-| ---- | ----------- | ------ |
-| 200 |  | [SimpleResponse](#simpleresponse) |
-
-### /api/gc/all
-
-#### POST
-##### Summary:
-
-Runs the full garbage collection for Bob, reclaiming all resources.
-
-##### Responses
-
-| Code | Description | Schema |
-| ---- | ----------- | ------ |
-| 200 |  | [SimpleResponse](#simpleresponse) |
-
 ### Models
 
 
@@ -339,8 +313,8 @@ Runs the full garbage collection for Bob, reclaiming all resources.
 | ---- | ---- | ----------- | -------- |
 | steps | [ [Step](#step) ] |  | Yes |
 | image | string |  | Yes |
-| vars | [PipelineVars](#pipelinevars) |  | Yes |
-| resources | [ [Resource](#resource) ] |  | Yes |
+| vars | [PipelineVars](#pipelinevars) |  | No |
+| resources | [ [Resource](#resource) ] |  | No |
 
 #### PipelineResourcesParams
 
