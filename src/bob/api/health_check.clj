@@ -19,6 +19,7 @@
             [clj-docker-client.core :as docker]
             [manifold.deferred :as d]
             [failjure.core :as f]
+            [taoensso.timbre :as log]
             [bob.util :as u]
             [bob.states :as states]))
 
@@ -27,10 +28,14 @@
 (defn health-check
   "Check the systems we depend upon."
   []
-  (d/let-flow [result (f/try-all [_ (docker/ping states/docker-conn)
-                                  _ (db-health-check states/db)]
+  (d/let-flow [result (f/try-all [_ (when (f/failed? (f/try* (docker/ping states/docker-conn)))
+                                      (f/fail "Docker daemon is not healthy"))
+                                  _ (when (f/failed? (f/try* (db-health-check states/db)))
+                                      (f/fail "Postgres database not healthy"))]
                                  (u/respond "Yes, we can! \uD83D\uDD28 \uD83D\uDD28")
-                                 (f/when-failed [err] (u/service-unavailable "Docker or Postgres unavailable")))]
+                                 (f/when-failed [err]
+                                                (log/errorf "Health check failed: %s" (f/message err))
+                                                (u/service-unavailable (str "Health check failed: " (f/message err)))))]
               result))
 
 (comment

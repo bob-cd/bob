@@ -28,9 +28,9 @@
   (testing "failing docker daemon"
     (with-redefs-fn {#'docker/ping (fn [x] (f/fail "Docker Failed"))
                      #'db-health-check (fn [x] {:?column? true})}
-      #(is (= {:status 503, :headers {}, :body {:message "Docker or Postgres unavailable"}} @(health-check)))))
+      #(is (= {:status 503, :headers {}, :body {:message "Health check failed: Docker daemon is not healthy"}} @(health-check)))))
 
   (testing "failing postgres db"
     (with-redefs-fn {#'docker/ping (fn [x] "OK")
                      #'db-health-check (fn [x] (f/fail "Postgres Failed"))}
-      #(is (= {:status 503, :headers {}, :body {:message "Docker or Postgres unavailable"}} @(health-check))))))
+      #(is (= {:status 503, :headers {}, :body {:message "Health check failed: Postgres database not healthy"}} @(health-check))))))
