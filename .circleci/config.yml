@@ -25,7 +25,9 @@ jobs:
       - checkout
       - restore_cache:
           key: bob-{{ checksum "build.boot" }}
-      - run: boot kaocha build
+      - run:
+          name: "Unit tests and build uberjar"
+          command: boot kaocha build
       - save_cache:
           paths:
             - ~/.m2
@@ -39,9 +41,21 @@ jobs:
 
     steps:
       - checkout
-      - run: "cd integration-tests && docker-compose up --abort-on-container-exit integration-tests"
-      - run: "docker login --username=${DOCKER_USER} --password=${DOCKER_PASS}"
-      - run: "docker push bobcd/bob:latest"
+      - run:
+          name: "Integration tests"
+          command: "cd integration-tests && docker-compose up --abort-on-container-exit integration-tests"
+      - run:
+          name: "Docker Hub push"
+          command: |
+            case ${CIRCLE_BRANCH} in
+                master)
+                    docker login --username=${DOCKER_USER} --password=${DOCKER_PASS}
+                    docker push bobcd/bob:latest
+                    ;;
+                *)
+                    echo "Not a stable branch, not pushing image."
+                    ;;
+            esac
 
 workflows:
   version: 2
