@@ -24,26 +24,14 @@
 
 (sql/def-db-fns (io/resource "sql/health_checks.sql"))
 
-(defn docker-health-check
-  []
-  (docker/ping states/docker-conn))
-
-(defn pg-health-check
-  []
-  (db-health-check states/db))
-
 (defn health-check
   "Check the systems we depend upon."
   []
-  (d/let-flow [result (f/try-all [_ (docker-health-check)
-                                  _ (pg-health-check)]
+  (d/let-flow [result (f/try-all [_ (docker/ping states/docker-conn)
+                                  _ (db-health-check states/db)]
                                  (u/respond "Yes, we can! \uD83D\uDD28 \uD83D\uDD28")
                                  (f/when-failed [err] (u/service-unavailable "Docker or Postgres unavailable")))]
               result))
 
 (comment
-  (health-check)
-
-  (docker-health-check)
-
-  (pg-health-check))
+  (health-check))

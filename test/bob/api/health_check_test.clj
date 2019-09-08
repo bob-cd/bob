@@ -21,16 +21,16 @@
 
 (deftest health-check-various-conditions
   (testing "all systems operational"
-    (with-redefs-fn {#'docker-health-check (fn [] "OK")
-                     #'pg-health-check (fn [] {:?column? true})}
+    (with-redefs-fn {#'docker/ping (fn [x] "OK")
+                     #'db-health-check (fn [x] {:?column? true})}
       #(is (= {:status 200, :headers {}, :body {:message "Yes, we can! \uD83D\uDD28 \uD83D\uDD28"}} @(health-check)))))
 
   (testing "failing docker daemon"
-    (with-redefs-fn {#'docker-health-check #(f/fail "Docker Failed")
-                     #'pg-health-check (fn [] {:?column? true})}
+    (with-redefs-fn {#'docker/ping (fn [x] (f/fail "Docker Failed"))
+                     #'db-health-check (fn [x] {:?column? true})}
       #(is (= {:status 503, :headers {}, :body {:message "Docker or Postgres unavailable"}} @(health-check)))))
 
   (testing "failing postgres db"
-    (with-redefs-fn {#'docker-health-check (fn [] "OK")
-                     #'pg-health-check #(f/fail "Postgres Failed")}
+    (with-redefs-fn {#'docker/ping (fn [x] "OK")
+                     #'db-health-check (fn [x] (f/fail "Postgres Failed"))}
       #(is (= {:status 503, :headers {}, :body {:message "Docker or Postgres unavailable"}} @(health-check))))))
