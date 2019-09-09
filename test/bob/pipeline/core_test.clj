@@ -53,6 +53,7 @@
                                                    :needs_resource    "src"
                                                    :produces_artifact "jar"
                                                    :artifact_path     "path"
+                                                   :artifact_store    "s3"
                                                    :pipeline          "dev:test"}
                                                   args)))
                      #'db/delete-pipeline  (fn [& _]
@@ -62,8 +63,9 @@
                            "test"
                            [{:cmd               "hello"
                              :needs_resource    "src"
-                             :produces_artifact {:name "jar"
-                                                 :path "path"}}]
+                             :produces_artifact {:name  "jar"
+                                                 :path  "path"
+                                                 :store "s3"}}]
                            {:k1 "v1"}
                            [{:name     "src"
                              :provider "git"
@@ -94,6 +96,7 @@
                                                    :needs_resource    nil
                                                    :produces_artifact "jar"
                                                    :artifact_path     "path"
+                                                   :artifact_store    "s3"
                                                    :pipeline          "dev:test"}
                                                   args)))
                      #'db/delete-pipeline  (fn [& _]
@@ -102,8 +105,9 @@
               (-> @(create "dev"
                            "test"
                            [{:cmd               "hello"
-                             :produces_artifact {:name "jar"
-                                                 :path "path"}}]
+                             :produces_artifact {:name  "jar"
+                                                 :path  "path"
+                                                 :store "s3"}}]
                            {:k1 "v1"}
                            []
                            "img")
@@ -128,6 +132,7 @@
                                                    :needs_resource    nil
                                                    :produces_artifact "jar"
                                                    :artifact_path     "path"
+                                                   :artifact_store    "s3"
                                                    :pipeline          "dev:test"}
                                                   args)))
                      #'db/delete-pipeline  (fn [& _]
@@ -136,8 +141,9 @@
               (-> @(create "dev"
                            "test"
                            [{:cmd               "hello"
-                             :produces_artifact {:name "jar"
-                                                 :path "path"}}]
+                             :produces_artifact {:name  "jar"
+                                                 :path  "path"
+                                                 :store "s3"}}]
                            {}
                            []
                            "img")

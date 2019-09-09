@@ -133,7 +133,7 @@
         :summary "Lists all registered external resources by name."
         (r/all-external-resources))
 
-      (rest/GET "/pipelines/groups/:group/names/:name/number/:number/artifacts/:artifact-name" []
+      (rest/GET "/pipelines/groups/:group/names/:name/number/:number/artifacts/store/:store-name/name/:artifact-name" []
         :summary "Returns the artifact archive of a pipeline"
         :path-params [group
                       :- String
@@ -142,8 +142,10 @@
                       number
                       :- s/Int
                       artifact-name
+                      :- String
+                      store-name
                       :- String]
-        (a/stream-artifact group name number artifact-name))
+        (a/stream-artifact group name number artifact-name store-name))
 
       (rest/POST "/artifact-stores/:name" []
         :return schema/SimpleResponse
@@ -163,7 +165,7 @@
       (rest/GET "/artifact-stores" []
         :return schema/ArtifactStoreResponse
         :summary "Lists the registered artifact store."
-        (a/get-registered-artifact-store))
+        (a/get-registered-artifact-stores))
 
       ;; TODO: Actually do some health checks here.
       (rest/GET "/can-we-build-it" []

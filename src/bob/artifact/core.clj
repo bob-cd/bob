@@ -24,14 +24,12 @@
             [bob.states :as states]
             [bob.artifact.db :as db]))
 
-(def artifact-prefix "artifact/")
-
 (defn register-artifact-store
   "Registers an artifact store with an unique name and an URL."
   [name url]
   (d/let-flow [result (f/try* (db/register-artifact-store
                                 states/db
-                                {:name (str artifact-prefix name)
+                                {:name name
                                  :url  url}))]
     (if (f/failed? result)
       (do (log/errorf "Could not register Artifact Store: %s" (f/message result))
@@ -44,28 +42,26 @@
   [name]
   (d/let-flow [_ (db/un-register-artifact-store
                    states/db
-                   {:name (str artifact-prefix name)})]
+                   {:name name})]
     (do (log/infof "Un-registered Artifact Store %s" name)
         (u/respond "Ok"))))
 
-(defn get-registered-artifact-store
+(defn get-registered-artifact-stores
   "Gets the registered artifact store."
   []
-  (d/let-flow [result (f/try* (db/get-artifact-store states/db))]
+  (d/let-flow [result (f/try* (db/get-artifact-stores states/db))]
     (if (f/failed? result)
       (do (log/errorf "Could not get Artifact Store details: %s" (f/message result))
           (res/bad-request (f/message result)))
-      (u/respond (-> result
-                     (update-in [:name]
-                                #(last (clojure.string/split % #"/"))))))))
+      (u/respond result))))
 
 (defn stream-artifact
   "Connects to the registered atrifact store and streams the artifact back if exists.
 
   Contrstucts the following URL to connect:
   <URL of regsitered store>/bob_artifact/dev/test/1/jar"
-  [group name number artifact]
-  (if-let [{url :url} (db/get-artifact-store states/db)]
+  [group name number artifact store-name]
+  (if-let [{url :url} (db/get-artifact-store states/db {:name store-name})]
     (d/let-flow [fetch-url (clojure.string/join "/"
                                                 [url
                                                  "bob_artifact"
@@ -87,14 +83,14 @@
         (do (log/errorf "Error fetching artifact: %s" data)
             (res/not-found "No such artifact"))))
     (do (log/error "Error locating Artifact Store")
-        (res/bad-request "No artifact store registered"))))
+        (res/bad-request "No such artifact store registered"))))
 
 (defn upload-artifact
   "Opens up a stream to the path in a container by id and POSTs it to the artifact store.
 
   Returns a Failure object if failed."
-  [group name number artifact run-id path]
-  (if-let [{url :url} (db/get-artifact-store states/db)]
+  [group name number artifact run-id path store-name]
+  (if-let [{url :url} (db/get-artifact-store states/db {:name store-name})]
     (f/try-all [stream     (docker/stream-path states/docker-conn run-id path)
                 upload-url (clojure.string/join "/"
                                                 [url
@@ -116,22 +112,22 @@
         (log/errorf "Error in uploading artifact: %s" (f/message err))
         err))
     (do (log/error "Error locating Artifact Store")
-        (f/fail "No artifact store registered"))))
+        (f/fail "No such artifact store registered"))))
 
 (comment
-  (db/register-artifact-store states/db {:name "artifact/s3"
+  (db/register-artifact-store states/db {:name "s3"
                                          :url  "http://localhost:8001"})
 
   (db/get-artifact-store states/db)
 
-  (db/un-register-artifact-store states/db {:name "artifact/s3"})
+  (db/un-register-artifact-store states/db {:name "s3"})
 
-  (stream-artifact "dev" "test" "1" "jar")
+  (stream-artifact "dev" "test" "1" "jar" "s3")
 
   @(http/post "http://localhost:8001/bob_artifact/dev/test/1/jar"
               {:multipart [{:name    "data"
                             :content (clojure.java.io/input-stream "build.boot")}]})
 
-  (upload-artifact "dev" "test" "1" "hosts" "92c6692a6471" "/etc/hosts")
+  (upload-artifact "dev" "test" "1" "hosts" "92c6692a6471" "/etc/hosts" "s3")
 
   (log/errorf "Shizzz %s" "Oh noes!"))

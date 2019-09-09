@@ -28,8 +28,7 @@
                                                     (tu/check-and-fail
                                                      #(and (tu/subseq? [:name :url]
                                                                        (keys params))
-                                                           (= (:name params)
-                                                              "artifact/s3"))))}
+                                                           (= "s3" (:name params)))))}
       #(is (= "Ok"
               (-> @(register-artifact-store "s3" "test")
                   (:body)
@@ -48,28 +47,27 @@
                                                        (tu/check-and-fail
                                                         #(and (tu/subseq? [:name]
                                                                           (keys params))
-                                                              (= (:name params)
-                                                                 "artifact/s3"))))}
+                                                              (= "s3" (:name params)))))}
       #(is (= "Ok"
               (-> @(un-register-artifact-store "s3")
                   (:body)
                   (:message))))))
 
   (testing "successfully getting registered artifact store"
-    (with-redefs-fn {#'db/get-artifact-store (constantly {:name "artifact/s3"
-                                                          :url  "test"})}
-      #(is (= {:name "s3" :url "test"}
-              (-> @(get-registered-artifact-store)
+    (with-redefs-fn {#'db/get-artifact-stores (constantly [{:name "s3"
+                                                            :url  "test"}])}
+      #(is (= [{:name "s3" :url "test"}]
+              (-> @(get-registered-artifact-stores)
                   (:body)
                   (:message))))))
 
   (testing "unsuccessfully getting registered artifact store"
-    (with-redefs-fn {#'db/get-artifact-store (fn [_]
-                                               (tu/check-and-fail
-                                                false
-                                                "FAILED!"))}
+    (with-redefs-fn {#'db/get-artifact-stores (fn [_]
+                                                (tu/check-and-fail
+                                                 false
+                                                 "FAILED!"))}
       #(is (= 400
-              (:status @(get-registered-artifact-store)))))))
+              (:status @(get-registered-artifact-stores)))))))
 
 (deftest streaming-artifacts
   (testing "successful artifact stream"
@@ -84,18 +82,18 @@
                :headers {"Content-Type"        "application/tar"
                          "Content-Disposition" "attachment; filename=afile.tar"}
                :body    :stuff}
-              @(stream-artifact "dev" "test" 1 "afile")))))
+              @(stream-artifact "dev" "test" 1 "afile" "s3")))))
 
   (testing "artifact store not registered"
     (with-redefs-fn {#'db/get-artifact-store (constantly nil)}
-      #(is (= "No artifact store registered"
-              (-> (stream-artifact "dev" "test" 1 "afile")
+      #(is (= "No such artifact store registered"
+              (-> (stream-artifact "dev" "test" 1 "afile" "s3")
                   (:body))))))
 
   (testing "unsuccessful artifact stream"
     (with-redefs-fn {#'db/get-artifact-store (constantly {:url "bob-url"})
                      #'http/get              (constantly {:status 404})}
-      #(let [result @(stream-artifact "dev" "test" 1 "afile")]
+      #(let [result @(stream-artifact "dev" "test" 1 "afile" "s3")]
          (is (and (= 404 (:status result))
                   (= "No such artifact" (:body result))))))))
 
@@ -117,18 +115,18 @@
                                                         (= :stream
                                                            (get-in options [:multipart 0 :content]))))))}
       #(is (= "Ok"
-              (upload-artifact "dev" "test" 1 "afile" "1" "/path")))))
+              (upload-artifact "dev" "test" 1 "afile" "1" "/path" "s3")))))
 
   (testing "artifact store not registered"
     (with-redefs-fn {#'db/get-artifact-store (constantly nil)}
-      #(let [result (upload-artifact "dev" "test" 1 "afile" "1" "/path")]
+      #(let [result (upload-artifact "dev" "test" 1 "afile" "1" "/path" "s3")]
          (is (and (f/failed? result)
-                  (= "No artifact store registered"
+                  (= "No such artifact store registered"
                      (f/message result)))))))
 
   (testing "unsuccessful artifact upload"
     (with-redefs-fn {#'db/get-artifact-store (constantly {:url "bob-url"})
                      #'docker/stream-path    (constantly :stream)
                      #'http/post             (constantly (future (throw (Exception. "bad call"))))}
-      #(let [result (upload-artifact "dev" "test" 1 "afile" "1" "/path")]
+      #(let [result (upload-artifact "dev" "test" 1 "afile" "1" "/path" "s3")]
          (is (f/failed? result))))))

@@ -13,6 +13,6 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-{:up   ["CREATE TABLE \"config\" (\"name\"  TEXT PRIMARY KEY,
-                                  \"value\" TEXT NOT NULL);"]
- :down ["DROP TABLE config;"]}
+{:up   ["CREATE TABLE \"artifact_stores\" (\"name\" TEXT PRIMARY KEY,
+                                           \"url\"  TEXT NOT NULL);"]
+ :down ["DROP TABLE \"artifact_stores\";"]}

@@ -56,6 +56,20 @@ requests:
       - jsonpath: "content.message"
         expect: "Ok"
 
+  secondArtifactStoreRegistration:
+    request:
+      url: "http://bob:7777/api/artifact-stores/s3"
+      method: "POST"
+      postData:
+        mimeType: "application/json"
+        text:
+          url: "http://artifact-s3:8002"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "Ok"
+
   pipelineCreation:
     request:
       url: "http://bob:7777/api/pipelines/groups/dev/names/test"
@@ -75,11 +89,13 @@ requests:
               produces_artifact:
                 name: "afile"
                 path: "test.txt"
+                store: "local"
             - needs_resource: "my-source"
               cmd: "ls"
               produces_artifact:
                 name: "license-file"
                 path: "LICENSE"
+                store: "local"
           resources:
             - name: "my-source"
               type: "external"
@@ -149,7 +165,7 @@ requests:
 
   pipelineArtifacts:
     request:
-      url: "http://bob:7777/api/pipelines/groups/dev/names/test/number/1/artifacts/afile"
+      url: "http://bob:7777/api/pipelines/groups/dev/names/test/number/1/artifacts/store/local/name/afile"
       method: "GET"
     validate:
       - jsonpath: "status"
@@ -157,7 +173,7 @@ requests:
 
   pipelineArtifactsFromResource:
     request:
-      url: "http://bob:7777/api/pipelines/groups/dev/names/test/number/1/artifacts/license-file"
+      url: "http://bob:7777/api/pipelines/groups/dev/names/test/number/1/artifacts/store/local/name/license-file"
       method: "GET"
     validate:
       - jsonpath: "status"
@@ -195,17 +211,20 @@ requests:
       - jsonpath: "content.message"
         expect: "Ok"
 
-  artifactStoreListing:
+  artifactStoresListing:
     request:
       url: "http://bob:7777/api/artifact-stores"
       method: "GET"
     validate:
       - jsonpath: "status"
         expect: 200
-      - jsonpath: "content.message"
+      - jsonpath: "content"
         expect:
-          name: "local"
-          url: "http://artifact-local:8001"
+          message:
+            - name: "local"
+              url: "http://artifact-local:8001"
+            - name: "s3"
+              url: "http://artifact-s3:8002"
 
   artifactStoreDeletion:
     request:

@@ -146,7 +146,8 @@
 (deftest single-step-execution
   (testing "successful step execution with artifact upload"
     (let [test-step {:produces_artifact "jar"
-                     :artifact_path     "path"}]
+                     :artifact_path     "path"
+                     :artifact_store    "s3"}]
       (with-redefs-fn {#'db/run-stopped?          (fn [_ args]
                                                     (tu/check-and-fail
                                                      #(= {:id "id"} args))
@@ -174,14 +175,15 @@
                                                     (tu/check-and-fail
                                                      #(= "id" id))
                                                     {:Config {:WorkingDir "/some"}})
-                       #'artifact/upload-artifact (fn [group name number artifact id path]
+                       #'artifact/upload-artifact (fn [group name number artifact id path store-name]
                                                     (tu/check-and-fail
                                                      #(and (= "dev" group)
                                                            (= "test" name)
                                                            (= 1 number)
                                                            (= "jar" artifact)
                                                            (= "id" id)
-                                                           (= "/some/path" path))))}
+                                                           (= "/some/path" path)
+                                                           (= "s3" store-name))))}
         #(is (= {:id      "id"
                  :mounted []}
                 (exec-step "id" {} "dev:test" 1 {:id "id"} test-step))))))
@@ -240,7 +242,7 @@
                        #'e/run                    nein
                        #'docker/inspect           nein
                        #'artifact/upload-artifact nein}
-        #(is (reduced? (exec-step "id" {} "dev:test" 1 {:id (f/fail "shizz")} test-step))))))
+        #(is (reduced? (exec-step "id" {} "dev:test" 1 (f/fail "shizz") test-step))))))
 
   (testing "failed step execution"
     (let [test-step {}

@@ -22,8 +22,8 @@ INSERT INTO "evars" ("key", "value", "pipeline")
 VALUES :tuple*:evars;
 
 -- :name insert-step :insert :1
-INSERT INTO "steps" ("cmd", "needs_resource", "produces_artifact", "artifact_path", "pipeline")
-VALUES (:cmd, :needs_resource, :produces_artifact, :artifact_path, :pipeline);
+INSERT INTO "steps" ("cmd", "needs_resource", "produces_artifact", "artifact_path", "artifact_store", "pipeline")
+VALUES (:cmd, :needs_resource, :produces_artifact, :artifact_path, :artifact_store, :pipeline);
 
 -- :name delete-pipeline :execute :1
 DELETE FROM "pipelines"

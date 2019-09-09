@@ -19,6 +19,7 @@
                                  \"needs_resource\"    TEXT DEFAULT NULL,
                                  \"produces_artifact\" TEXT DEFAULT NULL,
                                  \"artifact_path\"     TEXT DEFAULT NULL,
+                                 \"artifact_store\"    TEXT DEFAULT NULL,
                                  PRIMARY KEY(\"id\", \"pipeline\"),
                                  FOREIGN KEY(\"pipeline\") REFERENCES \"pipelines\"(\"name\") ON DELETE CASCADE);"]
  :down ["DROP TABLE \"steps\";"]}

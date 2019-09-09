@@ -22,7 +22,7 @@
 (comment
   (sql/def-sqlvec-fns (io/resource "sql/artifact.sql"))
 
-  (register-artifact-store-sqlvec {:name "artifact/s3"
+  (register-artifact-store-sqlvec {:name "s3"
                                    :url  "http://localhost:8001"})
 
-  (un-register-artifact-store-sqlvec {:name "artifact/s3"}))
+  (un-register-artifact-store-sqlvec {:name "s3"}))

@@ -127,7 +127,7 @@
                                               {:id run-id})
                              (:stopped)))]
     (if (or stopped?
-            (f/failed? (:id build-state)))
+            (f/failed? build-state))
       (reduced build-state)
       (f/try-all [_            (log/infof "Executing step %s in pipeline %s"
                                           step
@@ -149,11 +149,12 @@
                                                            (str (get-in (docker/inspect states/docker-conn id)
                                                                         [:Config :WorkingDir])
                                                                 "/"
-                                                                (:artifact_path step))))]
+                                                                (:artifact_path step))
+                                                           (:artifact_store step)))]
         {:id      id
          :mounted (:mounted result)}
         (f/when-failed [err]
-          (log/errorf "Failed to exec step: %s" step)
+          (log/errorf "Failed to exec step: %s with error %s" step err)
           err)))))
 
 (defn next-build-number-of

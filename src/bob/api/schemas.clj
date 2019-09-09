@@ -26,8 +26,9 @@
                        :type     SupportedResourceTypes
                        :provider String})
 
-(s/defschema Artifact {:name String
-                       :path String})
+(s/defschema Artifact {:name  String
+                       :path  String
+                       :store String})
 
 (s/defschema Step {(s/required-key :cmd)               String
                    (s/optional-key :needs_resource)    String
@@ -51,8 +52,8 @@
 
 (s/defschema ArtifactStoreAttributes {:url String})
 
-(s/defschema ArtifactStoreResponse {:message {:name String
-                                              :url  String}})
+(s/defschema ArtifactStoreResponse {:message [{:name String
+                                               :url  String}]})
 
 (comment
   (s/validate Step

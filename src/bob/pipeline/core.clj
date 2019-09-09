@@ -72,10 +72,11 @@
                                         (f/try* (db/insert-evars states/db
                                                                  {:evars evars})))
                                     _ (doseq [step pipeline-steps]
-                                        (let [{cmd                   :cmd
-                                               needs-resource        :needs_resource
-                                               {artifact-name :name
-                                                artifact-path :path} :produces_artifact} step]
+                                        (let [{cmd                     :cmd
+                                               needs-resource          :needs_resource
+                                               {artifact-name  :name
+                                                artifact-path  :path
+                                                artifact-store :store} :produces_artifact} step]
                                           (log/debugf "Inserting step:
                                                        cmd: %s
                                                        needs resource: %s
@@ -88,6 +89,7 @@
                                                            :needs_resource    needs-resource
                                                            :produces_artifact artifact-name
                                                            :artifact_path     artifact-path
+                                                           :artifact_store    artifact-store
                                                            :pipeline          pipeline})))]
                           (u/respond "Ok")
                           (f/when-failed [err]

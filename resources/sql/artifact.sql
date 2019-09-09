@@ -14,14 +14,16 @@
 -- along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 -- :name register-artifact-store :insert :1
-INSERT INTO "config" ("name", "value")
+INSERT INTO "artifact_stores" ("name", "url")
 VALUES (:name, :url);
 
 -- :name get-artifact-store :query :1
-SELECT "name", "value" AS "url" FROM "config"
-WHERE "name" LIKE 'artifact/%'
-LIMIT 1;
+SELECT "name", "url" FROM "artifact_stores"
+WHERE "name"=:name;
 
 -- :name un-register-artifact-store :execute :1
-DELETE FROM "config"
+DELETE FROM "artifact_stores"
 WHERE "name"=:name;
+
+-- :name get-artifact-stores :query :many
+SELECT * FROM "artifact_stores";
