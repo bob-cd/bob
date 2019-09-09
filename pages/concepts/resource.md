@@ -12,8 +12,7 @@ permalink: /concepts/resource
 A Resource is a pre-requisite for a command in a Step.
 
 Resource is a term used to describe an external requirement that is needed before a step
-can be executed successfully. In the context of a CI, this in most of the cases stands for
-source code which needs to be continuously integrated and delivered.
+can be executed successfully, e.g. source code which needs to be continuously integrated and delivered.
 
 To denote that a particular step needs a resource:
 
@@ -25,7 +24,42 @@ To denote that a particular step needs a resource:
 ```
 This resource must be declared in the `resources` section of the Pipeline definition.
 
-To generalize, Resource can be used fetch _any_ external items which may be needed in a build.
+Each entry consists of the following keys:
+- `name`: String, Required: The unique name of the resource by which its to be referred in the `needs_resource` key of a step.
+- `type`: String, Required: This can either be `internal` or `external`. External resources are to be fetched from a Resource Provider, whereas Internal ones are outputs of another pipeline in the system (NOT IMPLEMENTED YET! See this [issue] (https://github.com/bob-cd/bob/issues/42). Resources are loaded lazily when required, so if a declared resource isn’t used in a step, it will not be fetched.
+
+Conditional keys:
+
+If type is external:
+- `provider`: String, Required: This is the name of the Resource Provider which will provide this resource when this step is about to be executed.
+- `params`: Map[String, String], Required: This are the params that are to be sent to the Resource Provider when requesting the resource. These are a property of that particular provider and helps in customizing the kind of resource fetched.
+
+If the type is internal: (Not implemented yet)
+- `pipeline`: String, Required: This denotes the group/name of a pipeline in the system on the output of which a Step depends. This is generally to be used to consume an artifact which has been produced in another pipeline.
+- `artifact_name`: String, Required: The name of the artifact that the other pipeline has produced which should be mounted before Step execution.
+
+Example:
+```json
+[
+  {
+    "name": "my-source",
+    "type": "external",
+    "provider": "github-provider",
+    "params": {
+      "repo": "https://github.com/bob-cd/bob",
+      "branch": "master"
+    }
+  },
+  {
+    "name": "my-ml-model",
+    "type": "internal",
+    "pipeline": "dev/make-model",
+    "artifact_name": "trained_model.json"
+  }
+]
+```
+
+A Resource can be used fetch _any_ external items which may be needed in a build.
 This is provided to Bob via a Resource Provider.
 
 ## Resource Provider

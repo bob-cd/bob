@@ -23,8 +23,6 @@ Example: `ubuntu:latest`
 
 ## A List of Steps
 
-### Step
-
 A Step is essentially a key-value pair consisting of the following keys:
 
 - `cmd`: String, Required: This is the command that is to be executed.
@@ -47,16 +45,17 @@ Example:
 [Artifact](/bob/concepts/artifact) if successfully executed. This consists of the following keys:
     - `path`: String, Required: This is the path relative to the command being executed
     where the expected artifact will be produced. Bob will stream the artifact to the
-    registered artifact provider. The path must exist.
+    registered artifact store. The path must exist.
     - `name`: String, Required: This is the unique name with which the artifact will be uploaded
-    to the artifact provider.
+    to the artifact store.
 
 Example:
 ```json
 {
   "produces_artifact": {
     "path": "target/app.jar",
-    "name": "app-jar"
+    "name": "app-jar",
+    "store": "s3"
   }
 }
 ```
@@ -74,60 +73,13 @@ Example:
 }
 ```
 
-## Resources
+## List of Resources
 
-Resources is a list of key-value pairs which defines the list of Resources which may be
+Resources is a list of key-value pairs which defines the list of [Resources](https://bob-cd.github.io/bob/concepts/resource) which may be
 consumed by one or more of the steps of the pipeline.
 
-Each entry consists of the following keys:
-- `name`: String, Required: The unique name of the resource by which its to be referred in the
-`needs_resource` key of a step.
-- `type`: String, Required: This can either be `internal` or `external`. External resources are
-to be fetched from a Resource Provider, whereas Internal ones are outputs of another pipeline in
-the system. **Internal resources are not implemented yet.** See this [issue](https://github.com/bob-cd/bob/issues/42).
-Resources are loaded lazily when required, so if a declared resource isn't used in a step,
-it will not be fetched.
+## Full working pipeline example
 
-Conditional keys:
-
-If type is `external`:
-- `provider`: String, Required: This is the name of the Resource Provider which will provide this
-resource when this step is about to be executed.
-- `params`: Map[String, String], Required: This are the params that are to be sent to the Resource
-Provider when requesting the resource. These are a property of that particular provider and helps
-in customizing the kind of resource fetched.
-
-If the type is `internal`: (Not implemented yet)
-- `pipeline`: String, Required: This denotes the group/name of a pipeline in the system on the output
-of which a Step depends. This is generally to be used to consume an artifact which has been produced
-in another pipeline.
-- `artifact_name`: String, Required: The name of the artifact that the other pipeline has produced
-which should be mounted before Step execution.
-
-Example:
-```json
-[
-  {
-    "name": "my-source",
-    "type": "external",
-    "provider": "github-provider",
-    "params": {
-      "repo": "https://github.com/bob-cd/bob",
-      "branch": "master"
-    }
-  },
-  {
-    "name": "my-ml-model",
-    "type": "internal",
-    "pipeline": "dev/make-model",
-    "artifact_name": "trained_model.json"
-  }
-]
-```
-
-The provider is a Resource Provider which is to be registered before this pipeline is started.
-
-Full working pipeline example:
 ```json
 {
   "image": "busybox:musl",
@@ -149,7 +101,8 @@ Full working pipeline example:
       "cmd": "cat test.txt",
       "produces_artifact": {
         "name": "afile",
-        "path": "test.txt"
+        "path": "test.txt",
+        "store": "local"
       }
     },
     {
@@ -157,7 +110,8 @@ Full working pipeline example:
       "cmd": "ls",
       "produces_artifact": {
         "name": "license-file",
-        "path": "LICENSE"
+        "path": "LICENSE",
+        "store": "local"
       }
     }
   ],

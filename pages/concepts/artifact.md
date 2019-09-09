@@ -22,20 +22,21 @@ To denote that a step produces an artifact:
   "cmd": "mvn build",
   "produces_artifact": {
     "name": "app-jar",
-    "path": "target/app.jar"
+    "path": "target/app.jar",
+    "store": "s3"
   }
 }
 ```
 
 When Bob encounters such a step, it executes the step and if its successful, uploads the artifact
-from the provided `path` to an Artifact Provider.
+from the provided `path` to an Artifact Store denoted by the `store` key.
 
-## Artifact Provider
+## Artifact Store
 
-An Artifact Provider is Bob's way of abstracting the kind of storage needed to store artifacts. This
+An Artifact Store is Bob's way of abstracting the kind of storage needed to store artifacts. This
 is akin to an abstract object store where Bob can store and retrieve artifacts.
 
-An artifact provider is any system which has the following properties:
+An artifact store is any system which has the following properties:
 - It is a web server.
 - It is reachable from the network that Bob is in.
 - Exposes an endpoint at `/bob_request/<path>` which:
@@ -78,5 +79,5 @@ Conversely a `DELETE` request on `/api/artifact-stores/<name>` un-registers it f
 To list the registered store make a `GET` request on `/api/artifact-stores`.
 
 To retrieve an artifact from a pipeline run:
-- Make a `GET` request on `/api/pipelines/groups/<group-name>/names/<pipeline-name>/number/<run-number>/artifacts/<artifact-name>`.
+- Make a `GET` request on `/api/pipelines/groups/<group-name>/names/<pipeline-name>/number/<run-number>/artifacts/store/<store-name>/name/<artifact-name>`.
 - The artifact is directly streamed from the Artifact Store via Bob.

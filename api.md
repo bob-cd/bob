@@ -187,7 +187,7 @@ Lists all registered external resources by name.
 | ---- | ----------- | ------ |
 | 200 |  | [ResourceResponse](#resourceresponse) |
 
-### /api/pipelines/groups/{group}/names/{name}/number/{number}/artifacts/{artifact-name}
+### /api/pipelines/groups/{group}/names/{name}/number/{number}/artifacts/store/{store-name}/name/{artifact-name}
 
 #### GET
 ##### Summary:
@@ -201,6 +201,7 @@ Returns the artifact archive of a pipeline
 | group | path |  | Yes | string |
 | name | path |  | Yes | string |
 | number | path |  | Yes | long |
+| store-name | path |  | Yes | string |
 | artifact-name | path |  | Yes | string |
 
 ##### Responses
@@ -281,6 +282,7 @@ Runs health checks for Bob.
 | ---- | ---- | ----------- | -------- |
 | name | string |  | Yes |
 | path | string |  | Yes |
+| store | string |  | Yes |
 
 #### ArtifactStoreAttributes
 
@@ -292,7 +294,7 @@ Runs health checks for Bob.
 
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
-| message | [ArtifactStoreResponseMessage](#artifactstoreresponsemessage) |  | Yes |
+| message | [ [ArtifactStoreResponseMessage](#artifactstoreresponsemessage) ] |  | Yes |
 
 #### ArtifactStoreResponseMessage
 
