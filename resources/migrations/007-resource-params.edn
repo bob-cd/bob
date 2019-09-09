@@ -18,4 +18,4 @@
                                            \"value\"    TEXT NOT NULL,
                                            \"pipeline\" TEXT NOT NULL,
                                            FOREIGN KEY(\"name\", \"pipeline\") REFERENCES \"resources\"(\"name\", \"pipeline\") ON DELETE CASCADE);"]
- :down ["DROP TABLE resource_params;"]}
+ :down ["DROP TABLE \"resource_params\";"]}

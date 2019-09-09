@@ -18,15 +18,15 @@ INSERT INTO "resources" ("name", "type", "pipeline", "provider")
 VALUES (:name, :type, :pipeline, :provider);
 
 -- :name insert-external-resource :insert :1
-INSERT INTO "external_resources" ("name", "url")
+INSERT INTO "resource_providers" ("name", "url")
 VALUES (:name, :url);
 
 -- :name delete-external-resource :execute :1
-DELETE FROM "external_resources"
+DELETE FROM "resource_providers"
 WHERE "name"=:name;
 
 -- :name external-resources :query :many
-SELECT "name" FROM "external_resources";
+SELECT "name" FROM "resource_providers";
 
 -- :name resource-by-pipeline :query :1
 SELECT * FROM "resources"
@@ -34,7 +34,7 @@ WHERE "name"=:name AND "pipeline"=:pipeline
 LIMIT 1;
 
 -- :name external-resource-url :query :1
-SELECT "url" FROM "external_resources"
+SELECT "url" FROM "resource_providers"
 WHERE "name"=:name;
 
 -- :name resource-params-of :query :many
@@ -46,5 +46,5 @@ INSERT INTO "resource_params" ("key", "value", "name", "pipeline")
 VALUES :tuple*:params;
 
 -- :name invalid-external-resources :query :many
-SELECT * FROM "external_resources"
+SELECT * FROM "resource_providers"
 WHERE "name"=:name AND "url" IS NOT NULL;

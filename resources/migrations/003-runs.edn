@@ -20,4 +20,4 @@
                                 \"last_pid\" TEXT DEFAULT NULL,
                                 \"stopped\"  BOOLEAN DEFAULT FALSE,
                                 FOREIGN KEY(\"pipeline\") REFERENCES \"pipelines\"(\"name\") ON DELETE CASCADE);"]
- :down ["DROP TABLE runs;"]}
+ :down ["DROP TABLE \"runs\";"]}

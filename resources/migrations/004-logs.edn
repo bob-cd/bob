@@ -16,4 +16,4 @@
 {:up   ["CREATE TABLE \"logs\" (\"run\" TEXT PRIMARY KEY,
                                 \"content\" TEXT DEFAULT '',
                                 FOREIGN KEY(\"run\") REFERENCES \"runs\"(\"id\") ON DELETE CASCADE);"]
- :down ["DROP TABLE logs;"]}
+ :down ["DROP TABLE \"logs\";"]}

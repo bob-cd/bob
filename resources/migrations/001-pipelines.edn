@@ -15,4 +15,4 @@
 
 {:up   ["CREATE TABLE \"pipelines\" (\"name\"  TEXT PRIMARY KEY,
                                      \"image\" TEXT DEFAULT NULL);"]
- :down ["DROP TABLE pipelines;"]}
+ :down ["DROP TABLE \"pipelines\";"]}

@@ -19,4 +19,4 @@
                                  \"pipeline\" TEXT NOT NULL,
                                  PRIMARY KEY(\"id\", \"pipeline\"),
                                  FOREIGN KEY(\"pipeline\") REFERENCES \"pipelines\"(\"name\") ON DELETE CASCADE);"]
- :down ["DROP TABLE evars;"]}
+ :down ["DROP TABLE \"evars\";"]}

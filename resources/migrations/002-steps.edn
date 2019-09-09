@@ -21,4 +21,4 @@
                                  \"artifact_path\"     TEXT DEFAULT NULL,
                                  PRIMARY KEY(\"id\", \"pipeline\"),
                                  FOREIGN KEY(\"pipeline\") REFERENCES \"pipelines\"(\"name\") ON DELETE CASCADE);"]
- :down ["DROP TABLE steps;"]}
+ :down ["DROP TABLE \"steps\";"]}
