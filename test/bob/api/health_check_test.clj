@@ -21,16 +21,21 @@
 
 (deftest health-check-various-conditions
   (testing "all systems operational"
-    (with-redefs-fn {#'docker/ping (fn [x] "OK")
-                     #'db-health-check (fn [x] {:?column? true})}
+    (with-redefs-fn {#'docker/ping (constantly "OK")
+                     #'db-health-check (constantly {:?column? true})}
       #(is (= {:status 200, :headers {}, :body {:message "Yes, we can! \uD83D\uDD28 \uD83D\uDD28"}} @(health-check)))))
 
   (testing "failing docker daemon"
-    (with-redefs-fn {#'docker/ping (fn [x] (f/fail "Docker Failed"))
-                     #'db-health-check (fn [x] {:?column? true})}
-      #(is (= {:status 503, :headers {}, :body {:message "Health check failed: Docker daemon is not healthy"}} @(health-check)))))
+    (with-redefs-fn {#'docker/ping (constantly (f/fail "Docker Failed"))
+                     #'db-health-check (constantly {:?column? true})}
+      #(is (= {:status 503, :headers {}, :body {:message "Health check failed: Docker not healthy"}} @(health-check)))))
 
   (testing "failing postgres db"
-    (with-redefs-fn {#'docker/ping (fn [x] "OK")
-                     #'db-health-check (fn [x] (f/fail "Postgres Failed"))}
-      #(is (= {:status 503, :headers {}, :body {:message "Health check failed: Postgres database not healthy"}} @(health-check))))))
+    (with-redefs-fn {#'docker/ping (constantly "OK")
+                     #'db-health-check (constantly (f/fail "Postgres Failed"))}
+      #(is (= {:status 503, :headers {}, :body {:message "Health check failed: Postgres not healthy"}} @(health-check)))))
+
+  (testing "failing docker and postgres"
+    (with-redefs-fn {#'docker/ping (constantly (f/fail "Docker Failed"))
+                     #'db-health-check (constantly (f/fail "Postgres Failed"))}
+      #(is (= {:status 503, :headers {}, :body {:message "Health check failed: Docker and Postgres not healthy"}} @(health-check))))))
