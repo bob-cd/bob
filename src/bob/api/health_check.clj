@@ -14,8 +14,9 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.api.health-check
-  (:require [hugsql.core :as sql]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
+            [clojure.string :as string]
+            [hugsql.core :as sql]
             [clj-docker-client.core :as docker]
             [manifold.deferred :as d]
             [failjure.core :as f]
@@ -28,15 +29,14 @@
 (defn health-check
   "Check the systems we depend upon."
   []
-  (d/let-flow [result (f/try-all [_ (when (f/failed? (f/try* (docker/ping states/docker-conn)))
-                                      (f/fail "Docker daemon is not healthy"))
-                                  _ (when (f/failed? (f/try* (db-health-check states/db)))
-                                      (f/fail "Postgres database not healthy"))]
-                                 (u/respond "Yes, we can! \uD83D\uDD28 \uD83D\uDD28")
-                                 (f/when-failed [err]
-                                                (log/errorf "Health check failed: %s" (f/message err))
-                                                (u/service-unavailable (str "Health check failed: " (f/message err)))))]
-              result))
+  (d/let-flow [docker   (when (f/failed? (f/try* (docker/ping states/docker-conn))) "Docker")
+               postgres (when (f/failed? (f/try* (db-health-check states/db))) "Postgres")
+               failures (filter some? [docker postgres])]
+              (if (empty? failures)
+                (do (log/debugf "Health check succeeded") (u/respond "Yes, we can! \uD83D\uDD28 \uD83D\uDD28"))
+                (let [failstr (str "Health check failed: " (string/join " and " failures) " not healthy")]
+                  (log/errorf failstr)
+                  (u/service-unavailable failstr)))))
 
 (comment
   (health-check))

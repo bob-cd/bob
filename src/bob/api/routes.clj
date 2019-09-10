@@ -174,4 +174,4 @@
         (hc/health-check))
 
     (rest/undocumented
-     (route/not-found (u/respond "Took a wrong turn?"))))))
+     (route/not-found (u/respond "Took a wrong turn?")))))))
