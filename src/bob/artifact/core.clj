@@ -114,8 +114,10 @@
       "Ok"
       (f/when-failed [err]
         (log/errorf "Error in uploading artifact: %s" (f/message err))
+        (f/try* (docker/rm states/docker-conn run-id))
         err))
     (do (log/error "Error locating Artifact Store")
+        (f/try* (docker/rm states/docker-conn run-id))
         (f/fail "No such artifact store registered"))))
 
 (comment

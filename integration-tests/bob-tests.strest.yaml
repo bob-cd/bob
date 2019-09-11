@@ -216,8 +216,11 @@ requests:
       - jsonpath: "content"
         expect:
           message:
+            - "[bob] Pulling image busybox:musl"
             - "hello"
             - "test"
+            - "[bob] Uploading artifact afile"
+            - "[bob] Fetching and mounting resource my-source"
             - "CODE_OF_CONDUCT.md"
             - "CONTRIBUTING.md"
             - "Dockerfile"
@@ -232,6 +235,8 @@ requests:
             - "resources"
             - "src"
             - "test"
+            - "[bob] Uploading artifact license-file"
+            - "[bob] Run successful"
 
   invalidPipelineLogs:
     request:

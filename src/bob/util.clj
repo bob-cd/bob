@@ -14,7 +14,9 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.util
-  (:require [ring.util.http-response :as res])
+  (:require [ring.util.http-response :as res]
+            [bob.states :as states]
+            [bob.pipeline.db :as db])
   (:import (java.util UUID)))
 
 (def id-length 12)
@@ -39,3 +41,8 @@
 (defn name-of
   [group name]
   (format "%s:%s" group name))
+
+(defn log-to-db
+  [data run-id]
+  (db/upsert-log states/db {:run     run-id
+                            :content data}))

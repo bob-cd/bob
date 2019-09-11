@@ -83,12 +83,13 @@
                                                             resource)
                                                          (= "test" pipeline)
                                                          (= "img" img)))
-                                                  "image-id")}
+                                                  "image-id")
+                     #'u/log-to-db              (constantly nil)}
       #(is (= "image-id"
-              (resourceful-step {:needs_resource "git"} "test" "img")))))
+              (resourceful-step {:needs_resource "git"} "test" "img" "build-id")))))
 
   (testing "ignore mount if not needed"
-    (is (= "img" (resourceful-step {} "test" "img")))))
+    (is (= "img" (resourceful-step {} "test" "img" "run-id")))))
 
 (deftest next-step-execution
   (testing "next images generation with resource mount"
@@ -183,7 +184,8 @@
                                                            (= "jar" artifact)
                                                            (= "id" id)
                                                            (= "/some/path" path)
-                                                           (= "s3" store-name))))}
+                                                           (= "s3" store-name))))
+                       #'u/log-to-db              (constantly nil)}
         #(is (= {:id      "id"
                  :mounted []}
                 (exec-step "id" {} "dev:test" 1 {:id "id"} test-step))))))
@@ -290,16 +292,18 @@
                                                       :pipeline "test"
                                                       :status   "running"}
                                                      args)))
+                       #'u/log-to-db          (constantly nil)
                        #'e/pull               (fn [img]
                                                 (tu/check-and-fail
                                                  #(= "img" img))
                                                 "img")
-                       #'resourceful-step     (fn [step pipeline img]
+                       #'resourceful-step     (fn [step pipeline img run-id]
                                                 (tu/check-and-fail
                                                  #(and (= first-step
                                                           step)
                                                        (= "test" pipeline)
-                                                       (= "img" img)))
+                                                       (= "img" img)
+                                                       (= "run-id" run-id)))
                                                 "img")
                        #'e/build              (fn [img step evars]
                                                 (tu/check-and-fail
@@ -354,16 +358,18 @@
                                                       :pipeline "test"
                                                       :status   "running"}
                                                      args)))
+                       #'u/log-to-db          (constantly nil)
                        #'e/pull               (fn [img]
                                                 (tu/check-and-fail
                                                  #(= "img" img))
                                                 "img")
-                       #'resourceful-step     (fn [step pipeline img]
+                       #'resourceful-step     (fn [step pipeline img run-id]
                                                 (tu/check-and-fail
                                                  #(and (= first-step
                                                           step)
                                                        (= "test" pipeline)
-                                                       (= "img" img)))
+                                                       (= "img" img)
+                                                       (= "run-id" run-id)))
                                                 "img")
                        #'e/build              (fn [img step evars]
                                                 (tu/check-and-fail
@@ -419,6 +425,7 @@
                                                       :pipeline "test"
                                                       :status   "running"}
                                                      args)))
+                       #'u/log-to-db          (constantly nil)
                        #'e/pull               (constantly (f/fail "shizz"))
                        #'resourceful-step     nein
                        #'e/build              nein

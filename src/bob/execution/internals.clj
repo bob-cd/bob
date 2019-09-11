@@ -18,8 +18,7 @@
             [clj-docker-client.core :as docker]
             [taoensso.timbre :as log]
             [bob.util :as u]
-            [bob.states :as states]
-            [bob.pipeline.db :as db]))
+            [bob.states :as states]))
 
 (defn has-image
   "Checks if an image is present locally.
@@ -96,8 +95,7 @@
               _      (log/debugf "Attaching to container %s for logs" id)
               _      (docker/logs-live states/docker-conn
                                        id
-                                       #(db/upsert-log states/db {:run     run-id
-                                                                  :content %}))
+                                       #(u/log-to-db % run-id))
               status (-> (docker/inspect states/docker-conn id)
                          :State
                          :ExitCode)]

@@ -65,13 +65,15 @@
 
 (defn resourceful-step
   "Create a resource mounted image for a step if it needs it."
-  [step pipeline image]
-  (if (:needs_resource step)
-    (r/mounted-image-from (rdb/resource-by-pipeline states/db
-                                                    {:name     (:needs_resource step)
-                                                     :pipeline pipeline})
-                          pipeline
-                          image)
+  [step pipeline image run-id]
+  (if-let [resource (:needs_resource step)]
+    (do (u/log-to-db (format "[bob] Fetching and mounting resource %s" resource)
+                     run-id)
+        (r/mounted-image-from (rdb/resource-by-pipeline states/db
+                                                        {:name     resource
+                                                         :pipeline pipeline})
+                              pipeline
+                              image))
     image))
 
 (defn next-step
@@ -96,7 +98,7 @@
                               false
                               (not (some #{resource} mounted)))
               image         (if mount-needed?
-                              (resourceful-step step pipeline image)
+                              (resourceful-step step pipeline image run-id)
                               image)
               _             (mark-image-for-gc image run-id)
               result        {:id      (e/build image step evars)
@@ -141,6 +143,7 @@
                                  result)
                   [group name] (clojure.string/split pipeline #":")
                   _            (when-let [artifact (:produces_artifact step)]
+                                 (u/log-to-db (format "[bob] Uploading artifact %s" artifact) run-id)
                                  (artifact/upload-artifact group
                                                            name
                                                            number
@@ -154,7 +157,7 @@
         {:id      id
          :mounted (:mounted result)}
         (f/when-failed [err]
-          (log/errorf "Failed to exec step: %s with error %s" step err)
+          (log/errorf "Failed to exec step: %s with error %s" step (f/message err))
           err)))))
 
 (defn next-build-number-of
@@ -189,9 +192,10 @@
                                                   :number   number
                                                   :pipeline pipeline
                                                   :status   "running"})
+                      _           (u/log-to-db (format "[bob] Pulling image %s" image) run-id)
                       _           (e/pull image)
                       _           (mark-image-for-gc image run-id)
-                      image       (resourceful-step first-step pipeline image)
+                      image       (resourceful-step first-step pipeline image run-id)
                       _           (mark-image-for-gc image run-id)
                       id          (e/build image first-step evars)
                       id          (update-pid id run-id)
@@ -212,13 +216,15 @@
                       _           (gc-images run-id)
                       _           (db/update-run states/db
                                                  {:status "passed"
-                                                  :id     run-id})]
+                                                  :id     run-id})
+                      _           (u/log-to-db "[bob] Run successful" run-id)]
             id
             (f/when-failed [err]
               (log/infof "Marking run %d for %s as failed with reason: %s"
                          number
                          pipeline
                          (f/message err))
+              (u/log-to-db (format "[bob] Run failed with reason: %s" (f/message err)) run-id)
               (gc-images run-id)
               (f/try* (db/update-run states/db
                                      {:status "failed"
@@ -290,7 +296,8 @@
   (resourceful-step {:needs_resource "source"
                      :cmd            "ls"}
                     "test:test"
-                    "busybox:musl")
+                    "busybox:musl"
+                    "run-id")
 
   (db/insert-run states/db
                  {:id       "1"
@@ -302,7 +309,8 @@
 
   (resourceful-step (first (db/ordered-steps states/db {:pipeline "dev:test"}))
                     "dev:test"
-                    "busybox:musl")
+                    "busybox:musl"
+                    "run-id")
 
   (exec-steps "busybox:musl"
               (db/ordered-steps states/db {:pipeline "dev:test"})

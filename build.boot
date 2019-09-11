@@ -30,7 +30,7 @@
                             [compojure "1.6.1"]
                             [com.fasterxml.jackson.core/jackson-core "2.9.9"]
                             [failjure "1.5.0"]
-                            [org.postgresql/postgresql "42.2.6"]
+                            [org.postgresql/postgresql "42.2.7"]
                             [ragtime "0.8.0"]
                             [hikari-cp "2.9.0"]
                             [com.layerware/hugsql "0.4.9"]
