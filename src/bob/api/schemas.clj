@@ -39,7 +39,8 @@
                        (s/optional-key :vars)      {Keyword String}
                        (s/optional-key :resources) [Resource]})
 
-(s/defschema LogsResponse {:message [String]})
+(s/defschema LogsResponse (s/either {:message [String]}
+                                    SimpleResponse))
 
 (s/defschema StatusResponse {:message (s/enum :running :passed :failed)})
 
@@ -60,4 +61,10 @@
               {:cmd               "echo hello"
                :needs_resource    "src"
                :produces_artifact {:name "jar"
-                                   :path "target"}}))
+                                   :path "target"}})
+
+  (s/validate LogsResponse
+              {:message "Failed"})
+
+  (s/validate LogsResponse
+              {:message ["log line 1" "log line 2"]}))

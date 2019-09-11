@@ -171,7 +171,7 @@
                                              (tu/check-and-fail
                                               #(= {:pipeline "dev:test"}
                                                   args)))}
-      #(is (= "shizzz"
+      #(is (= "Pipeline creation error: Check params or if its already created"
               (-> @(create "dev"
                            "test"
                            [{:cmd               "hello"

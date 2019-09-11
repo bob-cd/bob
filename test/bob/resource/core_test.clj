@@ -34,7 +34,7 @@
 
   (testing "unsuccessful external resource registration"
     (with-redefs-fn {#'db/insert-external-resource #(f/fail "Nope")}
-      #(is (= "Resource Provider may already be registered"
+      #(is (= {:message "Resource Provider may already be registered"}
               (-> @(register-external-resource "git" "test")
                   :body)))))
 

@@ -42,6 +42,20 @@ requests:
       - jsonpath: "content.message"
         expect: "Ok"
 
+  resourceReRegistrationFailure:
+    request:
+      url: "http://bob:7777/api/external-resources/git"
+      method: "POST"
+      postData:
+        mimeType: "application/json"
+        text:
+          url: "http://resource-git:8000"
+    validate:
+      - jsonpath: "status"
+        expect: 409
+      - jsonpath: "content.message"
+        expect: "Resource Provider may already be registered"
+
   artifactStoreRegistration:
     request:
       url: "http://bob:7777/api/artifact-stores/local"
@@ -69,6 +83,20 @@ requests:
         expect: 200
       - jsonpath: "content.message"
         expect: "Ok"
+
+  artifactReRegistration:
+    request:
+      url: "http://bob:7777/api/artifact-stores/local"
+      method: "POST"
+      postData:
+        mimeType: "application/json"
+        text:
+          url: "http://artifact-local:8001"
+    validate:
+      - jsonpath: "status"
+        expect: 409
+      - jsonpath: "content.message"
+        expect: "Artifact Store may already be registered"
 
   pipelineCreation:
     request:
@@ -115,6 +143,38 @@ requests:
       - jsonpath: "content.message"
         expect: "Ok"
 
+  failingPipelineCreation:
+    request:
+      url: "http://bob:7777/api/pipelines/groups/dev/names/this-fails"
+      method: "POST"
+      postData:
+        mimeType: "application/json"
+        text:
+          image: "busybox:musl"
+          steps:
+            - cmd: "rcho hello"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "Ok"
+
+  rePipelineCreationFailure:
+    request:
+      url: "http://bob:7777/api/pipelines/groups/dev/names/this-fails"
+      method: "POST"
+      postData:
+        mimeType: "application/json"
+        text:
+          image: "busybox:musl"
+          steps:
+            - cmd: "rcho hello"
+    validate:
+      - jsonpath: "status"
+        expect: 400
+      - jsonpath: "content.message"
+        expect: "Pipeline creation error: Check params or if its already created"
+
   pipelineStart:
     request:
       url: "http://bob:7777/api/pipelines/start/groups/dev/names/test"
@@ -124,6 +184,26 @@ requests:
         expect: 200
       - jsonpath: "content.message"
         expect: "Ok"
+
+  failingPipelineStart:
+    request:
+      url: "http://bob:7777/api/pipelines/start/groups/dev/names/this-fails"
+      method: "POST"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "Ok"
+
+  invalidPipelineStart:
+    request:
+      url: "http://bob:7777/api/pipelines/start/groups/dev/names/tes"
+      method: "POST"
+    validate:
+      - jsonpath: "status"
+        expect: 400
+      - jsonpath: "content.message"
+        expect: "No such pipeline"
 
   pipelineLogs:
     request:
@@ -153,6 +233,16 @@ requests:
             - "src"
             - "test"
 
+  invalidPipelineLogs:
+    request:
+      url: "http://bob:7777/api/pipelines/logs/groups/dev/names/tes/number/1/offset/0/lines/1"
+      method: "GET"
+    validate:
+      - jsonpath: "status"
+        expect: 400
+      - jsonpath: "content.message"
+        expect: "Unable to fetch logs for this run"
+
   pipelineStatus:
     request:
       url: "http://bob:7777/api/pipelines/status/groups/dev/names/test/number/1"
@@ -162,6 +252,26 @@ requests:
         expect: 200
       - jsonpath: "content.message"
         expect: "passed"
+
+  invalidPipelineStatus:
+    request:
+      url: "http://bob:7777/api/pipelines/status/groups/dev/names/tes/number/1"
+      method: "GET"
+    validate:
+      - jsonpath: "status"
+        expect: 404
+      - jsonpath: "content.message"
+        expect: "No such pipeline"
+
+  failedPipelineStatus:
+    request:
+      url: "http://bob:7777/api/pipelines/status/groups/dev/names/this-fails/number/1"
+      method: "GET"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "failed"
 
   pipelineArtifacts:
     request:

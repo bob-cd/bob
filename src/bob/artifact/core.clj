@@ -33,7 +33,7 @@
                                  :url  url}))]
     (if (f/failed? result)
       (do (log/errorf "Could not register Artifact Store: %s" (f/message result))
-          (res/conflict "Artifact Store may already be registered"))
+          (res/conflict {:message "Artifact Store may already be registered"}))
       (do (log/infof "Registered Artifact Store %s at %s" name url)
           (u/respond "Ok")))))
 
@@ -52,7 +52,7 @@
   (d/let-flow [result (f/try* (db/get-artifact-stores states/db))]
     (if (f/failed? result)
       (do (log/errorf "Could not get Artifact Store details: %s" (f/message result))
-          (res/bad-request (f/message result)))
+          (res/bad-request {:message (f/message result)}))
       (u/respond result))))
 
 (defn stream-artifact
@@ -74,16 +74,20 @@
                                       name
                                       number
                                       fetch-url)
-                 data      (http/get fetch-url {:throw-exceptions false})]
-      (if (= 200 (:status data))
-        {:status  200
-         :headers {"Content-Type"        "application/tar"
-                   "Content-Disposition" (format "attachment; filename=%s.tar" artifact)}
-         :body    (:body data)}
-        (do (log/errorf "Error fetching artifact: %s" data)
-            (res/not-found "No such artifact"))))
+                 data      (f/try* @(http/get fetch-url {:throw-exceptions false}))]
+      (cond
+        (f/failed? data)       (do (log/errorf "Error reaching artifact store: %s" data)
+                                   (res/service-unavailable {:message (format "Cannot reach artifact store: %s"
+                                                                              (f/message data))}))
+        (= 200 (:status data)) {:status  200
+                                :headers {"Content-Type"        "application/tar"
+                                          "Content-Disposition" (format "attachment; filename=%s.tar"
+                                                                        artifact)}
+                                :body    (:body data)}
+        :else                  (do (log/errorf "Error fetching artifact: %s" data)
+                                   (res/not-found {:message "No such artifact"}))))
     (do (log/error "Error locating Artifact Store")
-        (res/bad-request "No such artifact store registered"))))
+        (res/bad-request {:message "No such artifact store registered"}))))
 
 (defn upload-artifact
   "Opens up a stream to the path in a container by id and POSTs it to the artifact store.
@@ -130,4 +134,6 @@
 
   (upload-artifact "dev" "test" "1" "hosts" "92c6692a6471" "/etc/hosts" "s3")
 
-  (log/errorf "Shizzz %s" "Oh noes!"))
+  (log/errorf "Shizzz %s" "Oh noes!")
+
+  @(http/get "https://httpbin.org/get" {:throw-exceptions false}))

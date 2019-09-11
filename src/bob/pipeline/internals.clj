@@ -170,6 +170,7 @@
                   (f/message err))
       err)))
 
+;; TODO: Avoid doing the first step separately. Do it in the reduce like a normal person.
 (defn exec-steps
   "Implements the sequential execution of the list of steps with a starting image.
 
@@ -188,13 +189,17 @@
                                                   :number   number
                                                   :pipeline pipeline
                                                   :status   "running"})
-                      image       (e/pull image)
+                      _           (e/pull image)
                       _           (mark-image-for-gc image run-id)
                       image       (resourceful-step first-step pipeline image)
                       _           (mark-image-for-gc image run-id)
-                      id          (f/ok-> (e/build image first-step evars)
-                                          (update-pid run-id)
-                                          (e/run run-id))
+                      id          (e/build image first-step evars)
+                      id          (update-pid id run-id)
+                      id          (let [result (e/run id run-id)]
+                                    (when (f/failed? result)
+                                      (log/debugf "Removing failed container %s" id)
+                                      (docker/rm states/docker-conn id))
+                                    result)
                       build-state (reduce (partial exec-step run-id evars pipeline number)
                                           {:id      id
                                            :mounted (if first-resource
@@ -270,13 +275,16 @@
          (take lines))
     (f/when-failed [err]
       (log/errorf "Failed to fetch logs for pipeline %s: %s" name (f/message err))
-      (f/message err))))
+      err)))
 
 (defn image-of
   "Returns the image associated with the pipeline."
   [pipeline]
-  (f/try* (-> (db/image-of states/db {:name pipeline})
-              (:image))))
+  (let [image (-> (db/image-of states/db {:name pipeline})
+                  (:image))]
+    (if (nil? image)
+      (f/fail "No such pipeline")
+      image)))
 
 (comment
   (resourceful-step {:needs_resource "source"

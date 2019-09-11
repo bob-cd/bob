@@ -31,7 +31,7 @@
                                                             :url  url}))]
     (if (f/failed? result)
       (do (log/errorf "Could not register Resource Provider: %s" (f/message result))
-          (resp/conflict "Resource Provider may already be registered"))
+          (resp/conflict {:message "Resource Provider may already be registered"}))
       (do (log/infof "Registered Resource Provider %s at %s" name url)
           (u/respond "Ok")))))
 

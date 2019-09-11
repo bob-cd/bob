@@ -69,8 +69,7 @@
                                           (ri/add-params name params pipeline)))
                                     _ (when (seq evars)
                                         (log/debugf "Inserting environment vars: %s" (into [] evars))
-                                        (f/try* (db/insert-evars states/db
-                                                                 {:evars evars})))
+                                        (f/try* (db/insert-evars states/db {:evars evars})))
                                     _ (doseq [step pipeline-steps]
                                         (let [{cmd                     :cmd
                                                needs-resource          :needs_resource
@@ -93,10 +92,11 @@
                                                            :pipeline          pipeline})))]
                           (u/respond "Ok")
                           (f/when-failed [err]
-                            (do (log/errorf "Pipeline creation failed: %s
-                                             Rolling back." (f/message err))
-                                (f/try* (db/delete-pipeline states/db {:name pipeline}))
-                                (res/bad-request {:message (f/message err)}))))]
+                            (log/errorf "Pipeline creation failed: %s." (f/message err))
+                            ;; TODO: See if this can be done in a txn instead
+                            (when-not (clojure.string/includes? (f/message err) "duplicate key")
+                              (f/try* (db/delete-pipeline states/db {:name pipeline})))
+                            (res/bad-request {:message "Pipeline creation error: Check params or if its already created"})))]
     result))
 
 (defn start
@@ -152,6 +152,7 @@
   Returns Ok or 404."
   [group name]
   (d/let-flow [pipeline (u/name-of group name)
+               _        (log/debugf "Deleting pipeline %s" pipeline)
                _        (f/try* (db/delete-pipeline states/db
                                                     {:name pipeline}))]
     (u/respond "Ok")))
@@ -163,7 +164,9 @@
   [group name number offset lines]
   (d/let-flow [pipeline (u/name-of group name)
                result   (p/pipeline-logs pipeline number offset lines)]
-    (u/respond result)))
+    (if (f/failed? result)
+      (res/bad-request {:message (f/message result)})
+      (u/respond result))))
 
 (comment
   (create "test"

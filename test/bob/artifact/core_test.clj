@@ -76,8 +76,8 @@
                                                (tu/check-and-fail
                                                 #(= "bob-url/bob_artifact/dev/test/1/afile"
                                                     url))
-                                               {:status 200
-                                                :body   :stuff})}
+                                               (future {:status 200
+                                                        :body   :stuff}))}
       #(is (= {:status  200
                :headers {"Content-Type"        "application/tar"
                          "Content-Disposition" "attachment; filename=afile.tar"}
@@ -86,16 +86,24 @@
 
   (testing "artifact store not registered"
     (with-redefs-fn {#'db/get-artifact-store (constantly nil)}
-      #(is (= "No such artifact store registered"
+      #(is (= {:message "No such artifact store registered"}
               (-> (stream-artifact "dev" "test" 1 "afile" "s3")
                   (:body))))))
 
   (testing "unsuccessful artifact stream"
     (with-redefs-fn {#'db/get-artifact-store (constantly {:url "bob-url"})
-                     #'http/get              (constantly {:status 404})}
+                     #'http/get              (constantly (future {:status 404}))}
       #(let [result @(stream-artifact "dev" "test" 1 "afile" "s3")]
          (is (and (= 404 (:status result))
-                  (= "No such artifact" (:body result))))))))
+                  (= {:message "No such artifact"} (:body result)))))))
+
+  (testing "artifact store connection failure"
+    (with-redefs-fn {#'db/get-artifact-store (constantly {:url "bob-url"})
+                     #'http/get              (constantly (future (f/fail "Shizz")))}
+      #(let [result @(stream-artifact "dev" "test" 1 "afile" "s3")]
+         (is (and (= 503 (:status result))
+                  (= {:message "Cannot reach artifact store: Shizz"}
+                     (:body result))))))))
 
 (deftest artifact-upload
   (testing "successful artifact upload"

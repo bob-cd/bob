@@ -510,7 +510,8 @@
 
   (testing "unsuccessfully fetch logs"
     (with-redefs-fn {#'db/run-id-of    (fn [& _] (throw (Exception. "nope")))}
-      #(is (= "nope" (pipeline-logs "test" 1 0 2))))))
+      #(is (= "nope"
+              (f/message (pipeline-logs "test" 1 0 2)))))))
 
 (deftest pipeline-image-fetch
   (testing "successfully fetch the image of a pipeline"
@@ -522,5 +523,7 @@
       #(is (= "img" (image-of "test")))))
 
   (testing "unsuccessfully fetch the image of a pipeline"
-    (with-redefs-fn {#'db/image-of (fn [& _] (throw (Exception. "nope")))}
-      #(is (f/failed? (image-of "test"))))))
+    (with-redefs-fn {#'db/image-of (constantly nil)}
+      #(is (and (f/failed? (image-of "test"))
+                (= "No such pipeline"
+                   (f/message (image-of "test"))))))))
