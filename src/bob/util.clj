@@ -24,6 +24,11 @@
   [msg]
   (res/ok {:message msg}))
 
+(defn service-unavailable
+  "Decorator for returning code 503 Service Unavailable."
+  [error]
+  (res/service-unavailable {:message error}))
+
 (defn format-id
   "Return docker container ids in the standard length"
   [^String id]

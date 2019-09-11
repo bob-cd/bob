@@ -28,11 +28,12 @@
 (defonce db-name (get env/env :bob-db-name "bob"))
 
 (m/defstate data-source
-  :start (let [data-source (h/make-datasource {:adapter       "postgresql"
-                                               :username      db-user
-                                               :database-name db-name
-                                               :server-name   db-host
-                                               :port-number   db-port})]
+  :start (let [data-source (h/make-datasource {:adapter            "postgresql"
+                                               :username           db-user
+                                               :database-name      db-name
+                                               :server-name        db-host
+                                               :port-number        db-port
+                                               :connection-timeout 5000})]
            (defonce db {:datasource data-source})
            data-source)
   :stop  (do (log/info "Stopping DB")
@@ -55,4 +56,8 @@
              (docker/disconnect docker-conn)))
 
 (comment
+  (m/start)
+
+  (m/stop)
+
   (get env/env :java-home "No Java?!"))

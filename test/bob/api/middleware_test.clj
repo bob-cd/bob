@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns bob.middleware-test
+(ns bob.api.middleware-test
   (:require [clojure.test :refer :all]
             [bob.api.middleware :refer :all]))
 
