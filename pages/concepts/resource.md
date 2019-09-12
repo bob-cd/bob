@@ -75,9 +75,9 @@ A Resource Provider is any system which has the following properties:
 - It is reachable from the network that Bob is in.
 - Exposes an endpoint at `/bob_request` upon which when a `GET` request is made,
   a `zip` file is sent back. The rationale for using the zip format is:
-      - Its quite ubiquitous and can be implemented with relative ease.
-      - Generally resources tend to be source code and have multiple files/folders and
-        using an archive makes it easy to send multiple things.
+    - Its quite ubiquitous and can be implemented with relative ease.
+    - Generally resources tend to be source code and have multiple files/folders and
+      using an archive makes it easy to send multiple things.
 
 A reference resource provider which handles simple Github pulls can be [found](https://github.com/bob-cd/resource-git)
 

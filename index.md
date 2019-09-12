@@ -18,7 +18,7 @@ As a _low-level_ building block, it allows users to _build_ their
 own CI/CD platform. Think of Bob as a **CI Engine**
 
 Want pipelines as code? Scale automatically to handle large build loads?
-Want to_teach_ Bob something it can't do yet? Just talk to Bob's REST API.
+Want to _teach_ Bob something it can't do yet? Just talk to Bob's REST API.
 Bob makes CI/CD [easy **and simple**](https://www.infoq.com/presentations/Simple-Made-Easy/).
 
 ## 🚧 This is still in its pre-alpha stages. 🚧
