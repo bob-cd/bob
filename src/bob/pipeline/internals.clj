@@ -14,8 +14,7 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.pipeline.internals
-  (:require [clojure.core.async :as a]
-            [failjure.core :as f]
+  (:require [failjure.core :as f]
             [clj-docker-client.core :as docker]
             [taoensso.timbre :as log]
             [bob.execution.internals :as e]
@@ -186,49 +185,49 @@
         first-step     (first steps)
         first-resource (:needs_resource first-step)
         number         (next-build-number-of pipeline)]
-    (a/go (f/try-all [_           (log/infof "Starting new run %d for %s" number pipeline)
-                      _           (db/insert-run states/db
-                                                 {:id       run-id
-                                                  :number   number
-                                                  :pipeline pipeline
-                                                  :status   "running"})
-                      _           (u/log-to-db (format "[bob] Pulling image %s" image) run-id)
-                      _           (e/pull image)
-                      _           (mark-image-for-gc image run-id)
-                      image       (resourceful-step first-step pipeline image run-id)
-                      _           (mark-image-for-gc image run-id)
-                      id          (e/build image first-step evars)
-                      id          (update-pid id run-id)
-                      id          (let [result (e/run id run-id)]
-                                    (when (f/failed? result)
-                                      (log/debugf "Removing failed container %s" id)
-                                      (docker/rm states/docker-conn id))
-                                    result)
-                      build-state (reduce (partial exec-step run-id evars pipeline number)
-                                          {:id      id
-                                           :mounted (if first-resource
-                                                      [first-resource]
-                                                      [])}
-                                          (rest steps))
-                      _           (log/debug "Removing last successful container")
-                      _           (docker/rm states/docker-conn (:id build-state))
-                      _           (log/infof "Marking run %d for %s as passed" number pipeline)
-                      _           (gc-images run-id)
-                      _           (db/update-run states/db
-                                                 {:status "passed"
-                                                  :id     run-id})
-                      _           (u/log-to-db "[bob] Run successful" run-id)]
-            id
-            (f/when-failed [err]
-              (log/infof "Marking run %d for %s as failed with reason: %s"
-                         number
-                         pipeline
-                         (f/message err))
-              (u/log-to-db (format "[bob] Run failed with reason: %s" (f/message err)) run-id)
-              (gc-images run-id)
-              (f/try* (db/update-run states/db
-                                     {:status "failed"
-                                      :id     run-id})))))))
+    (future (f/try-all [_           (log/infof "Starting new run %d for %s" number pipeline)
+                        _           (db/insert-run states/db
+                                                   {:id       run-id
+                                                    :number   number
+                                                    :pipeline pipeline
+                                                    :status   "running"})
+                        _           (u/log-to-db (format "[bob] Pulling image %s" image) run-id)
+                        _           (e/pull image)
+                        _           (mark-image-for-gc image run-id)
+                        image       (resourceful-step first-step pipeline image run-id)
+                        _           (mark-image-for-gc image run-id)
+                        id          (e/build image first-step evars)
+                        id          (update-pid id run-id)
+                        id          (let [result (e/run id run-id)]
+                                      (when (f/failed? result)
+                                        (log/debugf "Removing failed container %s" id)
+                                        (docker/rm states/docker-conn id))
+                                      result)
+                        build-state (reduce (partial exec-step run-id evars pipeline number)
+                                            {:id      id
+                                             :mounted (if first-resource
+                                                        [first-resource]
+                                                        [])}
+                                            (rest steps))
+                        _           (log/debug "Removing last successful container")
+                        _           (docker/rm states/docker-conn (:id build-state))
+                        _           (log/infof "Marking run %d for %s as passed" number pipeline)
+                        _           (gc-images run-id)
+                        _           (db/update-run states/db
+                                                   {:status "passed"
+                                                    :id     run-id})
+                        _           (u/log-to-db "[bob] Run successful" run-id)]
+              id
+              (f/when-failed [err]
+                (log/infof "Marking run %d for %s as failed with reason: %s"
+                           number
+                           pipeline
+                           (f/message err))
+                (u/log-to-db (format "[bob] Run failed with reason: %s" (f/message err)) run-id)
+                (gc-images run-id)
+                (f/try* (db/update-run states/db
+                                       {:status "failed"
+                                        :id     run-id})))))))
 
 (defn stop-pipeline
   "Stops a pipeline if running.

@@ -17,7 +17,6 @@
   (:require [clojure.test :refer :all]
             [failjure.core :as f]
             [clj-docker-client.core :as docker]
-            [clojure.core.async :as a]
             [taoensso.timbre :as log]
             [bob.test-utils :as tu]
             [bob.pipeline.internals :refer :all]
@@ -338,10 +337,10 @@
                                                      args)))
                        #'docker/rm            (constantly nil)
                        #'mark-image-for-gc    (constantly nil)}
-        #(is (= "id" (a/<!! (exec-steps "img"
-                                        [first-step {:cmd "hello2"}]
-                                        "test"
-                                        {})))))))
+        #(is (= "id" @(exec-steps "img"
+                                  [first-step {:cmd "hello2"}]
+                                  "test"
+                                  {}))))))
 
   (testing "successful steps execution without first resource"
     (let [first-step {:cmd "hello"}]
@@ -404,10 +403,10 @@
                                                      args)))
                        #'docker/rm            (constantly nil)
                        #'mark-image-for-gc    (constantly nil)}
-        #(is (= "id" (a/<!! (exec-steps "img"
-                                        [first-step {:cmd "hello2"}]
-                                        "test"
-                                        {})))))))
+        #(is (= "id" @(exec-steps "img"
+                                  [first-step {:cmd "hello2"}]
+                                  "test"
+                                  {}))))))
 
   (testing "unsuccessful steps execution"
     (log/merge-config! {:level :report})
@@ -434,10 +433,10 @@
                        #'reduce               nein
                        #'db/update-run        nein
                        #'mark-image-for-gc    nein}
-        #(is (f/failed? (a/<!! (exec-steps "img"
-                                           [first-step {:cmd "hello2"}]
-                                           "test"
-                                           {}))))))))
+        #(is (f/failed? @(exec-steps "img"
+                                     [first-step {:cmd "hello2"}]
+                                     "test"
+                                     {})))))))
 
 (deftest stopping-pipeline
   (testing "successfully stop a running pipeline"

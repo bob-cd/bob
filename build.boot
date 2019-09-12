@@ -22,7 +22,6 @@
 (set-env! :resource-paths #{"resources"}
           :source-paths   #{"src"}
           :dependencies   '[[org.clojure/clojure "1.10.1"]
-                            [org.clojure/core.async "0.4.500"]
                             [manifold "0.1.8"]
                             [aleph "0.4.6"]
                             [ring "1.7.1"]
