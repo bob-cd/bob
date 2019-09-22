@@ -45,15 +45,15 @@
     (with-open [stream zip-stream]
       (loop [entry (.getNextEntry stream)]
         (when entry
-          (let [savePath (str out-dir File/separatorChar (.getName entry))
-                saveFile (File. savePath)]
+          (let [save-path (str out-dir File/separatorChar (.getName entry))
+                save-file (File. save-path)]
             (if (.isDirectory entry)
-              (if-not (.exists saveFile)
-                (.mkdirs saveFile))
-              (let [parentDir (.getParentFile saveFile)]
-                (if-not (.exists parentDir)
-                  (.mkdirs parentDir))
-                (clojure.java.io/copy stream saveFile)))
+              (when-not (.exists save-file)
+                (.mkdirs save-file))
+              (let [parent-dir (.getParentFile save-file)]
+                (when-not (.exists parent-dir)
+                  (.mkdirs parent-dir))
+                (clojure.java.io/copy stream save-file)))
             (recur (.getNextEntry stream))))))))
 
 (defn url-of
