@@ -14,7 +14,7 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.pipeline.core
-  (:require [ring.util.response :as res]
+  (:require [ring.util.http-response :as res]
             [manifold.deferred :as d]
             [failjure.core :as f]
             [taoensso.timbre :as log]
@@ -167,6 +167,33 @@
     (if (f/failed? result)
       (res/bad-request {:message (f/message result)})
       (u/respond result))))
+
+
+(defn filter-pipelines
+  "Handler to fetch list of defined piplies"
+  []
+  (log/debug "Fetching list of defined pipelines")
+  (f/try-all [pipelines (db/filter-by states/db)
+              _ (log/debugf "Found pipelines %s" (vec pipelines))
+              result (mapv (fn [{:keys [name image]}]
+                            (log/debugf "Fetching resources for %s" name)
+                            (f/try-all [steps (db/ordered-steps states/db
+                                                            {:pipeline name})
+                                        resources (rdb/resources-by-pipeline states/db {:pipeline name})]
+                                       {
+                                        :name name
+                                        :image image
+                                        :steps (vec steps)
+                                        :resources (vec resources)
+                                        })
+                            ) pipelines)
+              _ (log/debugf "Prepared pipelines %s" result)]
+             (do
+               (log/debugf "Fetched pipelines: %s" result)
+               (res/ok result))
+             (f/when-failed [err]
+               (log/warnf "Failed to fetch list of pipelines: %s" (f/message err))
+               (u/respond (format "Failed to fetch pipelines %s " (f/message err))))))
 
 (comment
   (create "test"

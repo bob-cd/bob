@@ -114,6 +114,12 @@
         :summary "Deletes a pipeline in a group with the specified name."
         (p/remove-pipeline group name))
 
+       (rest/GET "/pipelines" []
+        :return schema/PipelinesResponse
+        :summary "Returns all defined Pipelines"
+        (p/filter-pipelines))
+
+
       (rest/POST "/external-resources/:name" []
         :return schema/SimpleResponse
         :path-params [name

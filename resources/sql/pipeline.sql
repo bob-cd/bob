@@ -95,3 +95,6 @@ DO UPDATE SET "content" = "logs"."content" || E'\n' || EXCLUDED.content;
 -- :name logs-of :query :1
 SELECT "content" FROM "logs"
 WHERE "run"=:run-id;
+
+-- :name filter-by :query :many
+SELECT "name", "image" FROM "pipelines"

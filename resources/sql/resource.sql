@@ -48,3 +48,8 @@ VALUES :tuple*:params;
 -- :name invalid-external-resources :query :many
 SELECT * FROM "resource_providers"
 WHERE "name"=:name AND "url" IS NOT NULL;
+
+-- :name resources-by-pipeline :query :many
+SELECT * FROM "resources"
+WHERE "pipeline"=:pipeline;
+
