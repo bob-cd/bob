@@ -96,5 +96,22 @@ DO UPDATE SET "content" = "logs"."content" || E'\n' || EXCLUDED.content;
 SELECT "content" FROM "logs"
 WHERE "run"=:run-id;
 
--- :name filter-by :query :many
-SELECT "name", "image" FROM "pipelines"
+-- :name get-pipelines :query :many
+SELECT p.name, p.image
+FROM "pipelines" p
+WHERE 1 = 1
+--~ (when (some? (:pipeline params)) "AND p.name = :pipeline")
+/*~ (when (some? (:status params)) "
+      AND EXISTS (SELECT r.status
+		FROM runs r 
+		WHERE r.pipeline = p.name
+ 		      AND :status = r.status 
+		LIMIT 1)")
+~*/
+
+-- coalesce(:pipeline, p.name) = p.name
+--       AND (:status is null OR EXISTS (SELECT r.status
+-- 		FROM "runs" r 
+-- 		WHERE r.pipeline = p.name
+--  		      AND :status = r.status 
+-- 		LIMIT 1))

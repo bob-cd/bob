@@ -55,9 +55,9 @@
                                     _ (doseq [resource resources]
                                         (let [{:keys [name params type provider]} resource]
                                           (log/debugf "Inserting resource:
-                                                       name: %s
-                                                       type: %s
-                                                       provider: %s"
+                                                      name: %s
+                                                      type: %s
+                                                      provider: %s"
                                                       name
                                                       type
                                                       provider)
@@ -77,9 +77,9 @@
                                                 artifact-path  :path
                                                 artifact-store :store} :produces_artifact} step]
                                           (log/debugf "Inserting step:
-                                                       cmd: %s
-                                                       needs resource: %s
-                                                       produces artifact: %s"
+                                                      cmd: %s
+                                                      needs resource: %s
+                                                      produces artifact: %s"
                                                       cmd
                                                       needs-resource
                                                       (:produces_artifact step))
@@ -90,13 +90,13 @@
                                                            :artifact_path     artifact-path
                                                            :artifact_store    artifact-store
                                                            :pipeline          pipeline})))]
-                          (u/respond "Ok")
-                          (f/when-failed [err]
-                            (log/errorf "Pipeline creation failed: %s." (f/message err))
-                            ;; TODO: See if this can be done in a txn instead
-                            (when-not (clojure.string/includes? (f/message err) "duplicate key")
-                              (f/try* (db/delete-pipeline states/db {:name pipeline})))
-                            (res/bad-request {:message "Pipeline creation error: Check params or if its already created"})))]
+                                   (u/respond "Ok")
+                                   (f/when-failed [err]
+                                                  (log/errorf "Pipeline creation failed: %s." (f/message err))
+                                                  ;; TODO: See if this can be done in a txn instead
+                                                  (when-not (clojure.string/includes? (f/message err) "duplicate key")
+                                                    (f/try* (db/delete-pipeline states/db {:name pipeline})))
+                                                  (res/bad-request {:message "Pipeline creation error: Check params or if its already created"})))]
     result))
 
 (defn start
@@ -112,13 +112,13 @@
                                                (map #(hash-map
                                                        (keyword (:key %)) (:value %)))
                                                (into {}))]
-                          (do (log/infof "Starting pipeline %s" pipeline)
-                              (p/exec-steps image steps pipeline vars)
-                              (u/respond "Ok"))
-                          (f/when-failed [err]
-                            (log/errorf "Error starting pipeline: %s" (f/message err))
-                            (res/bad-request
-                              {:message (f/message err)})))]
+                                   (do (log/infof "Starting pipeline %s" pipeline)
+                                       (p/exec-steps image steps pipeline vars)
+                                       (u/respond "Ok"))
+                                   (f/when-failed [err]
+                                                  (log/errorf "Error starting pipeline: %s" (f/message err))
+                                                  (res/bad-request
+                                                    {:message (f/message err)})))]
     result))
 
 (defn stop
@@ -169,31 +169,35 @@
       (u/respond result))))
 
 
-(defn filter-pipelines
+(defn get-pipelines
   "Handler to fetch list of defined piplies"
-  []
+  [group name status]
   (log/debug "Fetching list of defined pipelines")
-  (f/try-all [pipelines (db/filter-by states/db)
-              _ (log/debugf "Found pipelines %s" (vec pipelines))
-              result (mapv (fn [{:keys [name image]}]
-                            (log/debugf "Fetching resources for %s" name)
-                            (f/try-all [steps (db/ordered-steps states/db
-                                                            {:pipeline name})
-                                        resources (rdb/resources-by-pipeline states/db {:pipeline name})]
-                                       {
-                                        :name name
-                                        :image image
-                                        :steps (vec steps)
-                                        :resources (vec resources)
-                                        })
-                            ) pipelines)
-              _ (log/debugf "Prepared pipelines %s" result)]
-             (do
-               (log/debugf "Fetched pipelines: %s" result)
-               (res/ok result))
-             (f/when-failed [err]
-               (log/warnf "Failed to fetch list of pipelines: %s" (f/message err))
-               (u/respond (format "Failed to fetch pipelines %s " (f/message err))))))
+  (d/let-flow [pipeline-query (if (every? some? [group name])
+                                (u/name-of group name)
+                                (or group name))
+               query-params {:pipeline pipeline-query :status status }
+               result (f/try-all [pipelines (db/get-pipelines states/db query-params)
+                                  _ (log/debugf "Found pipelines %s" (vec pipelines))
+                                  result (mapv (fn [{:keys [name image]}]
+                                                 (f/try-all [f {:pipeline name}
+                                                             steps (db/ordered-steps states/db f)
+                                                             resources (rdb/resources-by-pipeline states/db f)]
+                                                            {
+                                                             :name name
+                                                             :data {
+                                                                   :image image
+                                                                   :steps (vec steps)
+                                                                   :resources (vec resources)}}))
+                                               pipelines)]
+                                 (do
+                                   (log/debugf "Fetching pipelines: %s" result)
+                                   (res/ok result))
+                                 (f/when-failed [err]
+                                                (let [error (format "Failed to fetch pipelines %s " (f/message err))]
+                                                  (log/warn error err)
+                                                  (u/respond error))))]
+    result ))
 
 (comment
   (create "test"

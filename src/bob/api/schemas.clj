@@ -40,11 +40,8 @@
                        (s/optional-key :resources) [Resource]})
 
 (s/defschema PipelinesResponse (s/either {:message String}
-                                         [{:name                       String
-                                           :steps                      [Step]
-                                           :image                      String
-                                           (s/optional-key :vars)      {Keyword String}
-                                           (s/optional-key :resources) [Resource]}]))
+                                         [{:name   String
+                                           :data   Pipeline}]))
 
 (s/defschema LogsResponse (s/either {:message [String]}
                                     SimpleResponse))

@@ -116,8 +116,11 @@
 
        (rest/GET "/pipelines" []
         :return schema/PipelinesResponse
+        :query-params [{group :- String nil}
+                      {name :- String nil}
+                      {status :- String nil}]
         :summary "Returns all defined Pipelines"
-        (p/filter-pipelines))
+        (p/get-pipelines group name status))
 
 
       (rest/POST "/external-resources/:name" []

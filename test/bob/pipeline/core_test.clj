@@ -303,3 +303,20 @@
               (-> @(logs-of "dev" "test" 1 0 100)
                   :body
                   :message))))))
+
+(deftest get-pipeleines
+  (testing "Filter pipelines"
+    (with-redefs-fn {#'db/get-pipelines           (fn [& args] [{:name "test:Test" :image "test 1.7"}])
+                     #'db/ordered-steps           (fn [& args] [{:cmd "ls"} {:cmd "mkdir"}])
+                     #'rdb/resources-by-pipeline  (fn [& args] [{:name "git"}])}
+      #(is (= [{:name "test:Test", :data {:image "test 1.7", :steps [{:cmd "ls"} {:cmd "mkdir"}], :resources [{:name "git"}]}}]
+              (-> @(get-pipelines nil nil nil)
+                  :body)))))
+
+  (comment testing "Empty result returns empty "
+    (with-redefs-fn {#'db/get-pipelines (fn [& args] nil)}
+      #(is (= []
+              (-> @(get-pipelines nil nil nil)
+                  :body
+                  :message))))))
+
