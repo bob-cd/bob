@@ -41,6 +41,32 @@ See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the road
     - Optionally if Resources and Artifacts are to be used follow the instuctions in the Resources [doc](https://bob-cd.github.io/bob/concepts/resource) and Artifacts [doc](https://bob-cd.github.io/bob/concepts/artifact) respectively.
     - Run `boot run` to start the server on port **7777**.
 
+## Running integration tests:
+
+**Docker may need to be installed for this**
+
+One way to run the integration tests is to use docker. In the `integration-tests` dir, run:
+
+`docker-compose up --abort-on-container-exit integration-tests`
+
+*Note*: This will try to create new containers that might have been created by running `docker-compose up` in the source root. Hence you might need to clean up.
+
+You can also run the tests using [strest](https://www.npmjs.com/package/@strest/cli). 
+
+- Start `bob` how ever you like
+- Install strest 
+
+  ```
+  npm i -g @strest/cli
+  ```
+- Run 
+ 
+ ```
+ stress bob-tests.strest.yaml
+ ```
+
+*Note*: We're simulating a statful client on the tests. Which means you'll have to reset the database between each run. (Drop the db docker container and restart it)
+
 ## Running Bob in Docker
 Bob uses Docker as its engine to execute builds, but its now possible to run Bob
 inside Docker using [dind](https://hub.docker.com/_/docker).
@@ -84,14 +110,6 @@ Its **STRONGLY RECOMMENDED** to run Bob on its own isolated cluster as it uses c
    Bob's Deployment accordingly.
 3. Bob will be available via its load balancer's public IP.
 
-## Running integration tests:
-
-**Docker needs to be installed for this**
-
-In the `integration-tests` dir, run:
-
-`docker-compose up --abort-on-container-exit integration-tests`
-
 ## For Cursive users:
 This project is built using the Boot build tool which is unsupported on Cursive at the moment.
 
@@ -103,3 +121,9 @@ This project is built using the Boot build tool which is unsupported on Cursive 
 - Happy development!
 
 ### Extensive Usage + API [docs](https://bob-cd.github.io/bob)
+
+## Join the conversation 
+
+If you are not already part of the clojurians slack workspace head over [here](http://clojurians.net/). In there your'll find our slack channel `#bob-cd`. You can come with us with any questions that seem to0 lengthy for github issues.
+
+Happy Coding
