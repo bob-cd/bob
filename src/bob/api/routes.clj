@@ -119,7 +119,7 @@
         :query-params [{group :- String nil}
                       {name :- String nil}
                       {status :- String nil}]
-        :summary "Returns all defined Pipelines"
+        :summary "Returns all defined Pipelines. Search params are case sensitive :-)"
         (p/get-pipelines group name status))
 
 

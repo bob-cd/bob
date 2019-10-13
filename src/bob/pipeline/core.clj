@@ -168,6 +168,27 @@
       (res/bad-request {:message (f/message result)})
       (u/respond result))))
 
+(defn make-step 
+  "Convertes step from the database to conform with the schema"
+  [{:keys [cmd needs_resource produces_artifact artifact_path artifact_store]}]
+  (merge {:cmd cmd }
+         (when (some? needs_resource) {:needs_resource needs_resource})
+         (when (some? produces_artifact) 
+           {:produces_artifact 
+            {:name produces_artifact
+             :path artifact_path
+             :store artifact_store}})))
+
+(defn make-resource 
+  "Convert and enrich resource from the databse to comform with schema"
+  [{:keys [name type provider pipeline]}]
+  {
+   :name name
+   :type type
+   :provider provider
+   :params (ri/get-resource-params pipeline name)})
+
+
 
 (defn get-pipelines
   "Handler to fetch list of defined piplies"
@@ -180,18 +201,19 @@
                result (f/try-all [pipelines (db/get-pipelines states/db query-params)
                                   _ (log/debugf "Found pipelines %s" (vec pipelines))
                                   result (mapv (fn [{:keys [name image]}]
-                                                 (f/try-all [f {:pipeline name}
-                                                             steps (db/ordered-steps states/db f)
-                                                             resources (rdb/resources-by-pipeline states/db f)]
+                                                 (f/try-all [filter {:pipeline name}
+                                                             steps (mapv make-step (db/ordered-steps states/db filter))
+                                                             resources (mapv make-resource
+                                                                         (rdb/resources-by-pipeline states/db filter))]
                                                             {
                                                              :name name
                                                              :data {
                                                                    :image image
-                                                                   :steps (vec steps)
-                                                                   :resources (vec resources)}}))
+                                                                   :steps steps
+                                                                   :resources resources}}))
                                                pipelines)]
                                  (do
-                                   (log/debugf "Fetching pipelines: %s" result)
+                                   (log/debugf "Fetched pipelines: %s" result)
                                    (res/ok result))
                                  (f/when-failed [err]
                                                 (let [error (format "Failed to fetch pipelines %s " (f/message err))]

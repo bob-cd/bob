@@ -278,6 +278,38 @@ requests:
       - jsonpath: "content.message"
         expect: "failed"
 
+  getPipelines:
+    request:
+      url: "http://bob:7777/api/pipelines"
+      method: "GET"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content[0].name"
+        expect: "dev:test"
+      - jsonpath: "content[1].name"
+        expect: "dev:this-fails"
+
+  getPipelinesByStatus:
+    request:
+      url: "http://bob:7777/api/pipelines?status=failed"
+      method: "GET"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content[0].name"
+        expect: "dev:this-fails"
+
+  getPipelinesByGroupAndName:
+    request:
+      url: "http://bob:7777/api/pipelines?group=dev&name=test"
+      method: "GET"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content[0].name"
+        expect: "dev:test"
+
   pipelineArtifacts:
     request:
       url: "http://bob:7777/api/pipelines/groups/dev/names/test/number/1/artifacts/store/local/name/afile"
