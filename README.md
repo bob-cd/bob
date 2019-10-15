@@ -51,21 +51,19 @@ One way to run the integration tests is to use docker. In the `integration-tests
 
 *Note*: This will try to create new containers that might have been created by running `docker-compose up` in the source root. Hence you might need to clean up.
 
-You can also run the tests using [strest](https://www.npmjs.com/package/@strest/cli). 
+You can also run the tests using [strest](https://www.npmjs.com/package/@strest/cli).
 
-- Start `bob` how ever you like
-- Install strest 
-
+- Start Bob either via boot or docker as mentioned above.
+- Install strest
   ```
   npm i -g @strest/cli
   ```
-- Run 
- 
- ```
- stress bob-tests.strest.yaml
- ```
+- Run
+  ```
+  strest bob-tests.strest.yaml
+  ```
 
-*Note*: We're simulating a statful client on the tests. Which means you'll have to reset the database between each run. (Drop the db docker container and restart it)
+*Note*: We're simulating a stateful client on the tests. Which means you'll have to reset the database between each run. (Drop the db docker container and restart it)
 
 ## Running Bob in Docker
 Bob uses Docker as its engine to execute builds, but its now possible to run Bob
@@ -122,8 +120,12 @@ This project is built using the Boot build tool which is unsupported on Cursive 
 
 ### Extensive Usage + API [docs](https://bob-cd.github.io/bob)
 
-## Join the conversation 
+## Join the conversation
 
-If you are not already part of the clojurians slack workspace head over [here](http://clojurians.net/). In there your'll find our slack channel `#bob-cd`. You can come with us with any questions that seem to0 lengthy for github issues.
+For discussions regarding the usage and general development of Bob join the Gitter [channel](https://gitter.im/bob-cd/bob).
 
-Happy Coding
+For a more Clojure specific discussion we also have a [clojurians](http://clojurians.net/) Slack workspace head over [here](http://clojurians.net/). find our slack channel `#bob-cd`.
+
+You can come with us with any questions that seem too lengthy for github issues.
+
+Happy Coding!
