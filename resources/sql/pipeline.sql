@@ -100,8 +100,8 @@ WHERE "run"=:run-id;
 SELECT p.name, p.image
 FROM "pipelines" p
 WHERE 1 = 1
---~ (when (some? (:pipeline params)) "AND p.name = :pipeline")
-/*~ (when (some? (:status params)) "
+--~ (when (not-empty (:pipeline params)) "AND p.name = :pipeline")
+/*~ (when (not-empty (:status params)) "
       AND EXISTS (SELECT r.status
 		FROM runs r 
 		WHERE r.pipeline = p.name
@@ -109,9 +109,3 @@ WHERE 1 = 1
 		LIMIT 1)")
 ~*/
 
--- coalesce(:pipeline, p.name) = p.name
---       AND (:status is null OR EXISTS (SELECT r.status
--- 		FROM "runs" r 
--- 		WHERE r.pipeline = p.name
---  		      AND :status = r.status 
--- 		LIMIT 1))
