@@ -42,3 +42,18 @@
               (url-of {:provider "git"
                        :name     "r1"}
                       "test"))))))
+
+(deftest get-resource-params-test
+  (testing "Testing if restult from DB is mapped correctly"
+    (with-redefs-fn {#'db/resource-params-of  (fn [pipeline name]
+                                                [{:name "res"
+                                                  :key "env"
+                                                  :value "dev"
+                                                  :pipeline "dev:test"}
+                                                 {:name "res"
+                                                  :key "database"
+                                                  :value "jdbc:mysql://db.example.com/test"
+                                                  :pipeline "dev:test"}])}
+      #(is (= (get-resource-params "res" "dev:test")
+              {:env "dev"
+               :database "jdbc:mysql://db.example.com/test"})))))

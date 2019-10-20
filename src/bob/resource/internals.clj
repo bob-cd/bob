@@ -142,6 +142,18 @@
   (some? (db/invalid-external-resources states/db
                                         {:name (:provider resource)})))
 
+(defn get-resource-params
+  "Fetches list of parameters associated with the resource"
+  [pipeline name]
+  (reduce
+    (fn
+      [r {:keys [key value]}]
+      (assoc r (keyword key) value))
+    {}
+    (db/resource-params-of states/db
+                           {:name     name
+                            :pipeline pipeline})))
+
 (comment
   (def resource {:name     "my-source"
                  :type     "external"

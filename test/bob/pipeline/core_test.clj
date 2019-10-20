@@ -303,3 +303,88 @@
               (-> @(logs-of "dev" "test" 1 0 100)
                   :body
                   :message))))))
+
+(deftest get-pipeleines
+  (testing "Filter pipelines"
+    (with-redefs-fn {#'db/get-pipelines           (fn [_ filter]
+                                                    (tu/check-and-fail
+                                                     #(= {:pipeline nil
+                                                          :status nil}
+                                                         filter))
+                                                    [{:name "test:Test" :image "test 1.7"}])
+                     #'db/ordered-steps           (fn [_ filter]
+                                                    (tu/check-and-fail
+                                                     #(= {:pipeline "test:Test"}
+                                                         filter))
+                                                    [{
+                                                      :id 1
+                                                      :cmd "echo hello"
+                                                      :pipeline "dev:test"
+                                                      :needs_resource nil
+                                                      :produces_artifact "afile"
+                                                      :artifact_path "test.txt"
+                                                      :artifact_store "local"}
+                                                     {:cmd "mkdir"}])
+                     #'rdb/resources-by-pipeline  (fn [_ filter]
+                                                    (tu/check-and-fail
+                                                     #(= {:pipeline "test:Test"}
+                                                         filter))
+                                                    [{:id 1
+                                                      :provider "git"
+                                                      :name "src"
+                                                      :pipeline "test:Test"}])
+                     #'rdb/resource-params-of     (fn [_ filter]
+                                                    (tu/check-and-fail
+                                                     #(= {:name "src"
+                                                          :pipeline "test:Test"}
+                                                         filter))
+                                                    [{
+                                                      :name "git"
+                                                      :key "env"
+                                                      :value "dev"
+                                                      :pipeline "test:Test" }])}
+      #(is (= [{:name "test:Test",
+                :data
+                {:image "test 1.7",
+                 :steps
+                 [{:cmd "echo hello",
+                   :produces_artifact
+                   {:name "afile", :path "test.txt", :store "local"}}
+                  {:cmd "mkdir"}],
+                 :resources [{:name "src"
+                              :type nil
+                              :provider "git"
+                              :params {:env "dev"}}]}}]
+              (-> @(get-pipelines nil nil nil)
+                  :body)))))
+
+  (testing "Empty result returns empty "
+    (with-redefs-fn {#'db/get-pipelines (fn [_ filter]
+                                          nil)}
+      #(is (= []
+              (-> @(get-pipelines "dev" "test" nil)
+                  :body)))))
+
+  (testing "Test filters created correctly"
+    (with-redefs-fn {#'db/get-pipelines (fn [_ filter-map]
+                                          (tu/check-and-fail
+                                           #(= {:pipeline "dev:test"
+                                                :status nil}
+                                               filter-map))
+                                          nil)}
+      #(get-pipelines "dev" "test" nil))
+    (with-redefs-fn {#'db/get-pipelines (fn [_ filter]
+                                          (tu/check-and-fail
+                                           #(= {:name "dev:test"
+                                                :status "pass"}
+                                               filter))
+                                          nil)}
+      #(get-pipelines "dev" "test" "pass"))
+    (with-redefs-fn {#'db/get-pipelines (fn [_ filter]
+                                          (tu/check-and-fail
+                                           #(= {:name "test"
+                                                :status "pass"}
+                                               filter))
+                                          nil)}
+      #(get-pipelines nil "test" "pass"))))
+
