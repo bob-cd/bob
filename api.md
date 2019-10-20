@@ -137,6 +137,27 @@ Fetches the status of pipeline run in a group with the specified name and number
 | ---- | ----------- | ------ |
 | 200 |  | [StatusResponse](#statusresponse) |
 
+### /api/pipelines
+
+#### GET
+##### Summary:
+
+Returns all defined Pipelines. Search params are case sensitive :-)
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| group | query |  | No | string |
+| name | query |  | No | string |
+| status | query |  | No | string |
+
+##### Responses
+
+| Code | Description | Schema |
+| ---- | ----------- | ------ |
+| 200 |  | [PipelinesResponse](#pipelinesresponse) |
+
 ### /api/external-resources/{name}
 
 #### POST
@@ -330,6 +351,24 @@ Runs health checks for Bob.
 | ---- | ---- | ----------- | -------- |
 | PipelineVars | object |  |  |
 
+#### PipelinesResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| message | string |  | Yes |
+
+#### PipelinesResponseDataResourcesParams
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| PipelinesResponseDataResourcesParams | object |  |  |
+
+#### PipelinesResponseDataVars
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| PipelinesResponseDataVars | object |  |  |
+
 #### Resource
 
 | Name | Type | Description | Required |
@@ -370,3 +409,4 @@ Runs health checks for Bob.
 | cmd | string |  | Yes |
 | needs_resource | string |  | No |
 | produces_artifact | [Artifact](#artifact) |  | No |
+
