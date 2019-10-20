@@ -16,12 +16,12 @@ See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the road
 
 ## Build requirements
 - Any OS supporting Java and Docker
-- JDK 8+ (latest preferred for optimal performance)
+- JDK 8 to 12. 13+ will be supported when [#56](https://github.com/bob-cd/bob/issues/56) is fixed.
 - [Boot](https://boot-clj.com/) 2.7+
 
 ## Running requirements
 - Any OS supporting Java and Docker
-- JRE 8+ (latest preferred for optimal performance)
+- JDK 8 to 12. 13+ will be supported when [#56](https://github.com/bob-cd/bob/issues/56) is fixed.
 - Docker (latest preferred for optimal performance)
 
 ## Testing, building and running locally
@@ -124,7 +124,7 @@ This project is built using the Boot build tool which is unsupported on Cursive 
 
 For discussions regarding the usage and general development of Bob join the Gitter [channel](https://gitter.im/bob-cd/bob).
 
-For a more Clojure specific discussion we also have a [clojurians](http://clojurians.net/) Slack workspace head over [here](http://clojurians.net/). find our slack channel `#bob-cd`.
+For a more Clojure specific discussion we also have a [clojurians](http://clojurians.net/) Slack workspace on the channel `#bob-cd`.
 
 You can come with us with any questions that seem too lengthy for github issues.
 
