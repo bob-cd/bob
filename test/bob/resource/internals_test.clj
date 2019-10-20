@@ -25,15 +25,15 @@
   (testing "generation of GET url from resource"
     (with-redefs-fn {#'db/external-resource-url (fn [_ params]
                                                   (tu/check-and-fail
-                                                   #(= "git"
-                                                       (:name params)))
+                                                    #(= "git"
+                                                        (:name params)))
                                                   {:url "http://url.com"})
                      #'db/resource-params-of    (fn [_ params]
                                                   (tu/check-and-fail
-                                                   #(and (= "r1"
-                                                            (:name params))
-                                                         (= "test"
-                                                            (:pipeline params))))
+                                                    #(and (= "r1"
+                                                             (:name params))
+                                                          (= "test"
+                                                             (:pipeline params))))
                                                   [{:key   "k1"
                                                     :value "v1"}
                                                    {:key   "k2"
@@ -44,16 +44,16 @@
                       "test"))))))
 
 (deftest get-resource-params-test
-  (testing "Testing if restult from DB is mapped correctly"
-    (with-redefs-fn {#'db/resource-params-of  (fn [pipeline name]
-                                                [{:name "res"
-                                                  :key "env"
-                                                  :value "dev"
-                                                  :pipeline "dev:test"}
-                                                 {:name "res"
-                                                  :key "database"
-                                                  :value "jdbc:mysql://db.example.com/test"
-                                                  :pipeline "dev:test"}])}
+  (testing "Testing if result from DB is mapped correctly"
+    (with-redefs-fn {#'db/resource-params-of (fn [pipeline name]
+                                               [{:name     "res"
+                                                 :key      "env"
+                                                 :value    "dev"
+                                                 :pipeline "dev:test"}
+                                                {:name     "res"
+                                                 :key      "database"
+                                                 :value    "jdbc:mysql://db.example.com/test"
+                                                 :pipeline "dev:test"}])}
       #(is (= (get-resource-params "res" "dev:test")
-              {:env "dev"
+              {:env      "dev"
                :database "jdbc:mysql://db.example.com/test"})))))

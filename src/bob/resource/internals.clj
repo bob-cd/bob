@@ -112,11 +112,11 @@
               _                 (rm-r! path true)
               _                 (log/debug "Commiting resourceful container")
               provisioned-image (docker/commit-container
-                                 states/docker-conn
-                                 id
-                                 (format "%s/%d" id (System/currentTimeMillis))
-                                 "latest"
-                                 cmd)
+                                  states/docker-conn
+                                  id
+                                  (format "%s/%d" id (System/currentTimeMillis))
+                                  "latest"
+                                  cmd)
               _                 (log/debug "Removing temp container")
               _                 (docker/rm states/docker-conn id)]
     provisioned-image
@@ -146,8 +146,7 @@
   "Fetches list of parameters associated with the resource"
   [pipeline name]
   (reduce
-    (fn
-      [r {:keys [key value]}]
+    (fn [r {:keys [key value]}]
       (assoc r (keyword key) value))
     {}
     (db/resource-params-of states/db

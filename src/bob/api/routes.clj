@@ -117,11 +117,10 @@
        (rest/GET "/pipelines" []
         :return schema/PipelinesResponse
         :query-params [{group :- String nil}
-                      {name :- String nil}
-                      {status :- String nil}]
+                       {name :- String nil}
+                       {status :- String nil}]
         :summary "Returns all defined Pipelines. Search params are case sensitive :-)"
         (p/get-pipelines group name status))
-
 
       (rest/POST "/external-resources/:name" []
         :return schema/SimpleResponse

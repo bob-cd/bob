@@ -27,7 +27,7 @@
                             [ring "1.7.1"]
                             [ring/ring-json "0.5.0"]
                             [compojure "1.6.1"]
-                            [com.fasterxml.jackson.core/jackson-core "2.9.9"]
+                            [com.fasterxml.jackson.core/jackson-core "2.10.0"]
                             [failjure "1.5.0"]
                             [org.postgresql/postgresql "42.2.8"]
                             [ragtime "0.8.0"]
