@@ -43,7 +43,10 @@ jobs:
       - checkout
       - run:
           name: "Integration tests"
-          command: "cd integration-tests && docker-compose up --abort-on-container-exit integration-tests"
+          command: |
+            cd integration-tests     && \
+            docker-compose up -d bob && \
+            docker-compose up --abort-on-container-exit --scale bob-node=3 integration-tests
       - run:
           name: "Docker Hub push"
           command: |

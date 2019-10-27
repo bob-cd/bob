@@ -46,7 +46,7 @@
 (s/defschema LogsResponse (s/either {:message [String]}
                                     SimpleResponse))
 
-(s/defschema StatusResponse {:message (s/enum :running :passed :failed)})
+(s/defschema StatusResponse {:message (s/enum :running :passed :failed :stopped)})
 
 (s/defschema RunningResponse {:message [{:group String
                                          :name  String}]})

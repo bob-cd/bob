@@ -52,10 +52,6 @@ UPDATE "runs"
 SET "last_pid"=:pid
 WHERE "id"=:id;
 
--- :name run-stopped? :query :1
-SELECT "stopped" FROM "runs"
-WHERE "id"=:id;
-
 -- :name pipeline-runs :query :many
 SELECT * FROM "runs"
 WHERE "pipeline"=:pipeline;
@@ -71,7 +67,7 @@ WHERE "id"=:id;
 
 -- :name stop-run :execute :1
 UPDATE "runs"
-SET "stopped"=TRUE
+SET "status"='stopped'
 WHERE "pipeline"=:pipeline AND "number"=:number;
 
 -- :name pid-of-run :query :1
@@ -103,9 +99,8 @@ WHERE 1 = 1
 --~ (when (not-empty (:pipeline params)) "AND p.name = :pipeline")
 /*~ (when (not-empty (:status params)) "
       AND EXISTS (SELECT r.status
-		FROM runs r 
+		FROM runs r
 		WHERE r.pipeline = p.name
- 		      AND :status = r.status 
+ 		      AND :status = r.status
 		LIMIT 1)")
 ~*/
-

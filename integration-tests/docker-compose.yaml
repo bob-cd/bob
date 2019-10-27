@@ -29,23 +29,6 @@ services:
     networks:
       - bob_net
 
-  bob:
-    image: "bobcd/bob"
-    build: ".."
-    privileged: true
-    container_name: "bob"
-    depends_on:
-      - db
-    environment:
-      - BOB_DB_HOST=db
-      - BOB_DB_PORT=5432
-      - BOB_DB_USER=bob
-      - BOB_DB_NAME=bob
-    ports:
-      - "7777:7777"
-    networks:
-      - bob_net
-
   resource-git:
     image: "bobcd/resource-git"
     container_name: "resource-git"
@@ -59,6 +42,34 @@ services:
     container_name: "artifact-local"
     ports:
       - "8001:8001"
+    networks:
+      - bob_net
+
+  bob-node:
+    image: "bobcd/bob"
+    build: ".."
+    privileged: true
+    depends_on:
+      - db
+    environment:
+      - BOB_DB_HOST=db
+      - BOB_DB_PORT=5432
+      - BOB_DB_USER=bob
+      - BOB_DB_NAME=bob
+    expose:
+      - "7777"
+    networks:
+      - bob_net
+
+  bob:
+    image: nginx:alpine
+    container_name: "bob-lb"
+    volumes:
+      - ../nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - bob-node
+    ports:
+      - "7777:7777"
     networks:
       - bob_net
 

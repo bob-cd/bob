@@ -51,8 +51,6 @@
 
   (update-runs-sqlvec {:pid "aaa" :id "aaaaa"})
 
-  (run-stopped?-sqlvec {:id "aaa"})
-
   (pipeline-runs-sqlvec {:pipeline "test"})
 
   (insert-run-sqlvec {:id       "id"

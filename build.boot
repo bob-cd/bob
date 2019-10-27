@@ -38,6 +38,8 @@
                             [lispyclouds/clj-docker-client "0.3.2"]
                             [mount "0.1.16"]
                             [environ "1.1.0"]
+                            [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.8.3"]
+                            [cheshire "5.9.0"]
                             [com.taoensso/timbre "4.10.0"]
                             [javax.xml.bind/jaxb-api "2.3.0"]           ;; For Aleph's XML dependency, Java 8 compat
                             [io.netty/netty-all "4.1.36.Final"]         ;; Forced Netty version for Java 9+ compat

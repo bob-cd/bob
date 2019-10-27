@@ -17,13 +17,18 @@
   (:require [failjure.core :as f]
             [clj-docker-client.core :as docker]
             [taoensso.timbre :as log]
+            [cheshire.core :as json]
+            [mount.core :as m]
             [bob.execution.internals :as e]
             [bob.util :as u]
             [bob.resource.core :as r]
             [bob.artifact.core :as artifact]
             [bob.states :as states]
             [bob.pipeline.db :as db]
-            [bob.resource.db :as rdb]))
+            [bob.resource.db :as rdb])
+  (:import (com.impossibl.postgres.jdbc PGDataSource)
+           (com.impossibl.postgres.api.jdbc PGNotificationListener
+                                            PGConnection)))
 
 ;; TODO: Simpler solution, see if it can be improved
 (def ^:private images-produced (atom {}))
@@ -83,11 +88,11 @@
   [build-state step evars pipeline run-id]
   (f/try-all [_             (log/debugf "Commiting container: %s" (:id build-state))
               image         (docker/commit-container
-                             states/docker-conn
-                             (:id build-state)
-                             (format "%s/%d" (:id build-state) (System/currentTimeMillis))
-                             "latest"
-                             (:cmd step))
+                              states/docker-conn
+                              (:id build-state)
+                              (format "%s/%d" (:id build-state) (System/currentTimeMillis))
+                              "latest"
+                              (:cmd step))
               _             (mark-image-for-gc image run-id)
               _             (log/debug "Removing commited container")
               _             (docker/rm states/docker-conn (:id build-state))
@@ -116,48 +121,43 @@
   Used to reduce an initial state with the list of steps, executing
   them to the final state.
 
-  Stops the reduce if the pipeline stop has been signalled or any
-  step has a non-zero exit.
+  Short circuits the reduce if the last step has a non-zero exit.
 
   Additionally uploads the artifact if produced in a step with the
   PWD as the prefix.
 
   Returns the next state or errors if any."
   [run-id evars pipeline number build-state step]
-  (let [stopped? (f/try* (-> (db/run-stopped? states/db
-                                              {:id run-id})
-                             (:stopped)))]
-    (if (or stopped?
-            (f/failed? build-state))
-      (reduced build-state)
-      (f/try-all [_            (log/infof "Executing step %s in pipeline %s"
-                                          step
-                                          pipeline)
-                  result       (next-step build-state step evars pipeline run-id)
-                  id           (update-pid (:id result) run-id)
-                  id           (let [result (e/run id run-id)]
-                                 (when (f/failed? result)
-                                   (log/debugf "Removing failed container %s" id)
-                                   (docker/rm states/docker-conn id))
-                                 result)
-                  [group name] (clojure.string/split pipeline #":")
-                  _            (when-let [artifact (:produces_artifact step)]
-                                 (u/log-to-db (format "[bob] Uploading artifact %s" artifact) run-id)
-                                 (artifact/upload-artifact group
-                                                           name
-                                                           number
-                                                           artifact
-                                                           id
-                                                           (str (get-in (docker/inspect states/docker-conn id)
-                                                                        [:Config :WorkingDir])
-                                                                "/"
-                                                                (:artifact_path step))
-                                                           (:artifact_store step)))]
-        {:id      id
-         :mounted (:mounted result)}
-        (f/when-failed [err]
-          (log/errorf "Failed to exec step: %s with error %s" step (f/message err))
-          err)))))
+  (if (f/failed? build-state)
+    (reduced build-state)
+    (f/try-all [_      (log/infof "Executing step %s in pipeline %s"
+                                  step
+                                  pipeline)
+                result (next-step build-state step evars pipeline run-id)
+                id     (update-pid (:id result) run-id)
+                id     (let [result (e/run id run-id)]
+                         (when (f/failed? result)
+                           (log/debugf "Removing failed container %s" id)
+                           (docker/rm states/docker-conn id))
+                         result)
+                [group name] (clojure.string/split pipeline #":")
+                _      (when-let [artifact (:produces_artifact step)]
+                         (u/log-to-db (format "[bob] Uploading artifact %s" artifact) run-id)
+                         (artifact/upload-artifact group
+                                                   name
+                                                   number
+                                                   artifact
+                                                   id
+                                                   (str (get-in (docker/inspect states/docker-conn id)
+                                                                [:Config :WorkingDir])
+                                                        "/"
+                                                        (:artifact_path step))
+                                                   (:artifact_store step)))]
+      {:id      id
+       :mounted (:mounted result)}
+      (f/when-failed [err]
+        (log/errorf "Failed to exec step: %s with error %s" step (f/message err))
+        err))))
 
 (defn next-build-number-of
   "Generates a sequential build number for a pipeline."
@@ -219,45 +219,74 @@
                         _           (u/log-to-db "[bob] Run successful" run-id)]
               id
               (f/when-failed [err]
-                (log/infof "Marking run %d for %s as failed with reason: %s"
-                           number
-                           pipeline
-                           (f/message err))
-                (u/log-to-db (format "[bob] Run failed with reason: %s" (f/message err)) run-id)
+                (let [status (f/try* (:status (db/status-of states/db {:pipeline pipeline :number number})))]
+                  (when-not (= status "stopped")
+                    (log/infof "Marking run %d for %s as failed with reason: %s"
+                               number
+                               pipeline
+                               (f/message err))
+                    (u/log-to-db (format "[bob] Run failed with reason: %s" (f/message err)) run-id)
+                    (f/try* (db/update-run states/db
+                                           {:status "failed"
+                                            :id     run-id}))))
                 (gc-images run-id)
-                (f/try* (db/update-run states/db
-                                       {:status "failed"
-                                        :id     run-id})))))))
+                err)))))
+
+(defn container-in-node
+  "Checks if the container with `id` is running in the local Docker daemon."
+  [id]
+  (some #(clojure.string/starts-with? (:Id %) id)
+        (f/try* (docker/ps states/docker-conn))))
+
+(defn sync-action
+  "Dispatches either the action or signal based on external signal and container locality.
+
+  Must be used by operations which rely on the container being local to the node.
+
+  Params:
+  - `signalled?`: to denote a external DB signalling
+  - `id`: the container id to be acted upon
+  - `action-fn`: the fn that does the effects on the container like stopping/pausing/unpausing
+  - `signalling-fn`: the fn that does the effects on the DB causing the signal"
+  [signalled? id action-fn signalling-fn]
+  (cond
+    (and (not signalled?) (not (container-in-node id)))
+    (signalling-fn)
+    (and (not signalled?) (container-in-node id))
+    (do (action-fn)
+        (signalling-fn))
+    (and signalled? (container-in-node id))
+    (action-fn)))
 
 (defn stop-pipeline
   "Stops a pipeline if running.
-  Performs the following:
-  - Sets the field *stopped* in the runs table to true such that exec-step won't reduce any further.
-  - Gets the *last_pid* field from the runs table.
-  - Checks if that container with that id is running; if yes, kills it.
+
   Returns Ok or any errors if any."
-  [name number]
-  (let [criteria {:pipeline name
-                  :number   number}
-        status   (f/try* (-> (db/status-of states/db criteria)
-                             (:status)))]
-    (when (= status "running")
-      (log/debugf "Stopping run %d of pipeline %s" number name)
-      (f/try-all [_      (db/stop-run states/db criteria)
-                  pid    (-> (db/pid-of-run states/db criteria)
-                             (:last_pid))
-                  status (e/status-of pid)
-                  _      (when (status :running?)
-                           (log/debugf "Killing container %s" pid)
-                           (e/kill-container pid)
-                           (docker/rm states/docker-conn pid))
-                  run-id (-> (db/run-id-of states/db criteria)
-                             (:id))
-                  _      (gc-images run-id)]
-        "Ok"
-        (f/when-failed [err]
-          (log/errorf "Failed to stop pipeline: %s" (f/message err))
-          (f/message err))))))
+  ([name number]
+   (stop-pipeline name number false))
+  ([name number signalled?]
+   (let [criteria {:pipeline name
+                   :number   number}
+         status   (f/try* (-> (db/status-of states/db criteria)
+                              (:status)))]
+     (when (= status "running")
+       (log/debugf "Stopping run %d of pipeline %s" number name)
+       (f/try-all [pid         (-> (db/pid-of-run states/db criteria)
+                                   (:last_pid))
+                   stopping-fn #(let [status (e/status-of pid)
+                                      _      (when (status :running?)
+                                               (log/debugf "Killing container %s" pid)
+                                               (e/kill-container pid))
+                                      run-id (-> (db/run-id-of states/db criteria)
+                                                 (:id))
+                                      _      (gc-images run-id)])
+                   db-fn       #(db/stop-run states/db criteria)
+                   _           (sync-action signalled? pid stopping-fn db-fn)]
+         "Ok"
+         (f/when-failed [err]
+           (let [message (f/message err)]
+             (log/errorf "Failed to stop pipeline: %s" message)
+             message)))))))
 
 (defn pipeline-logs
   "Fetches all the logs from from a particular run-id split by lines.
@@ -291,6 +320,33 @@
       (f/fail "No such pipeline")
       image)))
 
+(defn listen-on
+  "Creates a PGNotificationListener for an `expected-status`.
+
+  Calls the `dispatch-fn` with the corresponding pipeline and number."
+  [expected-status dispatch-fn]
+  (reify PGNotificationListener
+    (^void notification [this ^int process-id ^String channel-name ^String payload]
+      (let [{:keys [status pipeline number]} (json/parse-string payload true)]
+        (when (= status expected-status)
+          (log/debugf "Received DB signal with status %s, dispatching." expected-status)
+          (dispatch-fn pipeline number))))))
+
+(m/defstate pipeline-status-change-connection
+  :start (let [datasource    (doto (PGDataSource.)
+                               (.setServerName states/db-host)
+                               (.setPort states/db-port)
+                               (.setDatabaseName states/db-name)
+                               (.setUser states/db-user))
+               stop-listener (listen-on "stopped" stop-pipeline)
+               connection    (doto ^PGConnection (.getConnection datasource)
+                               (.addNotificationListener stop-listener))]
+           (doto (.createStatement connection)
+             (.execute "LISTEN pipeline_status;")
+             (.close))
+           connection)
+  :stop (.close ^PGConnection pipeline-status-change-connection))
+
 (comment
   (resourceful-step {:needs_resource "source"
                      :cmd            "ls"}
@@ -314,4 +370,8 @@
   (exec-steps "busybox:musl"
               (db/ordered-steps states/db {:pipeline "dev:test"})
               "dev:test"
-              {}))
+              {})
+
+  (container-in-node "118dadda9545")
+
+  (listen-on "stopped" (constantly true)))

@@ -13,10 +13,16 @@
 ;   You should have received a copy of the GNU General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-{:up   ["CREATE TABLE \"runs\" (\"id\"       TEXT PRIMARY KEY,
-                                \"number\"   INTEGER NOT NULL,
-                                \"pipeline\" TEXT NOT NULL,
-                                \"status\"   TEXT NOT NULL,
-                                \"last_pid\" TEXT DEFAULT NULL,
-                                FOREIGN KEY(\"pipeline\") REFERENCES \"pipelines\"(\"name\") ON DELETE CASCADE);"]
- :down ["DROP TABLE \"runs\";"]}
+{:up   ["CREATE FUNCTION \"notify_on_status_update\"()
+         RETURNS TRIGGER
+         LANGUAGE \"plpgsql\"
+         AS $$
+         BEGIN
+           PERFORM pg_notify('pipeline_status', row_to_json(NEW)::TEXT);
+           RETURN NEW;
+         END;
+         $$;"
+        "CREATE TRIGGER \"pipeline_status_change\"
+         AFTER UPDATE ON \"runs\"
+         FOR EACH ROW EXECUTE PROCEDURE \"notify_on_status_update\"();"]
+ :down ["DROP FUNCTION \"notify_on_status_update\" CASCADE;"]}

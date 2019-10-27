@@ -148,11 +148,7 @@
     (let [test-step {:produces_artifact "jar"
                      :artifact_path     "path"
                      :artifact_store    "s3"}]
-      (with-redefs-fn {#'db/run-stopped?          (fn [_ args]
-                                                    (tu/check-and-fail
-                                                     #(= {:id "id"} args))
-                                                    {:stopped false})
-                       #'next-step                (fn [id step evars pipeline run-id]
+      (with-redefs-fn {#'next-step                (fn [id step evars pipeline run-id]
                                                     (tu/check-and-fail
                                                      #(and (= {:id "id"} id)
                                                            (= step test-step)
@@ -191,11 +187,7 @@
 
   (testing "successful step execution without artifact upload"
     (let [test-step {}]
-      (with-redefs-fn {#'db/run-stopped?          (fn [_ args]
-                                                    (tu/check-and-fail
-                                                     #(= {:id "id"} args))
-                                                    {:stopped false})
-                       #'next-step                (fn [id step evars pipeline run-id]
+      (with-redefs-fn {#'next-step                (fn [id step evars pipeline run-id]
                                                     (tu/check-and-fail
                                                      #(and (= {:id "id"} id)
                                                            (= step test-step)
@@ -223,22 +215,10 @@
                  :mounted []}
                 (exec-step "id" {} "dev:test" 1 {:id "id"} test-step))))))
 
-  (testing "stopped step execution"
-    (let [test-step {}
-          nein      (fn [& _] (throw (Exception. "shouldn't be called")))]
-      (with-redefs-fn {#'db/run-stopped?          (constantly {:stopped true})
-                       #'next-step                nein
-                       #'update-pid               nein
-                       #'e/run                    nein
-                       #'docker/inspect           nein
-                       #'artifact/upload-artifact nein}
-        #(is (reduced? (exec-step "id" {} "dev:test" 1 {:id "id"} test-step))))))
-
   (testing "non-zero step execution"
     (let [test-step {}
           nein      (fn [& _] (throw (Exception. "shouldn't be called")))]
-      (with-redefs-fn {#'db/run-stopped?          (constantly {:stopped false})
-                       #'next-step                nein
+      (with-redefs-fn {#'next-step                nein
                        #'update-pid               nein
                        #'e/run                    nein
                        #'docker/inspect           nein
@@ -248,8 +228,7 @@
   (testing "failed step execution"
     (let [test-step {}
           nein      (fn [& _] (throw (Exception. "shouldn't be called")))]
-      (with-redefs-fn {#'db/run-stopped?          (constantly {:stopped false})
-                       #'next-step                (constantly (f/fail "shizz"))
+      (with-redefs-fn {#'next-step                (constantly (f/fail "shizz"))
                        #'update-pid               nein
                        #'e/run                    nein
                        #'docker/inspect           nein
@@ -426,6 +405,7 @@
                                                      args)))
                        #'u/log-to-db          (constantly nil)
                        #'e/pull               (constantly (f/fail "shizz"))
+                       #'db/status-of         (constantly {:status "running"})
                        #'resourceful-step     nein
                        #'e/build              nein
                        #'update-pid           nein
@@ -439,50 +419,127 @@
                                      {})))))))
 
 (deftest stopping-pipeline
-  (testing "successfully stop a running pipeline"
+  (testing "successfully stop a running local pipeline from user request"
     (let [criteria {:pipeline "test"
                     :number   1}]
-      (with-redefs-fn {#'db/status-of     (fn [_ args]
-                                            (tu/check-and-fail
-                                             #(= criteria args))
-                                            {:status "running"})
-                       #'db/stop-run      (fn [_ args]
-                                            (tu/check-and-fail
-                                             #(= criteria args)))
-                       #'db/pid-of-run    (fn [_ args]
-                                            (tu/check-and-fail
-                                             #(= criteria args))
-                                            {:last_pid "pid"})
-                       #'e/status-of      (fn [pid]
-                                            (tu/check-and-fail
-                                             #(= "pid" pid))
-                                            {:running? true})
-                       #'e/kill-container (fn [pid]
-                                            (tu/check-and-fail
-                                             #(= "pid" pid)))
-                       #'docker/rm        (constantly nil)
-                       #'db/run-id-of     (fn [_ args]
-                                            (tu/check-and-fail
-                                             #(= criteria args))
-                                            {:id "run-id"})
-                       #'gc-images        (fn [run-id]
-                                            (tu/check-and-fail
-                                             #(= "run-id" run-id)))}
+      (with-redefs-fn {#'db/status-of      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:status "running"})
+                       #'db/stop-run       (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args)))
+                       #'db/pid-of-run     (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:last_pid "pid"})
+                       #'e/status-of       (fn [pid]
+                                             (tu/check-and-fail
+                                              #(= "pid" pid))
+                                             {:running? true})
+                       #'e/kill-container  (fn [pid]
+                                             (tu/check-and-fail
+                                              #(= "pid" pid)))
+                       #'db/run-id-of      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:id "run-id"})
+                       #'gc-images         (fn [run-id]
+                                             (tu/check-and-fail
+                                              #(= "run-id" run-id)))
+                       #'container-in-node (constantly true)}
         #(is (= "Ok" (stop-pipeline "test" 1))))))
+
+  (testing "successfully stop a running local pipeline from DB signal"
+    (let [criteria {:pipeline "test"
+                    :number   1}]
+      (with-redefs-fn {#'db/status-of      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:status "running"})
+                       #'db/stop-run       (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args)))
+                       #'db/pid-of-run     (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:last_pid "pid"})
+                       #'e/status-of       (fn [pid]
+                                             (tu/check-and-fail
+                                              #(= "pid" pid))
+                                             {:running? true})
+                       #'e/kill-container  (fn [pid]
+                                             (tu/check-and-fail
+                                              #(= "pid" pid)))
+                       #'db/run-id-of      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:id "run-id"})
+                       #'gc-images         (fn [run-id]
+                                             (tu/check-and-fail
+                                              #(= "run-id" run-id)))
+                       #'container-in-node (constantly true)}
+        #(is (= "Ok" (stop-pipeline "test" 1 true))))))
+
+  (testing "successfully stop a running remote pipeline from user request"
+    (let [criteria {:pipeline "test"
+                    :number   1}
+          nein     (fn [& _] (throw (Exception. "shouldn't be called")))]
+      (with-redefs-fn {#'container-in-node (constantly nil)
+                       #'db/status-of      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:status "running"})
+                       #'db/stop-run       (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args)))
+                       #'db/pid-of-run     (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:last_pid "pid"})
+                       #'e/status-of       nein
+                       #'e/kill-container  nein
+                       #'db/run-id-of      nein
+                       #'gc-images         nein}
+        #(is (= "Ok" (stop-pipeline "test" 1))))))
+
+  (testing "ignoring a stop request for a remote pipeline from DB signal"
+    (let [criteria {:pipeline "test"
+                    :number   1}
+          nein     (fn [& _] (throw (Exception. "shouldn't be called")))]
+      (with-redefs-fn {#'container-in-node (constantly nil)
+                       #'db/pid-of-run     (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:last_pid "pid"})
+                       #'db/stop-run       (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args)))
+                       #'db/status-of      nein
+                       #'e/status-of       nein
+                       #'e/kill-container  nein
+                       #'db/run-id-of      nein
+                       #'gc-images         nein}
+        #(is (nil? (stop-pipeline "test" 1 true))))))
 
   (testing "unsuccessfully stop a running pipeline"
     (let [criteria {:pipeline "test"
                     :number   1}
           nein     (fn [& _] (throw (Exception. "shouldn't be called")))]
-      (with-redefs-fn {#'db/status-of     (fn [_ args]
-                                            (tu/check-and-fail
-                                             #(= criteria args))
-                                            {:status "running"})
-                       #'db/stop-run      (fn [& _]
-                                            (throw (Exception. "nope")))
-                       #'db/pid-of-run    nein
-                       #'e/status-of      nein
-                       #'e/kill-container nein}
+      (with-redefs-fn {#'container-in-node (constantly true)
+                       #'db/pid-of-run     (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:last_pid "pid"})
+                       #'db/status-of      (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args))
+                                             {:status "running"})
+                       #'db/stop-run       (fn [_ args]
+                                             (tu/check-and-fail
+                                              #(= criteria args)))
+                       #'e/status-of       (fn [& _] (throw (Exception. "nope")))
+                       #'e/kill-container  nein}
         #(is (= "nope" (stop-pipeline "test" 1))))))
 
   (testing "stop a stopped pipeline"
@@ -533,3 +590,32 @@
       #(is (and (f/failed? (image-of "test"))
                 (= "No such pipeline"
                    (f/message (image-of "test"))))))))
+
+(deftest container-locality-test
+  (testing "container is found locally"
+    (with-redefs-fn {#'docker/ps (constantly [{:Id "id1"}])}
+      #(is (container-in-node "id"))))
+
+  (testing "container is not found locally"
+    (with-redefs-fn {#'docker/ps (constantly [{:Id "crappy-id"}])}
+      #(is (nil? (container-in-node "id"))))))
+
+(deftest sync-action-test
+  (letfn [(action-fn [] "acted")
+          (signalling-fn [] "signalled")
+          (nein [] (throw (Exception. "this shouldn't be called")))]
+    (testing "not signalled and not local dispatch"
+      (with-redefs-fn {#'container-in-node (constantly false)}
+        #(is (= "signalled" (sync-action false "id" nein signalling-fn)))))
+
+    (testing "not signalled and local dispatch"
+      (with-redefs-fn {#'container-in-node (constantly true)}
+        #(is (= "signalled" (sync-action false "id" action-fn signalling-fn)))))
+
+    (testing "signalled and local dispatch"
+      (with-redefs-fn {#'container-in-node (constantly true)}
+        #(is (= "acted" (sync-action true "id" action-fn nein)))))
+
+    (testing "signalled and not local dispatch"
+      (with-redefs-fn {#'container-in-node (constantly false)}
+        #(is (nil? (sync-action true "id" nein nein)))))))

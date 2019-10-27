@@ -143,6 +143,24 @@ requests:
       - jsonpath: "content.message"
         expect: "Ok"
 
+  longRunningPipelineCreation:
+    request:
+      url: "http://bob:7777/api/pipelines/groups/dev/names/test1"
+      method: "POST"
+      postData:
+        mimeType: "application/json"
+        text:
+          image: "busybox:musl"
+          steps:
+            - cmd: "echo hello"
+            - cmd: "sleep 100"
+            - cmd: "echo done"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "Ok"
+
   failingPipelineCreation:
     request:
       url: "http://bob:7777/api/pipelines/groups/dev/names/this-fails"
@@ -179,6 +197,27 @@ requests:
     request:
       url: "http://bob:7777/api/pipelines/start/groups/dev/names/test"
       method: "POST"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "Ok"
+
+  longRunningPipelineStart:
+    request:
+      url: "http://bob:7777/api/pipelines/start/groups/dev/names/test1"
+      method: "POST"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "Ok"
+
+  pipelineStop:
+    request:
+      url: "http://bob:7777/api/pipelines/stop/groups/dev/names/test1/number/1"
+      method: "POST"
+    delay: 5000
     validate:
       - jsonpath: "status"
         expect: 200
@@ -232,6 +271,7 @@ requests:
             - "deploy"
             - "docker-compose.yaml"
             - "integration-tests"
+            - "nginx.conf"
             - "resources"
             - "src"
             - "test"
@@ -257,6 +297,16 @@ requests:
         expect: 200
       - jsonpath: "content.message"
         expect: "passed"
+
+  secondPipelineStatus:
+    request:
+      url: "http://bob:7777/api/pipelines/status/groups/dev/names/test1/number/1"
+      method: "GET"
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "stopped"
 
   invalidPipelineStatus:
     request:
@@ -288,6 +338,8 @@ requests:
       - jsonpath: "content[0].name"
         expect: "dev:test"
       - jsonpath: "content[1].name"
+        expect: "dev:test1"
+      - jsonpath: "content[2].name"
         expect: "dev:this-fails"
 
   getPipelinesByStatus:
