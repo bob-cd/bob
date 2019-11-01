@@ -59,7 +59,7 @@ A pipeline is executed in the following way:
 5. The relevant working directory is set: the resource folder if a resource was mounted or the home of the container.
 6. The container is started and Bob waits for its completion.
 7. Bob attaches to the stderr and stdout of the container while its running and streams the log to the DB.
-8. If the container exists with code was zero and if a `produces_artifact` key was defined in the step, Bob streams the artifact out from the path on the container to the Artifact Store. If the exit was anything other than zero, Bob marks the pipeline run as failed and stops executing the rest of the steps.
+8. If the container exits with code as zero and if a `produces_artifact` key was defined in the step, Bob streams the artifact out from the path on the container to the Artifact Store. If the exit was anything other than zero, Bob marks the pipeline run as failed and stops executing the rest of the steps.
 9. If the last step succeeded, Bob creates a diff of the current container which contains the effects of the last command via the [commit](https://docs.docker.com/engine/reference/commandline/commit/) feature. This becomes the next image in the series of execution of steps.
 10. This recursively continues until there are no steps left. If all steps pass, Bob marks the pipeline run as passed.
 
