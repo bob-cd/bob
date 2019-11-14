@@ -124,7 +124,7 @@
   (db/register-artifact-store states/db {:name "s3"
                                          :url  "http://localhost:8001"})
 
-  (db/get-artifact-store states/db)
+  (db/get-artifact-stores states/db)
 
   (db/un-register-artifact-store states/db {:name "s3"})
 

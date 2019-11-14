@@ -49,8 +49,8 @@
                   :message)))))
 
   (testing "listing all external resources"
-    (with-redefs-fn {#'db/external-resources (constantly [{:name "r1"}
-                                                          {:name "r2"}])}
+    (with-redefs-fn {#'db/get-external-resources (constantly [{:name "r1"}
+                                                              {:name "r2"}])}
       #(is (= ["r1" "r2"]
               (-> @(all-external-resources)
                   :body
