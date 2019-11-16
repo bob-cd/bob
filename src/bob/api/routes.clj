@@ -18,7 +18,7 @@
             [compojure.api.sweet :as rest]
             [schema.core :as s]
             [bob.util :as u]
-            [bob.api.health-check :as hc]
+            [bob.api.health :as health]
             [bob.api.schemas :as schema]
             [bob.api.middleware :as m]
             [bob.pipeline.core :as p]
@@ -179,7 +179,10 @@
       (rest/GET "/can-we-build-it" []
         :return schema/SimpleResponse
         :summary "Runs health checks for Bob."
-        (hc/health-check))
+          (let [failures @(health/health-check)]
+            (if (empty? failures)
+              (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28")
+              (u/service-unavailable (str "Health check failed: " (clojure.string/join " and " failures) " not healthy")))))
 
     (rest/undocumented
      (route/not-found (u/respond "Took a wrong turn?")))))))

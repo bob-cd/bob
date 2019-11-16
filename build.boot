@@ -22,6 +22,7 @@
 (set-env! :resource-paths #{"resources"}
           :source-paths   #{"src"}
           :dependencies   '[[org.clojure/clojure "1.10.1"]
+                            [org.clojure/core.async "0.5.527"]
                             [manifold "0.1.8"]
                             [aleph "0.4.6"]
                             [ring "1.7.1"]
@@ -40,6 +41,7 @@
                             [environ "1.1.0"]
                             [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.8.3"]
                             [cheshire "5.9.0"]
+                            [jarohen/chime "0.2.2"]
                             [com.taoensso/timbre "4.10.0"]
                             [javax.xml.bind/jaxb-api "2.3.0"]           ;; For Aleph's XML dependency, Java 8 compat
                             [io.netty/netty-all "4.1.36.Final"]         ;; Forced Netty version for Java 9+ compat
