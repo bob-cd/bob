@@ -27,7 +27,8 @@
             [clj-time.periodic :as tp]
             [bob.artifact.db :refer [get-artifact-stores]]
             [bob.resource.db :refer [get-external-resources]]
-            [bob.states :as states]))
+            [bob.states :as states]
+            [bob.util :as u]))
 
 (sql/def-db-fns (io/resource "sql/health.sql"))
 
@@ -40,27 +41,44 @@
   "Check the systems we depend upon. Returns nil if everything is alright, else returns a sequence
    of strings naming the failing systems."
   []
-  (d/let-flow [docker   (when (f/failed? (f/try* (docker/ping states/docker-conn))) '("Docker"))
-               postgres (when (f/failed? (f/try* (db-health-check states/db))) '("Postgres"))
-               extsys   (when (nil? postgres) (ping-external-systems))]
+  (let [docker   (when (f/failed? (f/try* (docker/ping states/docker-conn)))
+                   ["Docker"])
+        postgres (when (f/failed? (f/try* (db-health-check states/db)))
+                   ["Postgres"])
+        extsys   (when (nil? postgres)
+                   (ping-external-systems))]
     (filter some? (concat docker postgres extsys))))
 
-(defn log-health-check []
-  (let [failures @(health-check)]
+(defn respond-to-health-check
+  "Endpoint for answering a health check"
+  []
+  (d/let-flow [failures (health-check)]
+    (if (empty? failures)
+      (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28")
+      (u/service-unavailable (str "Health check failed: " (clojure.string/join " and " failures) " not healthy")))))
+
+(defn log-health-check
+  "Logs if any of the subsystems is unhealthy."
+  []
+  (let [failures (health-check)]
     (if (empty? failures)
       (log/debugf (str "Health check succeeded!"))
       (log/warn (str "Health check failed: " (clojure.string/join " and " failures) " not healthy")))))
 
-(defn start-heartbeat []
+(defn start-heartbeat
+  "Starts a periodic heatbeat which performs a health check."
+  []
   (let [_      (log/debugf "Starting Heartbeat")
         chimes (chime-ch (rest (tp/periodic-seq (t/now) (-> 1 t/minutes))))]
     (a/go-loop []
-      (when-let [msg (a/<! chimes)]
+      (when-let [_ (a/<! chimes)]
         (log-health-check)
         (recur)))
     chimes))
 
-(defn stop-heartbeat [heartbeat]
+(defn stop-heartbeat
+  "Stops the periodic heartbeat."
+  [heartbeat]
   (log/debug "Stopping Heartbeat")
   (a/close! heartbeat))
 
@@ -72,7 +90,7 @@
 
   (ping-external-systems)
 
-  (str "Health check failed: " (clojure.string/join " and " @(health-check)) " not healthy")
+  (str "Health check failed: " (clojure.string/join " and " (health-check)) " not healthy")
 
   (log-health-check)
 

@@ -30,38 +30,38 @@
     (with-redefs-fn {#'docker/ping (constantly "OK")
                      #'db-health-check (constantly {:?column? true})
                      #'ping-external-systems (constantly '())}
-      #(is (= '()
-              @(health-check)))))
+      #(is (= []
+              (health-check)))))
 
   (testing "failing docker daemon"
     (with-redefs-fn {#'docker/ping (constantly (f/fail "Docker Failed"))
                      #'db-health-check (constantly {:?column? true})
                      #'ping-external-systems (constantly '())}
-      #(is (= '("Docker")
-              @(health-check)))))
+      #(is (= ["Docker"]
+              (health-check)))))
 
   (testing "failing postgres db"
     (with-redefs-fn {#'docker/ping (constantly "OK")
                      #'db-health-check (constantly (f/fail "Postgres Failed"))}
-      #(is (= '("Postgres")
-              @(health-check)))))
+      #(is (= ["Postgres"]
+              (health-check)))))
 
   (testing "failing docker and postgres"
     (with-redefs-fn {#'docker/ping (constantly (f/fail "Docker Failed"))
                      #'db-health-check (constantly (f/fail "Postgres Failed"))}
-      #(is (= '("Docker" "Postgres")
-              @(health-check)))))
+      #(is (= ["Docker" "Postgres"]
+              (health-check)))))
 
   (testing "failing external resource"
     (with-redefs-fn {#'docker/ping (constantly "OK")
                      #'db-health-check (constantly {:?column? true})
                      #'ping-external-systems (constantly '("failed"))}
-      #(is (= '("failed")
-              @(health-check)))))
+      #(is (= ["failed"]
+              (health-check)))))
 
   (testing "failing external resources"
     (with-redefs-fn {#'docker/ping (constantly "OK")
                      #'db-health-check (constantly {:?column? true})
                      #'ping-external-systems (constantly '("failed" "failed"))}
-      #(is (= '("failed" "failed")
-              @(health-check))))))
+      #(is (= ["failed" "failed"]
+              (health-check))))))

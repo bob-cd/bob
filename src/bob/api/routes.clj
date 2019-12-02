@@ -179,10 +179,7 @@
       (rest/GET "/can-we-build-it" []
         :return schema/SimpleResponse
         :summary "Runs health checks for Bob."
-          (let [failures @(health/health-check)]
-            (if (empty? failures)
-              (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28")
-              (u/service-unavailable (str "Health check failed: " (clojure.string/join " and " failures) " not healthy")))))
+        (health/respond-to-health-check))
 
     (rest/undocumented
      (route/not-found (u/respond "Took a wrong turn?")))))))
