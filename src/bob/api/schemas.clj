@@ -48,9 +48,6 @@
 
 (s/defschema StatusResponse {:message (s/enum :running :passed :failed :stopped)})
 
-(s/defschema RunningResponse {:message [{:group String
-                                         :name  String}]})
-
 (s/defschema ResourceAttributes {:url String})
 
 (s/defschema ResourceResponse {:message [String]})

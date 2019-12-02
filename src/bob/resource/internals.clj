@@ -110,7 +110,7 @@
               _                 (log/debug "Copying resources to container")
               _                 (docker/cp states/docker-conn id path "/root")
               _                 (rm-r! path true)
-              _                 (log/debug "Commiting resourceful container")
+              _                 (log/debug "Committing resourceful container")
               provisioned-image (docker/commit-container
                                   states/docker-conn
                                   id

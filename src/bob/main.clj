@@ -19,17 +19,22 @@
             [clojure.repl :as repl]
             [taoensso.timbre :as log]
             [bob.states :refer :all]
+            [bob.api.health :as health]
             [bob.api.routes :as routes])
   (:gen-class))
 
 (def PORT 7777)
 
-;; TODO: It's here to avoid a cyclic import from routes, figure out a better way.
+;; TODO: These states are here to avoid a cyclic import, figure out a better way.
 (m/defstate server
   :start (do (log/infof "Bob's listening on http://0.0.0.0:%d/" PORT)
              (http/start-server routes/bob-api {:port PORT}))
   :stop  (do (log/info "Stopping HTTP")
              (.close server)))
+
+(m/defstate heartbeat
+  :start (health/start-heartbeat)
+  :stop (health/stop-heartbeat heartbeat))
 
 (defn shutdown!
   [_]

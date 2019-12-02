@@ -18,3 +18,4 @@ project.clj
 strest_history.json
 kind
 .kube
+.#*

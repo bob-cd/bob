@@ -25,8 +25,8 @@ VALUES (:name, :url);
 DELETE FROM "resource_providers"
 WHERE "name"=:name;
 
--- :name external-resources :query :many
-SELECT "name" FROM "resource_providers";
+-- :name get-external-resources :query :many
+SELECT * FROM "resource_providers";
 
 -- :name resource-by-pipeline :query :1
 SELECT * FROM "resources"

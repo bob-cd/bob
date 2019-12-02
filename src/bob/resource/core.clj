@@ -46,7 +46,7 @@
 (defn all-external-resources
   "Lists all external resources by name."
   []
-  (d/let-flow [result (f/try* (db/external-resources states/db))]
+  (d/let-flow [result (f/try* (db/get-external-resources states/db))]
     (u/respond
       (if (f/failed? result)
         []
