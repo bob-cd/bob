@@ -217,7 +217,7 @@ requests:
     request:
       url: "http://bob:7777/api/pipelines/stop/groups/dev/names/test1/number/1"
       method: "POST"
-    delay: 5000
+    delay: 10000
     validate:
       - jsonpath: "status"
         expect: 200
