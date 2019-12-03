@@ -65,7 +65,7 @@
         params (db/resource-params-of states/db
                                       {:name     (:name resource)
                                        :pipeline pipeline})]
-    (format "%s/bob_request?%s"
+    (format "%s/bob_resource?%s"
             url
             (clojure.string/join
               "&"

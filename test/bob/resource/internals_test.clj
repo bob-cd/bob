@@ -38,7 +38,7 @@
                                                     :value "v1"}
                                                    {:key   "k2"
                                                     :value "v2"}])}
-      #(is (= "http://url.com/bob_request?k1=v1&k2=v2"
+      #(is (= "http://url.com/bob_resource?k1=v1&k2=v2"
               (url-of {:provider "git"
                        :name     "r1"}
                       "test"))))))
