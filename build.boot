@@ -22,17 +22,17 @@
 (set-env! :resource-paths #{"resources"}
           :source-paths   #{"src"}
           :dependencies   '[[org.clojure/clojure "1.10.1"]
-                            [org.clojure/core.async "0.5.527"]
+                            [org.clojure/core.async "0.7.559"]
                             [manifold "0.1.8"]
                             [aleph "0.4.6"]
                             [ring "1.8.0"]
                             [ring/ring-json "0.5.0"]
                             [compojure "1.6.1"]
-                            [com.fasterxml.jackson.core/jackson-core "2.10.1"]
-                            [failjure "1.5.0"]
-                            [org.postgresql/postgresql "42.2.8"]
+                            [com.fasterxml.jackson.core/jackson-core "2.10.2"]
+                            [failjure "2.0.0"]
+                            [org.postgresql/postgresql "42.2.9"]
                             [ragtime "0.8.0"]
-                            [hikari-cp "2.9.0"]
+                            [hikari-cp "2.10.0"]
                             [com.layerware/hugsql "0.5.1"]
                             [metosin/compojure-api "2.0.0-alpha30"]
                             [prismatic/schema "1.1.12"]
@@ -43,8 +43,8 @@
                             [cheshire "5.9.0"]
                             [jarohen/chime "0.2.2"]
                             [com.taoensso/timbre "4.10.0"]
-                            [javax.xml.bind/jaxb-api "2.3.0"]           ;; For Aleph's XML dependency, Java 8 compat
-                            [io.netty/netty-all "4.1.36.Final"]         ;; Forced Netty version for Java 9+ compat
+                            [javax.xml.bind/jaxb-api "2.3.1"]           ;; For Aleph's XML dependency, Java 8 compat
+                            [io.netty/netty-all "4.1.44.Final"]         ;; Forced Netty version for Java 9+ compat
                             [javax.activation/activation "1.1.1"]       ;; Java 9+ compat for XML bindings
                             ;; Test
                             [lambdaisland/kaocha-boot "0.0-14" :scope "test"]

@@ -86,7 +86,7 @@
   creating a new container from it, thereby managing state externally.
   Returns the new container id or errors if any."
   [build-state step evars pipeline run-id]
-  (f/try-all [_             (log/debugf "Commiting container: %s" (:id build-state))
+  (f/try-all [_             (log/debugf "Committing container: %s" (:id build-state))
               image         (docker/commit-container
                               states/docker-conn
                               (:id build-state)
