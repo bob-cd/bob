@@ -24,6 +24,7 @@ services:
     environment:
       - POSTGRES_USER=bob
       - POSTGRES_DB=bob
+      - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
       - 5432:5432
     networks:

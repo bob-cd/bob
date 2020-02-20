@@ -44,7 +44,6 @@
                             [jarohen/chime "0.2.2"]
                             [com.taoensso/timbre "4.10.0"]
                             [javax.xml.bind/jaxb-api "2.3.1"]           ;; For Aleph's XML dependency, Java 8 compat
-                            [io.netty/netty-all "4.1.44.Final"]         ;; Forced Netty version for Java 9+ compat
                             [javax.activation/activation "1.1.1"]       ;; Java 9+ compat for XML bindings
                             ;; Test
                             [lambdaisland/kaocha-boot "0.0-14" :scope "test"]
