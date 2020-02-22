@@ -263,6 +263,7 @@ requests:
             - "CODE_OF_CONDUCT.md"
             - "CONTRIBUTING.md"
             - "Dockerfile"
+            - "Dockerfile.ci"
             - "LICENSE"
             - "README.md"
             - "bob-entrypoint.sh"

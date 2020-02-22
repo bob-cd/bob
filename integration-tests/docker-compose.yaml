@@ -48,7 +48,9 @@ services:
 
   bob-node:
     image: "bobcd/bob"
-    build: ".."
+    build:
+      context: ".."
+      dockerfile: "${DOCKER_FILE:-Dockerfile}"
     privileged: true
     depends_on:
       - db

@@ -15,19 +15,20 @@
 
 name: "Bob CI"
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
-  test:
+  test-and-build:
     runs-on: "ubuntu-latest"
 
     steps:
-      - uses: "actions/checkout@v2"
+      - name: "Checkout code"
+        uses: "actions/checkout@v2"
 
       - name: "Prepare java"
         uses: "actions/setup-java@v1"
         with:
-          java-version: "11"
+          java-version: "12"
 
       - name: "Prepare Boot"
         uses: "DeLaGuardo/setup-clojure@2.0"
@@ -41,5 +42,32 @@ jobs:
           key: "${{ runner.os }}-boot-${{ hashFiles('build.boot') }}"
           restore-keys: "${{ runner.os }}-boot-"
 
-      - name: "Run unit tests"
-        run: "boot kaocha"
+      - name: "Run unit tests and build uberjar"
+        run: "boot kaocha build"
+
+      - name: "Upload Jar"
+        uses: "actions/upload-artifact@v1"
+        with:
+          name: "bob-jar"
+          path: "target/bob-standalone.jar"
+
+  integration-test-and-publish:
+    needs: "test-and-build"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: "Checkout code"
+        uses: "actions/checkout@v2"
+
+      - name: "Download Jar"
+        uses: "actions/download-artifact@v1"
+        with:
+          name: "bob-jar"
+
+      - name: "Integration tests"
+        env:
+          DOCKER_FILE: "Dockerfile.ci"
+        run: |
+          cd integration-tests     && \
+          docker-compose up -d bob && \
+          docker-compose up --abort-on-container-exit --scale bob-node=3 integration-tests
