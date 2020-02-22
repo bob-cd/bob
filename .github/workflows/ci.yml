@@ -13,7 +13,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-name: "Bob CI"
+name: "Test-and-Publish"
 
 on: [push, pull_request]
 
@@ -25,7 +25,7 @@ jobs:
       - name: "Checkout code"
         uses: "actions/checkout@v2"
 
-      - name: "Prepare java"
+      - name: "Prepare Java"
         uses: "actions/setup-java@v1"
         with:
           java-version: "12"
@@ -35,12 +35,12 @@ jobs:
         with:
           boot: "2.8.3"
 
-      - name: "Restore Cache"
+      - name: "Apply Cache"
         uses: "actions/cache@v1"
         with:
           path: "~/.m2/repository"
-          key: "${{ runner.os }}-boot-${{ hashFiles('build.boot') }}"
-          restore-keys: "${{ runner.os }}-boot-"
+          key: "${{ runner.os }}-bob-${{ hashFiles('build.boot') }}"
+          restore-keys: "${{ runner.os }}-bob-"
 
       - name: "Run unit tests and build uberjar"
         run: "boot kaocha build"
@@ -71,3 +71,9 @@ jobs:
           cd integration-tests     && \
           docker-compose up -d bob && \
           docker-compose up --abort-on-container-exit --scale bob-node=3 integration-tests
+
+      - name: "Publish to Docker Hub"
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker login --username="${{ secrets.DOCKERHUB_USERNAME }}" --password="${{ secrets.DOCKERHUB_PASSWORD }}" && \
+          docker push bobcd/bob:latest
