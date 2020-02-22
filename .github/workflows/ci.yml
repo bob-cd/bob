@@ -1,0 +1,45 @@
+#   This file is part of Bob.
+#
+#   Bob is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU Affero General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Bob is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+name: "Bob CI"
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - uses: "actions/checkout@v2"
+
+      - name: "Prepare java"
+        uses: "actions/setup-java@v1"
+        with:
+          java-version: "11"
+
+      - name: "Prepare Boot"
+        uses: "DeLaGuardo/setup-clojure@2.0"
+        with:
+          boot: "2.8.3"
+
+      - name: "Restore Cache"
+        uses: "actions/cache@v1"
+        with:
+          path: "~/.m2/repository"
+          key: "${{ runner.os }}-boot-${{ hashFiles('build.boot') }}"
+          restore-keys: "${{ runner.os }}-boot-"
+
+      - name: "Run unit tests"
+        run: "boot kaocha"
