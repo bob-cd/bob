@@ -1,16 +1,16 @@
 ;   This file is part of Bob.
 ;
 ;   Bob is free software: you can redistribute it and/or modify
-;   it under the terms of the GNU General Public License as published by
+;   it under the terms of the GNU Affero General Public License as published by
 ;   the Free Software Foundation, either version 3 of the License, or
 ;   (at your option) any later version.
 ;
 ;   Bob is distributed in the hope that it will be useful,
 ;   but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-;   GNU General Public License for more details.
+;   GNU Affero General Public License for more details.
 ;
-;   You should have received a copy of the GNU General Public License
+;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (def project 'bob)
@@ -58,8 +58,8 @@
       :description "This is what CI/CD should've been."
       :url         "https://bob-cd.github.io/bob"
       :scm         {:url "https://github.com/bob-cd/bob"}
-      :license     {"GPL 3.0"
-                    "https://www.gnu.org/licenses/gpl-3.0.en.html"}}
+      :license     {"AGPL 3.0"
+                    "https://www.gnu.org/licenses/agpl-3.0.en.html"}}
  jar  {:main       'bob.main
        :file       (str project "-standalone.jar")})
 
