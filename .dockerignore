@@ -21,4 +21,4 @@ project.clj
 LICENSE
 .dockerignore
 .git
-Dockerfile
+Dockerfile*
