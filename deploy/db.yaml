@@ -82,6 +82,8 @@ spec:
             value: bob
           - name: POSTGRES_DB
             value: bob
+          - name: POSTGRES_HOST_AUTH_METHOD
+            value: trust
         ports:
           - containerPort: 5432
         volumeMounts:
