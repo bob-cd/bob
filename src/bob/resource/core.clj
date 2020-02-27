@@ -65,11 +65,12 @@
   - Copies over the contents to the home dir inside the container.
   - Returns the id or the error."
   [resource pipeline image]
-  (f/try-all [_       (when (not (r/valid-external-resource? resource))
-                        (f/fail (str "Invalid external resources, possibly not registered"
-                                     (:name resource))))
-              out-dir (r/fetch-resource resource pipeline)]
-    (r/initial-image-of out-dir image nil)
+  (f/try-all [resource-name   (:name resource)
+              _               (when (not (r/valid-external-resource? resource))
+                                (f/fail (str "Invalid external resources, possibly not registered"
+                                             resource-name)))
+              resource-stream (r/fetch-resource resource pipeline)]
+    (r/initial-image-of resource-stream image nil resource-name)
     (f/when-failed [err]
       (log/errorf "Failed to generate mounted image: %s" (f/message err))
       err)))

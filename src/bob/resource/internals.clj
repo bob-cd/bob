@@ -14,47 +14,19 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns bob.resource.internals
-  (:require [aleph.http :as http]
+  (:require [clojure.string :as s]
+            [aleph.http :as http]
             [failjure.core :as f]
             [clj-docker-client.core :as docker]
             [taoensso.timbre :as log]
             [bob.states :as states]
             [bob.resource.db :as db])
-  (:import (java.util.zip ZipInputStream)
-           (java.io File)
-           (java.nio.file Files)
-           (java.nio.file.attribute FileAttribute)))
-
-(defn- rm-r!
-  "Recursively deletes a directory."
-  [dir & [silently]]
-  (log/debugf "Deleting directory %s" dir)
-  (f/try*
-    (letfn [(delete-f [^File file]
-              (when (.isDirectory file)
-                (doseq [child-file (.listFiles file)]
-                  (delete-f child-file)))
-              (clojure.java.io/delete-file file silently))]
-      (delete-f (clojure.java.io/file dir)))))
-
-(defn- extract-zip!
-  "Takes a java.util.zip.ZipInputStream `zip-stream` and extracts the content to the `out-dir`."
-  [^ZipInputStream zip-stream out-dir]
-  (log/debugf "Extracting zip file to %s" out-dir)
-  (f/try*
-    (with-open [stream zip-stream]
-      (loop [entry (.getNextEntry stream)]
-        (when entry
-          (let [save-path (str out-dir File/separatorChar (.getName entry))
-                save-file (File. save-path)]
-            (if (.isDirectory entry)
-              (when-not (.exists save-file)
-                (.mkdirs save-file))
-              (let [parent-dir (.getParentFile save-file)]
-                (when-not (.exists parent-dir)
-                  (.mkdirs parent-dir))
-                (clojure.java.io/copy stream save-file)))
-            (recur (.getNextEntry stream))))))))
+  (:import (java.io BufferedOutputStream
+                    File
+                    FileInputStream
+                    FileOutputStream)
+           (org.kamranzafar.jtar TarInputStream
+                                 TarOutputStream)))
 
 (defn url-of
   "Generates a GET URL for the external resource of a pipeline."
@@ -67,35 +39,48 @@
                                        :pipeline pipeline})]
     (format "%s/bob_resource?%s"
             url
-            (clojure.string/join
+            (s/join
               "&"
               (map #(format "%s=%s" (:key %) (:value %))
                    params)))))
 
 (defn fetch-resource
-  "Downloads a resource(zip file) and expands it to a tmp dir.
-
-  Returns the absolute path of the expansion dir."
+  "Downloads a resource(tar file) and returns the stream."
   [resource pipeline]
-  (f/try-all [creation-args (into-array FileAttribute [])
-              out-dir       (str (Files/createTempDirectory "out" creation-args))
-              dir           (File. (str out-dir File/separatorChar (:name resource)))
-              _             (.mkdirs ^File dir)
-              url           (url-of resource pipeline)
-              _             (log/infof "Fetching resource %s from %s"
-                                       (:name resource)
-                                       url)
-              stream        (-> @(http/get url)
-                                :body
-                                (ZipInputStream.))
-              _             (extract-zip! stream dir)]
-    (.getAbsolutePath ^File dir)
+  (f/try-all [url (url-of resource pipeline)
+              _   (log/infof "Fetching resource %s from %s"
+                             (:name resource)
+                             url)]
+    ;; TODO: Potential out of memory issues here
+    (:body @(http/get url))
     (f/when-failed [err]
       (log/errorf "Failed to fetch resource: %s" (f/message err))
       err)))
 
+(defn prefix-dir-on-tar!
+  "Adds a prefix to the tar entry paths to make a directory.
+
+  Returns the path to the final archive."
+  [in-stream prefix]
+  (let [archive    (File/createTempFile "resource", ".tar")
+        out-stream (-> archive
+                       FileOutputStream.
+                       BufferedOutputStream.
+                       TarOutputStream.)]
+    (loop [entry (.getNextEntry in-stream)]
+      (when entry
+        (.setName entry (format "%s/%s" prefix (.getName entry)))
+        (.putNextEntry out-stream entry)
+        (when-not (.isDirectory entry)
+          (.transferTo in-stream out-stream)
+          (.flush out-stream))
+        (recur (.getNextEntry in-stream))))
+    (.close in-stream)
+    (.close out-stream)
+    (.getAbsolutePath archive)))
+
 (defn initial-image-of
-  "Takes a path to a directory, name and image and builds the initial image.
+  "Takes a InputStream of the resource, name and image and builds the initial image.
   This image is used by Bob as the starting image which holds the initial
   state for the rest of the steps.
 
@@ -104,19 +89,27 @@
   - Commit the container.
   - Return the id of the committed image.
   - Deletes the temp folder."
-  [path image cmd]
-  (f/try-all [_                 (log/debug "Creating temp container for resource mount")
+  [resource-stream image cmd resource-name]
+  (f/try-all [_                 (log/debug "Patching tar stream for container mounting")
+              archive           (-> resource-stream
+                                    TarInputStream.
+                                    (prefix-dir-on-tar! resource-name))
+              _                 (log/debug "Creating temp container for resource mount")
               id                (docker/create states/docker-conn image "" {} {})
               _                 (log/debug "Copying resources to container")
-              _                 (docker/cp states/docker-conn id path "/root")
-              _                 (rm-r! path true)
+              _                 (-> states/docker-conn
+                                    (.copyArchiveToContainerCmd id)
+                                    (.withTarInputStream (-> archive FileInputStream.))
+                                    (.withRemotePath "/root")
+                                    .exec)
+              _                 (-> archive File. .delete)
               _                 (log/debug "Committing resourceful container")
               provisioned-image (docker/commit-container
-                                  states/docker-conn
-                                  id
-                                  (format "%s/%d" id (System/currentTimeMillis))
-                                  "latest"
-                                  cmd)
+                                 states/docker-conn
+                                 id
+                                 (format "%s/%d" id (System/currentTimeMillis))
+                                 "latest"
+                                 cmd)
               _                 (log/debug "Removing temp container")
               _                 (docker/rm states/docker-conn id)]
     provisioned-image

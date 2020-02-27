@@ -60,18 +60,19 @@
   (testing "successful image mount"
     (with-redefs-fn {#'r/valid-external-resource? (fn [resource]
                                                     (tu/check-and-fail
-                                                     #(= "test" resource))
+                                                     #(= {:name "test"} resource))
                                                     true)
                      #'r/fetch-resource           (fn [resource pipeline]
                                                     (tu/check-and-fail
-                                                     #(and (= "test" resource)
+                                                     #(and (= {:name "test"} resource)
                                                            (= "p1" pipeline)))
-                                                    "/some/path")
-                     #'r/initial-image-of         (fn [dir img cmd]
+                                                    (java.io.FileInputStream. "README.md"))
+                     #'r/initial-image-of         (fn [stream img cmd resource-name]
                                                     (tu/check-and-fail
-                                                     #(and (= "/some/path" dir)
+                                                     #(and (instance? java.io.InputStream stream)
                                                            (= "test-img" img)
-                                                           (nil? cmd)))
+                                                           (nil? cmd)
+                                                           (= "test" resource-name)))
                                                     "mounted-image-id")}
       #(is (= "mounted-image-id"
-              (mounted-image-from "test" "p1" "test-img"))))))
+              (mounted-image-from {:name "test"} "p1" "test-img"))))))

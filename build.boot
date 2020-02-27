@@ -22,7 +22,7 @@
 (set-env! :resource-paths #{"resources"}
           :source-paths   #{"src"}
           :dependencies   '[[org.clojure/clojure "1.10.1"]
-                            [org.clojure/core.async "0.7.559"]
+                            [org.clojure/core.async "1.0.567"]
                             [manifold "0.1.8"]
                             [aleph "0.4.6"]
                             [ring "1.8.0"]
@@ -30,7 +30,7 @@
                             [compojure "1.6.1"]
                             [com.fasterxml.jackson.core/jackson-core "2.10.2"]
                             [failjure "2.0.0"]
-                            [org.postgresql/postgresql "42.2.9"]
+                            [org.postgresql/postgresql "42.2.10"]
                             [ragtime "0.8.0"]
                             [hikari-cp "2.10.0"]
                             [com.layerware/hugsql "0.5.1"]
@@ -40,14 +40,15 @@
                             [mount "0.1.16"]
                             [environ "1.1.0"]
                             [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.8.3"]
-                            [cheshire "5.9.0"]
+                            [cheshire "5.10.0"]
                             [jarohen/chime "0.2.2"]
                             [com.taoensso/timbre "4.10.0"]
+                            [org.kamranzafar/jtar "2.3"]
                             [javax.xml.bind/jaxb-api "2.3.1"]           ;; For Aleph's XML dependency, Java 8 compat
                             [javax.activation/activation "1.1.1"]       ;; Java 9+ compat for XML bindings
                             ;; Test
-                            [lambdaisland/kaocha-boot "0.0-14" :scope "test"]
-                            [org.clojure/test.check "0.10.0" :scope "test"]
+                            [lambdaisland/kaocha-boot "0.0-20" :scope "test"]
+                            [org.clojure/test.check "1.0.0" :scope "test"]
                             ;; Plugins
                             [boot-deps "0.1.9" :scope "test"]])
 
