@@ -41,21 +41,23 @@
   "Check the systems we depend upon. Returns nil if everything is alright, else returns a sequence
    of strings naming the failing systems."
   []
-  (let [docker   (when (f/failed? (f/try* (docker/ping states/docker-conn)))
-                   ["Docker"])
-        postgres (when (f/failed? (f/try* (db-health-check states/db)))
-                   ["Postgres"])
-        extsys   (when (nil? postgres)
-                   (ping-external-systems))]
+  (let [docker      (when (not (= "OK" (docker/invoke {:category :_ping
+                                                       :conn states/conn}
+                                                      {:op :SystemPing})))
+                      ["Docker"])
+        postgres    (when (f/failed? (f/try* (db-health-check states/db)))
+                      ["Postgres"])
+        extsys      (when (nil? postgres)
+                      (ping-external-systems))]
     (filter some? (concat docker postgres extsys))))
 
 (defn respond-to-health-check
   "Endpoint for answering a health check"
   []
   (d/let-flow [failures (health-check)]
-    (if (empty? failures)
-      (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28")
-      (u/service-unavailable (str "Health check failed: " (clojure.string/join " and " failures) " not healthy")))))
+              (if (empty? failures)
+                (u/respond "Yes we can! \uD83D\uDD28 \uD83D\uDD28")
+                (u/service-unavailable (str "Health check failed: " (clojure.string/join " and " failures) " not healthy")))))
 
 (defn log-health-check
   "Logs if any of the subsystems is unhealthy."
@@ -83,6 +85,12 @@
   (a/close! heartbeat))
 
 (comment
+  (docker/categories)
+  (def ping (docker/client {:category :_ping :conn states/conn}))
+  (docker/ops (docker/client {:category :_ping :conn states/conn}))
+  (docker/invoke ping {:op :SystemPing})
+  (f/failed? (f/try* (docker/invoke ping {:op :SystemPing})))
+
   (when (nil? nil) (concat (get-artifact-stores states/db) (get-external-resources states/db)))
 
   (map #(when (f/failed? (f/try* @(http/get (clojure.string/join "/" [(:url %) "ping"]) {:throw-exceptions false}))) (:name %))
@@ -90,7 +98,7 @@
 
   (ping-external-systems)
 
-  (str "Health check failed: " (clojure.string/join " and " (health-check)) " not healthy")
+  (health-check)
 
   (log-health-check)
 

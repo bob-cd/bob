@@ -15,8 +15,11 @@
 
 (ns bob.resource.internals-test
   (:require [clojure.test :refer :all]
+            [failjure.core :as f]
+            [clj-docker-client.core :as docker]
             [bob.test-utils :as tu]
             [bob.resource.db :as db]
+            [bob.execution.internals :as e]
             [bob.resource.internals :refer :all]))
 
 ;; TODO: Test the rest of the fns too?
@@ -42,6 +45,7 @@
               (url-of {:provider "git"
                        :name     "r1"}
                       "test"))))))
+
 
 (deftest get-resource-params-test
   (testing "Testing if result from DB is mapped correctly"

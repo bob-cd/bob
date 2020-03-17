@@ -22,6 +22,7 @@
             [taoensso.timbre :as log]
             [bob.util :as u]
             [bob.states :as states]
+            [bob.execution.internals :as e]
             [bob.artifact.db :as db]))
 
 (defn register-artifact-store
@@ -95,7 +96,11 @@
   Returns a Failure object if failed."
   [group name number artifact run-id path store-name]
   (if-let [{url :url} (db/get-artifact-store states/db {:name store-name})]
-    (f/try-all [stream     (docker/stream-path states/docker-conn run-id path)
+    (f/try-all [_          (log/debugf "Streaming from container with id %s and path %s" run-id path)
+                stream     (docker/invoke states/containers {:op     :ContainerArchive
+                                                             :params {:id   run-id
+                                                                      :path path}
+                                                             :as     :stream})
                 upload-url (clojure.string/join "/"
                                                 [url
                                                  "bob_artifact"
@@ -114,13 +119,22 @@
       "Ok"
       (f/when-failed [err]
         (log/errorf "Error in uploading artifact: %s" (f/message err))
-        (f/try* (docker/rm states/docker-conn run-id))
+        (f/try* (e/delete-container run-id :force))
         err))
     (do (log/error "Error locating Artifact Store")
-        (f/try* (docker/rm states/docker-conn run-id))
+        (f/try* (e/delete-container run-id :force))
         (f/fail "No such artifact store registered"))))
 
 (comment
+  (docker/ops (docker/client {:category :containers :conn states/conn}))
+  (let [foo (docker/invoke states/containers {:op :ContainerArchive
+                                              :params
+                                              {:id "clever_swartz"
+                                               :path "/root/my-source/target/default+uberjar/wendy"}
+                                              :as :stream})]
+    @(http/post "http://localhost:8001/bob_artifact/wendy/build/3/wendy" {:multipart [{:name "data" :content foo}]}))
+  (upload-artifact "dev" "test" 1 "poetry.lock" "0be7b883382b" "/opt" "s3")
+
   (db/register-artifact-store states/db {:name "s3"
                                          :url  "http://localhost:8001"})
 

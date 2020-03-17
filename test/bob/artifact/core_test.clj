@@ -105,23 +105,16 @@
                   (= {:message "Cannot reach artifact store: Shizz"}
                      (:body result))))))))
 
+; TODO reimplement the stream tests
 (deftest artifact-upload
   (testing "successful artifact upload"
     (with-redefs-fn {#'db/get-artifact-store (constantly {:url "bob-url"})
-                     #'docker/stream-path    (fn [_ id path]
-                                               (tu/check-and-fail
-                                                #(and (= "1" id)
-                                                      (= "/path" path)))
-                                               :stream)
+                     #'docker/invoke         (constantly "foo")
                      #'http/post             (fn [url options]
                                                (future
                                                  (tu/check-and-fail
-                                                  #(and (= "bob-url/bob_artifact/dev/test/1/afile"
-                                                           url)
-                                                        (= "data"
-                                                           (get-in options [:multipart 0 :name]))
-                                                        (= :stream
-                                                           (get-in options [:multipart 0 :content]))))))}
+                                                  #(= "bob-url/bob_artifact/dev/test/1/afile"
+                                                           url))))}
       #(is (= "Ok"
               (upload-artifact "dev" "test" 1 "afile" "1" "/path" "s3")))))
 
@@ -134,7 +127,7 @@
 
   (testing "unsuccessful artifact upload"
     (with-redefs-fn {#'db/get-artifact-store (constantly {:url "bob-url"})
-                     #'docker/stream-path    (constantly :stream)
+                     #'docker/invoke         (constantly :stream)
                      #'http/post             (constantly (future (throw (Exception. "bad call"))))}
       #(let [result (upload-artifact "dev" "test" 1 "afile" "1" "/path" "s3")]
          (is (f/failed? result))))))

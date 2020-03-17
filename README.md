@@ -22,8 +22,23 @@ See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the road
 
 ## Running requirements
 - Any OS supporting Java and Docker
-- JDK 11+. 13+ will be supported soon when [#56](https://github.com/bob-cd/bob/issues/56) is fixed.
+- JDK 11+
 - Docker (latest preferred for optimal performance)
+
+## Configuration
+Configuration uses the [environ library](https://github.com/weavejester/environ) and therefore several variables can be
+set by specifying them as environment variable or as java system property. Possible variables are:
+| java system properties | environment variables | defaults                    |
+|------------------------|-----------------------|-----------------------------|
+| bob-db-host            | BOB_DB_HOST           | localhost                   |
+| bob-db-port            | BOB_DB_PORT           | 5432                        |
+| bob-db-user            | BOB_DB_USER           | bob                         |
+| bob-db-name            | BOB_DB_NAME           | bob                         |
+| bob-docker-uri         | BOB_DOCKER_URI        | unix:///var/run/docker.sock |
+| bob-connect-timeout    | BOB_CONNECT_TIMEOUT   | 1000ms                      |
+| bob-read-timeout       | BOB_READ_TIMEOUT      | 30000ms                     |
+| bob-write-timeout      | BOB_WRITE_TIMEOUT     | 30000ms                     |
+| bob-call-timeout       | BOB_CALL_TIMEOUT      | 40000ms                     |
 
 ## Testing, building and running locally
 - Clone this repository.

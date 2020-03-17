@@ -19,12 +19,12 @@
             [taoensso.timbre :as log]
             [cheshire.core :as json]
             [mount.core :as m]
-            [bob.execution.internals :as e]
             [bob.util :as u]
-            [bob.resource.core :as r]
-            [bob.artifact.core :as artifact]
             [bob.states :as states]
+            [bob.artifact.core :as artifact]
+            [bob.execution.internals :as e]
             [bob.pipeline.db :as db]
+            [bob.resource.core :as r]
             [bob.resource.db :as rdb])
   (:import (com.impossibl.postgres.jdbc PGDataSource)
            (com.impossibl.postgres.api.jdbc PGNotificationListener
@@ -45,11 +45,12 @@
            (if (nil? new-images) (list image) new-images))))
 
 (defn gc-images
+  "garbage-collect images by run-id."
   [run-id]
-  (log/debugf "Deleting all images for run %s" run-id)
-  (f/try* (run! #(docker/image-rm states/docker-conn %)
-                (get @images-produced run-id)))
-  (swap! images-produced dissoc run-id))
+  (let [_      (log/debugf "Deleting all images for run %s" run-id)
+        result (f/try* (run! #(e/delete-image %)
+                             (get @images-produced run-id)))]
+    (swap! images-produced dissoc run-id)))
 
 (defn update-pid
   "Sets the current container id in the runs tables.
@@ -62,10 +63,10 @@
               _ (db/update-runs states/db
                                 {:pid pid
                                  :id  run-id})]
-    pid
-    (f/when-failed [err]
-      (log/errorf "Failed to update pid: %s" (f/message err))
-      err)))
+             pid
+             (f/when-failed [err]
+                            (log/errorf "Failed to update pid: %s" (f/message err))
+                            err)))
 
 (defn resourceful-step
   "Create a resource mounted image for a step if it needs it."
@@ -87,15 +88,12 @@
   Returns the new container id or errors if any."
   [build-state step evars pipeline run-id]
   (f/try-all [_             (log/debugf "Committing container: %s" (:id build-state))
-              image         (docker/commit-container
-                              states/docker-conn
-                              (:id build-state)
-                              (format "%s/%d" (:id build-state) (System/currentTimeMillis))
-                              "latest"
-                              (:cmd step))
+              image         (e/commit-image
+                             (:id build-state)
+                             (:cmd step))
               _             (mark-image-for-gc image run-id)
               _             (log/debug "Removing commited container")
-              _             (docker/rm states/docker-conn (:id build-state))
+              _             (e/delete-container (:id build-state))
               resource      (:needs_resource step)
               mounted       (:mounted build-state)
               mount-needed? (if (nil? resource)
@@ -105,15 +103,15 @@
                               (resourceful-step step pipeline image run-id)
                               image)
               _             (mark-image-for-gc image run-id)
-              result        {:id      (e/build image step evars)
+              result        {:id      (e/create-container image step evars)
                              :mounted mounted}
               _             (log/debugf "Built a resourceful container: %s" (:id build-state))]
-    (if mount-needed?
-      (update-in result [:mounted] conj resource)
-      result)
-    (f/when-failed [err]
-      (log/errorf "Next step creation failed: %s" (f/message err))
-      err)))
+             (if mount-needed?
+               (update-in result [:mounted] conj resource)
+               result)
+             (f/when-failed [err]
+                            (log/errorf "Next step creation failed: %s" (f/message err))
+                            err)))
 
 (defn exec-step
   "Reducer function to implement the sequential execution of steps.
@@ -135,10 +133,10 @@
                                   pipeline)
                 result (next-step build-state step evars pipeline run-id)
                 id     (update-pid (:id result) run-id)
-                id     (let [result (e/run id run-id)]
+                id     (let [result (e/start-container id run-id)]
                          (when (f/failed? result)
                            (log/debugf "Removing failed container %s" id)
-                           (docker/rm states/docker-conn id))
+                           (e/delete-container id))
                          result)
                 [group name] (clojure.string/split pipeline #":")
                 _      (when-let [artifact (:produces_artifact step)]
@@ -148,29 +146,31 @@
                                                    number
                                                    artifact
                                                    id
-                                                   (str (get-in (docker/inspect states/docker-conn id)
+                                                   (str (get-in (docker/invoke states/containers
+                                                                               {:op :ContainerInspect
+                                                                                :params {:id id}})
                                                                 [:Config :WorkingDir])
                                                         "/"
                                                         (:artifact_path step))
                                                    (:artifact_store step)))]
-      {:id      id
-       :mounted (:mounted result)}
-      (f/when-failed [err]
-        (log/errorf "Failed to exec step: %s with error %s" step (f/message err))
-        err))))
+               {:id      id
+                :mounted (:mounted result)}
+               (f/when-failed [err]
+                              (log/errorf "Failed to exec step: %s with error %s" step (f/message err))
+                              err))))
 
 (defn next-build-number-of
   "Generates a sequential build number for a pipeline."
   [name]
   (f/try-all [result (last (db/pipeline-runs states/db {:pipeline name}))]
-    (if (nil? result)
-      1
-      (inc (result :number)))
-    (f/when-failed [err]
-      (log/errorf "Error generating build number for %s: %s"
-                  name
-                  (f/message err))
-      err)))
+             (if (nil? result)
+               1
+               (inc (result :number)))
+             (f/when-failed [err]
+                            (log/errorf "Error generating build number for %s: %s"
+                                        name
+                                        (f/message err))
+                            err)))
 
 ;; TODO: Avoid doing the first step separately. Do it in the reduce like a normal person.
 (defn exec-steps
@@ -192,16 +192,15 @@
                                                     :pipeline pipeline
                                                     :status   "running"})
                         _           (u/log-to-db (format "[bob] Pulling image %s" image) run-id)
-                        _           (e/pull image)
+                        _           (e/pull-image image)
                         _           (mark-image-for-gc image run-id)
                         image       (resourceful-step first-step pipeline image run-id)
                         _           (mark-image-for-gc image run-id)
-                        id          (e/build image first-step evars)
+                        id          (e/create-container image first-step evars)
                         id          (update-pid id run-id)
-                        id          (let [result (e/run id run-id)]
+                        id          (let [result (e/start-container id run-id)]
                                       (when (f/failed? result)
-                                        (log/debugf "Removing failed container %s" id)
-                                        (docker/rm states/docker-conn id))
+                                        (e/delete-container id))
                                       result)
                         build-state (reduce (partial exec-step run-id evars pipeline number)
                                             {:id      id
@@ -210,33 +209,33 @@
                                                         [])}
                                             (rest steps))
                         _           (log/debug "Removing last successful container")
-                        _           (docker/rm states/docker-conn (:id build-state))
+                        _           (e/delete-container (:id build-state))
                         _           (log/infof "Marking run %d for %s as passed" number pipeline)
                         _           (gc-images run-id)
                         _           (db/update-run states/db
                                                    {:status "passed"
                                                     :id     run-id})
                         _           (u/log-to-db "[bob] Run successful" run-id)]
-              id
-              (f/when-failed [err]
-                (let [status (f/try* (:status (db/status-of states/db {:pipeline pipeline :number number})))]
-                  (when-not (= status "stopped")
-                    (log/infof "Marking run %d for %s as failed with reason: %s"
-                               number
-                               pipeline
-                               (f/message err))
-                    (u/log-to-db (format "[bob] Run failed with reason: %s" (f/message err)) run-id)
-                    (f/try* (db/update-run states/db
-                                           {:status "failed"
-                                            :id     run-id}))))
-                (gc-images run-id)
-                err)))))
+                       id
+                       (f/when-failed [err]
+                                      (let [status (f/try* (:status (db/status-of states/db {:pipeline pipeline :number number})))]
+                                        (when-not (= status "stopped")
+                                          (log/infof "Marking run %d for %s as failed with reason: %s"
+                                                     number
+                                                     pipeline
+                                                     (f/message err))
+                                          (u/log-to-db (format "[bob] Run failed with reason: %s" (f/message err)) run-id)
+                                          (f/try* (db/update-run states/db
+                                                                 {:status "failed"
+                                                                  :id     run-id}))))
+                                      (gc-images run-id)
+                                      err)))))
 
 (defn container-in-node
   "Checks if the container with `id` is running in the local Docker daemon."
   [id]
   (some #(clojure.string/starts-with? (:Id %) id)
-        (f/try* (docker/ps states/docker-conn))))
+        (docker/invoke states/containers {:op :ContainerList})))
 
 (defn sync-action
   "Dispatches either the action or signal based on external signal and container locality.
@@ -282,11 +281,11 @@
                                       _      (gc-images run-id)])
                    db-fn       #(db/stop-run states/db criteria)
                    _           (sync-action signalled? pid stopping-fn db-fn)]
-         "Ok"
-         (f/when-failed [err]
-           (let [message (f/message err)]
-             (log/errorf "Failed to stop pipeline: %s" message)
-             message)))))))
+                  "Ok"
+                  (f/when-failed [err]
+                                 (let [message (f/message err)]
+                                   (log/errorf "Failed to stop pipeline: %s" message)
+                                   message)))))))
 
 (defn pipeline-logs
   "Fetches all the logs from from a particular run-id split by lines.
@@ -303,13 +302,13 @@
               logs   (:content (db/logs-of states/db {:run-id run-id}))
               _      (when (nil? logs)
                        (f/fail "Unable to fetch logs for this run"))]
-    (->> logs
-         (clojure.string/split-lines)
-         (drop (dec offset))
-         (take lines))
-    (f/when-failed [err]
-      (log/errorf "Failed to fetch logs for pipeline %s: %s" name (f/message err))
-      err)))
+             (->> logs
+                  (clojure.string/split-lines)
+                  (drop (dec offset))
+                  (take lines))
+             (f/when-failed [err]
+                            (log/errorf "Failed to fetch logs for pipeline %s: %s" name (f/message err))
+                            err)))
 
 (defn image-of
   "Returns the image associated with the pipeline."
@@ -374,4 +373,9 @@
 
   (container-in-node "118dadda9545")
 
-  (listen-on "stopped" (constantly true)))
+  (listen-on "stopped" (constantly true))
+
+  (str (get-in (docker/invoke states/containers {:op :ContainerInspect :params {:id "8778328a32b6"}})
+               [:Config :WorkingDir]))
+
+  (docker/invoke states/containers {:op :ContainerList}))

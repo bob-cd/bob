@@ -27,40 +27,40 @@
 
 (deftest health-check-various-conditions-test
   (testing "all systems operational"
-    (with-redefs-fn {#'docker/ping (constantly "OK")
+    (with-redefs-fn {#'docker/invoke (constantly "OK")
                      #'db-health-check (constantly {:?column? true})
                      #'ping-external-systems (constantly '())}
       #(is (= []
               (health-check)))))
 
   (testing "failing docker daemon"
-    (with-redefs-fn {#'docker/ping (constantly (f/fail "Docker Failed"))
+    (with-redefs-fn {#'docker/invoke (constantly (java.io.IOException.))
                      #'db-health-check (constantly {:?column? true})
                      #'ping-external-systems (constantly '())}
       #(is (= ["Docker"]
               (health-check)))))
 
   (testing "failing postgres db"
-    (with-redefs-fn {#'docker/ping (constantly "OK")
+    (with-redefs-fn {#'docker/invoke (constantly "OK")
                      #'db-health-check (constantly (f/fail "Postgres Failed"))}
       #(is (= ["Postgres"]
               (health-check)))))
 
   (testing "failing docker and postgres"
-    (with-redefs-fn {#'docker/ping (constantly (f/fail "Docker Failed"))
+    (with-redefs-fn {#'docker/invoke (constantly (java.io.IOException.))
                      #'db-health-check (constantly (f/fail "Postgres Failed"))}
       #(is (= ["Docker" "Postgres"]
               (health-check)))))
 
   (testing "failing external resource"
-    (with-redefs-fn {#'docker/ping (constantly "OK")
+    (with-redefs-fn {#'docker/invoke (constantly "OK")
                      #'db-health-check (constantly {:?column? true})
                      #'ping-external-systems (constantly '("failed"))}
       #(is (= ["failed"]
               (health-check)))))
 
   (testing "failing external resources"
-    (with-redefs-fn {#'docker/ping (constantly "OK")
+    (with-redefs-fn {#'docker/invoke (constantly "OK")
                      #'db-health-check (constantly {:?column? true})
                      #'ping-external-systems (constantly '("failed" "failed"))}
       #(is (= ["failed" "failed"]
