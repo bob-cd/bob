@@ -32,7 +32,7 @@
                             [failjure "2.0.0"]
                             [org.postgresql/postgresql "42.2.10"]
                             [ragtime "0.8.0"]
-                            [hikari-cp "2.10.0"]
+                            [hikari-cp "2.11.0"]
                             [com.layerware/hugsql "0.5.1"]
                             [metosin/compojure-api "2.0.0-alpha30"]
                             [prismatic/schema "1.1.12"]
@@ -41,7 +41,7 @@
                             [environ "1.1.0"]
                             [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.8.3"]
                             [cheshire "5.10.0"]
-                            [jarohen/chime "0.2.2"]
+                            [jarohen/chime "0.3.0"]
                             [com.taoensso/timbre "4.10.0"]
                             [org.kamranzafar/jtar "2.3"]
                             [javax.xml.bind/jaxb-api "2.3.1"]           ;; For Aleph's XML dependency, Java 8 compat
