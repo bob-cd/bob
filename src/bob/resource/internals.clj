@@ -19,8 +19,10 @@
             [failjure.core :as f]
             [clj-docker-client.core :as docker]
             [taoensso.timbre :as log]
+            [bob.util :as u]
             [bob.states :as states]
-            [bob.resource.db :as db])
+            [bob.resource.db :as db]
+            [bob.execution.internals :as e])
   (:import (java.io BufferedOutputStream
                     File
                     FileInputStream
@@ -40,9 +42,9 @@
     (format "%s/bob_resource?%s"
             url
             (s/join
-              "&"
-              (map #(format "%s=%s" (:key %) (:value %))
-                   params)))))
+             "&"
+             (map #(format "%s=%s" (:key %) (:value %))
+                  params)))))
 
 (defn fetch-resource
   "Downloads a resource(tar file) and returns the stream."
@@ -52,10 +54,10 @@
                              (:name resource)
                              url)]
     ;; TODO: Potential out of memory issues here
-    (:body @(http/get url))
-    (f/when-failed [err]
-      (log/errorf "Failed to fetch resource: %s" (f/message err))
-      err)))
+             (:body @(http/get url))
+             (f/when-failed [err]
+                            (log/errorf "Failed to fetch resource: %s" (f/message err))
+                            err)))
 
 (defn prefix-dir-on-tar!
   "Adds a prefix to the tar entry paths to make a directory.
@@ -79,8 +81,24 @@
     (.close out-stream)
     (.getAbsolutePath archive)))
 
+(defn put-container-archive
+  "Upload a tar archive to be extracted to a path in the filesystem of container id.
+  The tar archive needs to be compressed with one of the following algorithms:
+  identity (no compression), gzip, bzip2, xz.
+  Returns Id on success and failjure on failure"
+  [container-id archive-path extract-path]
+  (let [result (with-open [xin (-> archive-path
+                                   clojure.java.io/input-stream)]
+                 (docker/invoke states/containers {:op     :PutContainerArchive
+                                                   :params {:id          container-id
+                                                            :path        extract-path
+                                                            :inputStream xin}}))]
+    (if (get result :message)
+      (u/log-and-fail "Could not put archive into container:" (:message result))
+      result)))
+
 (defn initial-image-of
-  "Takes a InputStream of the resource, name and image and builds the initial image.
+  "Takes an InputStream of the resource, name and image and builds the initial image.
   This image is used by Bob as the starting image which holds the initial
   state for the rest of the steps.
 
@@ -95,27 +113,18 @@
                                     TarInputStream.
                                     (prefix-dir-on-tar! resource-name))
               _                 (log/debug "Creating temp container for resource mount")
-              id                (docker/create states/docker-conn image "" {} {})
+              container-id      (e/create-container image)
               _                 (log/debug "Copying resources to container")
-              _                 (-> states/docker-conn
-                                    (.copyArchiveToContainerCmd id)
-                                    (.withTarInputStream (-> archive FileInputStream.))
-                                    (.withRemotePath "/root")
-                                    .exec)
+              _                 (put-container-archive container-id archive "/root")
               _                 (-> archive File. .delete)
               _                 (log/debug "Committing resourceful container")
-              provisioned-image (docker/commit-container
-                                 states/docker-conn
-                                 id
-                                 (format "%s/%d" id (System/currentTimeMillis))
-                                 "latest"
-                                 cmd)
+              provisioned-image (e/commit-image container-id cmd)
               _                 (log/debug "Removing temp container")
-              _                 (docker/rm states/docker-conn id)]
-    provisioned-image
-    (f/when-failed [err]
-      (log/errorf "Failed to create initial image: %s" (f/message err))
-      err)))
+              _                 (e/delete-container container-id :force)]
+             provisioned-image
+             (f/when-failed [err]
+                            (log/errorf "Failed to create initial image: %s" (f/message err))
+                            err)))
 
 (defn add-params
   "Saves the map of GET params to be sent to the resource."
@@ -139,12 +148,12 @@
   "Fetches list of parameters associated with the resource"
   [pipeline name]
   (reduce
-    (fn [r {:keys [key value]}]
-      (assoc r (keyword key) value))
-    {}
-    (db/resource-params-of states/db
-                           {:name     name
-                            :pipeline pipeline})))
+   (fn [r {:keys [key value]}]
+     (assoc r (keyword key) value))
+   {}
+   (db/resource-params-of states/db
+                          {:name     name
+                           :pipeline pipeline})))
 
 (comment
   (def resource {:name     "my-source"
@@ -158,4 +167,25 @@
 
   (->> (db/resource-params-of states/db
                               {:name     "my-source"
-                               :pipeline "dev:test"})))
+                               :pipeline "dev:test"}))
+
+  (with-open [xin (-> "/home/timo/projects/bob/test.tar"
+                      clojure.java.io/file
+                      clojure.java.io/input-stream)]
+    (docker/invoke states/containers {:op     :PutContainerArchive
+                                      :params {:id          "8778328a32b6"
+                                               :path        "/root"
+                                               :inputStream xin}}))
+
+  (put-container-archive "8778328a32b6" "/home/timo/projects/bob/test.tar" "/root")
+  (e/commit-image "8778328a32b6" "foo")
+  (e/delete-container "e206ec8f15d5")
+
+  (docker/categories)
+  (def commit (docker/client {:category :commit :conn states/conn}))
+  (docker/invoke commit {:op :ImageCommit
+                         :params {:container "8778328a32b6"
+                                  :repo "local"
+                                  :tag "foobar"
+                                  :comment "foo so bar"
+                                  :author "memyselfandi"}}))

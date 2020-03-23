@@ -30,28 +30,35 @@
 (deftest image-mark-and-sweep-test
   (log/merge-config! {:level :report})
   (testing "marking an image for the first time"
-    (is (= {"build1" (list "image1")}
-           (mark-image-for-gc "image1" "build1"))))
+    (with-redefs [bob.pipeline.internals/images-produced (atom {})]
+      (is (= {"build1" (list "image1")}
+             (mark-image-for-gc "image1" "build1")))))
 
   (testing "marking the same image is idempotent"
-    (is (= {"build1" (list "image1")}
-           (mark-image-for-gc "image1" "build1"))))
+    (with-redefs [bob.pipeline.internals/images-produced (atom {})]
+      (is (= {"build1" (list "image1")}
+             (mark-image-for-gc "image1" "build1")))))
 
   (testing "marking a new image for the same build"
-    (is (= {"build1" (list "image2" "image1")}
-           (mark-image-for-gc "image2" "build1"))))
+    (with-redefs [bob.pipeline.internals/images-produced (atom {"build1" (list "image1")})]
+      (is (= {"build1" (list "image2" "image1")}
+             (mark-image-for-gc "image2" "build1")))))
 
   (testing "marking a new image for another same build"
-    (is (= {"build1" (list "image2" "image1")
-            "build2" (list "image1")}
-           (mark-image-for-gc "image1" "build2"))))
+    (with-redefs [bob.pipeline.internals/images-produced (atom {"build1" (list "image2" "image1")})]
+      (is (= {"build1" (list "image2" "image1")
+              "build2" (list "image1")}
+             (mark-image-for-gc "image1" "build2"))))))
 
+(deftest gc-images-test
   (testing "sweep images for build1"
-    (with-redefs-fn {#'docker/image-rm (fn [_ image]
-                                         (tu/check-and-fail
-                                          #(some #{image} ["image1" "image2"])))}
-      #(is (= {"build2" (list "image1")}
-              (gc-images "build1"))))))
+    (with-redefs [bob.pipeline.internals/images-produced (atom {"build1" (list "image2" "image1")
+                                                                "build2" (list "image1")})]
+      (with-redefs-fn {#'e/delete-image (fn [image]
+                                              (tu/check-and-fail
+                                               #(some #{image} ["image1" "image2"])))}
+        #(is (= {"build2" (list "image1")}
+                (gc-images "build1")))))))
 
 (deftest pid-updates
   (testing "successful container id update"
@@ -92,17 +99,14 @@
 
 (deftest next-step-execution
   (testing "next images generation with resource mount"
-    (with-redefs-fn {#'docker/commit-container (fn [_ id repo tag cmd]
-                                                 (tu/check-and-fail
-                                                  #(and (= "id" id)
-                                                        (clojure.string/starts-with? repo id)
-                                                        (= "latest" tag)
-                                                        (= "hello" cmd)))
-                                                 "img")
-                     #'resourceful-step        (constantly "img")
-                     #'e/build                 (constantly "id")
-                     #'docker/rm               (constantly nil)
-                     #'mark-image-for-gc       (constantly nil)}
+    (with-redefs-fn {#'e/commit-image     (fn [id cmd]
+                                            (tu/check-and-fail
+                                             #(and (= "id" id)
+                                                   (= "hello" cmd))))
+                     #'resourceful-step   (constantly "img")
+                     #'e/create-container (constantly "id")
+                     #'e/delete-container (constantly nil)
+                     #'mark-image-for-gc  (constantly nil)}
       #(is (= {:id      "id"
                :mounted ["source"]}
               (next-step {:id "id" :mounted []}
@@ -113,17 +117,14 @@
                          "run-id")))))
 
   (testing "next image generation without resource mount"
-    (with-redefs-fn {#'docker/commit-container (fn [_ id repo tag cmd]
-                                                 (tu/check-and-fail
-                                                  #(and (= "id" id)
-                                                        (clojure.string/starts-with? repo id)
-                                                        (= "latest" tag)
-                                                        (= "hello" cmd)))
-                                                 "img")
-                     #'resourceful-step        (constantly "img")
-                     #'e/build                 (constantly "id")
-                     #'docker/rm               (constantly nil)
-                     #'mark-image-for-gc       (constantly nil)}
+    (with-redefs-fn {#'e/commit-image     (fn [id cmd]
+                                            (tu/check-and-fail
+                                             #(and (= "id" id)
+                                                   (= "hello" cmd))))
+                     #'resourceful-step   (constantly "img")
+                     #'e/create-container (constantly "id")
+                     #'e/delete-container (constantly nil)
+                     #'mark-image-for-gc  (constantly nil)}
       #(is (= {:id      "id"
                :mounted []}
               (next-step {:id "id" :mounted []}
@@ -133,10 +134,10 @@
                          "run-id")))))
 
   (testing "failed next image generation"
-    (with-redefs-fn {#'docker/commit-container #(throw (Exception. "nope"))
-                     #'resourceful-step        (constantly "img")
-                     #'e/build                 (constantly "id")
-                     #'mark-image-for-gc       (constantly nil)}
+    (with-redefs-fn {#'e/commit-image     #(throw (Exception. "nope"))
+                     #'resourceful-step   (constantly "img")
+                     #'e/create-container (constantly "id")
+                     #'mark-image-for-gc  (constantly nil)}
       #(is (f/failed? (next-step {:id "id" :mounted []}
                                  {:cmd "hello"}
                                  {}
@@ -162,14 +163,14 @@
                                                      #(and (= "id" id)
                                                            (= "id" run-id)))
                                                     "id")
-                       #'e/run                    (fn [id run-id]
+                       #'e/start-container        (fn [id run-id]
                                                     (tu/check-and-fail
                                                      #(and (= "id" id)
                                                            (= "id" run-id)))
                                                     "id")
-                       #'docker/inspect           (fn [_ id]
+                       #'docker/invoke            (fn [_ params]
                                                     (tu/check-and-fail
-                                                     #(= "id" id))
+                                                     #(= "id" (:id (:params params))))
                                                     {:Config {:WorkingDir "/some"}})
                        #'artifact/upload-artifact (fn [group name number artifact id path store-name]
                                                     (tu/check-and-fail
@@ -201,12 +202,12 @@
                                                      #(and (= "id" id)
                                                            (= "id" run-id)))
                                                     "id")
-                       #'e/run                    (fn [id run-id]
+                       #'e/start-container        (fn [id run-id]
                                                     (tu/check-and-fail
                                                      #(and (= "id" id)
                                                            (= "id" run-id)))
                                                     "id")
-                       #'docker/inspect           (fn [_ id]
+                       #'docker/invoke            (fn [_ id]
                                                     (tu/check-and-fail
                                                      #(= "id" id))
                                                     {:Config {:WorkingDir "/some"}})
@@ -220,8 +221,8 @@
           nein      (fn [& _] (throw (Exception. "shouldn't be called")))]
       (with-redefs-fn {#'next-step                nein
                        #'update-pid               nein
-                       #'e/run                    nein
-                       #'docker/inspect           nein
+                       #'e/start-container        nein
+                       #'docker/invoke            nein
                        #'artifact/upload-artifact nein}
         #(is (reduced? (exec-step "id" {} "dev:test" 1 (f/fail "shizz") test-step))))))
 
@@ -230,8 +231,8 @@
           nein      (fn [& _] (throw (Exception. "shouldn't be called")))]
       (with-redefs-fn {#'next-step                (constantly (f/fail "shizz"))
                        #'update-pid               nein
-                       #'e/run                    nein
-                       #'docker/inspect           nein
+                       #'e/start-container        nein
+                       #'docker/invoke            nein
                        #'artifact/upload-artifact nein}
         #(is (f/failed? (exec-step "id" {} "dev:test" 1 {:id "id"} test-step)))))))
 
@@ -271,7 +272,7 @@
                                                       :status   "running"}
                                                      args)))
                        #'u/log-to-db          (constantly nil)
-                       #'e/pull               (fn [img]
+                       #'e/pull-image         (fn [img]
                                                 (tu/check-and-fail
                                                  #(= "img" img))
                                                 "img")
@@ -283,7 +284,7 @@
                                                        (= "img" img)
                                                        (= "run-id" run-id)))
                                                 "img")
-                       #'e/build              (fn [img step evars]
+                       #'e/create-container   (fn [img step evars]
                                                 (tu/check-and-fail
                                                  #(and (= "img" img)
                                                        (= first-step
@@ -295,7 +296,7 @@
                                                  #(and (= "id" id)
                                                        (= "run-id" run-id)))
                                                 "id")
-                       #'e/run                (fn [id run-id]
+                       #'e/start-container   (fn [id run-id]
                                                 (tu/check-and-fail
                                                  #(and (= "id" id)
                                                        (= "run-id" run-id)))
@@ -314,7 +315,7 @@
                                                  #(= {:status "passed"
                                                       :id     "run-id"}
                                                      args)))
-                       #'docker/rm            (constantly nil)
+                       #'e/delete-container   (constantly nil)
                        #'mark-image-for-gc    (constantly nil)}
         #(is (= "id" @(exec-steps "img"
                                   [first-step {:cmd "hello2"}]
@@ -337,7 +338,7 @@
                                                       :status   "running"}
                                                      args)))
                        #'u/log-to-db          (constantly nil)
-                       #'e/pull               (fn [img]
+                       #'e/pull-image          (fn [img]
                                                 (tu/check-and-fail
                                                  #(= "img" img))
                                                 "img")
@@ -349,7 +350,7 @@
                                                        (= "img" img)
                                                        (= "run-id" run-id)))
                                                 "img")
-                       #'e/build              (fn [img step evars]
+                       #'e/create-container   (fn [img step evars]
                                                 (tu/check-and-fail
                                                  #(and (= "img" img)
                                                        (= first-step
@@ -361,7 +362,7 @@
                                                  #(and (= "id" id)
                                                        (= "run-id" run-id)))
                                                 "id")
-                       #'e/run                (fn [id run-id]
+                       #'e/start-container   (fn [id run-id]
                                                 (tu/check-and-fail
                                                  #(and (= "id" id)
                                                        (= "run-id" run-id)))
@@ -380,7 +381,7 @@
                                                  #(= {:status "passed"
                                                       :id     "run-id"}
                                                      args)))
-                       #'docker/rm            (constantly nil)
+                       #'e/delete-container   (constantly nil)
                        #'mark-image-for-gc    (constantly nil)}
         #(is (= "id" @(exec-steps "img"
                                   [first-step {:cmd "hello2"}]
@@ -404,12 +405,12 @@
                                                       :status   "running"}
                                                      args)))
                        #'u/log-to-db          (constantly nil)
-                       #'e/pull               (constantly (f/fail "shizz"))
+                       #'e/pull-image         (constantly (f/fail "shizz"))
                        #'db/status-of         (constantly {:status "running"})
                        #'resourceful-step     nein
-                       #'e/build              nein
+                       #'e/create-container   nein
                        #'update-pid           nein
-                       #'e/run                nein
+                       #'e/start-container   nein
                        #'reduce               nein
                        #'db/update-run        nein
                        #'mark-image-for-gc    nein}
@@ -593,11 +594,11 @@
 
 (deftest container-locality-test
   (testing "container is found locally"
-    (with-redefs-fn {#'docker/ps (constantly [{:Id "id1"}])}
+    (with-redefs-fn {#'docker/invoke (constantly [{:Id "id1"}])}
       #(is (container-in-node "id"))))
 
   (testing "container is not found locally"
-    (with-redefs-fn {#'docker/ps (constantly [{:Id "crappy-id"}])}
+    (with-redefs-fn {#'docker/invoke (constantly [{:Id "crappy-id"}])}
       #(is (nil? (container-in-node "id"))))))
 
 (deftest sync-action-test

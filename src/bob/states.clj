@@ -27,6 +27,22 @@
 (defonce db-user (get env/env :bob-db-user "bob"))
 (defonce db-name (get env/env :bob-db-name "bob"))
 
+(defonce docker-uri (get env/env :bob-docker-uri "unix:///var/run/docker.sock"))
+(defonce connect-timeout (get env/env :bob-connect-timeout 1000))
+(defonce read-timeout (get env/env :bob-read-timeout 30000))
+(defonce write-timeout (get env/env :bob-write-timeout 30000))
+(defonce call-timeout (get env/env :bob-call-timeout 40000))
+
+(defonce conn {:uri docker-uri
+               :timeouts {:connect-timeout connect-timeout
+                          :read-timeout    read-timeout
+                          :write-timeout   write-timeout
+                          :call-timeout    call-timeout}})
+
+(defonce images (docker/client {:category :images :conn conn}))
+(defonce containers (docker/client {:category :containers :conn conn}))
+(defonce commit (docker/client {:category :commit :conn conn}))
+
 (m/defstate data-source
   :start (let [data-source (h/make-datasource {:adapter            "postgresql"
                                                :username           db-user
@@ -49,11 +65,6 @@
 
 (m/defstate database
   :start (repl/migrate migration-config))
-
-(m/defstate docker-conn
-  :start (docker/connect)
-  :stop  (do (log/info "Closing docker connection")
-             (docker/disconnect docker-conn)))
 
 (comment
   (m/start)

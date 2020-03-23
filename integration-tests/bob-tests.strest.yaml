@@ -213,11 +213,22 @@ requests:
       - jsonpath: "content.message"
         expect: "Ok"
 
+  secondPipelineStatusRunning:
+    request:
+      url: "http://bob:7777/api/pipelines/status/groups/dev/names/test1/number/1"
+      method: "GET"
+    delay: 2000
+    validate:
+      - jsonpath: "status"
+        expect: 200
+      - jsonpath: "content.message"
+        expect: "running"
+
   pipelineStop:
     request:
       url: "http://bob:7777/api/pipelines/stop/groups/dev/names/test1/number/1"
       method: "POST"
-    delay: 10000
+    delay: 2000
     validate:
       - jsonpath: "status"
         expect: 200
@@ -299,7 +310,7 @@ requests:
       - jsonpath: "content.message"
         expect: "passed"
 
-  secondPipelineStatus:
+  secondPipelineStatusStopped:
     request:
       url: "http://bob:7777/api/pipelines/status/groups/dev/names/test1/number/1"
       method: "GET"
