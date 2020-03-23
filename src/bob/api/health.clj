@@ -23,12 +23,11 @@
             [taoensso.timbre :as log]
             [aleph.http :as http]
             [chime :refer [chime-ch]]
-            [clj-time.core :as t]
-            [clj-time.periodic :as tp]
             [bob.artifact.db :refer [get-artifact-stores]]
             [bob.resource.db :refer [get-external-resources]]
             [bob.states :as states]
-            [bob.util :as u]))
+            [bob.util :as u])
+  (:import  [java.time Instant Duration]))
 
 (sql/def-db-fns (io/resource "sql/health.sql"))
 
@@ -67,11 +66,14 @@
       (log/debugf (str "Health check succeeded!"))
       (log/warn (str "Health check failed: " (clojure.string/join " and " failures) " not healthy")))))
 
+(defn- periodic-seq [^Instant start duration-or-period]
+  (iterate #(.addTo duration-or-period %) start))
+
 (defn start-heartbeat
   "Starts a periodic heatbeat which performs a health check."
   []
   (let [_      (log/debugf "Starting Heartbeat")
-        chimes (chime-ch (rest (tp/periodic-seq (t/now) (-> 1 t/minutes))))]
+        chimes (chime-ch (rest (periodic-seq (Instant/now) (Duration/ofMinutes 1))))]
     (a/go-loop []
       (when-let [_ (a/<! chimes)]
         (log-health-check)
