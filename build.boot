@@ -30,7 +30,7 @@
                             [compojure "1.6.1"]
                             [com.fasterxml.jackson.core/jackson-core "2.10.2"]
                             [failjure "2.0.0"]
-                            [org.postgresql/postgresql "42.2.10"]
+                            [org.postgresql/postgresql "42.2.11"]
                             [ragtime "0.8.0"]
                             [hikari-cp "2.11.0"]
                             [com.layerware/hugsql "0.5.1"]
@@ -44,7 +44,7 @@
                             [jarohen/chime "0.3.0"]
                             [com.taoensso/timbre "4.10.0"]
                             [org.kamranzafar/jtar "2.3"]
-                            [javax.xml.bind/jaxb-api "2.3.1"]           ;; For Aleph's XML dependency, Java 8 compat
+                            [com.fzakaria/slf4j-timbre "0.3.19"]
                             [javax.activation/activation "1.1.1"]       ;; Java 9+ compat for XML bindings
                             ;; Test
                             [lambdaisland/kaocha-boot "0.0-20" :scope "test"]

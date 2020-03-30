@@ -28,7 +28,7 @@ jobs:
       - name: "Prepare Java"
         uses: "actions/setup-java@v1"
         with:
-          java-version: "12"
+          java-version: "11"
 
       - name: "Prepare Boot"
         uses: "DeLaGuardo/setup-clojure@2.0"
