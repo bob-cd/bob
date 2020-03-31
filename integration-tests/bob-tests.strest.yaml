@@ -347,11 +347,11 @@ requests:
     validate:
       - jsonpath: "status"
         expect: 200
-      - jsonpath: "content[0].name"
+      - jsonpath: "content.message[0].name"
         expect: "dev:test"
-      - jsonpath: "content[1].name"
+      - jsonpath: "content.message[1].name"
         expect: "dev:test1"
-      - jsonpath: "content[2].name"
+      - jsonpath: "content.message[2].name"
         expect: "dev:this-fails"
 
   getPipelinesByStatus:
@@ -361,7 +361,7 @@ requests:
     validate:
       - jsonpath: "status"
         expect: 200
-      - jsonpath: "content[0].name"
+      - jsonpath: "content.message[0].name"
         expect: "dev:this-fails"
 
   getPipelinesByGroupAndName:
@@ -371,7 +371,7 @@ requests:
     validate:
       - jsonpath: "status"
         expect: 200
-      - jsonpath: "content[0].name"
+      - jsonpath: "content.message[0].name"
         expect: "dev:test"
 
   pipelineArtifacts:

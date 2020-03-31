@@ -304,7 +304,7 @@
                   :body
                   :message))))))
 
-(deftest get-pipeleines
+(deftest test-get-pipelines
   (testing "Filter pipelines"
     (with-redefs-fn {#'db/get-pipelines          (fn [_ filter]
                                                    (tu/check-and-fail
@@ -345,25 +345,27 @@
                                                      :pipeline "test:Test"}])}
       #(is (= [{:name "test:Test",
                 :data
-                      {:image     "test 1.7",
-                       :steps
-                                  [{:cmd "echo hello",
-                                    :produces_artifact
-                                         {:name "afile", :path "test.txt", :store "local"}}
-                                   {:cmd "mkdir"}],
-                       :resources [{:name     "src"
-                                    :type     nil
-                                    :provider "git"
-                                    :params   {:env "dev"}}]}}]
+                {:image     "test 1.7",
+                 :steps
+                 [{:cmd "echo hello",
+                   :produces_artifact
+                   {:name "afile", :path "test.txt", :store "local"}}
+                  {:cmd "mkdir"}],
+                 :resources [{:name     "src"
+                              :type     nil
+                              :provider "git"
+                              :params   {:env "dev"}}]}}]
               (-> @(get-pipelines nil nil nil)
-                  :body)))))
+                  :body
+                  :message)))))
 
   (testing "Empty result returns empty "
     (with-redefs-fn {#'db/get-pipelines (fn [_ filter]
                                           nil)}
       #(is (= []
               (-> @(get-pipelines "dev" "test" nil)
-                  :body)))))
+                  :body
+                  :message)))))
 
   (testing "Test filters created correctly"
     (with-redefs-fn {#'db/get-pipelines (fn [_ filter-map]

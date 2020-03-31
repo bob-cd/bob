@@ -19,3 +19,5 @@ strest_history.json
 kind
 .kube
 .#*
+bob-tests-local.strest.yaml
+docker-compose-local.yaml
