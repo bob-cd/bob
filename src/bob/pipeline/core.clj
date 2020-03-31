@@ -195,26 +195,23 @@
                                 (u/name-of group name)
                                 (some not-empty [group name]))
                query-params   {:pipeline pipeline-query :status status}
-               result         (f/try-all [pipelines (db/get-pipelines states/db query-params)
-                                          _         (log/debugf "Found pipelines %s" (vec pipelines))
-                                          result    (mapv (fn [{:keys [name image]}]
-                                                            (f/try-all [filter    {:pipeline name}
-                                                                        steps     (mapv make-step (db/ordered-steps states/db filter))
-                                                                        resources (mapv make-resource
-                                                                                        (rdb/resources-by-pipeline states/db filter))]
-                                                              {:name name
-                                                               :data {:image     image
-                                                                      :steps     steps
-                                                                      :resources resources}}))
-                                                          pipelines)]
-                                (do
-                                  (log/debugf "Fetched pipelines: %s" result)
-                                  (res/ok result))
-                                (f/when-failed [err]
-                                  (let [error (format "Failed to fetch pipelines %s " (f/message err))]
-                                    (log/warn error err)
-                                    (u/respond error))))]
-    result))
+               pipelines      (f/try* (db/get-pipelines states/db query-params))
+               _              (log/debugf "Found pipelines %s" (vec pipelines))
+               result         (f/try* (mapv (fn [{:keys [name image]}]
+                                              (f/try-all [filter    {:pipeline name}
+                                                          steps     (mapv make-step (db/ordered-steps states/db filter))
+                                                          resources (mapv make-resource
+                                                                          (rdb/resources-by-pipeline states/db filter))]
+                                                         {:name name
+                                                          :data {:image     image
+                                                                 :steps     steps
+                                                                 :resources resources}}))
+                                            pipelines))]
+              (if (or (f/failed? query-params) (f/failed? result))
+                (u/log-and-fail "Failed fetching the pipelines")
+                (do
+                  (log/debugf "Fetched pipelines: %s" result)
+                  (u/respond (or result []))))))
 
 (comment
   (create "test"
@@ -237,4 +234,8 @@
   (start "test" "test")
   (status "dev" "test" 1)
   (logs-of "test" "test" 1 0 20)
-  (remove-pipeline "test" "test"))
+  (remove-pipeline "test" "test")
+  (get-pipelines "fo" "test" nil)
+  (get-pipelines "dev" "test" nil)
+  (get-pipelines nil nil nil)
+  (or (f/failed? nil) (f/failed? nil)))
