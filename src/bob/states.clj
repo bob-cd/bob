@@ -28,10 +28,10 @@
 (defonce db-name (get env/env :bob-db-name "bob"))
 
 (defonce docker-uri (get env/env :bob-docker-uri "unix:///var/run/docker.sock"))
-(defonce connect-timeout (get env/env :bob-connect-timeout 1000))
-(defonce read-timeout (get env/env :bob-read-timeout 30000))
-(defonce write-timeout (get env/env :bob-write-timeout 30000))
-(defonce call-timeout (get env/env :bob-call-timeout 40000))
+(defonce connect-timeout (Integer/parseInt (get env/env :bob-connect-timeout "1000")))
+(defonce read-timeout (Integer/parseInt (get env/env :bob-read-timeout "30000")))
+(defonce write-timeout (Integer/parseInt (get env/env :bob-write-timeout "30000")))
+(defonce call-timeout (Integer/parseInt (get env/env :bob-call-timeout "40000")))
 
 (defonce conn {:uri docker-uri
                :timeouts {:connect-timeout connect-timeout
