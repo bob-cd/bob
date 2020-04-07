@@ -22,16 +22,22 @@
             [environ.core :as env]
             [taoensso.timbre :as log]))
 
+(defn int-from-env
+  [key default]
+  (try
+    (Integer/parseInt (get env/env key (str default)))
+    (catch Exception _ default)))
+
 (defonce db-host (get env/env :bob-db-host "localhost"))
-(defonce db-port (Integer/parseInt (get env/env :bob-db-port "5432")))
+(defonce db-port (int-from-env :bob-db-port 5432))
 (defonce db-user (get env/env :bob-db-user "bob"))
 (defonce db-name (get env/env :bob-db-name "bob"))
 
 (defonce docker-uri (get env/env :bob-docker-uri "unix:///var/run/docker.sock"))
-(defonce connect-timeout (Integer/parseInt (get env/env :bob-connect-timeout "1000")))
-(defonce read-timeout (Integer/parseInt (get env/env :bob-read-timeout "30000")))
-(defonce write-timeout (Integer/parseInt (get env/env :bob-write-timeout "30000")))
-(defonce call-timeout (Integer/parseInt (get env/env :bob-call-timeout "40000")))
+(defonce connect-timeout (int-from-env :bob-connect-timeout 1000))
+(defonce read-timeout (int-from-env :bob-read-timeout 30000))
+(defonce write-timeout (int-from-env :bob-write-timeout 30000))
+(defonce call-timeout (int-from-env :bob-call-timeout 40000))
 
 (defonce conn {:uri docker-uri
                :timeouts {:connect-timeout connect-timeout
