@@ -20,6 +20,7 @@
             [cheshire.core :as json]
             [mount.core :as m]
             [bob.util :as u]
+            [bob.config :refer [config]]
             [bob.states :as states]
             [bob.artifact.core :as artifact]
             [bob.execution.internals :as e]
@@ -333,10 +334,10 @@
 
 (m/defstate pipeline-status-change-connection
   :start (let [datasource    (doto (PGDataSource.)
-                               (.setServerName states/db-host)
-                               (.setPort states/db-port)
-                               (.setDatabaseName states/db-name)
-                               (.setUser states/db-user))
+                               (.setServerName (get-in config [:postgres :host]))
+                               (.setPort (get-in config [:postgres :port]))
+                               (.setDatabaseName (get-in config [:postgres :database]))
+                               (.setUser (get-in config [:postgres :user])))
                stop-listener (listen-on "stopped" stop-pipeline)
                connection    (doto ^PGConnection (.getConnection datasource)
                                (.addNotificationListener stop-listener))]
