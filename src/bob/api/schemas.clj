@@ -17,6 +17,23 @@
   (:require [schema.core :as s])
   (:import (clojure.lang Keyword)))
 
+(s/defschema ServerConfig {(s/optional-key :port) s/Int})
+
+(s/defschema DockerConfig {:uri String
+                           (s/optional-key :timeouts) {:connect-timeout s/Int
+                                                       :read-timeout    s/Int
+                                                       :write-timeout   s/Int
+                                                       :call-timeout    s/Int}})
+
+(s/defschema PostgresConfig {:host String
+                             :port s/Int
+                             :user String
+                             :database String})
+
+(s/defschema Config {(s/optional-key :server) ServerConfig
+                     :docker DockerConfig
+                     :postgres PostgresConfig})
+
 (s/defschema SimpleResponse {:message String})
 
 (s/defschema SupportedResourceTypes (s/enum "external"))
@@ -58,6 +75,17 @@
                                                :url  String}]})
 
 (comment
+  (s/validate Config {:server {:port 7777}
+                      :docker {:uri "unix:///var/run/docker.sock",
+                               :timeouts {:connect-timeout 1000,
+                                          :read-timeout 30000,
+                                          :write-timeout 30000,
+                                          :call-timeout 40000}},
+                      :postgres {:host "localhost",
+                                 :port 5432,
+                                 :user "bob",
+                                 :database "bob"}})
+
   (s/validate Step
               {:cmd               "echo hello"
                :needs_resource    "src"

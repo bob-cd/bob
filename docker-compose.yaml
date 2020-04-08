@@ -54,14 +54,7 @@ services:
       - resource-git
       - artifact-local
     environment:
-      - BOB_DB_HOST=db
-      - BOB_DB_PORT=5432
-      - BOB_DB_USER=bob
-      - BOB_DB_NAME=bob
-      - BOB_CONNECT_TIMEOUT=0
-      - BOB_READ_TIMEOUT=0
-      - BOB_WRITE_TIMEOUT=0
-      - BOB_CALL_TIMEOUT=0
+      - BOB_POSTGRES_HOST=db
     expose:
       - "7777"
     networks:

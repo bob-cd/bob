@@ -28,17 +28,42 @@ See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the road
 ## Configuration
 Configuration uses the [environ library](https://github.com/weavejester/environ) and therefore several variables can be
 set by specifying them as environment variable or as java system property. Possible variables are:
-| java system properties | environment variables | defaults                    |
-|------------------------|-----------------------|-----------------------------|
-| bob-db-host            | BOB_DB_HOST           | localhost                   |
-| bob-db-port            | BOB_DB_PORT           | 5432                        |
-| bob-db-user            | BOB_DB_USER           | bob                         |
-| bob-db-name            | BOB_DB_NAME           | bob                         |
-| bob-docker-uri         | BOB_DOCKER_URI        | unix:///var/run/docker.sock |
-| bob-connect-timeout    | BOB_CONNECT_TIMEOUT   | 1000ms                      |
-| bob-read-timeout       | BOB_READ_TIMEOUT      | 30000ms                     |
-| bob-write-timeout      | BOB_WRITE_TIMEOUT     | 30000ms                     |
-| bob-call-timeout       | BOB_CALL_TIMEOUT      | 40000ms                     |
+| java system properties     | environment variables      | defaults                    |
+|----------------------------|----------------------------|-----------------------------|
+| bob-server-port            | BOB_SERVER_PORT            | 7777                        |
+| bob-postgres-host          | BOB_POSTGRES_HOST          | localhost                   |
+| bob-postgres-port          | BOB_POSTGRES_PORT          | 5432                        |
+| bob-postgres-user          | BOB_POSTGRES_USER          | bob                         |
+| bob-postgres-database      | BOB_POSTGRES_DATABASE      | bob                         |
+| bob-docker-uri             | BOB_DOCKER_URI             | unix:///var/run/docker.sock |
+| bob-docker-connect-timeout | BOB_DOCKER_CONNECT_TIMEOUT | 1000ms                      |
+| bob-docker-read-timeout    | BOB_DOCKER_READ_TIMEOUT    | 30000ms                     |
+| bob-docker-write-timeout   | BOB_DOCKER_WRITE_TIMEOUT   | 30000ms                     |
+| bob-docker-call-timeout    | BOB_DOCKER_CALL_TIMEOUT    | 40000ms                     |
+
+You can also set configuration in a file called `.bob.conf` inside your home folder. This is supposed to be an edn-file
+and will be merged with the config passed as env-vars, system properties and the defaults.
+
+A sample configuration looks like this:
+```
+{:server {:port 7777}
+ :docker {:uri "unix:///var/run/docker.sock",
+          :timeouts {:connect-timeout 1000,
+                     :read-timeout 30000,
+                     :write-timeout 30000,
+                     :call-timeout 40000}},
+ :postgres {:host "localhost",
+            :port 5432,
+            :user "bob",
+            :database "bob"}}
+```
+
+The priority of your configuration is following:
+
+1. defaults
+1. Environment variables
+1. Java system properties
+1. Bob's configuration file
 
 ## Testing, building and running locally
 - Clone this repository.

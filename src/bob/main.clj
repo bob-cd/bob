@@ -19,16 +19,17 @@
             [clojure.repl :as repl]
             [taoensso.timbre :as log]
             [bob.states :refer :all]
+            [bob.config :refer [config]]
             [bob.api.health :as health]
             [bob.api.routes :as routes])
   (:gen-class))
 
-(def PORT 7777)
+(defonce options (:server config))
 
 ;; TODO: These states are here to avoid a cyclic import, figure out a better way.
 (m/defstate server
-  :start (do (log/infof "Bob's listening on http://0.0.0.0:%d/" PORT)
-             (http/start-server routes/bob-api {:port PORT}))
+  :start (do (log/infof "Bob's listening on http://0.0.0.0:%d/" (:port options))
+             (http/start-server routes/bob-api options))
   :stop  (do (log/info "Stopping HTTP")
              (.close server)))
 
@@ -49,3 +50,6 @@
   [& _]
   (repl/set-break-handler! shutdown!)
   (m/start))
+
+(comment
+  (alter-var-root #'options (fn [_] (:server (bob.config/load-config)))))
