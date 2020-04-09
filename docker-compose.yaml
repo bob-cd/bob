@@ -55,6 +55,10 @@ services:
       - artifact-local
     environment:
       - BOB_POSTGRES_HOST=db
+      - BOB_DOCKER_CONNECT_TIMEOUT=0
+      - BOB_DOCKER_READ_TIMEOUT=0
+      - BOB_DOCKER_WRITE_TIMEOUT=0
+      - BOB_DOCKER_CALL_TIMEOUT=0
     expose:
       - "7777"
     networks:

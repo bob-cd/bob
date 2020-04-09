@@ -56,6 +56,10 @@ services:
       - db
     environment:
       - BOB_POSTGRES_HOST=db
+      - BOB_DOCKER_CONNECT_TIMEOUT=1000
+      - BOB_DOCKER_READ_TIMEOUT=30000
+      - BOB_DOCKER_WRITE_TIMEOUT=30000
+      - BOB_DOCKER_CALL_TIMEOUT=40000
     expose:
       - "7777"
     networks:
