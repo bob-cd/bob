@@ -13,7 +13,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-FROM clojure:boot as builder
+FROM clojure:openjdk-14-boot as builder
 
 WORKDIR /opt
 COPY . .
