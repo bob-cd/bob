@@ -281,6 +281,7 @@ requests:
             - "boot.properties"
             - "build.boot"
             - "deploy"
+            - "doc"
             - "docker-compose.yaml"
             - "integration-tests"
             - "nginx.conf"
