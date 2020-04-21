@@ -19,7 +19,9 @@
    failjure.core/ok->
    failjure.core/try-all
    manifold.deferred/let-flow
-   mount.core/defstate]
+   mount.core/defstate
+   next.jdbc/with-transaction
+   clojure.core/destructure]
  :known-namespaces
   [clojure.string
    clojure.set
