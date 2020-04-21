@@ -1,0 +1,22 @@
+{:paths ["src" "resources"]
+
+ :deps
+ {org.clojure/clojure                    {:mvn/version "1.10.1"}
+  com.novemberain/langohr                {:mvn/version "5.1.0"}
+  environ                                {:mvn/version "1.1.0"}
+  org.postgresql/postgresql              {:mvn/version "42.2.12"}
+  ragtime                                {:mvn/version "0.8.0"}
+  hikari-cp                              {:mvn/version "2.11.0"}
+  com.layerware/hugsql                   {:mvn/version "0.5.1"}
+  com.layerware/hugsql-adapter-next-jdbc {:mvn/version "0.5.1"}
+  com.taoensso/timbre                    {:mvn/version "4.10.0"}
+  com.stuartsierra/component             {:mvn/version "1.0.0"}
+  com.fzakaria/slf4j-timbre              {:mvn/version "0.3.19"}
+  failjure                               {:mvn/version "2.0.0"}}
+
+ :aliases
+ {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0-612"}}
+            :main-opts  ["-m" "kaocha.runner"]}
+  :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}
+            :main-opts  ["-m" "hf.depstar.uberjar" "entities.jar"
+                         "-C" "-S" "-m" "entities.main"]}}}

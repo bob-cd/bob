@@ -1,0 +1,25 @@
+;   This file is part of Bob.
+;
+;   Bob is free software: you can redistribute it and/or modify
+;   it under the terms of the GNU Affero General Public License as published by
+;   the Free Software Foundation, either version 3 of the License, or
+;   (at your option) any later version.
+;
+;   Bob is distributed in the hope that it will be useful,
+;   but WITHOUT ANY WARRANTY; without even the implied warranty of
+;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;   GNU Affero General Public License for more details.
+;
+;   You should have received a copy of the GNU Affero General Public License
+;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+{:up   ["CREATE TABLE \"steps\" (\"id\"                SERIAL,
+                                 \"cmd\"               TEXT NOT NULL,
+                                 \"pipeline\"          TEXT NOT NULL,
+                                 \"needs_resource\"    TEXT DEFAULT NULL,
+                                 \"produces_artifact\" TEXT DEFAULT NULL,
+                                 \"artifact_path\"     TEXT DEFAULT NULL,
+                                 \"artifact_store\"    TEXT DEFAULT NULL,
+                                 PRIMARY KEY(\"id\", \"pipeline\"),
+                                 FOREIGN KEY(\"pipeline\") REFERENCES \"pipelines\"(\"name\") ON DELETE CASCADE);"]
+ :down ["DROP TABLE \"steps\";"]}
