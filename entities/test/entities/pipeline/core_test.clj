@@ -16,39 +16,19 @@
 (ns entities.pipeline.core-test
   (:require [clojure.test :refer [deftest testing is]]
             [com.stuartsierra.component :as component]
-            [ragtime.repl :as repl]
-            [ragtime.jdbc :as jdbc]
-            [hikari-cp.core :as h]
             [entities.system :as sys]
             [entities.pipeline.core :as p]))
-
-(defrecord TestDatabase
-  [jdbc-url connection-timeout]
-  component/Lifecycle
-  (start [this]
-    (let [data-source      (h/make-datasource {:jdbc-url           jdbc-url
-                                               :connection-timeout connection-timeout})
-          migration-config {:datastore  (jdbc/sql-database {:connection-uri jdbc-url})
-                            :migrations (jdbc/load-resources "migrations")}]
-      (repl/migrate migration-config)
-      (assoc this :conn data-source)))
-  (stop [this]
-    (h/close-datasource (:conn this))
-    (assoc this :conn nil))
-  sys/IDatabase
-  (db-connection [this]
-    (:conn this)))
 
 (defn with-db
   [test-fn]
   (let [url "jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob"
-        db  (map->TestDatabase {:jdbc-url           url
+        db  (sys/map->Database {:jdbc-url           url
                                 :connection-timeout 5000})
         com (component/start db)]
     (test-fn (sys/db-connection com))
     (component/stop com)))
 
-(deftest pipleine
+(deftest ^:integration pipleine
   (testing "creation and deletion"
     (with-db
       #(let [pipeline   {:group     "test"
