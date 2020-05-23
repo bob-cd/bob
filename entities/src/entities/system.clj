@@ -21,7 +21,10 @@
             [hikari-cp.core :as h]
             [taoensso.timbre :as log]
             [langohr.core :as rmq]
-            [langohr.channel :as lch]))
+            [langohr.channel :as lch]
+            [langohr.queue :as lq]
+            [langohr.consumers :as lc]
+            [entities.dispatch :as d]))
 
 (defn int-from-env
   [key default]
@@ -39,29 +42,6 @@
 (defonce queue-port (int-from-env :bob-rmq-port 5672))
 (defonce queue-user (:bob-rmq-user env/env "guest"))
 (defonce queue-password (:bob-rmq-password env/env "guest"))
-
-(defprotocol IQueue
-  (queue-connection [this]))
-
-(defrecord Queue
-  [queue-host queue-port queue-user queue-password]
-  component/Lifecycle
-  (start [this]
-    (let [conn (rmq/connect {:host     queue-host
-                             :port     queue-port
-                             :username queue-user
-                             :vhost    "/"
-                             :password queue-password})
-          ch   (lch/open conn)]
-      (log/infof "Connected on channel id: %d" (.getChannelNumber ch))
-      (assoc this :conn conn)))
-  (stop [this]
-    (log/info "Disconnecting queue")
-    (rmq/close (:conn this))
-    (assoc this :conn nil))
-  IQueue
-  (queue-connection [this]
-    (:conn this)))
 
 (defprotocol IDatabase
   (db-connection [this]))
@@ -84,12 +64,43 @@
   (db-connection [this]
     (:conn this)))
 
+(defprotocol IQueue
+  (queue-connection [this]))
+
+(defrecord Queue
+  [database queue-host queue-port queue-user queue-password]
+  component/Lifecycle
+  (start [this]
+    (let [conn       (rmq/connect {:host     queue-host
+                                   :port     queue-port
+                                   :username queue-user
+                                   :vhost    "/"
+                                   :password queue-password})
+          ch         (lch/open conn)
+          queue-name "entities"]
+      (log/infof "Connected on channel id: %d" (.getChannelNumber ch))
+      (lq/declare ch
+                  queue-name
+                  {:exclusive   false
+                   :auto-delete false})
+      (lc/subscribe ch queue-name (partial d/queue-msg-subscriber (:conn database)) {:auto-ack true})
+      (log/infof "Subscribed to entities")
+      (assoc this :conn conn)))
+  (stop [this]
+    (log/info "Disconnecting queue")
+    (rmq/close (:conn this))
+    (assoc this :conn nil))
+  IQueue
+  (queue-connection [this]
+    (:conn this)))
+
 (def system-map
   (component/system-map
-    :queue    (map->Queue {:queue-host     queue-host
-                           :queue-port     queue-port
-                           :queue-user     queue-user
-                           :queue-password queue-password})
+    :queue    (component/using (map->Queue {:queue-host     queue-host
+                                            :queue-port     queue-port
+                                            :queue-user     queue-user
+                                            :queue-password queue-password})
+                               [:database])
     :database (map->Database {:jdbc-url           (format "jdbc:postgresql://%s:%d/%s?user=%s&password=%s"
                                                           db-host
                                                           db-port

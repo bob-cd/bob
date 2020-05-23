@@ -15,6 +15,7 @@
 
 (ns entities.dispatch
   (:require [taoensso.timbre :as log]
+            [jsonista.core :as json]
             [entities.pipeline.core :as pipeline]))
 
 (def ^:private routes
@@ -22,32 +23,23 @@
    :pipeline/delete pipeline/delete})
 
 (defn route
-  [message]
+  [db-conn message]
   (log/debugf "Routing message: %s" message)
   (let [msg-type  (keyword (:type message))
         routed-fn (msg-type routes)]
-    (routed-fn (:payload message))))
+    (if routed-fn
+      (routed-fn db-conn (:payload message))
+      (log/errorf "Unknown message type: %s" msg-type))))
 
-(comment
-  (route {:type    "pipeline/create"
-          :payload {:group     "test"
-                    :name      "test"
-                    :steps     [{:cmd "echo hello"}
-                                {:needs_resource "source"
-                                 :cmd            "ls"}]
-                    :vars      {:k1 "v1"
-                                :k2 "v2"}
-                    :resources [{:name     "source"
-                                 :type     "external"
-                                 :provider "git"
-                                 :params   {:repo   "https://github.com/bob-cd/bob"
-                                            :branch "master"}}
-                                {:name     "source2"
-                                 :type     "external"
-                                 :provider "git"
-                                 :params   {:repo   "https://github.com/lispyclouds/clj-docker-client"
-                                            :branch "master"}}]
-                    :image     "busybox:musl"}})
-  (route {:type    "pipeline/delete"
-          :payload {:name  "test"
-                    :group "test"}}))
+(def mapper (json/object-mapper {:decode-key-fn true}))
+
+(defn queue-msg-subscriber
+  [db-conn _chan meta-data payload]
+  (let [payload (json/read-value payload mapper)]
+    (log/infof "payload %s" payload)
+    (log/infof "meta %s" meta-data)
+    (route db-conn
+           {:type    (-> meta-data
+                         :type
+                         keyword)
+            :payload payload})))
