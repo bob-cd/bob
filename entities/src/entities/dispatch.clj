@@ -16,6 +16,7 @@
 (ns entities.dispatch
   (:require [taoensso.timbre :as log]
             [jsonista.core :as json]
+            [failjure.core :as f]
             [entities.pipeline.core :as pipeline]
             [entities.artifact-store.core :as artifact-store]))
 
@@ -38,11 +39,14 @@
 
 (defn queue-msg-subscriber
   [db-conn _chan meta-data payload]
-  (let [payload (json/read-value payload mapper)]
-    (log/infof "payload %s" payload)
-    (log/infof "meta %s" meta-data)
-    (route db-conn
-           {:type    (-> meta-data
-                         :type
-                         keyword)
-            :payload payload})))
+  (let [msg (f/try* (json/read-value payload mapper))]
+    (if (f/failed? msg)
+      (log/errorf "Could not parse %s as json" payload)
+      (do
+        (log/infof "payload %s" msg)
+        (log/infof "meta %s" meta-data)
+        (route db-conn
+               {:type    (-> meta-data
+                             :type
+                             keyword)
+                :payload msg})))))
