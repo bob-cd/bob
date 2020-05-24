@@ -33,6 +33,6 @@
     (u/with-db
       #(let [artifact-store {:name "s3"}
              delete-res     (artifact-store/un-register-artifact-store % artifact-store)
-             effect         (first (u/sql-exec! % "SELECT * FROM artifact_stores"))]
+             effect         (u/sql-exec! % "SELECT * FROM artifact_stores")]
          (is (= "Ok" delete-res))
          (is (empty? effect))))))

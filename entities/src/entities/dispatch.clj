@@ -29,15 +29,6 @@
    "resource-provider/create" resource-provider/register-resource-provider
    "resource-provider/delete" resource-provider/un-register-resource-provider})
 
-(defn route
-  [db-conn message]
-  (log/debugf "Routing message: %s" message)
-  (if-let [routed-fn (some-> message
-                             :type
-                             routes)]
-    (routed-fn db-conn (:payload message))
-    (log/errorf "Could not route message: %s" message)))
-
 (def mapper (json/object-mapper {:decode-key-fn true}))
 
 (defn queue-msg-subscriber
@@ -46,10 +37,11 @@
     (if (f/failed? msg)
       (log/errorf "Could not parse %s as json" payload)
       (do
-        (log/infof "payload %s" msg)
-        (log/infof "meta %s" meta-data)
-        (route db-conn
-               {:type    (-> meta-data
-                             :type
-                             keyword)
-                :payload msg})))))
+        (log/infof "payload %s, meta: %s"
+                   msg
+                   meta-data)
+        (if-let [routed-fn (some-> meta-data
+                                   :type
+                                   routes)]
+          (routed-fn db-conn msg)
+          (log/errorf "Could not route message: %s" msg))))))

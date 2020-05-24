@@ -33,6 +33,6 @@
     (u/with-db
       #(let [resource-provider {:name "github"}
              delete-res        (resource-provider/un-register-resource-provider % resource-provider)
-             effect            (first (u/sql-exec! % "SELECT * FROM resource_providers"))]
+             effect            (u/sql-exec! % "SELECT * FROM resource_providers")]
          (is (= "Ok" delete-res))
          (is (empty? effect))))))
