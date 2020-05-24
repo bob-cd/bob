@@ -19,15 +19,20 @@
             [entities.artifact-store.core :as artifact-store]))
 
 (deftest ^:integration artifact-store
-  (testing "creation and deletion"
+  (testing "creation"
     (u/with-db
       #(let [artifact-store {:name "s3"
                              :url  "my.store.com"}
              create-res     (artifact-store/register-artifact-store % artifact-store)
-             effect         (first (u/sql-exec! % "SELECT * FROM artifact_stores"))
-             delete-res     (artifact-store/un-register-artifact-store % {:name "s3"})]
+             effect         (first (u/sql-exec! % "SELECT * FROM artifact_stores"))]
          (is (= "Ok" create-res))
          (is (= {:name "s3"
                  :url  "my.store.com"}
-                effect))
-         (is (= "Ok" delete-res))))))
+                effect)))))
+  (testing "deletion"
+    (u/with-db
+      #(let [artifact-store {:name "s3"}
+             delete-res     (artifact-store/un-register-artifact-store % artifact-store)
+             effect         (first (u/sql-exec! % "SELECT * FROM artifact_stores"))]
+         (is (= "Ok" delete-res))
+         (is (empty? effect))))))

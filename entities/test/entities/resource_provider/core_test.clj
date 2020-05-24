@@ -19,11 +19,20 @@
             [entities.resource-provider.core :as resource-provider]))
 
 (deftest ^:integration resource-provider
-  (testing "creation and deletion"
+  (testing "creation"
     (u/with-db
       #(let [resource-provider {:name "github"
                                 :url  "my.resource.com"}
              create-res        (resource-provider/register-resource-provider % resource-provider)
-             delete-res        (resource-provider/un-register-resource-provider % {:name "s3"})]
+             effect            (first (u/sql-exec! % "SELECT * FROM resource_providers"))]
          (is (= "Ok" create-res))
-         (is (= "Ok" delete-res))))))
+         (is (= {:name "github"
+                 :url  "my.resource.com"}
+                effect)))))
+  (testing "deletion"
+    (u/with-db
+      #(let [resource-provider {:name "github"}
+             delete-res        (resource-provider/un-register-resource-provider % resource-provider)
+             effect            (first (u/sql-exec! % "SELECT * FROM resource_providers"))]
+         (is (= "Ok" delete-res))
+         (is (empty? effect))))))

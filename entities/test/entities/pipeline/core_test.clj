@@ -19,7 +19,7 @@
             [entities.pipeline.core :as p]))
 
 (deftest ^:integration pipleine
-  (testing "creation and deletion"
+  (testing "creation"
     (u/with-db
       #(let [pipeline                {:group     "test"
                                       :name      "test"
@@ -48,8 +48,7 @@
              steps-effect            (u/sql-exec! % "SELECT * FROM steps")
              evars-effect            (u/sql-exec! % "SELECT * FROM evars")
              resource-params-effects (u/sql-exec! % "SELECT * FROM resource_params")
-             resources-effects       (u/sql-exec! % "SELECT * FROM resources")
-             delete-res              (p/delete % (select-keys pipeline [:name :group]))]
+             resources-effects       (u/sql-exec! % "SELECT * FROM resources")]
          (is (= "Ok" create-res))
          (is (= {:name  "test:test"
                  :image "busybox:musl"}
@@ -110,5 +109,15 @@
                   :type     "external"
                   :provider "git"
                   :pipeline "test:test"}]
-                resources-effects))
-         (is (= "Ok" delete-res))))))
+                resources-effects)))))
+  (testing "deletion"
+    (u/with-db
+      (fn [conn]
+        (let [pipeline   {:name  "test"
+                          :group "test"}
+              delete-res (p/delete conn pipeline)
+              effects    (->> ["pipelines" "steps" "evars" "resource_params" "resources"]
+                              (map #(format "SELECT * FROM %s" %))
+                              (map #(u/sql-exec! conn %)))]
+          (is (= "Ok" delete-res))
+          (is (every? empty? effects)))))))
