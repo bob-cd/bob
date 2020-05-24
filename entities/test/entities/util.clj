@@ -13,17 +13,15 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns entities.resource-provider.core-test
-  (:require [clojure.test :refer [deftest testing is]]
-            [entities.util :as u]
-            [entities.resource-provider.core :as resource-provider]))
+(ns entities.util
+  (:require [com.stuartsierra.component :as component]
+            [entities.system :as sys]))
 
-(deftest ^:integration resource-provider
-  (testing "creation and deletion"
-    (u/with-db
-      #(let [resource-provider {:name "github"
-                                :url  "my.resource.com"}
-             create-res        (resource-provider/register-resource-provider % resource-provider)
-             delete-res        (resource-provider/un-register-resource-provider % {:name "s3"})]
-         (is (= "Ok" create-res))
-         (is (= "Ok" delete-res))))))
+(defn with-db
+  [test-fn]
+  (let [url "jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob"
+        db  (sys/map->Database {:jdbc-url           url
+                                :connection-timeout 5000})
+        com (component/start db)]
+    (test-fn (sys/db-connection com))
+    (component/stop com)))

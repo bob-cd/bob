@@ -15,22 +15,12 @@
 
 (ns entities.artifact-store.core-test
   (:require [clojure.test :refer [deftest testing is]]
-            [com.stuartsierra.component :as component]
-            [entities.system :as sys]
+            [entities.util :as u]
             [entities.artifact-store.core :as artifact-store]))
-
-(defn with-db
-  [test-fn]
-  (let [url "jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob"
-        db  (sys/map->Database {:jdbc-url           url
-                                :connection-timeout 5000})
-        com (component/start db)]
-    (test-fn (sys/db-connection com))
-    (component/stop com)))
 
 (deftest ^:integration artifact-store
   (testing "creation and deletion"
-    (with-db
+    (u/with-db
       #(let [artifact-store {:name "s3"
                              :url  "my.store.com"}
              create-res     (artifact-store/register-artifact-store % artifact-store)
