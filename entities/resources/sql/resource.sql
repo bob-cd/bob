@@ -17,11 +17,11 @@
 INSERT INTO "resources" ("name", "type", "pipeline", "provider")
 VALUES (:name, :type, :pipeline, :provider);
 
--- :name insert-external-resource :insert :1
+-- :name register-resource-provider :insert :1
 INSERT INTO "resource_providers" ("name", "url")
 VALUES (:name, :url);
 
--- :name delete-external-resource :execute :1
+-- :name un-register-resource-provider :execute :1
 DELETE FROM "resource_providers"
 WHERE "name"=:name;
 

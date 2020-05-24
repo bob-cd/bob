@@ -18,13 +18,16 @@
             [jsonista.core :as json]
             [failjure.core :as f]
             [entities.pipeline.core :as pipeline]
-            [entities.artifact-store.core :as artifact-store]))
+            [entities.artifact-store.core :as artifact-store]
+            [entities.resource-provider.core :as resource-provider]))
 
 (def ^:private routes
-  {:pipeline/create       pipeline/create
-   :pipeline/delete       pipeline/delete
-   :artifact-store/create artifact-store/register-artifact-store
-   :artifact-store/delete artifact-store/un-register-artifact-store})
+  {:pipeline/create          pipeline/create
+   :pipeline/delete          pipeline/delete
+   :artifact-store/create    artifact-store/register-artifact-store
+   :artifact-store/delete    artifact-store/un-register-artifact-store
+   :resource-provider/create resource-provider/register-resource-provider
+   :resource-provider/delete resource-provider/un-register-resource-provider})
 
 (defn route
   [db-conn message]

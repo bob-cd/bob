@@ -23,14 +23,14 @@
   [db-conn data]
   (let [result (f/try* (db/register-artifact-store db-conn data))]
     (if (f/failed? result)
-      (log/errorf "Could not register Artifact Store: %s" (f/message result))
+      (log/errorf "Could not register artifact store: %s" (f/message result))
       (do
-        (log/infof "Registered Artifact Store at: %s" data)
+        (log/infof "Registered artifact store at: %s" data)
         "Ok"))))
 
 (defn un-register-artifact-store
-  "Unregisters an artifact-store resource by its name supplied in a map."
+  "Unregisters an artifact store by its name supplied in a map."
   [db-conn data]
   (f/try* (db/un-register-artifact-store db-conn data))
-  (log/infof "Un-registered Artifact Store %s" name)
+  (log/infof "Un-registered artifact store %s" name)
   "Ok")
