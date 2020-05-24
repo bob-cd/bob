@@ -15,6 +15,8 @@
 
 (ns entities.util
   (:require [com.stuartsierra.component :as component]
+            [next.jdbc :as jdbc]
+            [next.jdbc.result-set :as rs]
             [entities.system :as sys]))
 
 (defn with-db
@@ -25,3 +27,7 @@
         com (component/start db)]
     (test-fn (sys/db-connection com))
     (component/stop com)))
+
+(defn sql-exec!
+  [db sql]
+  (jdbc/execute! db [sql] {:builder-fn rs/as-unqualified-lower-maps}))

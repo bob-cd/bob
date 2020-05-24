@@ -24,6 +24,10 @@
       #(let [artifact-store {:name "s3"
                              :url  "my.store.com"}
              create-res     (artifact-store/register-artifact-store % artifact-store)
+             effect         (first (u/sql-exec! % "SELECT * FROM artifact_stores"))
              delete-res     (artifact-store/un-register-artifact-store % {:name "s3"})]
          (is (= "Ok" create-res))
+         (is (= {:name "s3"
+                 :url  "my.store.com"}
+                effect))
          (is (= "Ok" delete-res))))))
