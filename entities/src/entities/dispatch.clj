@@ -16,11 +16,14 @@
 (ns entities.dispatch
   (:require [taoensso.timbre :as log]
             [jsonista.core :as json]
-            [entities.pipeline.core :as pipeline]))
+            [entities.pipeline.core :as pipeline]
+            [entities.artifact-store.core :as artifact-store]))
 
 (def ^:private routes
-  {:pipeline/create pipeline/create
-   :pipeline/delete pipeline/delete})
+  {:pipeline/create       pipeline/create
+   :pipeline/delete       pipeline/delete
+   :artifact-store/create artifact-store/register-artifact-store
+   :artifact-store/delete artifact-store/un-register-artifact-store})
 
 (defn route
   [db-conn message]
