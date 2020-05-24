@@ -18,6 +18,34 @@ name: "Test-and-Publish"
 on: [push, pull_request]
 
 jobs:
+  test-neobob:
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: "Checkout code"
+        uses: "actions/checkout@v2"
+
+      - name: "Prepare Java"
+        uses: "actions/setup-java@v1"
+        with:
+          java-version: "11"
+
+      - name: "Prepare tools-deps"
+        uses: DeLaGuardo/setup-clojure@2.0
+        with:
+          tools-deps: 1.10.1.536
+
+      - name: "Apply Cache"
+        uses: "actions/cache@v1"
+        with:
+          path: "~/.m2/repository"
+          key: "${{ runner.os }}-bob-${{ hashFiles('entities/deps.edn') }}"
+          restore-keys: "${{ runner.os }}-bob-"
+
+      - name: "Run tests"
+        working-directory: "entities"
+        run: "make test"
+
   test-and-build:
     runs-on: "ubuntu-latest"
 
