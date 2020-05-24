@@ -22,21 +22,21 @@
             [entities.resource-provider.core :as resource-provider]))
 
 (def ^:private routes
-  {:pipeline/create          pipeline/create
-   :pipeline/delete          pipeline/delete
-   :artifact-store/create    artifact-store/register-artifact-store
-   :artifact-store/delete    artifact-store/un-register-artifact-store
-   :resource-provider/create resource-provider/register-resource-provider
-   :resource-provider/delete resource-provider/un-register-resource-provider})
+  {"pipeline/create"          pipeline/create
+   "pipeline/delete"          pipeline/delete
+   "artifact-store/create"    artifact-store/register-artifact-store
+   "artifact-store/delete"    artifact-store/un-register-artifact-store
+   "resource-provider/create" resource-provider/register-resource-provider
+   "resource-provider/delete" resource-provider/un-register-resource-provider})
 
 (defn route
   [db-conn message]
   (log/debugf "Routing message: %s" message)
-  (let [msg-type  (keyword (:type message))
-        routed-fn (msg-type routes)]
-    (if routed-fn
-      (routed-fn db-conn (:payload message))
-      (log/errorf "Unknown message type: %s" msg-type))))
+  (if-let [routed-fn (some-> message
+                             :type
+                             routes)]
+    (routed-fn db-conn (:payload message))
+    (log/errorf "Could not route message: %s" message)))
 
 (def mapper (json/object-mapper {:decode-key-fn true}))
 
