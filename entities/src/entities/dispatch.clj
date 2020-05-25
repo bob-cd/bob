@@ -36,9 +36,7 @@
   [db-conn chan meta-data payload]
   (let [msg (f/try* (json/read-value payload mapper))]
     (if (f/failed? msg)
-      (do
-        (log/errorf "Could not parse %s as json" payload)
-        (err/publish-error chan (format "Could not parse %s as json" payload)))
+      (err/publish-error chan (format "Could not parse %s as json" payload))
       (do
         (log/infof "payload %s, meta: %s"
                    msg
@@ -46,5 +44,5 @@
         (if-let [routed-fn (some-> meta-data
                                    :type
                                    routes)]
-          (routed-fn db-conn msg)
-          (log/errorf "Could not route message: %s" msg))))))
+          (routed-fn db-conn chan msg)
+          (err/publish-error chan (format "Could not route message: %s" msg)))))))

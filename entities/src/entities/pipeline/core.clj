@@ -17,7 +17,8 @@
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
             [next.jdbc :as jdbc]
-            [entities.pipeline.db :as db]))
+            [entities.pipeline.db :as db]
+            [entities.errors :as err]))
 
 (defn- name-of
   [p-group p-name]
@@ -109,6 +110,7 @@
 
   Returns Ok or the error if any."
   [db-conn
+   queue-chan
    {:keys [group steps vars resources image]
     :as   p}]
   (let [pipeline (name-of group (:name p))
@@ -119,12 +121,12 @@
                                (insert-evars vars pipeline)
                                (insert-steps steps pipeline))))]
     (if (f/failed? result)
-      (log/errorf "Pipeline creation failed: %s" (f/message result))
+      (err/publish-error queue-chan (format "Pipeline creation failed: %s" (f/message result)))
       "Ok")))
 
 (defn delete
   "Deletes a pipeline"
-  [db-conn pipeline]
+  [db-conn _queue-chan pipeline]
   (let [pipeline (name-of (:group pipeline) (:name pipeline))]
     (log/debugf "Deleting pipeline %s" pipeline)
     (f/try* (db/delete-pipeline db-conn {:name pipeline}))
@@ -136,6 +138,7 @@
                  :database
                  sys/db-connection)]
     (create conn
+            nil
             {:group     "test"
              :name      "test"
              :steps     [{:cmd "echo hello"}
@@ -155,5 +158,6 @@
                                      :branch "master"}}]
              :image     "busybox:musl"})
     (delete conn
+            nil
             {:group "test"
              :name  "test"})))

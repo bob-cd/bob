@@ -16,21 +16,22 @@
 (ns entities.resource-provider.core
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [entities.resource-provider.db :as db]))
+            [entities.resource-provider.db :as db]
+            [entities.errors :as err]))
 
 (defn register-resource-provider
   "Registers a rersource provider with an unique name and an url supplied in a map."
-  [db-conn data]
+  [db-conn queue-chan data]
   (let [result (f/try* (db/register-resource-provider db-conn data))]
     (if (f/failed? result)
-      (log/errorf "Could not register resource provider: %s" (f/message result))
+      (err/publish-error queue-chan (format "Could not register resource provider: %s" (f/message result)))
       (do
         (log/infof "Registered resource provider at: %s" data)
         "Ok"))))
 
 (defn un-register-resource-provider
   "Unregisters an resource provider by its name supplied in a map."
-  [db-conn data]
+  [db-conn _queue-chan data]
   (f/try* (db/un-register-resource-provider db-conn data))
   (log/infof "Un-registered resource provider %s" name)
   "Ok")

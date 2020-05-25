@@ -16,21 +16,22 @@
 (ns entities.artifact-store.core
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [entities.artifact-store.db :as db]))
+            [entities.artifact-store.db :as db]
+            [entities.errors :as err]))
 
 (defn register-artifact-store
   "Registers an artifact store with an unique name and an url supplied in a map."
-  [db-conn data]
+  [db-conn queue-chan data]
   (let [result (f/try* (db/register-artifact-store db-conn data))]
     (if (f/failed? result)
-      (log/errorf "Could not register artifact store: %s" (f/message result))
+      (err/publish-error queue-chan (format "Could not register artifact store: %s" (f/message result)))
       (do
         (log/infof "Registered artifact store at: %s" data)
         "Ok"))))
 
 (defn un-register-artifact-store
   "Unregisters an artifact store by its name supplied in a map."
-  [db-conn data]
+  [db-conn _queue-chan data]
   (f/try* (db/un-register-artifact-store db-conn data))
   (log/infof "Un-registered artifact store %s" name)
   "Ok")

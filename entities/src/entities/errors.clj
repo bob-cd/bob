@@ -15,10 +15,12 @@
 
 (ns entities.errors
   (:require [langohr.basic :as lb]
-            [jsonista.core :as json]))
+            [jsonista.core :as json]
+            [taoensso.timbre :as log]))
 
 (defn publish-error
   [chan message]
+  (log/error message)
   (lb/publish chan
               "" ; Default exchange
               "errors"
