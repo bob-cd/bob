@@ -36,7 +36,7 @@
   [db-conn chan meta-data payload]
   (let [msg (f/try* (json/read-value payload mapper))]
     (if (f/failed? msg)
-      (err/publish-error chan (format "Could not parse %s as json" payload))
+      (err/publish-error chan (format "Could not parse '%s' as json" (String. payload "UTF-8")))
       (do
         (log/infof "payload %s, meta: %s"
                    msg
