@@ -65,7 +65,7 @@
     (:conn this)))
 
 (defprotocol IQueue
-  (queue-connection [this]))
+  (queue-chan [this]))
 
 (defrecord Queue
   [database queue-host queue-port queue-user queue-password]
@@ -76,27 +76,26 @@
                                    :username queue-user
                                    :vhost    "/"
                                    :password queue-password})
-          ch         (lch/open conn)
+          chan       (lch/open conn)
           queue-name "entities"]
-      (log/infof "Connected on channel id: %d" (.getChannelNumber ch))
-      (lq/declare ch
+      (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
+      (lq/declare chan
                   queue-name
                   {:exclusive   false
                    :auto-delete false})
-      (lq/declare ch
+      (lq/declare chan
                   "errors"
                   {:exclusive   false
                    :auto-delete false})
-      (lc/subscribe ch queue-name (partial d/queue-msg-subscriber (:conn database)) {:auto-ack true})
-      (log/infof "Subscribed to entities")
-      (assoc this :conn conn)))
+      (lc/subscribe chan queue-name (partial d/queue-msg-subscriber (:conn database)) {:auto-ack true})
+      (log/infof "Subscribed to %s" queue-name)
+      (assoc this :conn conn :chan chan)))
   (stop [this]
     (log/info "Disconnecting queue")
     (rmq/close (:conn this))
-    (assoc this :conn nil))
+    (assoc this :conn nil :chan nil))
   IQueue
-  (queue-connection [this]
-    (:conn this)))
+  (queue-chan [this] (:chan this)))
 
 (def system-map
   (component/system-map

@@ -20,19 +20,19 @@
 
 (deftest ^:integration artifact-store
   (testing "creation"
-    (u/with-db
-      #(let [artifact-store {:name "s3"
-                             :url  "my.store.com"}
-             create-res     (artifact-store/register-artifact-store % artifact-store)
-             effect         (first (u/sql-exec! % "SELECT * FROM artifact_stores"))]
-         (is (= "Ok" create-res))
-         (is (= {:name "s3"
-                 :url  "my.store.com"}
-                effect)))))
+    (u/with-system (fn [db queue-chan]
+                     (let [artifact-store {:name "s3"
+                                           :url  "my.store.com"}
+                           create-res     (artifact-store/register-artifact-store db queue-chan artifact-store)
+                           effect         (first (u/sql-exec! db "SELECT * FROM artifact_stores"))]
+                       (is (= "Ok" create-res))
+                       (is (= {:name "s3"
+                               :url  "my.store.com"}
+                              effect))))))
   (testing "deletion"
-    (u/with-db
-      #(let [artifact-store {:name "s3"}
-             delete-res     (artifact-store/un-register-artifact-store % artifact-store)
-             effect         (u/sql-exec! % "SELECT * FROM artifact_stores")]
-         (is (= "Ok" delete-res))
-         (is (empty? effect))))))
+    (u/with-system (fn [db queue-chan]
+                     (let [artifact-store {:name "s3"}
+                           delete-res     (artifact-store/un-register-artifact-store db queue-chan artifact-store)
+                           effect         (u/sql-exec! db "SELECT * FROM artifact_stores")]
+                       (is (= "Ok" delete-res))
+                       (is (empty? effect)))))))

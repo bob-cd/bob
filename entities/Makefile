@@ -25,8 +25,14 @@ test:
 		-e POSTGRES_USER=bob \
 		-e POSTGRES_PASSWORD=bob \
 		postgres:alpine
+	docker run \
+		-d \
+		--name bob-test-queue \
+		-p 5673:5672 \
+		rabbitmq:3-alpine
+	sleep 7 # TODO: Find a better way to wait till RMQ comes up.
 	clojure -A:test
-	docker kill bob-test-db && docker rm bob-test-db
+	docker kill bob-test-db bob-test-queue && docker rm bob-test-db bob-test-queue
 
 compile:
 	clojure -Spom && clojure -A:uberjar

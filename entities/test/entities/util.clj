@@ -19,13 +19,22 @@
             [next.jdbc.result-set :as rs]
             [entities.system :as sys]))
 
-(defn with-db
+(defn with-system
   [test-fn]
-  (let [url "jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob"
-        db  (sys/map->Database {:jdbc-url           url
-                                :connection-timeout 5000})
-        com (component/start db)]
-    (test-fn (sys/db-connection com))
+  (let [jdbc-url "jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob"
+        system (component/system-map
+                 :database (sys/map->Database {:jdbc-url           jdbc-url
+                                               :connection-timeout 5000})
+                 :queue    (component/using (sys/map->Queue {:queue-host     "localhost"
+                                                             :queue-port     5673
+                                                             :queue-user     "guest"
+                                                             :queue-password "guest"})
+                                            [:database]))
+        {:keys [database queue]
+         :as   com}
+        (component/start system)]
+    (test-fn (sys/db-connection database)
+             (sys/queue-chan queue))
     (component/stop com)))
 
 (defn sql-exec!

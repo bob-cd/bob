@@ -20,19 +20,21 @@
 
 (deftest ^:integration resource-provider
   (testing "creation"
-    (u/with-db
-      #(let [resource-provider {:name "github"
-                                :url  "my.resource.com"}
-             create-res        (resource-provider/register-resource-provider % resource-provider)
-             effect            (first (u/sql-exec! % "SELECT * FROM resource_providers"))]
-         (is (= "Ok" create-res))
-         (is (= {:name "github"
-                 :url  "my.resource.com"}
-                effect)))))
+    (u/with-system
+      (fn [db queue-chan]
+        (let [resource-provider {:name "github"
+                                 :url  "my.resource.com"}
+              create-res        (resource-provider/register-resource-provider db queue-chan resource-provider)
+              effect            (first (u/sql-exec! db "SELECT * FROM resource_providers"))]
+          (is (= "Ok" create-res))
+          (is (= {:name "github"
+                  :url  "my.resource.com"}
+                 effect))))))
   (testing "deletion"
-    (u/with-db
-      #(let [resource-provider {:name "github"}
-             delete-res        (resource-provider/un-register-resource-provider % resource-provider)
-             effect            (u/sql-exec! % "SELECT * FROM resource_providers")]
-         (is (= "Ok" delete-res))
-         (is (empty? effect))))))
+    (u/with-system
+      (fn [db queue-chan]
+        (let [resource-provider {:name "github"}
+              delete-res        (resource-provider/un-register-resource-provider db queue-chan resource-provider)
+              effect            (u/sql-exec! db "SELECT * FROM resource_providers")]
+          (is (= "Ok" delete-res))
+          (is (empty? effect)))))))
