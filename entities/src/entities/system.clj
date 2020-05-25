@@ -83,6 +83,10 @@
                   queue-name
                   {:exclusive   false
                    :auto-delete false})
+      (lq/declare ch
+                  "errors"
+                  {:exclusive   false
+                   :auto-delete false})
       (lc/subscribe ch queue-name (partial d/queue-msg-subscriber (:conn database)) {:auto-ack true})
       (log/infof "Subscribed to entities")
       (assoc this :conn conn)))

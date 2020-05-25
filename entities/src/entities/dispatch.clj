@@ -19,7 +19,8 @@
             [failjure.core :as f]
             [entities.pipeline.core :as pipeline]
             [entities.artifact-store.core :as artifact-store]
-            [entities.resource-provider.core :as resource-provider]))
+            [entities.resource-provider.core :as resource-provider]
+            [entities.errors :as err]))
 
 (def ^:private routes
   {"pipeline/create"          pipeline/create
@@ -32,10 +33,12 @@
 (def mapper (json/object-mapper {:decode-key-fn true}))
 
 (defn queue-msg-subscriber
-  [db-conn _chan meta-data payload]
+  [db-conn chan meta-data payload]
   (let [msg (f/try* (json/read-value payload mapper))]
     (if (f/failed? msg)
-      (log/errorf "Could not parse %s as json" payload)
+      (do
+        (log/errorf "Could not parse %s as json" payload)
+        (err/publish-error chan (format "Could not parse %s as json" payload)))
       (do
         (log/infof "payload %s, meta: %s"
                    msg
