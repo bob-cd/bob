@@ -42,8 +42,12 @@ jobs:
           key: "${{ runner.os }}-bob-${{ hashFiles('entities/deps.edn') }}"
           restore-keys: "${{ runner.os }}-bob-"
 
-      - name: "Run tests"
+      - name: "Run entities tests"
         working-directory: "entities"
+        run: "make test"
+
+      - name: "Run runner tests"
+        working-directory: "runner"
         run: "make test"
 
   test-and-build:
