@@ -213,14 +213,14 @@
    Takes container-id and run-id to tag the logs.
 
    Returns the id when complete or an error in case on non-zero exit."
-  [id run-id]
+  [id logging-fn]
   (f/try-all [_      (log/debugf "Starting container %s" id)
               _      (docker/invoke containers
                                     {:op               :ContainerStart
                                      :params           {:id id}
                                      :throw-exception? true})
               _      (log/debugf "Attaching to container %s for logs" id)
-              _      (react-to-log-line id #(log/debug (str run-id %))) ;; FIXME: Send to DB for now?
+              _      (react-to-log-line id logging-fn)
               status (:StatusCode (docker/invoke containers
                                                  {:op               :ContainerWait
                                                   :params           {:id id}

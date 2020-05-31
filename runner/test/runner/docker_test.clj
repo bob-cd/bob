@@ -149,25 +149,25 @@
   (testing "success: normal exit"
     (let [id        (d/create-container image {:cmd "ls"})
           _         (wait id)
-          result-id (d/start-container id "some-id")]
+          result-id (d/start-container id #(println %))]
       (is (= id result-id))
       (d/delete-container id)))
   (testing "success: abnormal exit"
     (let [id     (d/create-container image {:cmd "sh -c 'exit 1'"})
           _      (wait id)
-          result (d/start-container id "some-id")]
+          result (d/start-container id #(println %))]
       (is (f/failed? result))
       (is (= (format "Container %s exited with non-zero status 1" id) (f/message result)))
       (d/delete-container id)))
   (testing "failure"
-    (is (f/failed? (d/start-container "this-doesnt-exist" "some-id"))))
+    (is (f/failed? (d/start-container "this-doesnt-exist" #(println %)))))
   (d/delete-image image))
 
 (deftest ^:integration kill-container
   (d/pull-image image)
   (testing "success"
     (let [id     (d/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
-          _      (future (d/start-container id "some-id"))
+          _      (future (d/start-container id #(println %)))
           _      (d/kill-container id)
           status (d/status-of id)]
       (is (= 137 (:exit-code status))) ; 137 = SIGKILL
