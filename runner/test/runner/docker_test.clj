@@ -16,6 +16,7 @@
 (ns runner.docker-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.string :as s]
+            [clojure.java.io :as io]
             [clj-docker-client.core :as docker]
             [failjure.core :as f]
             [runner.docker :as d]))
@@ -181,4 +182,17 @@
           _      (d/delete-container id)
           result (some #{id} (ps-a))]
       (is (nil? result))))
+  (d/delete-image image))
+
+(deftest ^:integration put-container-archive
+  (d/pull-image image)
+  (testing "success"
+    (let [id (d/create-container image)]
+      (is (nil? (d/put-container-archive id (io/input-stream "test/test.tar") "/root")))
+      (d/delete-container id)))
+  (testing "failure"
+    (let [id (d/create-container image)]
+      (is (f/failed? (d/put-container-archive "this-doesnt-exist" (io/input-stream "test/test.tar") "/root")))
+      (is (f/failed? (d/put-container-archive id (io/input-stream "test/test.tar") "no-a-valid-path")))
+      (d/delete-container id)))
   (d/delete-image image))

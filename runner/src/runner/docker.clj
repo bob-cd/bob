@@ -253,6 +253,25 @@
                            :force true}})
   id)
 
+(defn put-container-archive
+  "Copies an tar input stream of either of the compressions:
+   none, gzip, bzip2 or xz
+   into the path of the container by id.
+
+   Returns a Failure if failed."
+  [id archive-input-stream path]
+  (let [result (f/try*
+                 (with-open [xin archive-input-stream]
+                   (docker/invoke containers
+                                  {:op               :PutContainerArchive
+                                   :params           {:id          id
+                                                      :path        path
+                                                      :inputStream xin}
+                                   :throw-exception? true})))]
+    (when (f/failed? result)
+      (log/errorf "Could not put archive in container: %s" result)
+      result)))
+
 (comment
   (pull-image "alpine:latest")
   (delete-image "alpine:latest")
@@ -265,4 +284,5 @@
   (status-of "conny")
   (start-container "f99" "yes")
   (kill-container "conny")
-  (delete-container "conny"))
+  (delete-container "conny")
+  (put-container-archive "conny" (io/input-stream "src.tar") "/root"))
