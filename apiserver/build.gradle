@@ -19,6 +19,7 @@ dependencies {
     implementation "io.vertx:vertx-core:$vertx_version"
     implementation "io.vertx:vertx-web:$vertx_version"
     implementation "io.vertx:vertx-web-api-contract:$vertx_version"
+    implementation "io.vertx:vertx-rabbitmq-client:$vertx_version"
 
     testImplementation "org.spekframework.spek2:spek-dsl-jvm:$spek_version"
     testImplementation 'junit:junit:4.12'

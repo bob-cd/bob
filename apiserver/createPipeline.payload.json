@@ -1,0 +1,15 @@
+{
+  "image": "busybox:musl",
+  "vars": {},
+  "steps": [
+    {
+      "cmd": "echo hi"
+    },
+    {
+      "cmd": "sleep 100"
+    },
+    {
+      "cmd": "echo bye"
+    }
+  ]
+}

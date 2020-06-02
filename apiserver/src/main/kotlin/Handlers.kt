@@ -1,6 +1,8 @@
 import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
+import io.vertx.rabbitmq.RabbitMQClient
+import io.vertx.rabbitmq.RabbitMQOptions
 
 fun toJsonResponse(routingContext: RoutingContext, content: Any): Future<Void> =
     routingContext.response()
