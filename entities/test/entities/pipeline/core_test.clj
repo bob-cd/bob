@@ -15,109 +15,52 @@
 
 (ns entities.pipeline.core-test
   (:require [clojure.test :refer [deftest testing is]]
+            [crux.api :as crux]
             [entities.util :as u]
             [entities.pipeline.core :as p]))
+
+;; TODO: Better way to wait for consistency than sleep
 
 (deftest ^:integration pipleine
   (testing "creation"
     (u/with-system
       (fn [db queue-chan]
-        (let [pipeline                {:group     "test"
-                                       :name      "test"
-                                       :steps     [{:cmd "echo hello"}
-                                                   {:needs_resource "source"
-                                                    :cmd            "ls"}
-                                                   {:cmd               "touch test"
-                                                    :produces_artifact {:name  "file"
-                                                                        :path  "test"
-                                                                        :store "s3"}}]
-                                       :vars      {:k1 "v1"
-                                                   :k2 "v2"}
-                                       :resources [{:name     "source"
-                                                    :type     "external"
-                                                    :provider "git"
-                                                    :params   {:repo   "https://github.com/bob-cd/bob"
-                                                               :branch "master"}}
-                                                   {:name     "source2"
-                                                    :type     "external"
-                                                    :provider "git"
-                                                    :params   {:repo "https://github.com/lispyclouds/clj-docker-client"
-                                                               :branch "master"}}]
-                                       :image     "busybox:musl"}
-              create-res              (p/create db queue-chan pipeline)
-              pipeline-effect         (first (u/sql-exec! db "SELECT * FROM pipelines"))
-              steps-effect            (u/sql-exec! db "SELECT * FROM steps")
-              evars-effect            (u/sql-exec! db "SELECT * FROM evars")
-              resource-params-effects (u/sql-exec! db "SELECT * FROM resource_params")
-              resources-effects       (u/sql-exec! db "SELECT * FROM resources")]
+        (let [pipeline   {:group     "test"
+                          :name      "test"
+                          :steps     [{:cmd "echo hello"}
+                                      {:needs_resource "source"
+                                       :cmd            "ls"}
+                                      {:cmd               "touch test"
+                                       :produces_artifact {:name  "file"
+                                                           :path  "test"
+                                                           :store "s3"}}]
+                          :vars      {:k1 "v1"
+                                      :k2 "v2"}
+                          :resources [{:name     "source"
+                                       :type     "external"
+                                       :provider "git"
+                                       :params   {:repo   "https://github.com/bob-cd/bob"
+                                                  :branch "master"}}
+                                      {:name     "source2"
+                                       :type     "external"
+                                       :provider "git"
+                                       :params   {:repo   "https://github.com/lispyclouds/clj-docker-client"
+                                                  :branch "master"}}]
+                          :image     "busybox:musl"}
+              create-res (p/create db queue-chan pipeline)
+              _          (Thread/sleep 1000)
+              effect     (crux/entity (crux/db db) :bob.pipeline.test/test)]
           (is (= "Ok" create-res))
-          (is (= {:name  "test:test"
-                  :image "busybox:musl"}
-                 pipeline-effect))
-          (is (= [{:id                1
-                   :cmd               "echo hello"
-                   :pipeline          "test:test"
-                   :needs_resource    nil
-                   :produces_artifact nil
-                   :artifact_path     nil
-                   :artifact_store    nil}
-                  {:id                2
-                   :cmd               "ls"
-                   :pipeline          "test:test"
-                   :needs_resource    "source"
-                   :produces_artifact nil
-                   :artifact_path     nil
-                   :artifact_store    nil}
-                  {:id                3
-                   :cmd               "touch test"
-                   :pipeline          "test:test"
-                   :needs_resource    nil
-                   :produces_artifact "file"
-                   :artifact_path     "test"
-                   :artifact_store    "s3"}]
-                 steps-effect))
-          (is (= [{:id       1
-                   :key      "k1"
-                   :value    "v1"
-                   :pipeline "test:test"}
-                  {:id       2
-                   :key      "k2"
-                   :value    "v2"
-                   :pipeline "test:test"}]
-                 evars-effect))
-          (is (= [{:name     "source"
-                   :key      "repo"
-                   :value    "https://github.com/bob-cd/bob"
-                   :pipeline "test:test"}
-                  {:name     "source"
-                   :key      "branch"
-                   :value    "master"
-                   :pipeline "test:test"}
-                  {:name     "source2"
-                   :key      "repo"
-                   :value    "https://github.com/lispyclouds/clj-docker-client"
-                   :pipeline "test:test"}
-                  {:name     "source2"
-                   :key      "branch"
-                   :value    "master"
-                   :pipeline "test:test"}]
-                 resource-params-effects))
-          (is (= [{:name     "source"
-                   :type     "external"
-                   :provider "git"
-                   :pipeline "test:test"}
-                  {:name     "source2"
-                   :type     "external"
-                   :provider "git"
-                   :pipeline "test:test"}]
-                 resources-effects))))))
+          (is (= (-> pipeline
+                     (dissoc :group :name)
+                     (assoc :crux.db/id :bob.pipeline.test/test))
+                 effect))))))
   (testing "deletion"
     (u/with-system (fn [db queue-chan]
                      (let [pipeline   {:name  "test"
                                        :group "test"}
                            delete-res (p/delete db queue-chan pipeline)
-                           effects    (->> ["pipelines" "steps" "evars" "resource_params" "resources"]
-                                           (map #(format "SELECT * FROM %s" %))
-                                           (map #(u/sql-exec! db %)))]
+                           _          (Thread/sleep 1000)
+                           effect     (crux/entity (crux/db db) :bob.pipeline.test/test)]
                        (is (= "Ok" delete-res))
-                       (is (every? empty? effects)))))))
+                       (is (nil? effect)))))))

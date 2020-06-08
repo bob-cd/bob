@@ -33,7 +33,7 @@
 (def mapper (json/object-mapper {:decode-key-fn true}))
 
 (defn queue-msg-subscriber
-  [db-conn chan meta-data payload]
+  [db-client chan meta-data payload]
   (let [msg (f/try* (json/read-value payload mapper))]
     (if (f/failed? msg)
       (err/publish-error chan (format "Could not parse '%s' as json" (String. payload "UTF-8")))
@@ -44,5 +44,5 @@
         (if-let [routed-fn (some-> meta-data
                                    :type
                                    routes)]
-          (routed-fn db-conn chan msg)
+          (routed-fn db-client chan msg)
           (err/publish-error chan (format "Could not route message: %s" msg)))))))

@@ -8,19 +8,20 @@ Following the [diagram](https://github.com/bob-cd/bob/issues/70#issuecomment-611
 ## How does this work
 - This is implemented in Clojure/JVM
 - Uses RabbitMQ to receive messages and perform the necessary effects
+- Uses the crux+postgres backed bob db service for persistence
 
 ## Building and Running
 
 ### Requirements, min versions, latest recommended.
 - JDK 11+
 - RabbitMQ 3.8+
-- PostgreSQL 11+
+- Bob [DB](https://github.com/bob-cd/bob/tree/queue/db)
 - Clojure [tools.deps](https://clojure.org/guides/getting_started)
 
 ### Using Docker to easily boot up a local cluster
 - Install Docker 18+ and start it up
 - Run `docker run -it --name bob-queue -p 5672:5672 -p 15672:15672 rabbitmq:3-management-alpine` to run the latest management enabled RabbitMQ instance on port `5672` and the admin control on port `15672`. The default credentials are `guest:guest`.
-- Run `docker run -it --name db -p 5432:5432 -e POSTGRES_DB=bob -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob postgres:alpine` to run the latest PostgreSQL container with the above creds and db name.
+- Follow the [steps](https://github.com/bob-cd/bob/tree/queue/db#using-docker-to-easily-boot-up-a-local-cluster) to run a Bob DB.
 
 ### Ways of connecting Entities to the cluster
 - To build an uberjar run `clojure -Spom && clojure -A:uberjar` to obtain an `entities.jar`. Running `java -jar entities.jar` should connect to it all nicely.

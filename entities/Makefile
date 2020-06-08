@@ -17,22 +17,33 @@ all: test compile
 
 .PHONY: test
 test:
+	docker network create bob-net
 	docker run \
 		-d \
-		--name bob-test-db \
-		-p 5433:5432 \
+		--name bob-test-storage \
 		-e POSTGRES_DB=bob-test \
 		-e POSTGRES_USER=bob \
 		-e POSTGRES_PASSWORD=bob \
+		--network bob-net \
 		postgres:alpine
 	docker run \
 		-d \
 		--name bob-test-queue \
 		-p 5673:5672 \
+		--network bob-net \
 		rabbitmq:3-alpine
-	sleep 7 # TODO: Find a better way to wait till RMQ comes up.
+	docker run \
+		-d \
+		--name bob-test-db \
+		-p 7779:7778 \
+		-e BOB_STORAGE_HOST=bob-test-storage \
+		-e BOB_STORAGE_DATABASE=bob-test \
+		--network bob-net \
+		bobcd/db
+	sleep 7 # TODO: Find a better way to wait till things come up.
 	clojure -A:test
-	docker kill bob-test-db bob-test-queue && docker rm bob-test-db bob-test-queue
+	docker kill bob-test-storage bob-test-queue bob-test-db && docker rm bob-test-storage bob-test-queue bob-test-db
+	docker network rm bob-net
 
 compile:
 	clojure -Spom && clojure -A:uberjar

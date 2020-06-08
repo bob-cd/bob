@@ -15,8 +15,11 @@
 
 (ns entities.artifact-store.core-test
   (:require [clojure.test :refer [deftest testing is]]
+            [crux.api :as crux]
             [entities.util :as u]
             [entities.artifact-store.core :as artifact-store]))
+
+;; TODO: Better way to wait for consistency than sleep
 
 (deftest ^:integration artifact-store
   (testing "creation"
@@ -24,15 +27,17 @@
                      (let [artifact-store {:name "s3"
                                            :url  "my.store.com"}
                            create-res     (artifact-store/register-artifact-store db queue-chan artifact-store)
-                           effect         (first (u/sql-exec! db "SELECT * FROM artifact_stores"))]
+                           _              (Thread/sleep 1000)
+                           effect         (crux/entity (crux/db db) :bob.artifact-store/s3)]
                        (is (= "Ok" create-res))
-                       (is (= {:name "s3"
-                               :url  "my.store.com"}
+                       (is (= {:crux.db/id :bob.artifact-store/s3
+                               :url        "my.store.com"}
                               effect))))))
   (testing "deletion"
     (u/with-system (fn [db queue-chan]
                      (let [artifact-store {:name "s3"}
                            delete-res     (artifact-store/un-register-artifact-store db queue-chan artifact-store)
-                           effect         (u/sql-exec! db "SELECT * FROM artifact_stores")]
+                           _              (Thread/sleep 1000)
+                           effect         (crux/entity (crux/db db) :bob.artifact-store/s3)]
                        (is (= "Ok" delete-res))
-                       (is (empty? effect)))))))
+                       (is (nil? effect)))))))

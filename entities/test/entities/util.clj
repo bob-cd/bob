@@ -15,16 +15,14 @@
 
 (ns entities.util
   (:require [com.stuartsierra.component :as component]
-            [next.jdbc :as jdbc]
-            [next.jdbc.result-set :as rs]
-            [entities.system :as sys]))
+            [entities.system :as sys])
+  (:import [entities.system Database]))
 
 (defn with-system
   [test-fn]
-  (let [jdbc-url "jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob"
+  (let [url "http://localhost:7779"
         system (component/system-map
-                 :database (sys/map->Database {:jdbc-url           jdbc-url
-                                               :connection-timeout 5000})
+                 :database (Database. url)
                  :queue    (component/using (sys/map->Queue {:queue-host     "localhost"
                                                              :queue-port     5673
                                                              :queue-user     "guest"
@@ -33,10 +31,6 @@
         {:keys [database queue]
          :as   com}
         (component/start system)]
-    (test-fn (sys/db-connection database)
+    (test-fn (sys/db-client database)
              (sys/queue-chan queue))
     (component/stop com)))
-
-(defn sql-exec!
-  [db sql]
-  (jdbc/execute! db [sql] {:builder-fn rs/as-unqualified-lower-maps}))

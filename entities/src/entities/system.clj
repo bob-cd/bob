@@ -16,9 +16,7 @@
 (ns entities.system
   (:require [com.stuartsierra.component :as component]
             [environ.core :as env]
-            [ragtime.repl :as repl]
-            [ragtime.jdbc :as jdbc]
-            [hikari-cp.core :as h]
+            [crux.api :as crux]
             [taoensso.timbre :as log]
             [langohr.core :as rmq]
             [langohr.channel :as lch]
@@ -32,11 +30,8 @@
     (Integer/parseInt (get env/env key (str default)))
     (catch Exception _ default)))
 
-(defonce db-host (:bob-postgres-host env/env "localhost"))
-(defonce db-port (int-from-env :bob-postgres-port 5432))
-(defonce db-user (:bob-postgres-user env/env "bob"))
-(defonce db-name (:bob-postgres-database env/env "bob"))
-(defonce db-password (:bob-postgres-password env/env "bob"))
+(defonce db-host (:bob-db-host env/env "localhost"))
+(defonce db-port (int-from-env :bob-db-port 7778))
 
 (defonce queue-host (:bob-rmq-host env/env "localhost"))
 (defonce queue-port (int-from-env :bob-rmq-port 5672))
@@ -44,25 +39,20 @@
 (defonce queue-password (:bob-rmq-password env/env "guest"))
 
 (defprotocol IDatabase
-  (db-connection [this]))
+  (db-client [this]))
 
 (defrecord Database
-  [jdbc-url connection-timeout]
+  [url]
   component/Lifecycle
   (start [this]
-    (let [data-source      (h/make-datasource {:jdbc-url           jdbc-url
-                                               :connection-timeout connection-timeout})
-          migration-config {:datastore  (jdbc/sql-database {:connection-uri jdbc-url})
-                            :migrations (jdbc/load-resources "migrations")}]
-      (repl/migrate migration-config)
-      (assoc this :conn data-source)))
+    (assoc this :client (crux/new-api-client url)))
   (stop [this]
     (log/info "Disconnecting DB")
-    (h/close-datasource (:conn this))
-    (assoc this :conn nil))
+    (.close (:client this))
+    (assoc this :client nil))
   IDatabase
-  (db-connection [this]
-    (:conn this)))
+  (db-client [this]
+             (:client this)))
 
 (defprotocol IQueue
   (queue-chan [this]))
@@ -87,7 +77,7 @@
                   "errors"
                   {:exclusive   false
                    :auto-delete false})
-      (lc/subscribe chan queue-name (partial d/queue-msg-subscriber (:conn database)) {:auto-ack true})
+      (lc/subscribe chan queue-name (partial d/queue-msg-subscriber (db-client database)) {:auto-ack true})
       (log/infof "Subscribed to %s" queue-name)
       (assoc this :conn conn :chan chan)))
   (stop [this]
@@ -104,13 +94,9 @@
                                             :queue-user     queue-user
                                             :queue-password queue-password})
                                [:database])
-    :database (map->Database {:jdbc-url           (format "jdbc:postgresql://%s:%d/%s?user=%s&password=%s"
-                                                          db-host
-                                                          db-port
-                                                          db-name
-                                                          db-user
-                                                          db-password)
-                              :connection-timeout 5000})))
+    :database (Database. (format "http://%s:%d/"
+                                 db-host
+                                 db-port))))
 
 (defonce system nil)
 
@@ -132,4 +118,5 @@
 
 (comment
   (reset)
+
   (int-from-env :yalla 42))

@@ -16,83 +16,8 @@
 (ns entities.pipeline.core
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [next.jdbc :as jdbc]
-            [entities.pipeline.db :as db]
+            [crux.api :as crux]
             [entities.errors :as err]))
-
-(defn- name-of
-  [p-group p-name]
-  (format "%s:%s"
-          p-group
-          p-name))
-
-(defn- insert-pipeline
-  [txn image pipeline]
-  (log/debugf "Inserting pipeline %s" pipeline)
-  (db/insert-pipeline txn
-                      {:name  pipeline
-                       :image image})
-  txn)
-
-(defn- insert-resources
-  [txn resources pipeline]
-  (doseq [resource resources]
-    (let [{:keys [params provider]} resource
-          rname                     (:name resource)
-          rtype                     (:type resource)]
-      (log/debugf "Inserting resource: name: %s type: %s provider: %s"
-                  rname
-                  rtype
-                  provider)
-      (db/insert-resource txn
-                          {:name     rname
-                           :type     rtype
-                           :pipeline pipeline
-                           :provider provider})
-      (when (seq params)
-        (log/debugf "Adding params %s for resource %s"
-                    params
-                    rname)
-        (db/insert-resource-params txn
-                                   {:params (map #(vector (name (first %))
-                                                          (last %)
-                                                          rname
-                                                          pipeline)
-                                                 params)}))))
-  txn)
-
-(defn- insert-evars
-  [txn evars pipeline]
-  (when (seq evars)
-    (let [evar-values (map #(vector (name (first %))
-                                    (last %)
-                                    pipeline)
-                           evars)]
-      (db/insert-evars txn {:evars evar-values})))
-  txn)
-
-(defn- insert-steps
-  [txn steps pipeline]
-  (doseq [step steps]
-    (let [{cmd :cmd
-           needs-resource :needs_resource
-           {artifact-name  :name
-            artifact-path  :path
-            artifact-store :store}
-           :produces_artifact}
-          step]
-      (log/debugf "Inserting step: cmd: %s resource: %s artifact: %s"
-                  cmd
-                  needs-resource
-                  (:produces_artifact step))
-      (db/insert-step txn
-                      {:cmd               cmd
-                       :needs_resource    needs-resource
-                       :produces_artifact artifact-name
-                       :artifact_path     artifact-path
-                       :artifact_store    artifact-store
-                       :pipeline          pipeline})))
-  txn)
 
 (defn create
   "Creates a new pipeline.
@@ -109,35 +34,33 @@
   and the name is the name of the pipeline like build or test.
 
   Returns Ok or the error if any."
-  [db-conn
-   queue-chan
-   {:keys [group steps vars resources image]
-    :as   p}]
-  (let [pipeline (name-of group (:name p))
-        result   (f/try* (jdbc/with-transaction [txn db-conn]
-                           (-> txn
-                               (insert-pipeline image pipeline)
-                               (insert-resources resources pipeline)
-                               (insert-evars vars pipeline)
-                               (insert-steps steps pipeline))))]
+  [db-client queue-chan pipeline]
+  (let [id     (keyword (format "bob.pipeline.%s/%s"
+                                (:group pipeline)
+                                (:name pipeline)))
+        data   (-> pipeline
+                   (dissoc :group :name)
+                   (assoc :crux.db/id id))
+        result (f/try*
+                 (crux/submit-tx db-client [[:crux.tx/put data]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Pipeline creation failed: %s" (f/message result)))
       "Ok")))
 
 (defn delete
   "Deletes a pipeline"
-  [db-conn _queue-chan pipeline]
-  (let [pipeline (name-of (:group pipeline) (:name pipeline))]
+  [db-client _queue-chan pipeline]
+  (let [id (keyword (format "bob.pipeline.%s/%s"
+                            (:group pipeline)
+                            (:name pipeline)))]
     (log/debugf "Deleting pipeline %s" pipeline)
-    (f/try* (db/delete-pipeline db-conn {:name pipeline}))
+    (f/try*
+      (crux/submit-tx db-client [[:crux.tx/delete id]]))
     "Ok"))
 
 (comment
-  (require '[entities.system :as sys])
-  (let [conn (-> sys/system
-                 :database
-                 sys/db-connection)]
-    (create conn
+  (let [client (crux/new-api-client "http://localhost:7778")]
+    (create client
             nil
             {:group     "test"
              :name      "test"
@@ -157,7 +80,8 @@
                           :params   {:repo   "https://github.com/lispyclouds/clj-docker-client"
                                      :branch "master"}}]
              :image     "busybox:musl"})
-    (delete conn
+    (delete client
             nil
             {:group "test"
-             :name  "test"})))
+             :name  "test"})
+    (.close client)))

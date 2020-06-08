@@ -15,8 +15,11 @@
 
 (ns entities.resource-provider.core-test
   (:require [clojure.test :refer [deftest testing is]]
+            [crux.api :as crux]
             [entities.util :as u]
             [entities.resource-provider.core :as resource-provider]))
+
+;; TODO: Better way to wait for consistency than sleep
 
 (deftest ^:integration resource-provider
   (testing "creation"
@@ -25,16 +28,18 @@
         (let [resource-provider {:name "github"
                                  :url  "my.resource.com"}
               create-res        (resource-provider/register-resource-provider db queue-chan resource-provider)
-              effect            (first (u/sql-exec! db "SELECT * FROM resource_providers"))]
+              _                 (Thread/sleep 1000)
+              effect            (crux/entity (crux/db db) :bob.resource-provider/github)]
           (is (= "Ok" create-res))
-          (is (= {:name "github"
-                  :url  "my.resource.com"}
+          (is (= {:crux.db/id :bob.resource-provider/github
+                  :url        "my.resource.com"}
                  effect))))))
   (testing "deletion"
     (u/with-system
       (fn [db queue-chan]
         (let [resource-provider {:name "github"}
               delete-res        (resource-provider/un-register-resource-provider db queue-chan resource-provider)
-              effect            (u/sql-exec! db "SELECT * FROM resource_providers")]
+              _                 (Thread/sleep 1000)
+              effect            (crux/entity (crux/db db) :bob.resource-provider/github)]
           (is (= "Ok" delete-res))
-          (is (empty? effect)))))))
+          (is (nil? effect)))))))

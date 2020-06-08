@@ -16,13 +16,17 @@
 (ns entities.artifact-store.core
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [entities.artifact-store.db :as db]
+            [crux.api :as crux]
             [entities.errors :as err]))
 
 (defn register-artifact-store
   "Registers an artifact store with an unique name and an url supplied in a map."
-  [db-conn queue-chan data]
-  (let [result (f/try* (db/register-artifact-store db-conn data))]
+  [db-client queue-chan data]
+  (let [result (f/try*
+                 (crux/submit-tx db-client
+                                 [[:crux.tx/put
+                                   {:crux.db/id (keyword (str "bob.artifact-store/" (:name data)))
+                                    :url        (:url data)}]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Could not register artifact store: %s" (f/message result)))
       (do
@@ -31,7 +35,24 @@
 
 (defn un-register-artifact-store
   "Unregisters an artifact store by its name supplied in a map."
-  [db-conn _queue-chan data]
-  (f/try* (db/un-register-artifact-store db-conn data))
-  (log/infof "Un-registered artifact store %s" name)
+  [db-client _queue-chan data]
+  (f/try*
+    (crux/submit-tx db-client [[:crux.tx/delete (keyword (str "bob.artifact-store/" (:name data)))]]))
+  (log/infof "Un-registered artifact store %s" (:name data))
   "Ok")
+
+(comment
+  (keyword (str "bob.artifact-store/" "test"))
+
+  (let [client (crux/new-api-client "http://localhost:7778")]
+    (register-artifact-store client
+                             nil
+                             {:name "local"
+                              :url  "http://localhost:8002"})
+    (.close client))
+
+  (let [client (crux/new-api-client "http://localhost:7778")]
+    (un-register-artifact-store client
+                                nil
+                                {:name "local"})
+    (.close client)))

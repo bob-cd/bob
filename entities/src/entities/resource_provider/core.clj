@@ -16,13 +16,17 @@
 (ns entities.resource-provider.core
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [entities.resource-provider.db :as db]
+            [crux.api :as crux]
             [entities.errors :as err]))
 
 (defn register-resource-provider
   "Registers a rersource provider with an unique name and an url supplied in a map."
-  [db-conn queue-chan data]
-  (let [result (f/try* (db/register-resource-provider db-conn data))]
+  [db-client queue-chan data]
+  (let [result (f/try*
+                 (crux/submit-tx db-client
+                                 [[:crux.tx/put
+                                   {:crux.db/id (keyword (str "bob.resource-provider/" (:name data)))
+                                    :url        (:url data)}]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Could not register resource provider: %s" (f/message result)))
       (do
@@ -31,7 +35,22 @@
 
 (defn un-register-resource-provider
   "Unregisters an resource provider by its name supplied in a map."
-  [db-conn _queue-chan data]
-  (f/try* (db/un-register-resource-provider db-conn data))
-  (log/infof "Un-registered resource provider %s" name)
+  [db-client _queue-chan data]
+  (f/try*
+    (crux/submit-tx db-client [[:crux.tx/delete (keyword (str "bob.resource-provider/" (:name data)))]]))
+  (log/infof "Un-registered resource provider %s" (:name data))
   "Ok")
+
+(comment
+  (let [client (crux/new-api-client "http://localhost:7778")]
+    (register-resource-provider client
+                                nil
+                                {:name "local"
+                                 :url  "http://localhost:8002"})
+    (.close client))
+
+  (let [client (crux/new-api-client "http://localhost:7778")]
+    (un-register-resource-provider client
+                                   nil
+                                   {:name "local"})
+    (.close client)))
