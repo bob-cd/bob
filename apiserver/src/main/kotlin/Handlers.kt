@@ -1,8 +1,8 @@
+
 import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
 import io.vertx.rabbitmq.RabbitMQClient
-import io.vertx.rabbitmq.RabbitMQOptions
 
 fun toJsonResponse(routingContext: RoutingContext, content: Any): Future<Void> =
     routingContext.response()
@@ -12,7 +12,7 @@ fun toJsonResponse(routingContext: RoutingContext, content: Any): Future<Void> =
 fun healthCheckHandler(routingContext: RoutingContext) =
     toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28")
 
-fun pipelineCreateHandler(routingContext: RoutingContext): Future<Void> {
+fun pipelineCreateHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
     val params = routingContext.request().params()
     val group = params["group"]
     val name = params["name"]

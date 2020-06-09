@@ -4,6 +4,7 @@ import io.vertx.core.Promise
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServer
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory
+import io.vertx.rabbitmq.RabbitMQClient
 
 fun openAPI3RouterFrom(vertx: Vertx, apiSpec: String): Future<OpenAPI3RouterFactory> {
     val promise = Promise.promise<OpenAPI3RouterFactory>()
@@ -13,12 +14,12 @@ fun openAPI3RouterFrom(vertx: Vertx, apiSpec: String): Future<OpenAPI3RouterFact
     return promise.future()
 }
 
-fun serverFrom(vertx: Vertx, routerFactory: OpenAPI3RouterFactory, host: String, port: Int): Future<HttpServer> {
+fun serverFrom(vertx: Vertx, routerFactory: OpenAPI3RouterFactory, host: String, port: Int, queue: RabbitMQClient): Future<HttpServer> {
     val router =
         routerFactory.addHandlerByOperationId("HealthCheck") {
             healthCheckHandler(it)
         }.addHandlerByOperationId("PipelineCreate") {
-            pipelineCreateHandler(it)
+            pipelineCreateHandler(it, queue)
         }.addHandlerByOperationId("PipelineDelete") {
             pipelineDeleteHandler(it)
         }.addHandlerByOperationId("PipelineStart") {
@@ -43,14 +44,16 @@ fun serverFrom(vertx: Vertx, routerFactory: OpenAPI3RouterFactory, host: String,
         }
 }
 
-class APIServer(private val apiSpec: String, private val host: String, private val port: Int) : AbstractVerticle() {
+class APIServer(private val apiSpec: String, private val host: String, private val port: Int, private val queue: RabbitMQClient) : AbstractVerticle() {
     override fun start(startPromise: Promise<Void>) {
-        openAPI3RouterFrom(this.vertx, this.apiSpec).compose {
-            serverFrom(this.vertx, it, this.host, this.port)
+        queue.start().compose {
+            openAPI3RouterFrom(this.vertx, this.apiSpec)
+        }.compose {
+            serverFrom(this.vertx, it, this.host, this.port, this.queue)
         }.onFailure {
             startPromise.fail(it.cause)
+        }.onSuccess {
+            startPromise.complete()
         }
-
-        startPromise.complete()
     }
 }
