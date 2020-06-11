@@ -1,9 +1,7 @@
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
-import io.vertx.core.buffer.Buffer
 import io.vertx.rabbitmq.RabbitMQClient
 import io.vertx.rabbitmq.RabbitMQOptions
-import java.io.File
 
 fun main() {
     System.getProperties()["io.netty.tryReflectionSetAccessible"] = "true";
@@ -18,8 +16,4 @@ fun main() {
             else "Deployment error: ${it.cause()}"
         )
     }
-
-    Thread.sleep(1000)
-
-    val message = Buffer.buffer(File("./createPipeline.message.json").readText(Charsets.UTF_8))
 }

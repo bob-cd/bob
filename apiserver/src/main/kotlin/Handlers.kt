@@ -1,5 +1,7 @@
 
+import com.rabbitmq.client.AMQP
 import io.vertx.core.Future
+import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
 import io.vertx.rabbitmq.RabbitMQClient
@@ -18,9 +20,17 @@ fun pipelineCreateHandler(routingContext: RoutingContext, queue: RabbitMQClient)
     val name = params["name"]
     val pipeline = routingContext.bodyAsJson
 
-    println(group)
-    println(name)
-    println(pipeline)
+    queue.basicPublish(
+        "",
+        "entities",
+        AMQP.BasicProperties.Builder().type("pipeline/create").build(),
+        Buffer.buffer(pipeline.put("name", name).put("group", group).toString())
+    ) {
+        println(
+            if (it.succeeded()) "Published message on entities: ${it.result()}"
+            else "Error publishing message on entities: ${it.cause().printStackTrace()}"
+        )
+    }
 
     return toJsonResponse(routingContext, pipeline)
 }

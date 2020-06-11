@@ -1,0 +1,32 @@
+{
+  "image": "gradle:jdk11",
+  "vars": {
+    "LOG_LEVEL": "error"
+  },
+  "steps": [
+    {
+      "cmd": "echo build started."
+    },
+    {
+      "needs_resource": "source-code",
+      "cmd": "gradle test"
+    },
+    {
+      "cmd": "gradle shadowJar",
+      "produces_artifact": {
+        "name": "uberjar",
+        "path": "build/libs/bob-example-1.0-SNAPSHOT-all.jar",
+        "store": "local"
+      }
+    }
+  ],
+  "resources": [{
+    "name": "source-code",
+    "type": "external",
+    "provider": "git",
+    "params": {
+      "repo": "https://github.com/lispyclouds/bob-example",
+      "branch": "master"
+    }
+  }]
+}

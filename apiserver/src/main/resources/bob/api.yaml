@@ -103,7 +103,7 @@ paths:
                     }
                   }
                   ],
-                  "resources": {
+                  "resources": [{
                     "name": "source-code",
                     "type": "external",
                     "provider": "git",
@@ -111,7 +111,7 @@ paths:
                       "repo": "https://github.com/lispyclouds/bob-example",
                       "branch": "master"
                     }
-                  }
+                  }]
                 }
 
       responses:
