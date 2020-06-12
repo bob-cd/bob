@@ -29,10 +29,14 @@ fun serverFrom(vertx: Vertx, routerFactory: OpenAPI3RouterFactory, host: String,
             pipelineStopHandler(it, queue)
         }.addHandlerByOperationId("PipelineLogs") {
             pipelineLogsHandler(it)
-        }.addHandlerByOperationId("GetApiSpec") {
-            apiSpecHandler(it)
+        }.addHandlerByOperationId("PipelineStatus") {
+            pipelineStatusHandler(it)
         }.addHandlerByOperationId("PipelineArtifactFetch") {
             pipelineArtifactHandler(it, queue)
+        }.addHandlerByOperationId("PipelineList") {
+            pipelineListHandler(it)
+        }.addHandlerByOperationId("GetApiSpec") {
+            apiSpecHandler(it)
         }.router
 
     return vertx.createHttpServer()
