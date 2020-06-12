@@ -5,6 +5,7 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
 import io.vertx.rabbitmq.RabbitMQClient
+import org.tinylog.Logger
 
 fun toJsonResponse(routingContext: RoutingContext, content: Any): Future<Void> =
     routingContext.response()
@@ -26,27 +27,37 @@ fun pipelineCreateHandler(routingContext: RoutingContext, queue: RabbitMQClient)
         AMQP.BasicProperties.Builder().type("pipeline/create").build(),
         Buffer.buffer(pipeline.put("name", name).put("group", group).toString())
     ) {
-        println(
+        Logger.info {
             if (it.succeeded()) "Published message on entities: ${it.result()}"
             else "Error publishing message on entities: ${it.cause().printStackTrace()}"
-        )
+        }
     }
 
-    return toJsonResponse(routingContext, pipeline)
+    return toJsonResponse(routingContext, "Successfully Created Pipeline $group $name")
 }
 
-fun pipelineDeleteHandler(routingContext: RoutingContext): Future<Void> {
+fun pipelineDeleteHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
     val params = routingContext.request().params()
     val group = params["group"]
     val name = params["name"]
+    val payload = mapOf("name" to name, "group" to group)
 
-    println(group)
-    println(name)
+    queue.basicPublish(
+            "",
+            "entities",
+            AMQP.BasicProperties.Builder().type("pipeline/delete").build(),
+            Buffer.buffer(payload.toString())
+    ) {
+        Logger.info {
+            if (it.succeeded()) "Published message on entities: ${it.result()}"
+            else "Error publishing message on entities: ${it.cause().printStackTrace()}"
+        }
+    }
 
     return toJsonResponse(routingContext, "Successfully Deleted Pipeline $group $name")
 }
 
-fun pipelineStartHandler(routingContext: RoutingContext): Future<Void> {
+fun pipelineStartHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
     val params = routingContext.request().params()
     val group = params["group"]
     val name = params["name"]
@@ -57,7 +68,7 @@ fun pipelineStartHandler(routingContext: RoutingContext): Future<Void> {
     return toJsonResponse(routingContext, "Successfully Started Pipeline $group $name")
 }
 
-fun pipelineStopHandler(routingContext: RoutingContext): Future<Void> {
+fun pipelineStopHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
     val params = routingContext.request().params()
     val group = params["group"]
     val name = params["name"]
@@ -92,6 +103,6 @@ fun apiSpecHandler(routingContext: RoutingContext): Future<Void> =
         .putHeader("content-type", "application/yaml")
         .end({}.javaClass.getResource("bob/api.yaml").readText())
 
-fun pipelineArtifactHandler(routingContext: RoutingContext): Future<Void> =
+fun pipelineArtifactHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> =
     routingContext.response()
         .sendFile("test.tar.gz")

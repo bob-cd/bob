@@ -5,6 +5,7 @@ import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServer
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory
 import io.vertx.rabbitmq.RabbitMQClient
+import org.tinylog.Logger
 
 fun openAPI3RouterFrom(vertx: Vertx, apiSpec: String): Future<OpenAPI3RouterFactory> {
     val promise = Promise.promise<OpenAPI3RouterFactory>()
@@ -21,26 +22,26 @@ fun serverFrom(vertx: Vertx, routerFactory: OpenAPI3RouterFactory, host: String,
         }.addHandlerByOperationId("PipelineCreate") {
             pipelineCreateHandler(it, queue)
         }.addHandlerByOperationId("PipelineDelete") {
-            pipelineDeleteHandler(it)
+            pipelineDeleteHandler(it, queue)
         }.addHandlerByOperationId("PipelineStart") {
-            pipelineStartHandler(it)
+            pipelineStartHandler(it, queue)
         }.addHandlerByOperationId("PipelineStop") {
-            pipelineStopHandler(it)
+            pipelineStopHandler(it, queue)
         }.addHandlerByOperationId("PipelineLogs") {
             pipelineLogsHandler(it)
         }.addHandlerByOperationId("GetApiSpec") {
             apiSpecHandler(it)
         }.addHandlerByOperationId("PipelineArtifactFetch") {
-            pipelineArtifactHandler(it)
+            pipelineArtifactHandler(it, queue)
         }.router
 
     return vertx.createHttpServer()
         .requestHandler(router)
         .listen(port, host)
         .onSuccess {
-            println("Bob's listening on port: $port")
+            Logger.info{"Bob's listening on port: $port"}
         }.onFailure {
-            println(it.cause)
+            Logger.error{it.cause}
         }
 }
 
