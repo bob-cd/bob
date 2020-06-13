@@ -1,7 +1,6 @@
 
 import com.rabbitmq.client.AMQP
 import io.vertx.core.Future
-import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
 import io.vertx.rabbitmq.RabbitMQClient
@@ -11,6 +10,18 @@ fun toJsonResponse(routingContext: RoutingContext, content: Any): Future<Void> =
     routingContext.response()
         .putHeader("content-type", "application/json")
         .end(JsonObject(mapOf("message" to content)).encode())
+
+fun publishToEntities(queue: RabbitMQClient, type: String, payload: JsonObject) {
+    queue.basicPublish(
+        "",
+        "entities",
+        AMQP.BasicProperties.Builder().type(type).build(),
+        payload.toBuffer()
+    ) {
+        if (it.succeeded()) Logger.info{"Published message on entities: ${it.result()}"}
+        else Logger.error{"Error publishing message on entities: ${it.cause().printStackTrace()}"}
+    }
+}
 
 fun healthCheckHandler(routingContext: RoutingContext) =
     toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28")
@@ -23,17 +34,7 @@ fun pipelineCreateHandler(routingContext: RoutingContext, queue: RabbitMQClient)
     // TODO make JsonObject from params directly?!?
     val payload = pipeline.put("name", name).put("group", group)
 
-    queue.basicPublish(
-        "",
-        "entities",
-        AMQP.BasicProperties.Builder().type("pipeline/create").build(),
-        payload.toBuffer()
-    ) {
-        Logger.info {
-            if (it.succeeded()) "Published message on entities: ${it.result()}"
-            else "Error publishing message on entities: ${it.cause().printStackTrace()}"
-        }
-    }
+    publishToEntities(queue, "pipeline/create", payload)
 
     return toJsonResponse(routingContext, "Successfully Created Pipeline $group $name")
 }
@@ -42,20 +43,9 @@ fun pipelineDeleteHandler(routingContext: RoutingContext, queue: RabbitMQClient)
     val params = routingContext.request().params()
     val group = params["group"]
     val name = params["name"]
-    // TODO make JsonObject from params directly?!?
     val payload = JsonObject().put("name", name).put("group", group)
 
-    queue.basicPublish(
-            "",
-            "entities",
-            AMQP.BasicProperties.Builder().type("pipeline/delete").build(),
-            payload.toBuffer()
-    ) {
-        Logger.info {
-            if (it.succeeded()) "Published message on entities: ${it.result()}"
-            else "Error publishing message on entities: ${it.cause().printStackTrace()}"
-        }
-    }
+    publishToEntities(queue, "pipeline/delete", payload)
 
     return toJsonResponse(routingContext, "Successfully Deleted Pipeline $group $name")
 }
@@ -67,17 +57,7 @@ fun pipelineStartHandler(routingContext: RoutingContext, queue: RabbitMQClient):
     // TODO make JsonObject from params directly?!?
     val payload = JsonObject().put("name", name).put("group", group)
 
-    queue.basicPublish(
-        "",
-        "entities",
-        AMQP.BasicProperties.Builder().type("pipeline/start").build(),
-        Buffer.buffer(payload.toString())
-    ) {
-        Logger.info {
-            if (it.succeeded()) "Published message on entities: ${it.result()}"
-            else "Error publishing message on entities: ${it.cause().printStackTrace()}"
-        }
-    }
+    publishToEntities(queue, "pipeline/start", payload)
 
     return toJsonResponse(routingContext, "Successfully Started Pipeline $group $name")
 }
@@ -87,20 +67,9 @@ fun pipelineStopHandler(routingContext: RoutingContext, queue: RabbitMQClient): 
     val group = params["group"]
     val name = params["name"]
     val number = params["number"]
-    // TODO make JsonObject from params directly?!?
     val payload = JsonObject().put("name", name).put("group", group).put("number", number)
 
-    queue.basicPublish(
-        "",
-        "entities",
-        AMQP.BasicProperties.Builder().type("pipeline/start").build(),
-        Buffer.buffer(payload.toString())
-    ) {
-        Logger.info {
-            if (it.succeeded()) "Published message on entities: ${it.result()}"
-            else "Error publishing message on entities: ${it.cause().printStackTrace()}"
-        }
-    }
+    publishToEntities(queue, "pipeline/start", payload)
 
     return toJsonResponse(routingContext, "Successfully Stopped Pipeline $group $name $number")
 }
