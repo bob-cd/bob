@@ -3,8 +3,8 @@ import com.rabbitmq.client.AMQP
 import io.vertx.core.Future
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.client.WebClient
 import io.vertx.rabbitmq.RabbitMQClient
-import org.tinylog.Logger
 
 fun toJsonResponse(routingContext: RoutingContext, content: Any): Future<Void> =
     routingContext.response()
@@ -18,12 +18,12 @@ fun publishToEntities(queue: RabbitMQClient, type: String, payload: JsonObject) 
         AMQP.BasicProperties.Builder().type(type).build(),
         payload.toBuffer()
     ) {
-        if (it.succeeded()) Logger.info{"Published message on entities: ${it.result()}"}
-        else Logger.error{"Error publishing message on entities: ${it.cause().printStackTrace()}"}
+        if (it.succeeded()) logger.info("Published message on entities: ${it.result()}")
+        else logger.error("Error publishing message on entities: ${it.cause().printStackTrace()}")
     }
 }
 
-fun healthCheckHandler(routingContext: RoutingContext) =
+fun healthCheckHandler(routingContext: RoutingContext, queue: RabbitMQClient, client: WebClient) =
     toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28")
 
 fun pipelineCreateHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
@@ -74,7 +74,7 @@ fun pipelineStopHandler(routingContext: RoutingContext, queue: RabbitMQClient): 
     return toJsonResponse(routingContext, "Successfully Stopped Pipeline $group $name $number")
 }
 
-fun pipelineLogsHandler(routingContext: RoutingContext): Future<Void> {
+fun pipelineLogsHandler(routingContext: RoutingContext, client: WebClient): Future<Void> {
     val params = routingContext.request().params()
     val group = params["group"]
     val name = params["name"]
@@ -82,25 +82,25 @@ fun pipelineLogsHandler(routingContext: RoutingContext): Future<Void> {
     val offset = params["offset"]
     val lines = params["lines"]
 
-    Logger.info{group}
-    Logger.info{name}
-    Logger.info{number}
-    Logger.info{offset}
-    Logger.info{lines}
+    logger.info(group)
+    logger.info(name)
+    logger.info(number)
+    logger.info(offset)
+    logger.info(lines)
     // TODO DB interaction
 
     return toJsonResponse(routingContext, "Logs for Pipeline $group $name $number with Offset $offset and Lines $lines")
 }
 
-fun pipelineStatusHandler(routingContext: RoutingContext): Future<Void> {
+fun pipelineStatusHandler(routingContext: RoutingContext, client: WebClient): Future<Void> {
     val params = routingContext.request().params()
     val group = params["group"]
     val name = params["name"]
     val number = params["number"]
 
-    Logger.info{group}
-    Logger.info{name}
-    Logger.info{number}
+    logger.info(group)
+    logger.info(name)
+    logger.info(number)
     // TODO DB interaction
 
     return toJsonResponse(routingContext, "Status for Pipeline $group $name $number")
@@ -114,15 +114,15 @@ fun pipelineArtifactHandler(routingContext: RoutingContext, queue: RabbitMQClien
     return toJsonResponse(routingContext, "Sending File completed!")
 }
 
-fun pipelineListHandler(routingContext: RoutingContext): Future<Void> {
+fun pipelineListHandler(routingContext: RoutingContext, client: WebClient): Future<Void> {
     val params = routingContext.request().params()
     val group = params["group"]
     val name = params["name"]
     val status = params["status"]
 
-    Logger.info{group}
-    Logger.info{name}
-    Logger.info{status}
+    logger.info(group)
+    logger.info(name)
+    logger.info(status)
     // TODO DB interaction
 
     return toJsonResponse(routingContext, "Listing Pipelines for $group $name $status")

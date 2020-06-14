@@ -18,10 +18,10 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "io.vertx:vertx-core:$vertx_version"
     implementation "io.vertx:vertx-web:$vertx_version"
+    implementation "io.vertx:vertx-web-client:$vertx_version"
     implementation "io.vertx:vertx-web-api-contract:$vertx_version"
     implementation "io.vertx:vertx-rabbitmq-client:$vertx_version"
-    implementation "org.tinylog:tinylog-api-kotlin:2.1.2"
-    implementation "org.tinylog:tinylog-impl:2.1.2"
+    implementation "org.slf4j:slf4j-simple:1.6.1"
 
     testImplementation "org.spekframework.spek2:spek-dsl-jvm:$spek_version"
     testImplementation 'junit:junit:4.12'
