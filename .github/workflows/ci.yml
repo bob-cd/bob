@@ -39,73 +39,8 @@ jobs:
         uses: "actions/cache@v1"
         with:
           path: "~/.m2/repository"
-          key: "${{ runner.os }}-bob-${{ hashFiles('entities/deps.edn') }}"
+          key: "${{ runner.os }}-bob-${{ hashFiles('{entities,runner}/deps.edn') }}"
           restore-keys: "${{ runner.os }}-bob-"
 
-      - name: "Run entities tests"
-        working-directory: "entities"
-        run: "make test"
-
-      - name: "Run runner tests"
-        working-directory: "runner"
-        run: "make test"
-
-  test-and-build:
-    runs-on: "ubuntu-latest"
-
-    steps:
-      - name: "Checkout code"
-        uses: "actions/checkout@v2"
-
-      - name: "Prepare Java"
-        uses: "actions/setup-java@v1"
-        with:
-          java-version: "11"
-
-      - name: "Prepare Boot"
-        uses: "DeLaGuardo/setup-clojure@2.0"
-        with:
-          boot: "2.8.3"
-
-      - name: "Apply Cache"
-        uses: "actions/cache@v1"
-        with:
-          path: "~/.m2/repository"
-          key: "${{ runner.os }}-bob-${{ hashFiles('build.boot') }}"
-          restore-keys: "${{ runner.os }}-bob-"
-
-      - name: "Run unit tests and build uberjar"
-        run: "boot kaocha build"
-
-      - name: "Upload Jar"
-        uses: "actions/upload-artifact@v1"
-        with:
-          name: "bob-jar"
-          path: "target/bob-standalone.jar"
-
-  integration-test-and-publish:
-    needs: "test-and-build"
-    runs-on: "ubuntu-latest"
-
-    steps:
-      - name: "Checkout code"
-        uses: "actions/checkout@v2"
-
-      - name: "Download Jar"
-        uses: "actions/download-artifact@v1"
-        with:
-          name: "bob-jar"
-
-      - name: "Integration tests"
-        env:
-          DOCKER_FILE: "Dockerfile.ci"
-        run: |
-          cd integration-tests     && \
-          docker-compose up -d bob && \
-          docker-compose up --abort-on-container-exit --scale bob-node=3 integration-tests
-
-      - name: "Publish to Docker Hub"
-        if: github.ref == 'refs/heads/master'
-        run: |
-          docker login --username="${{ secrets.DOCKERHUB_USERNAME }}" --password="${{ secrets.DOCKERHUB_PASSWORD }}" && \
-          docker push bobcd/bob:latest
+      - name: "Run all tests"
+        run: "make -j2 test"
