@@ -25,7 +25,7 @@ fun publishToEntities(queue: RabbitMQClient, type: String, payload: JsonObject) 
 
 fun healthCheckHandler(routingContext: RoutingContext, queue: RabbitMQClient, client: WebClient) {
     // TODO maybe implement with proper healthcheck
-    val checkDB = client.get(7778, "localhost", "/").send() {
+    client.get("/").send() {
         if (it.failed()) {
             logger.error("Healthcheck failed for CruxDB!")
             routingContext.fail(it.cause())
@@ -33,7 +33,7 @@ fun healthCheckHandler(routingContext: RoutingContext, queue: RabbitMQClient, cl
             logger.debug("Healthcheck succeeded for CruxDB!")
         }
     }
-    val checkRMQ = client.get(15672, "localhost", "/").send() {
+    client.get(15672, "localhost", "/").send() {
         if (it.failed()) {
             logger.error("Healthcheck failed for CruxDB!")
             routingContext.fail(it.cause())
@@ -168,7 +168,7 @@ fun resourceProviderDeleteHandler(routingContext: RoutingContext, queue: RabbitM
 }
 
 fun resourceProviderListHandler(routingContext: RoutingContext, client: WebClient): Future<Void> {
-    return toJsonResponse(routingContext, client.get(7778, "localhost", "/"))
+    return toJsonResponse(routingContext, client.get("/"))
 }
 
 fun artifactStoreCreateHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
@@ -193,7 +193,17 @@ fun artifactStoreDeleteHandler(routingContext: RoutingContext, queue: RabbitMQCl
 }
 
 fun artifactStoreListHandler(routingContext: RoutingContext, client: WebClient): Future<Void> {
-    return toJsonResponse(routingContext, client.get(7778, "localhost", "/"))
+    var response = Any()
+    client.get("/").send {
+        if (it.succeeded()) {
+            logger.info("SUCCESS! ${it.result()}")
+            response = "Artifact Store List: ${it.result()}"
+        } else {
+            logger.error("MEEEH! ${it.cause()}")
+            response = "Failed retrieving Artifact Store list: ${it.cause()}"
+        }
+    }
+    return toJsonResponse(routingContext, response.toString())
 }
 
 fun apiSpecHandler(routingContext: RoutingContext): Future<Void> =

@@ -1,23 +1,35 @@
+import io.vertx.config.ConfigRetriever
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
 import io.vertx.ext.web.client.WebClient
+import io.vertx.ext.web.client.WebClientOptions
 import io.vertx.rabbitmq.RabbitMQClient
 import io.vertx.rabbitmq.RabbitMQOptions
 import org.slf4j.LoggerFactory
 
 val logger = LoggerFactory.getLogger("bob.apiserver")
 
-
 fun main() {
     val vertx = Vertx.vertx(VertxOptions().setHAEnabled(true))
-    val port = System.getenv("BOB_PORT")?.toIntOrNull() ?: 7777
+    ConfigRetriever.create(vertx).getConfig {
+        val config = it.result()
 
-    val queue : RabbitMQClient = RabbitMQClient.create(vertx, RabbitMQOptions())
+        val rmqConfig = config.getJsonObject("rabbitmq")
+        val cruxConfig = config.getJsonObject("crux")
+        val httpConfig = config.getJsonObject("http")
 
-    val client = WebClient.create(vertx)
+        val apiSpec = httpConfig.getString("apiSpec", "/bob/api.yaml")
+        val httpHost = httpConfig.getString("host", "localhost")
+        val httpPort = httpConfig.getInteger("port", 7777)
 
-    vertx.deployVerticle(APIServer("/bob/api.yaml", "0.0.0.0", port, queue, client)) {
-        if (it.succeeded()) logger.info("Deployed on verticle: ${it.result()}")
-        else logger.error("Deployment error: ${it.cause()}")
+        logger.info(config.toString())
+
+        val queue : RabbitMQClient = RabbitMQClient.create(vertx, RabbitMQOptions(rmqConfig))
+        val client = WebClient.create(vertx, WebClientOptions(cruxConfig))
+
+        vertx.deployVerticle(APIServer(apiSpec, httpHost, httpPort, queue, client)) {
+            if (it.succeeded()) logger.info("Deployed on verticle: ${it.result()}")
+            else logger.error("Deployment error: ${it.cause()}")
+        }
     }
 }
