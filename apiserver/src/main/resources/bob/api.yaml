@@ -518,8 +518,8 @@ paths:
 
   /resource-providers/{name}:
     post:
-      operationId: ResourceProviderRegistration
-      summary: Registers a resource provider with its name and attributes
+      operationId: ResourceProviderCreate
+      summary: Creates a resource provider with its name and attributes
 
       parameters:
         - name: name
@@ -547,7 +547,7 @@ paths:
 
       responses:
         "200":
-          description: Successfully register a resource provider
+          description: Successfully created a resource provider
           content:
             application/json:
               schema:
@@ -558,7 +558,7 @@ paths:
                     "message": "Ok"
                   }
         default:
-          description: Failed to register a resource provider
+          description: Failed to create a resource provider
           content:
             application/json:
               schema:
@@ -616,8 +616,8 @@ paths:
 
   /artifact-stores/{name}:
     post:
-      operationId: ArtifactStoreRegistration
-      summary: Registers an artifact store with its name and attributes
+      operationId: ArtifactStoreCreate
+      summary: Creates an artifact store with its name and attributes
 
       parameters:
         - name: name
@@ -645,7 +645,7 @@ paths:
 
       responses:
         "200":
-          description: Successfully register an artifact store
+          description: Successfully created an artifact store
           content:
             application/json:
               schema:
@@ -656,7 +656,7 @@ paths:
                     "message": "Ok"
                   }
         default:
-          description: Failed to register an artifact store
+          description: Failed to create an artifact store
           content:
             application/json:
               schema:

@@ -18,13 +18,31 @@ fun publishToEntities(queue: RabbitMQClient, type: String, payload: JsonObject) 
         AMQP.BasicProperties.Builder().type(type).build(),
         payload.toBuffer()
     ) {
-        if (it.succeeded()) logger.info("Published message on entities: ${it.result()}")
+        if (it.succeeded()) logger.debug("Published message on entities!")
         else logger.error("Error publishing message on entities: ${it.cause().printStackTrace()}")
     }
 }
 
-fun healthCheckHandler(routingContext: RoutingContext, queue: RabbitMQClient, client: WebClient) =
+fun healthCheckHandler(routingContext: RoutingContext, queue: RabbitMQClient, client: WebClient) {
+    // TODO maybe implement with proper healthcheck
+    val checkDB = client.get(7778, "localhost", "/").send() {
+        if (it.failed()) {
+            logger.error("Healthcheck failed for CruxDB!")
+            routingContext.fail(it.cause())
+        } else {
+            logger.debug("Healthcheck succeeded for CruxDB!")
+        }
+    }
+    val checkRMQ = client.get(15672, "localhost", "/").send() {
+        if (it.failed()) {
+            logger.error("Healthcheck failed for CruxDB!")
+            routingContext.fail(it.cause())
+        } else {
+            logger.debug("Healthcheck succeeded for RabbitMQ!")
+        }
+    }
     toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28")
+}
 
 fun pipelineCreateHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
     val params = routingContext.request().params()
@@ -126,6 +144,56 @@ fun pipelineListHandler(routingContext: RoutingContext, client: WebClient): Futu
     // TODO DB interaction
 
     return toJsonResponse(routingContext, "Listing Pipelines for $group $name $status")
+}
+
+fun resourceProviderCreateHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
+    val name = routingContext.request().params()["name"]
+    val payload = routingContext.bodyAsJson.put("name", name)
+
+    logger.info("Creating Resource Provider with $payload")
+
+    publishToEntities(queue, "resource-provider/create", payload)
+
+    return toJsonResponse(routingContext, "Created Resource Provider $payload")
+}
+
+fun resourceProviderDeleteHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
+    val payload = JsonObject().put("name", routingContext.request().params()["name"])
+
+    logger.info("Deleting Resource Provider with $payload")
+
+    publishToEntities(queue, "resource-provider/create", payload)
+
+    return toJsonResponse(routingContext, "Deleted Resource Provider $payload")
+}
+
+fun resourceProviderListHandler(routingContext: RoutingContext, client: WebClient): Future<Void> {
+    return toJsonResponse(routingContext, client.get(7778, "localhost", "/"))
+}
+
+fun artifactStoreCreateHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
+    val name = routingContext.request().params()["name"]
+    val payload = routingContext.bodyAsJson.put("name", name)
+
+    logger.info("Creating Artifact Store with $payload")
+
+    publishToEntities(queue, "artifact-store/create", payload)
+
+    return toJsonResponse(routingContext, "Created Artifact Store $name")
+}
+
+fun artifactStoreDeleteHandler(routingContext: RoutingContext, queue: RabbitMQClient): Future<Void> {
+    val payload = JsonObject().put("name", routingContext.request().params()["name"])
+
+    logger.info("Deleting Artifact Store with $payload")
+
+    publishToEntities(queue, "artifact-store/delete", payload)
+
+    return toJsonResponse(routingContext, "Deleted Artifact Store $payload")
+}
+
+fun artifactStoreListHandler(routingContext: RoutingContext, client: WebClient): Future<Void> {
+    return toJsonResponse(routingContext, client.get(7778, "localhost", "/"))
 }
 
 fun apiSpecHandler(routingContext: RoutingContext): Future<Void> =

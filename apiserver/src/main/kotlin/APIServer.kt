@@ -35,6 +35,18 @@ fun serverFrom(vertx: Vertx, routerFactory: OpenAPI3RouterFactory, host: String,
             pipelineArtifactHandler(it, queue)
         }.addHandlerByOperationId("PipelineList") {
             pipelineListHandler(it, client)
+        }.addHandlerByOperationId("ResourceProviderCreate") {
+            resourceProviderCreateHandler(it, queue)
+        }.addHandlerByOperationId("ResourceProviderDelete") {
+            resourceProviderDeleteHandler(it, queue)
+        }.addHandlerByOperationId("ResourceProviderList") {
+            resourceProviderListHandler(it, client)
+        }.addHandlerByOperationId("ArtifactStoreCreate") {
+            artifactStoreCreateHandler(it, queue)
+        }.addHandlerByOperationId("ArtifactStoreDelete") {
+            artifactStoreDeleteHandler(it, queue)
+        }.addHandlerByOperationId("ArtifactStoreList") {
+            artifactStoreListHandler(it, client)
         }.addHandlerByOperationId("GetApiSpec") {
             apiSpecHandler(it)
         }.router

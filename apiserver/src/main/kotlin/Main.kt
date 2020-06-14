@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory
 
 val logger = LoggerFactory.getLogger("bob.apiserver")
 
-fun main() {
 
+fun main() {
     val vertx = Vertx.vertx(VertxOptions().setHAEnabled(true))
     val port = System.getenv("BOB_PORT")?.toIntOrNull() ?: 7777
 
