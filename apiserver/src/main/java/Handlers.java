@@ -34,8 +34,13 @@ public class Handlers {
     private final static Logger logger = LoggerFactory.getLogger(Handlers.class.getName());
 
     private static void toJsonResponse(RoutingContext routingContext, Object content) {
+        toJsonResponse(routingContext, content, 200);
+    }
+
+    private static void toJsonResponse(RoutingContext routingContext, Object content, int statusCode) {
         routingContext.response()
             .putHeader("Content-Type", "application/json")
+            .setStatusCode(statusCode)
             .end(new JsonObject(Map.of("message", content)).encode());
     }
 
@@ -221,7 +226,7 @@ public class Handlers {
 
     public static void artifactStoreListHandler(RoutingContext routingContext, WebClient client) {
         client.get("/").send(it -> {
-            String msg;
+            final String msg;
 
             if (it.succeeded()) {
                 final var result = it.result();
@@ -237,17 +242,17 @@ public class Handlers {
     }
 
     public static void apiSpecHandler(RoutingContext routingContext) {
-        final var file = new File(Handlers.class.getResource("bob/api.yaml").getFile()).toPath();
-        String data = "";
+        final var file = new File(Handlers.class.getResource("bob/api.yaml").getFile());
 
         try {
-            data = Files.readString(file);
-        } catch (IOException e) {
-            logger.error(format("Could not read spec file: %s", e.getMessage()));
-        }
+            routingContext.response()
+                .putHeader("Content-Type", "application/yaml")
+                .end(Files.readString(file.toPath()));
 
-        routingContext.response()
-            .putHeader("Content-Type", "application/yaml")
-            .end(data);
+        } catch (IOException e) {
+            final var msg = format("Could not read spec file: %s", e.getMessage());
+            logger.error(msg);
+            toJsonResponse(routingContext, msg, 500);
+        }
     }
 }
