@@ -4,3 +4,8 @@ gradle/
 test.tar.gz
 .idea/
 *.iml
+.classpath
+.project
+.settings/
+bin/
+.metals/
