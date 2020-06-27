@@ -17,6 +17,7 @@
 
 plugins {
     id "java"
+    id "application"
     id "com.github.johnrengelman.shadow" version "6.0.0"
     id "com.github.ben-manes.versions" version "0.28.0"
 }
@@ -66,3 +67,5 @@ shadowJar {
         attributes "Main-Class": "Main"
     }
 }
+
+mainClassName = "Main"
