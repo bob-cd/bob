@@ -24,7 +24,7 @@
             [runner.resource.core :as r])
   (:import [org.kamranzafar.jtar TarInputStream]))
 
-(def db-client (crux/new-api-client "http://localhost:7778"))
+(def db-client (crux/new-api-client "http://localhost:7779"))
 
 (deftest resource-fetch-test
   (testing "successful resource fetch"
@@ -51,6 +51,7 @@
                   [[:crux.tx/put
                     {:crux.db/id :bob.resource-provider/git
                      :url        "http://localhost:8000"}]])
+  (Thread/sleep 1000)
   (testing "valid resource provider"
     (is (r/valid-resource-provider? db-client {:provider "git"})))
   (testing "invalid resource provider"
@@ -64,6 +65,7 @@
                   [[:crux.tx/put
                     {:crux.db/id :bob.resource-provider/git
                      :url        "http://localhost:8000"}]])
+  (Thread/sleep 1000)
   (testing "generate url for a resource provider"
     (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
            (r/url-of db-client
@@ -93,6 +95,7 @@
                   [[:crux.tx/put
                     {:crux.db/id :bob.resource-provider/git
                      :url        "http://localhost:8000"}]])
+  (Thread/sleep 1000)
   (d/pull-image "busybox:musl")
   (testing "successful mount"
     (let [image  (r/mounted-image-from db-client

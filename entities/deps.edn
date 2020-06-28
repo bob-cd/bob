@@ -23,7 +23,7 @@
            failjure                   {:mvn/version "2.0.0"}
            juxt/crux-http-client      {:mvn/version "20.06-1.9.1-beta"}
            metosin/jsonista           {:mvn/version "0.2.6"}}
- :aliases {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0-612"}}
+ :aliases {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.632"}}
                      :main-opts  ["-m" "kaocha.runner" "--reporter" "kaocha.report.progress/report"]}
            :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}
                      :main-opts  ["-m" "hf.depstar.uberjar" "entities.jar" "-C" "-S" "-m" "entities.main"]}}}

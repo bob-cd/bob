@@ -43,4 +43,4 @@ jobs:
           restore-keys: "${{ runner.os }}-bob-"
 
       - name: "Run all tests"
-        run: "make -j2 test"
+        run: "make test" # TODO: Run in parallel with namespaced resources

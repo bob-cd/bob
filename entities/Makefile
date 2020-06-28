@@ -41,7 +41,7 @@ test:
 		--network bob-net \
 		bobcd/db
 	sleep 7 # TODO: Find a better way to wait till things come up.
-	clojure -A:test
+	clojure -A:test --fail-fast
 	docker kill bob-test-storage bob-test-queue bob-test-db && docker rm bob-test-storage bob-test-queue bob-test-db
 	docker network rm bob-net
 
