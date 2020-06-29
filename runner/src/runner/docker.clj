@@ -272,17 +272,42 @@
       (log/errorf "Could not put archive in container: %s" result)
       result)))
 
+(defn get-container-archive
+  "Returns a tar stream of a path in the container by id."
+  [id path]
+  (f/try-all [result (docker/invoke containers
+                                    {:op               :ContainerArchive
+                                     :params           {:id   id
+                                                        :path path}
+                                     :as               :stream
+                                     :throw-exception? true})]
+    result
+    (f/when-failed [err]
+      (log/errorf "Error fetching container archive: %s" err)
+      err)))
+
 (comment
   (pull-image "alpine:latest")
+
   (delete-image "alpine:latest")
+
   (sh-tokenize! "sh -c 'echo ${k1}'")
+
   (create-container "busybox:musl"
                     {:needs_resource "src"
                      :cmd            "sh -c 'i=1; while :; do echo $i; sleep 1; i=$((i+1)); done'"}
                     {:k1 "v1"})
+
   (create-container "busybox:musl" {:cmd "sh -c 'sleep 1; exit 1'"})
+
   (status-of "conny")
+
   (start-container "f99" "yes")
+
   (kill-container "conny")
+
   (delete-container "conny")
-  (put-container-archive "conny" (io/input-stream "src.tar") "/root"))
+
+  (put-container-archive "conny" (io/input-stream "src.tar") "/root")
+
+  (get-container-archive "conny" "/root/files"))

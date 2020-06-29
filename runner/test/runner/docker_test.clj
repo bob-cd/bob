@@ -196,3 +196,15 @@
       (is (f/failed? (d/put-container-archive id (io/input-stream "test/test.tar") "no-a-valid-path")))
       (d/delete-container id)))
   (d/delete-image image))
+
+(deftest ^:integration get-container-archive
+  (d/pull-image image)
+  (testing "success"
+    (let [id (d/create-container image)]
+      (is (instance? java.io.InputStream (d/get-container-archive id "/root")))
+      (d/delete-container id)))
+  (testing "failure"
+    (let [id (d/create-container image)]
+      (is (f/failed? (d/get-container-archive id "/invalid-path")))
+      (d/delete-container id)))
+  (d/delete-image image))
