@@ -171,7 +171,7 @@
           _      (future (d/start-container id #(println %)))
           _      (d/kill-container id)
           status (d/status-of id)]
-      (is (= 137 (:exit-code status))) ; 137 = SIGKILL
+      (is (not (:running? status)))
       (d/delete-container id)))
   (d/delete-image image))
 

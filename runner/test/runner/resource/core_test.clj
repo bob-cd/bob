@@ -26,7 +26,7 @@
 
 (def db-client (crux/new-api-client "http://localhost:7779"))
 
-(deftest resource-fetch-test
+(deftest ^:integration resource-fetch-test
   (testing "successful resource fetch"
     (is (instance?
           java.io.InputStream
@@ -35,7 +35,7 @@
   (testing "unsuccessful resource fetch"
     (is (f/failed? (r/fetch-resource "http://invalid-url")))))
 
-(deftest tar-prefix-test
+(deftest ^:integration tar-prefix-test
   (let [url   "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=master"
         tar   (r/fetch-resource url)
         path  (r/prefix-dir-on-tar! (TarInputStream. tar) "source")
@@ -46,7 +46,7 @@
                   .getName)]
     (is (s/starts-with? entry "source/"))))
 
-(deftest valid-resource-provider-test
+(deftest ^:integration valid-resource-provider-test
   (crux/submit-tx db-client
                   [[:crux.tx/put
                     {:crux.db/id :bob.resource-provider/git
@@ -60,7 +60,7 @@
                   [[:crux.tx/delete :bob.resource-provider/git]])
   (Thread/sleep 1000))
 
-(deftest url-generation-test
+(deftest ^:integration url-generation-test
   (crux/submit-tx db-client
                   [[:crux.tx/put
                     {:crux.db/id :bob.resource-provider/git
@@ -76,7 +76,7 @@
                   [[:crux.tx/delete :bob.resource-provider/git]])
   (Thread/sleep 1000))
 
-(deftest initial-image-test
+(deftest ^:integration initial-image-test
   (d/pull-image "busybox:musl")
   (testing "successful image creation"
     (let [url    "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=master"
@@ -90,7 +90,7 @@
     (is (f/failed? (r/initial-image-of (io/input-stream "test/test.tar") "invalid-image" nil "src"))))
   (d/delete-image "busybox:musl"))
 
-(deftest mounted-image-test
+(deftest ^:integration mounted-image-test
   (crux/submit-tx db-client
                   [[:crux.tx/put
                     {:crux.db/id :bob.resource-provider/git
