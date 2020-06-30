@@ -40,9 +40,15 @@ test:
 		-p 8000:8000 \
 		--network bob-net \
 		bobcd/resource-git
+	docker run \
+		-d \
+		--name artifact-local \
+		-p 8001:8001 \
+		--network bob-net \
+		bobcd/artifact-local
 	sleep 7 # TODO: Find a better way to wait till things come up.
 	clojure -A:test --fail-fast
-	docker kill bob-test-storage bob-test-db resource-git && docker rm bob-test-storage bob-test-db resource-git
+	docker kill bob-test-storage bob-test-db resource-git artifact-local && docker rm bob-test-storage bob-test-db resource-git artifact-local
 	docker network rm bob-net
 
 compile:
