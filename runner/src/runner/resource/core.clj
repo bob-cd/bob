@@ -18,7 +18,7 @@
             [clojure.java.io :as io]
             [failjure.core :as f]
             [taoensso.timbre :as log]
-            [clj-http.lite.client :as http]
+            [clj-http.client :as http]
             [crux.api :as crux]
             [runner.docker :as docker])
   (:import [java.io BufferedOutputStream File FileOutputStream]
