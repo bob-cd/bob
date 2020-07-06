@@ -208,3 +208,13 @@
       (is (f/failed? (d/get-container-archive id "/invalid-path")))
       (d/delete-container id)))
   (d/delete-image image))
+
+(deftest ^:integration inspect-container
+  (d/pull-image image)
+  (testing "success"
+    (let [id (d/create-container image)]
+      (is (map? (d/inspect-container id)))
+      (d/delete-container id)))
+  (testing "failure"
+    (is (f/failed? (d/inspect-container "invalid-id"))))
+  (d/delete-image image))

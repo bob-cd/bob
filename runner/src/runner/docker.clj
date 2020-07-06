@@ -169,13 +169,22 @@
        (log/errorf "Could not create container: %s" (f/message err))
        err))))
 
+(defn inspect-container
+  "Returns the container info by id."
+  [id]
+  (f/try-all [result (docker/invoke containers
+                                    {:op               :ContainerInspect
+                                     :params           {:id id}
+                                     :throw-exception? true})]
+    result
+    (f/when-failed [err]
+      (log/errorf "Error fetching container info: %s" err)
+      err)))
+
 (defn status-of
   "Returns the status of a container"
   [id]
-  (f/try-all [{:keys [State]} (docker/invoke containers
-                                             {:op               :ContainerInspect
-                                              :params           {:id id}
-                                              :throw-exception? true})]
+  (f/try-all [{:keys [State]} (inspect-container id)]
     {:running?  (:Running State)
      :exit-code (:ExitCode State)}
     (f/when-failed [err]
@@ -299,6 +308,8 @@
                     {:k1 "v1"})
 
   (create-container "busybox:musl" {:cmd "sh -c 'sleep 1; exit 1'"})
+
+  (inspect-container "conny")
 
   (status-of "conny")
 
