@@ -57,7 +57,7 @@ public class Handlers {
 
     public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, WebClient crux) {
         // TODO use better health check
-        crux.get("/").send(it -> {
+        crux.get("/").followRedirects(true).send(it -> {
             if (it.failed()) {
                 logger.error("Health check failed for CruxDB!");
                 routingContext.fail(it.cause());

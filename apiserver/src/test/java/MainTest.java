@@ -30,8 +30,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("👋 A fairly basic test example")
@@ -43,38 +41,36 @@ class APIServerTest {
     void useAPIServer(Vertx vertx, VertxTestContext testContext) {
         Checkpoint deploymentCheckpoint = testContext.checkpoint();
         Checkpoint requestCheckpoint = testContext.checkpoint(10);
-        ConfigRetriever.create(vertx).getConfig(config -> {
-            if (config.succeeded()) {
-                final var conf = config.result();
-                final var rmqConfig = conf.getJsonObject("rabbitmq");
-                final var cruxConfig = conf.getJsonObject("crux");
-                final var httpConfig = conf.getJsonObject("http");
+        final var apiSpec = "/bob/api.yaml";
+        final var httpHost = "localhost";
+        final var httpPort = 17777;
 
-                final var apiSpec = httpConfig.getString("apiSpec", "/bob/api.yaml");
-                final var httpHost = httpConfig.getString("host", "localhost");
-                final var httpPort = httpConfig.getInteger("port", 7777);
+        final var rabbitConfig = new RabbitMQOptions().setHost("localhost").setPort(5673);
+        final var queue = RabbitMQClient.create(vertx, rabbitConfig);
 
-                final var queue = RabbitMQClient.create(vertx, new RabbitMQOptions(rmqConfig));
-                final var client = WebClient.create(vertx, new WebClientOptions(cruxConfig));
+        final var cruxConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(7779);
+        final var crux = WebClient.create(vertx, cruxConfig);
 
-                vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, client), testContext.succeeding(id -> {
-                    deploymentCheckpoint.flag();
-                    for (int i = 0; i < 10; i++) {
-                        client.get(11981, "localhost", "/can-we-build-it")
-                                .as(BodyCodec.string())
-                                .send(testContext.succeeding(resp -> {
-                                    testContext.verify(() -> {
-                                        assertThat(resp.statusCode()).isEqualTo(200);
-                                        assertThat(resp.body()).contains("Yes we can!");
-                                        requestCheckpoint.flag();
-                                    });
-                                }));
-                    }
-                }));
+        final var clientConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(17777);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+            deploymentCheckpoint.flag();
+            for (int i = 0; i < 10; i++) {
+                client.get("/can-we-build-it")
+                        .as(BodyCodec.string())
+                        .send(testContext.succeeding(resp -> {
+                            testContext.verify(() -> {
+                                assertThat(resp.statusCode()).isEqualTo(200);
+                                assertThat(resp.body()).contains("Yes we can!");
+                                requestCheckpoint.flag();
+                            });
+                        }));
             }
-        });
+        }));
     }
 
+/*
     @DisplayName("➡️ A nested test with customized lifecycle")
     @Nested
     class CustomLifecycleTest {
@@ -148,4 +144,5 @@ class APIServerTest {
             vertx.close();
         }
     }
+*/
 }
