@@ -32,33 +32,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
- */
 @DisplayName("👋 A fairly basic test example")
 @ExtendWith(VertxExtension.class)
 class APIServerTest {
-
-    @Test
-    @DisplayName("⏱ Count 3 timer ticks")
-    void countThreeTicks(Vertx vertx, VertxTestContext testContext) {
-        AtomicInteger counter = new AtomicInteger();
-        vertx.setPeriodic(100, id -> {
-            if (counter.incrementAndGet() == 3) {
-                testContext.completeNow();
-            }
-        });
-    }
-
-    @Test
-    @DisplayName("⏱ Count 3 timer ticks, with a checkpoint")
-    void countThreeTicksWithCheckpoints(Vertx vertx, VertxTestContext testContext) {
-        Checkpoint checkpoint = testContext.checkpoint(3);
-        vertx.setPeriodic(100, id -> checkpoint.flag());
-    }
 
     @Test
     @DisplayName("🚀 Deploy a HTTP service verticle and make 10 requests")
@@ -82,12 +60,12 @@ class APIServerTest {
                 vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, client), testContext.succeeding(id -> {
                     deploymentCheckpoint.flag();
                     for (int i = 0; i < 10; i++) {
-                        client.get(11981, "localhost", "/")
+                        client.get(11981, "localhost", "/can-we-build-it")
                                 .as(BodyCodec.string())
                                 .send(testContext.succeeding(resp -> {
                                     testContext.verify(() -> {
                                         assertThat(resp.statusCode()).isEqualTo(200);
-                                        assertThat(resp.body()).contains("Yo!");
+                                        assertThat(resp.body()).contains("Yes we can!");
                                         requestCheckpoint.flag();
                                     });
                                 }));
@@ -152,7 +130,7 @@ class APIServerTest {
 
                     vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, client), testContext.succeeding(id ->
                             testContext.completeNow()));
-                    client.get(11981, "localhost", "/yo")
+                    client.get(7777, "localhost", "/can-we-build-it")
                             .as(BodyCodec.string())
                             .send(testContext.succeeding(resp -> {
                                 testContext.verify(() -> {
