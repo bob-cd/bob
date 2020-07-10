@@ -47,9 +47,9 @@ public class Main {
                 logger.info(conf.toString());
 
                 final var queue = RabbitMQClient.create(vertx, new RabbitMQOptions(rmqConfig));
-                final var client = WebClient.create(vertx, new WebClientOptions(cruxConfig));
+                final var crux = WebClient.create(vertx, new WebClientOptions(cruxConfig));
 
-                vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, client), v -> {
+                vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), v -> {
                     if (v.succeeded())
                         logger.info(format("Deployed on verticle: %s", v.result()));
                     else
