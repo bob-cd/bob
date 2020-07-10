@@ -56,7 +56,7 @@ public class Handlers {
     }
 
     public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, WebClient crux) {
-        // TODO maybe implement with proper healthcheck
+        // TODO use better health check
         crux.get("/").send(it -> {
             if (it.failed()) {
                 logger.error("Health check failed for CruxDB!");
@@ -65,9 +65,10 @@ public class Handlers {
                 logger.debug("Health check succeeded for CruxDB!");
             }
         });
-        crux.get(15672, "localhost", "/").send(it -> {
+        // TODO use better health check
+        crux.get(15672, "localhost", "/api/nodes").send(it -> {
             if (it.failed()) {
-                logger.error("Health check failed for CruxDB!");
+                logger.error("Health check failed for RabbitMQ!");
                 routingContext.fail(it.cause());
             } else {
                 logger.debug("Health check succeeded for RabbitMQ!");

@@ -13,11 +13,41 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-all: test compile
+all: setup test compile
 
-.PHONY: test
+.PHONY: setup teardown test
+setup:
+	docker network create bob-net --subnet 10.0.77.0/24
+	docker run \
+		--detach \
+		--name bob-storage \
+		-e POSTGRES_DB=bob \
+		-e POSTGRES_USER=bob \
+		-e POSTGRES_PASSWORD=bob \
+		--network bob-net \
+		postgres:alpine
+	docker run \
+		--detach \
+		--name bob-queue \
+		--publish 5672:5672 \
+		--publish 15672:15672 \
+		--network bob-net \
+		rabbitmq:3-management-alpine
+	docker run \
+		--detach \
+		--name bob-db \
+		--publish 7778:7778 \
+		-e BOB_STORAGE_HOST=bob-storage \
+		-e BOB_STORAGE_DATABASE=bob \
+		--network bob-net \
+		bobcd/db
+
+teardown:
+	docker rm -f bob-storage bob-queue bob-db
+	docker network rm bob-net
+
 test:
-	docker network create bob-net
+	docker network create bob-net --subnet 10.0.77.0/24
 	docker run \
 		-d \
 		--name bob-test-storage \
