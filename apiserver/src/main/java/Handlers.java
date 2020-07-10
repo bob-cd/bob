@@ -55,9 +55,9 @@ public class Handlers {
         });
     }
 
-    public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, WebClient client) {
+    public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, WebClient crux) {
         // TODO maybe implement with proper healthcheck
-        client.get("/").send(it -> {
+        crux.get("/").send(it -> {
             if (it.failed()) {
                 logger.error("Health check failed for CruxDB!");
                 routingContext.fail(it.cause());
@@ -65,7 +65,7 @@ public class Handlers {
                 logger.debug("Health check succeeded for CruxDB!");
             }
         });
-        client.get(15672, "localhost", "/").send(it -> {
+        crux.get(15672, "localhost", "/").send(it -> {
             if (it.failed()) {
                 logger.error("Health check failed for CruxDB!");
                 routingContext.fail(it.cause());
@@ -125,7 +125,7 @@ public class Handlers {
         toJsonResponse(routingContext, format("Successfully Stopped Pipeline %s %s %s", group, name, number));
     }
 
-    public static void pipelineLogsHandler(RoutingContext routingContext, WebClient client) {
+    public static void pipelineLogsHandler(RoutingContext routingContext, WebClient crux) {
         final var params = routingContext.request().params();
         final var group = params.get("group");
         final var name = params.get("name");
@@ -143,7 +143,7 @@ public class Handlers {
         toJsonResponse(routingContext, format("Logs for Pipeline %s %s %s with Offset %s and Lines %s", group, name, number, offset, lines));
     }
 
-    public static void pipelineStatusHandler(RoutingContext routingContext, WebClient client) {
+    public static void pipelineStatusHandler(RoutingContext routingContext, WebClient crux) {
         final var params = routingContext.request().params();
         final var group = params.get("group");
         final var name = params.get("name");
@@ -164,7 +164,7 @@ public class Handlers {
         toJsonResponse(routingContext, "Sending File completed!");
     }
 
-    public static void pipelineListHandler(RoutingContext routingContext, WebClient client) {
+    public static void pipelineListHandler(RoutingContext routingContext, WebClient crux) {
         final var params = routingContext.request().params();
         final var group = params.get("group");
         final var name = params.get("name");
@@ -199,8 +199,8 @@ public class Handlers {
         toJsonResponse(routingContext, format("Deleted Resource Provider %s", payload));
     }
 
-    public static void resourceProviderListHandler(RoutingContext routingContext, WebClient client) {
-        toJsonResponse(routingContext, client.get("/"));
+    public static void resourceProviderListHandler(RoutingContext routingContext, WebClient crux) {
+        toJsonResponse(routingContext, crux.get("/"));
     }
 
     public static void artifactStoreCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
@@ -224,8 +224,8 @@ public class Handlers {
         toJsonResponse(routingContext, format("Deleted Artifact Store %s", payload));
     }
 
-    public static void artifactStoreListHandler(RoutingContext routingContext, WebClient client) {
-        client.get("/").send(it -> {
+    public static void artifactStoreListHandler(RoutingContext routingContext, WebClient crux) {
+        crux.get("/").send(it -> {
             final String msg;
 
             if (it.succeeded()) {

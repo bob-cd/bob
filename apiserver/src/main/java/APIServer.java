@@ -34,14 +34,14 @@ public class APIServer extends AbstractVerticle {
     private final String host;
     private final int port;
     private final RabbitMQClient queue;
-    private final WebClient client;
+    private final WebClient crux;
 
-    public APIServer(String apiSpec, String host, int port, RabbitMQClient queue, WebClient client) {
+    public APIServer(String apiSpec, String host, int port, RabbitMQClient queue, WebClient crux) {
         this.apiSpec = apiSpec;
         this.host = host;
         this.port = port;
         this.queue = queue;
-        this.client = client;
+        this.crux = crux;
     }
 
     @Override
@@ -49,7 +49,7 @@ public class APIServer extends AbstractVerticle {
         this.queue
             .start()
             .compose(_it -> openAPI3RouterFrom(this.vertx, this.apiSpec))
-            .compose(router -> serverFrom(this.vertx, router, this.host, this.port, this.queue, this.client))
+            .compose(router -> serverFrom(this.vertx, router, this.host, this.port, this.queue, this.crux))
             .onFailure(err -> startPromise.fail(err.getCause()))
             .onSuccess(_it -> startPromise.complete());
     }
@@ -62,23 +62,23 @@ public class APIServer extends AbstractVerticle {
         return promise.future();
     }
 
-    private static Future<HttpServer> serverFrom(Vertx vertx, OpenAPI3RouterFactory routerFactory, String host, int port, RabbitMQClient queue, WebClient client) {
+    private static Future<HttpServer> serverFrom(Vertx vertx, OpenAPI3RouterFactory routerFactory, String host, int port, RabbitMQClient queue, WebClient crux) {
         final var router = routerFactory
-            .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, queue, client))
+            .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, queue, crux))
             .addHandlerByOperationId("PipelineCreate", ctx -> Handlers.pipelineCreateHandler(ctx, queue))
             .addHandlerByOperationId("PipelineDelete", ctx -> Handlers.pipelineDeleteHandler(ctx, queue))
             .addHandlerByOperationId("PipelineStart", ctx -> Handlers.pipelineStartHandler(ctx, queue))
             .addHandlerByOperationId("PipelineStop", ctx -> Handlers.pipelineStopHandler(ctx, queue))
-            .addHandlerByOperationId("PipelineLogs", ctx -> Handlers.pipelineLogsHandler(ctx, client))
-            .addHandlerByOperationId("PipelineStatus", ctx -> Handlers.pipelineStatusHandler(ctx, client))
+            .addHandlerByOperationId("PipelineLogs", ctx -> Handlers.pipelineLogsHandler(ctx, crux))
+            .addHandlerByOperationId("PipelineStatus", ctx -> Handlers.pipelineStatusHandler(ctx, crux))
             .addHandlerByOperationId("PipelineArtifactFetch", ctx -> Handlers.pipelineArtifactHandler(ctx, queue))
-            .addHandlerByOperationId("PipelineList", ctx -> Handlers.pipelineListHandler(ctx, client))
+            .addHandlerByOperationId("PipelineList", ctx -> Handlers.pipelineListHandler(ctx, crux))
             .addHandlerByOperationId("ResourceProviderCreate", ctx -> Handlers.resourceProviderCreateHandler(ctx, queue))
             .addHandlerByOperationId("ResourceProviderDelete", ctx -> Handlers.resourceProviderDeleteHandler(ctx, queue))
-            .addHandlerByOperationId("ResourceProviderList", ctx -> Handlers.resourceProviderListHandler(ctx, client))
+            .addHandlerByOperationId("ResourceProviderList", ctx -> Handlers.resourceProviderListHandler(ctx, crux))
             .addHandlerByOperationId("ArtifactStoreCreate", ctx -> Handlers.artifactStoreCreateHandler(ctx, queue))
             .addHandlerByOperationId("ArtifactStoreDelete", ctx -> Handlers.artifactStoreDeleteHandler(ctx, queue))
-            .addHandlerByOperationId("ArtifactStoreList", ctx -> Handlers.artifactStoreListHandler(ctx, client))
+            .addHandlerByOperationId("ArtifactStoreList", ctx -> Handlers.artifactStoreListHandler(ctx, crux))
             .addHandlerByOperationId("GetApiSpec", Handlers::apiSpecHandler)
             .getRouter();
 
