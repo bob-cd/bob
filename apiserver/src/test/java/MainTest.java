@@ -15,8 +15,10 @@
  * along with Bob. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -59,19 +61,20 @@ class APIServerTest {
             deploymentCheckpoint.flag();
             for (int i = 0; i < 10; i++) {
                 client.get("/api.yaml")
-                        .as(BodyCodec.string())
-                        .send(testContext.succeeding(resp -> {
-                            testContext.verify(() -> {
-                                assertThat(resp.statusCode()).isEqualTo(200);
-                                assertThat(resp.body()).contains("title: Bob the Builder");
-                                requestCheckpoint.flag();
-                            });
-                        }));
+                    .as(BodyCodec.string())
+                    .send(testContext.succeeding(resp -> {
+                        testContext.verify(() -> {
+                            assertThat(resp.statusCode()).isEqualTo(200);
+                            assertThat(resp.body()).contains("title: Bob the Builder");
+                            requestCheckpoint.flag();
+                        });
+                    }));
             }
         }));
     }
 
     @DisplayName("➡️ A nested test with customized lifecycle")
+    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
     @Nested
     class CustomLifecycleTest {
 
@@ -88,11 +91,12 @@ class APIServerTest {
         @BeforeEach
         void prepare() {
             vertx = Vertx.vertx(new VertxOptions()
-                    .setMaxEventLoopExecuteTime(1000)
-                    .setPreferNativeTransport(true));
+                .setMaxEventLoopExecuteTime(1000)
+                .setPreferNativeTransport(true));
         }
 
         @Test
+        @Order(1)
         @DisplayName("⬆️ Deploy APIServer")
         void deployAPIServer(VertxTestContext testContext) {
             final var queue = RabbitMQClient.create(vertx, rabbitConfig);
@@ -100,10 +104,11 @@ class APIServerTest {
             final var client = WebClient.create(vertx, clientConfig);
 
             vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id ->
-                    testContext.completeNow()));
+                testContext.completeNow()));
         }
 
         @Test
+        @Order(2)
         @DisplayName("🛂 Test Health Check of APIServer")
         void httpRequest(VertxTestContext testContext) {
             final var queue = RabbitMQClient.create(vertx, rabbitConfig);
@@ -112,22 +117,23 @@ class APIServerTest {
 
             vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
                 client.get("/can-we-build-it")
-                        .as(BodyCodec.string())
-                        .send(ar -> {
-                            if (ar.failed()) {
-                                testContext.failNow(ar.cause());
-                            } else {
-                                testContext.verify(() -> {
-                                    assertThat(ar.result().statusCode()).isEqualTo(200);
-                                    assertThat(ar.result().body()).contains("Yes we can!");
-                                    testContext.completeNow();
-                                });
-                            }
-                        });
+                    .as(BodyCodec.string())
+                    .send(ar -> {
+                        if (ar.failed()) {
+                            testContext.failNow(ar.cause());
+                        } else {
+                            testContext.verify(() -> {
+                                assertThat(ar.result().statusCode()).isEqualTo(200);
+                                assertThat(ar.result().body()).contains("Yes we can!");
+                                testContext.completeNow();
+                            });
+                        }
+                    });
             }));
         }
 
         @Test
+        @Order(3)
         @DisplayName("Create Test Pipeline")
         void createPipeline(VertxTestContext testContext) {
             final var queue = RabbitMQClient.create(vertx, rabbitConfig);
@@ -136,8 +142,6 @@ class APIServerTest {
 
             Checkpoint serverStarted = testContext.checkpoint();
             Checkpoint requestsServed = testContext.checkpoint(10);
-            Checkpoint queueStarted = testContext.checkpoint();
-            Checkpoint responsesReceived = testContext.checkpoint(10);
 
             vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
                 serverStarted.flag();
@@ -160,6 +164,27 @@ class APIServerTest {
                                     }
                                 });
                         }
+                    }
+                });
+            }));
+        }
+
+        @Test
+        @Order(4)
+        @DisplayName("Consume Messages From Queue")
+        void consumeMessages(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint queueStarted = testContext.checkpoint();
+            Checkpoint responsesReceived = testContext.checkpoint(10);
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                vertx.fileSystem().readFile("src/test/resources/createComplexPipeline.payload.json", file -> {
+                    if (file.succeeded()) {
+                        JsonObject json = new JsonObject(file.result());
                         queue.basicConsumer("entities", (it -> {
                             if (it.succeeded()) {
                                 System.out.println("RabbitMQ Consumer started!");
@@ -169,6 +194,7 @@ class APIServerTest {
                                 rmqConsumer.handler(message -> {
                                     testContext.verify(() -> {
                                         assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(pipelinePath));
+                                        assertThat((message.properties().getType())).isEqualTo("pipeline/create");
                                         responsesReceived.flag();
                                     });
                                 });
