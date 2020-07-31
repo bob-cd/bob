@@ -16,15 +16,20 @@
  */
 
 import com.rabbitmq.client.AMQP;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import io.vertx.rabbitmq.RabbitMQClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.file.Files;
 import java.util.Map;
 
@@ -57,28 +62,38 @@ public class Handlers {
 
     public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, WebClient crux) {
         // TODO use better health check
-        crux.get("/").followRedirects(true).send(it -> {
-            if (it.failed()) {
-                logger.error("Health check failed for CruxDB!");
-                routingContext.fail(it.cause());
-            } else {
-                logger.debug("Health check succeeded for CruxDB!");
-            }
-        });
+        Promise<HttpResponse<Buffer>> cruxCheck = Promise.promise();
+        crux.get(7779, "localhost", "/")
+            .expect(ResponsePredicate.SC_OK)
+            .followRedirects(true)
+            .send(it -> {
+                if (it.succeeded()) {
+                    logger.debug("Health check succeeded for CruxDB!");
+                    cruxCheck.complete();
+                } else {
+                    logger.error("Health check failed for CruxDB!");
+                    cruxCheck.fail(it.cause());
+                }
+            });
         // TODO use better health check
-        crux.get(15672, "localhost", "/api/nodes").send(it -> {
-            if (it.failed()) {
-                logger.error("Health check failed for RabbitMQ!");
-                routingContext.fail(it.cause());
-            } else {
-                logger.debug("Health check succeeded for RabbitMQ!");
-            }
-        });
+        Promise<HttpResponse<Buffer>> rabbitCheck = Promise.promise();
+        if (queue.isConnected()) {
+            logger.debug("Health check succeeded for RabbitMQ!");
+            rabbitCheck.complete();
+        } else {
+            logger.error("Health check failed for RabbitMQ!");
+            rabbitCheck.fail("foo");
+        }
 
-        toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28");
+        CompositeFuture.all(rabbitCheck.future(), cruxCheck.future()).onSuccess(it -> {
+            toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28");
+        }).onFailure(it -> {
+            toJsonResponse(routingContext, format("Failed Health Check: %s", it.getCause()), 503);
+        });
     }
 
     public static void pipelineCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
+        System.out.println("Creating Pipeline: ");
         final var params = routingContext.request().params();
         final var group = params.get("group");
         final var name = params.get("name");

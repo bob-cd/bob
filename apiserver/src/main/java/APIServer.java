@@ -22,6 +22,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.handler.LoggerHandler;
+import io.vertx.ext.web.handler.impl.LoggerHandlerImpl;
 import io.vertx.rabbitmq.RabbitMQClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +68,7 @@ public class APIServer extends AbstractVerticle {
         final var router = routerFactory
             .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, queue, crux))
             .addHandlerByOperationId("PipelineCreate", ctx -> Handlers.pipelineCreateHandler(ctx, queue))
+            .addFailureHandlerByOperationId("PipelineCreate", ctx -> logger.error(ctx.getBodyAsString()))
             .addHandlerByOperationId("PipelineDelete", ctx -> Handlers.pipelineDeleteHandler(ctx, queue))
             .addHandlerByOperationId("PipelineStart", ctx -> Handlers.pipelineStartHandler(ctx, queue))
             .addHandlerByOperationId("PipelineStop", ctx -> Handlers.pipelineStopHandler(ctx, queue))
@@ -80,6 +83,7 @@ public class APIServer extends AbstractVerticle {
             .addHandlerByOperationId("ArtifactStoreDelete", ctx -> Handlers.artifactStoreDeleteHandler(ctx, queue))
             .addHandlerByOperationId("ArtifactStoreList", ctx -> Handlers.artifactStoreListHandler(ctx, crux))
             .addHandlerByOperationId("GetApiSpec", Handlers::apiSpecHandler)
+            .addGlobalHandler(LoggerHandler.create())
             .getRouter();
 
         return vertx.createHttpServer()

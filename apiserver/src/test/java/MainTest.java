@@ -15,9 +15,9 @@
  * along with Bob. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import io.vertx.config.ConfigRetriever;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.codec.BodyCodec;
@@ -25,11 +25,12 @@ import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.rabbitmq.RabbitMQClient;
+import io.vertx.rabbitmq.RabbitMQConsumer;
 import io.vertx.rabbitmq.RabbitMQOptions;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("👋 A fairly basic test example")
@@ -57,12 +58,12 @@ class APIServerTest {
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
             deploymentCheckpoint.flag();
             for (int i = 0; i < 10; i++) {
-                client.get("/can-we-build-it")
+                client.get("/api.yaml")
                         .as(BodyCodec.string())
                         .send(testContext.succeeding(resp -> {
                             testContext.verify(() -> {
                                 assertThat(resp.statusCode()).isEqualTo(200);
-                                assertThat(resp.body()).contains("Yes we can!");
+                                assertThat(resp.body()).contains("title: Bob the Builder");
                                 requestCheckpoint.flag();
                             });
                         }));
@@ -70,12 +71,19 @@ class APIServerTest {
         }));
     }
 
-/*
     @DisplayName("➡️ A nested test with customized lifecycle")
     @Nested
     class CustomLifecycleTest {
 
         Vertx vertx;
+
+        String apiSpec = "/bob/api.yaml";
+        String httpHost = "localhost";
+        Integer httpPort = 17777;
+
+        RabbitMQOptions rabbitConfig = new RabbitMQOptions().setHost("localhost").setPort(5673);
+        WebClientOptions cruxConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(7779);
+        WebClientOptions clientConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(17777);
 
         @BeforeEach
         void prepare() {
@@ -87,56 +95,91 @@ class APIServerTest {
         @Test
         @DisplayName("⬆️ Deploy APIServer")
         void deployAPIServer(VertxTestContext testContext) {
-            ConfigRetriever.create(vertx).getConfig(config -> {
-                if (config.succeeded()) {
-                    final var conf = config.result();
-                    final var rmqConfig = conf.getJsonObject("rabbitmq");
-                    final var cruxConfig = conf.getJsonObject("crux");
-                    final var httpConfig = conf.getJsonObject("http");
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
 
-                    final var apiSpec = httpConfig.getString("apiSpec", "/bob/api.yaml");
-                    final var httpHost = httpConfig.getString("host", "localhost");
-                    final var httpPort = httpConfig.getInteger("port", 7777);
-
-                    final var queue = RabbitMQClient.create(vertx, new RabbitMQOptions(rmqConfig));
-                    final var client = WebClient.create(vertx, new WebClientOptions(cruxConfig));
-
-                    vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, client), testContext.succeeding(id ->
-                            testContext.completeNow()));
-                }
-            });
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id ->
+                    testContext.completeNow()));
         }
 
         @Test
-        @DisplayName("🛂 Make a HTTP client request to APIServer")
+        @DisplayName("🛂 Test Health Check of APIServer")
         void httpRequest(VertxTestContext testContext) {
-            ConfigRetriever.create(vertx).getConfig(config -> {
-                if (config.succeeded()) {
-                    final var conf = config.result();
-                    final var rmqConfig = conf.getJsonObject("rabbitmq");
-                    final var cruxConfig = conf.getJsonObject("crux");
-                    final var httpConfig = conf.getJsonObject("http");
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
 
-                    final var apiSpec = httpConfig.getString("apiSpec", "/bob/api.yaml");
-                    final var httpHost = httpConfig.getString("host", "localhost");
-                    final var httpPort = httpConfig.getInteger("port", 7777);
-
-                    final var queue = RabbitMQClient.create(vertx, new RabbitMQOptions(rmqConfig));
-                    final var client = WebClient.create(vertx, new WebClientOptions(cruxConfig));
-
-                    vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, client), testContext.succeeding(id ->
-                            testContext.completeNow()));
-                    client.get(7777, "localhost", "/can-we-build-it")
-                            .as(BodyCodec.string())
-                            .send(testContext.succeeding(resp -> {
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                client.get("/can-we-build-it")
+                        .as(BodyCodec.string())
+                        .send(ar -> {
+                            if (ar.failed()) {
+                                testContext.failNow(ar.cause());
+                            } else {
                                 testContext.verify(() -> {
-                                    assertThat(resp.statusCode()).isEqualTo(200);
-                                    assertThat(resp.body()).contains("Yo!");
+                                    assertThat(ar.result().statusCode()).isEqualTo(200);
+                                    assertThat(ar.result().body()).contains("Yes we can!");
                                     testContext.completeNow();
                                 });
-                            }));
-                }
-            });
+                            }
+                        });
+            }));
+        }
+
+        @Test
+        @DisplayName("Create Test Pipeline")
+        void createPipeline(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint requestsServed = testContext.checkpoint(10);
+            Checkpoint queueStarted = testContext.checkpoint();
+            Checkpoint responsesReceived = testContext.checkpoint(10);
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                vertx.fileSystem().readFile("src/test/resources/createComplexPipeline.payload.json", file -> {
+                    if (file.succeeded()) {
+                        JsonObject json = new JsonObject(file.result());
+                        for (int i = 0; i < 10; i++) {
+                            client.post("/pipelines/groups/dev/names/test")
+                                .putHeader("Content-Type", "application/json")
+                                .putHeader("content-length", "52")
+                                .sendJsonObject(json, ar -> {
+                                    if (ar.failed()) {
+                                        testContext.failNow(ar.cause());
+                                    } else {
+                                        testContext.verify(() -> {
+                                            assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Successfully Created Pipeline dev test");
+                                            assertThat(ar.result().statusCode()).isEqualTo(200);
+                                            requestsServed.flag();
+                                        });
+                                    }
+                                });
+                        }
+                        queue.basicConsumer("entities", (it -> {
+                            if (it.succeeded()) {
+                                System.out.println("RabbitMQ Consumer started!");
+                                queueStarted.flag();
+                                RabbitMQConsumer rmqConsumer = it.result();
+                                JsonObject pipelinePath = new JsonObject().put("name", "test").put("group", "dev");
+                                rmqConsumer.handler(message -> {
+                                    testContext.verify(() -> {
+                                        assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(pipelinePath));
+                                        responsesReceived.flag();
+                                    });
+                                });
+                            } else {
+                                System.out.println(format("Cannot start Consumer: %s", it.cause()));
+                                testContext.failNow(it.cause());
+                            }
+                        }));
+                    }
+                });
+            }));
         }
 
         @AfterEach
@@ -144,5 +187,4 @@ class APIServerTest {
             vertx.close();
         }
     }
-*/
 }

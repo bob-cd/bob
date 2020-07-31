@@ -63,8 +63,14 @@ compileJava {
 }
 
 test {
+    systemProperty 'rabbitmq.port', 5673
+    systemProperty 'crux.port', 7779
     useJUnitPlatform()
-    maxHeapSize = '1G'
+    testLogging {
+        exceptionFormat = 'full'
+        events 'FAILED', 'SKIPPED', 'PASSED'
+        showStandardStreams = true
+    }
 }
 
 shadowJar {
