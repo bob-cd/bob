@@ -61,14 +61,14 @@ class APIServerTest {
             deploymentCheckpoint.flag();
             for (int i = 0; i < 10; i++) {
                 client.get("/api.yaml")
-                    .as(BodyCodec.string())
-                    .send(testContext.succeeding(resp -> {
-                        testContext.verify(() -> {
-                            assertThat(resp.statusCode()).isEqualTo(200);
-                            assertThat(resp.body()).contains("title: Bob the Builder");
-                            requestCheckpoint.flag();
-                        });
-                    }));
+                        .as(BodyCodec.string())
+                        .send(testContext.succeeding(resp -> {
+                            testContext.verify(() -> {
+                                assertThat(resp.statusCode()).isEqualTo(200);
+                                assertThat(resp.body()).contains("title: Bob the Builder");
+                                requestCheckpoint.flag();
+                            });
+                        }));
             }
         }));
     }
@@ -91,8 +91,8 @@ class APIServerTest {
         @BeforeEach
         void prepare() {
             vertx = Vertx.vertx(new VertxOptions()
-                .setMaxEventLoopExecuteTime(1000)
-                .setPreferNativeTransport(true));
+                    .setMaxEventLoopExecuteTime(1000)
+                    .setPreferNativeTransport(true));
         }
 
         @Test
@@ -104,7 +104,7 @@ class APIServerTest {
             final var client = WebClient.create(vertx, clientConfig);
 
             vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id ->
-                testContext.completeNow()));
+                    testContext.completeNow()));
         }
 
         @Test
@@ -117,23 +117,44 @@ class APIServerTest {
 
             vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
                 client.get("/can-we-build-it")
-                    .as(BodyCodec.string())
-                    .send(ar -> {
-                        if (ar.failed()) {
-                            testContext.failNow(ar.cause());
-                        } else {
-                            testContext.verify(() -> {
-                                assertThat(ar.result().statusCode()).isEqualTo(200);
-                                assertThat(ar.result().body()).contains("Yes we can!");
-                                testContext.completeNow();
-                            });
-                        }
-                    });
+                        .as(BodyCodec.string())
+                        .send(ar -> {
+                            if (ar.failed()) {
+                                testContext.failNow(ar.cause());
+                            } else {
+                                testContext.verify(() -> {
+                                    assertThat(ar.result().statusCode()).isEqualTo(200);
+                                    assertThat(ar.result().body()).contains("Yes we can!");
+                                    testContext.completeNow();
+                                });
+                            }
+                        });
             }));
         }
 
         @Test
         @Order(3)
+        @DisplayName("Create Entities Queue")
+        void createEntitiesQueue(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                queue.queueDeclare("entities", true, false, false, it -> {
+                    if (it.succeeded()) {
+                        serverStarted.flag();
+                    } else {
+                        testContext.failNow(it.cause());
+                    }
+                });
+            }));
+        }
+
+        @Test
+        @Order(4)
         @DisplayName("Create Test Pipeline")
         void createPipeline(VertxTestContext testContext) {
             final var queue = RabbitMQClient.create(vertx, rabbitConfig);
@@ -150,19 +171,19 @@ class APIServerTest {
                         JsonObject json = new JsonObject(file.result());
                         for (int i = 0; i < 10; i++) {
                             client.post("/pipelines/groups/dev/names/test")
-                                .putHeader("Content-Type", "application/json")
-                                .putHeader("content-length", "52")
-                                .sendJsonObject(json, ar -> {
-                                    if (ar.failed()) {
-                                        testContext.failNow(ar.cause());
-                                    } else {
-                                        testContext.verify(() -> {
-                                            assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Successfully Created Pipeline dev test");
-                                            assertThat(ar.result().statusCode()).isEqualTo(200);
-                                            requestsServed.flag();
-                                        });
-                                    }
-                                });
+                                    .putHeader("Content-Type", "application/json")
+                                    .putHeader("content-length", "52")
+                                    .sendJsonObject(json, ar -> {
+                                        if (ar.failed()) {
+                                            testContext.failNow(ar.cause());
+                                        } else {
+                                            testContext.verify(() -> {
+                                                assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Successfully Created Pipeline dev test");
+                                                assertThat(ar.result().statusCode()).isEqualTo(200);
+                                                requestsServed.flag();
+                                            });
+                                        }
+                                    });
                         }
                     }
                 });
@@ -170,8 +191,8 @@ class APIServerTest {
         }
 
         @Test
-        @Order(4)
-        @DisplayName("Consume Messages From Queue")
+        @Order(5)
+        @DisplayName("Consume Create Messages From Queue")
         void consumeMessages(VertxTestContext testContext) {
             final var queue = RabbitMQClient.create(vertx, rabbitConfig);
             final var crux = WebClient.create(vertx, cruxConfig);
@@ -180,6 +201,8 @@ class APIServerTest {
             Checkpoint serverStarted = testContext.checkpoint();
             Checkpoint queueStarted = testContext.checkpoint();
             Checkpoint responsesReceived = testContext.checkpoint(10);
+            Checkpoint consumerStopped = testContext.checkpoint();
+
             vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
                 serverStarted.flag();
                 vertx.fileSystem().readFile("src/test/resources/createComplexPipeline.payload.json", file -> {
@@ -187,7 +210,6 @@ class APIServerTest {
                         JsonObject json = new JsonObject(file.result());
                         queue.basicConsumer("entities", (it -> {
                             if (it.succeeded()) {
-                                System.out.println("RabbitMQ Consumer started!");
                                 queueStarted.flag();
                                 RabbitMQConsumer rmqConsumer = it.result();
                                 JsonObject pipelinePath = new JsonObject().put("name", "test").put("group", "dev");
@@ -198,6 +220,13 @@ class APIServerTest {
                                         responsesReceived.flag();
                                     });
                                 });
+                                rmqConsumer.cancel(cr -> {
+                                    if (cr.succeeded()) {
+                                        consumerStopped.flag();
+                                    } else {
+                                        testContext.failNow(cr.cause());
+                                    }
+                                });
                             } else {
                                 System.out.println(format("Cannot start Consumer: %s", it.cause()));
                                 testContext.failNow(it.cause());
@@ -205,6 +234,78 @@ class APIServerTest {
                         }));
                     }
                 });
+            }));
+        }
+
+        @Test
+        @Order(6)
+        @DisplayName("Delete Test Pipeline")
+        void deletePipeline(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint requestsServed = testContext.checkpoint(10);
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                for (int i = 0; i < 10; i++) {
+                    client.delete("/pipelines/groups/dev/names/test")
+                            .send(it -> {
+                                if (it.failed()) {
+                                    testContext.failNow(it.cause());
+                                } else {
+                                    testContext.verify(() -> {
+                                        assertThat(it.result().bodyAsJsonObject().getString("message")).isEqualTo("Successfully Deleted Pipeline dev test");
+                                        assertThat(it.result().statusCode()).isEqualTo(200);
+                                        requestsServed.flag();
+                                    });
+                                }
+                            });
+                }
+            }));
+        }
+
+        @Test
+        @Order(7)
+        @DisplayName("Consume Delete Messages From Queue")
+        void consumeDeleteMessages(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint queueStarted = testContext.checkpoint();
+            Checkpoint responsesReceived = testContext.checkpoint(10);
+            Checkpoint consumerStopped = testContext.checkpoint();
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                System.out.println("SERVER STARTED");
+                queue.basicConsumer("entities", (it -> {
+                    if (it.succeeded()) {
+                        queueStarted.flag();
+                        RabbitMQConsumer rmqConsumer = it.result();
+                        JsonObject pipelinePath = new JsonObject().put("name", "test").put("group", "dev");
+                        rmqConsumer.handler(message -> {
+                            testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(pipelinePath);
+                                assertThat((message.properties().getType())).isEqualTo("pipeline/delete");
+                                responsesReceived.flag();
+                            });
+                        });
+                        rmqConsumer.cancel(cr -> {
+                            if (cr.succeeded()) {
+                                consumerStopped.flag();
+                            } else {
+                                testContext.failNow(cr.cause());
+                            }
+                        });
+                    } else {
+                        System.out.println(format("Cannot start Consumer: %s", it.cause()));
+                        testContext.failNow(it.cause());
+                    }
+                }));
             }));
         }
 

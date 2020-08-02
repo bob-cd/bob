@@ -44,9 +44,9 @@ public class Handlers {
 
     private static void toJsonResponse(RoutingContext routingContext, Object content, int statusCode) {
         routingContext.response()
-            .putHeader("Content-Type", "application/json")
-            .setStatusCode(statusCode)
-            .end(new JsonObject(Map.of("message", content)).encode());
+                .putHeader("Content-Type", "application/json")
+                .setStatusCode(statusCode)
+                .end(new JsonObject(Map.of("message", content)).encode());
     }
 
     private static void publishToEntities(RabbitMQClient queue, String type, JsonObject payload) {
@@ -54,7 +54,7 @@ public class Handlers {
 
         queue.basicPublish("", "entities", props, payload.toBuffer(), it -> {
             if (it.succeeded())
-                logger.debug("Published message on entities!");
+                logger.debug(format("Published message with type %s on entities!", type));
             else
                 logger.error(format("Error publishing message on entities: %s", it.cause().getMessage()));
         });
@@ -64,17 +64,17 @@ public class Handlers {
         // TODO use better health check
         Promise<HttpResponse<Buffer>> cruxCheck = Promise.promise();
         crux.get(7779, "localhost", "/")
-            .expect(ResponsePredicate.SC_OK)
-            .followRedirects(true)
-            .send(it -> {
-                if (it.succeeded()) {
-                    logger.debug("Health check succeeded for CruxDB!");
-                    cruxCheck.complete();
-                } else {
-                    logger.error("Health check failed for CruxDB!");
-                    cruxCheck.fail(it.cause());
-                }
-            });
+                .expect(ResponsePredicate.SC_OK)
+                .followRedirects(true)
+                .send(it -> {
+                    if (it.succeeded()) {
+                        logger.debug("Health check succeeded for CruxDB!");
+                        cruxCheck.complete();
+                    } else {
+                        logger.error("Health check failed for CruxDB!");
+                        cruxCheck.fail(it.cause());
+                    }
+                });
         // TODO use better health check
         Promise<HttpResponse<Buffer>> rabbitCheck = Promise.promise();
         if (queue.isConnected()) {
@@ -93,7 +93,6 @@ public class Handlers {
     }
 
     public static void pipelineCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
-        System.out.println("Creating Pipeline: ");
         final var params = routingContext.request().params();
         final var group = params.get("group");
         final var name = params.get("name");
@@ -262,8 +261,8 @@ public class Handlers {
 
         try {
             routingContext.response()
-                .putHeader("Content-Type", "application/yaml")
-                .end(Files.readString(file.toPath()));
+                    .putHeader("Content-Type", "application/yaml")
+                    .end(Files.readString(file.toPath()));
 
         } catch (IOException e) {
             final var msg = format("Could not read spec file: %s", e.getMessage());
