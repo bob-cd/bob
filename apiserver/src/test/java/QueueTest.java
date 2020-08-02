@@ -196,7 +196,6 @@ class APIServerTest {
         void consumeMessages(VertxTestContext testContext) {
             final var queue = RabbitMQClient.create(vertx, rabbitConfig);
             final var crux = WebClient.create(vertx, cruxConfig);
-            final var client = WebClient.create(vertx, clientConfig);
 
             Checkpoint serverStarted = testContext.checkpoint();
             Checkpoint queueStarted = testContext.checkpoint();
@@ -228,7 +227,6 @@ class APIServerTest {
                                     }
                                 });
                             } else {
-                                System.out.println(format("Cannot start Consumer: %s", it.cause()));
                                 testContext.failNow(it.cause());
                             }
                         }));
@@ -281,7 +279,6 @@ class APIServerTest {
 
             vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
                 serverStarted.flag();
-                System.out.println("SERVER STARTED");
                 queue.basicConsumer("entities", (it -> {
                     if (it.succeeded()) {
                         queueStarted.flag();
@@ -302,7 +299,6 @@ class APIServerTest {
                             }
                         });
                     } else {
-                        System.out.println(format("Cannot start Consumer: %s", it.cause()));
                         testContext.failNow(it.cause());
                     }
                 }));
@@ -443,13 +439,300 @@ class APIServerTest {
                             }
                         });
                     } else {
-                        System.out.println(format("Cannot start Consumer: %s", it.cause()));
                         testContext.failNow(it.cause());
                     }
                 }));
             }));
         }
 
+        // TODO PipelineLogs
+        // TODO PipelineStatus
+        // TODO PipelineArtifactFetch
+        // TODO PipelineList
+
+        @Test
+        @Order(12)
+        @DisplayName("Create Resource Provider")
+        void createResourceProvider(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint requestsServed = testContext.checkpoint(10);
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                JsonObject jsonBody = new JsonObject().put("url", "http://foobar:5678");
+                for (int i = 0; i < 10; i++) {
+                    client.post("/resource-providers/foo")
+                            .sendJsonObject(jsonBody, it -> {
+                                if (it.failed()) {
+                                    testContext.failNow(it.cause());
+                                } else {
+                                    testContext.verify(() -> {
+                                        assertThat(it.result().bodyAsJsonObject().getString("message")).isEqualTo("Created Resource Provider foo");
+                                        assertThat(it.result().statusCode()).isEqualTo(200);
+                                        requestsServed.flag();
+                                    });
+                                }
+                            });
+                }
+            }));
+        }
+
+        @Test
+        @Order(13)
+        @DisplayName("Consume Create Resource Provider Messages From Queue")
+        void consumeCreateResourceProviderMessages(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint queueStarted = testContext.checkpoint();
+            Checkpoint responsesReceived = testContext.checkpoint(10);
+            Checkpoint consumerStopped = testContext.checkpoint();
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                queue.basicConsumer("entities", (it -> {
+                    if (it.succeeded()) {
+                        queueStarted.flag();
+                        RabbitMQConsumer rmqConsumer = it.result();
+                        JsonObject pipelinePath = new JsonObject().put("url", "http://foobar:5678").put("name", "foo");
+                        rmqConsumer.handler(message -> {
+                            testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(pipelinePath);
+                                assertThat((message.properties().getType())).isEqualTo("resource-provider/create");
+                                responsesReceived.flag();
+                            });
+                        });
+                        rmqConsumer.cancel(cr -> {
+                            if (cr.succeeded()) {
+                                consumerStopped.flag();
+                            } else {
+                                testContext.failNow(cr.cause());
+                            }
+                        });
+                    } else {
+                        testContext.failNow(it.cause());
+                    }
+                }));
+            }));
+        }
+
+        @Test
+        @Order(14)
+        @DisplayName("Delete Resource Provider")
+        void deleteResourceProvider(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint requestsServed = testContext.checkpoint(10);
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                JsonObject jsonBody = new JsonObject().put("url", "http://foobar:5678");
+                for (int i = 0; i < 10; i++) {
+                    client.delete("/resource-providers/foo")
+                            .send(it -> {
+                                if (it.failed()) {
+                                    testContext.failNow(it.cause());
+                                } else {
+                                    testContext.verify(() -> {
+                                        assertThat(it.result().bodyAsJsonObject().getString("message")).isEqualTo("Deleted Resource Provider foo");
+                                        assertThat(it.result().statusCode()).isEqualTo(200);
+                                        requestsServed.flag();
+                                    });
+                                }
+                            });
+                }
+            }));
+        }
+
+        @Test
+        @Order(15)
+        @DisplayName("Consume Delete Resource Provider Messages From Queue")
+        void consumeDeleteResourceProviderMessages(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint queueStarted = testContext.checkpoint();
+            Checkpoint responsesReceived = testContext.checkpoint(10);
+            Checkpoint consumerStopped = testContext.checkpoint();
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                queue.basicConsumer("entities", (it -> {
+                    if (it.succeeded()) {
+                        queueStarted.flag();
+                        RabbitMQConsumer rmqConsumer = it.result();
+                        JsonObject pipelinePath = new JsonObject().put("name", "foo");
+                        rmqConsumer.handler(message -> {
+                            testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(pipelinePath);
+                                assertThat((message.properties().getType())).isEqualTo("resource-provider/delete");
+                                responsesReceived.flag();
+                            });
+                        });
+                        rmqConsumer.cancel(cr -> {
+                            if (cr.succeeded()) {
+                                consumerStopped.flag();
+                            } else {
+                                testContext.failNow(cr.cause());
+                            }
+                        });
+                    } else {
+                        testContext.failNow(it.cause());
+                    }
+                }));
+            }));
+        }
+
+        @Test
+        @Order(16)
+        @DisplayName("Create Artifact Store")
+        void createArtifactStore(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint requestsServed = testContext.checkpoint(10);
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                JsonObject jsonBody = new JsonObject().put("url", "http://foobar:5678");
+                for (int i = 0; i < 10; i++) {
+                    client.post("/artifact-stores/foo")
+                            .sendJsonObject(jsonBody, it -> {
+                                if (it.failed()) {
+                                    testContext.failNow(it.cause());
+                                } else {
+                                    testContext.verify(() -> {
+                                        assertThat(it.result().bodyAsJsonObject().getString("message")).isEqualTo("Created Artifact Store foo");
+                                        assertThat(it.result().statusCode()).isEqualTo(200);
+                                        requestsServed.flag();
+                                    });
+                                }
+                            });
+                }
+            }));
+        }
+
+        @Test
+        @Order(17)
+        @DisplayName("Consume Create Artifact Store Messages From Queue")
+        void consumeCreateArtifactStoreMessages(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint queueStarted = testContext.checkpoint();
+            Checkpoint responsesReceived = testContext.checkpoint(10);
+            Checkpoint consumerStopped = testContext.checkpoint();
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                queue.basicConsumer("entities", (it -> {
+                    if (it.succeeded()) {
+                        queueStarted.flag();
+                        RabbitMQConsumer rmqConsumer = it.result();
+                        JsonObject pipelinePath = new JsonObject().put("url", "http://foobar:5678").put("name", "foo");
+                        rmqConsumer.handler(message -> {
+                            testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(pipelinePath);
+                                assertThat((message.properties().getType())).isEqualTo("artifact-store/create");
+                                responsesReceived.flag();
+                            });
+                        });
+                        rmqConsumer.cancel(cr -> {
+                            if (cr.succeeded()) {
+                                consumerStopped.flag();
+                            } else {
+                                testContext.failNow(cr.cause());
+                            }
+                        });
+                    } else {
+                        testContext.failNow(it.cause());
+                    }
+                }));
+            }));
+        }
+
+        @Test
+        @Order(18)
+        @DisplayName("Delete Resource Provider")
+        void deleteArtifactStore(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint requestsServed = testContext.checkpoint(10);
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                JsonObject jsonBody = new JsonObject().put("url", "http://foobar:5678");
+                for (int i = 0; i < 10; i++) {
+                    client.delete("/artifact-stores/foo")
+                            .send(it -> {
+                                if (it.failed()) {
+                                    testContext.failNow(it.cause());
+                                } else {
+                                    testContext.verify(() -> {
+                                        assertThat(it.result().bodyAsJsonObject().getString("message")).isEqualTo("Deleted Artifact Store foo");
+                                        assertThat(it.result().statusCode()).isEqualTo(200);
+                                        requestsServed.flag();
+                                    });
+                                }
+                            });
+                }
+            }));
+        }
+
+        @Test
+        @Order(19)
+        @DisplayName("Consume Delete Artifact Store Messages From Queue")
+        void consumeDeleteArtifactStoreMessages(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint queueStarted = testContext.checkpoint();
+            Checkpoint responsesReceived = testContext.checkpoint(10);
+            Checkpoint consumerStopped = testContext.checkpoint();
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                queue.basicConsumer("entities", (it -> {
+                    if (it.succeeded()) {
+                        queueStarted.flag();
+                        RabbitMQConsumer rmqConsumer = it.result();
+                        JsonObject pipelinePath = new JsonObject().put("name", "foo");
+                        rmqConsumer.handler(message -> {
+                            testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(pipelinePath);
+                                assertThat((message.properties().getType())).isEqualTo("artifact-store/delete");
+                                responsesReceived.flag();
+                            });
+                        });
+                        rmqConsumer.cancel(cr -> {
+                            if (cr.succeeded()) {
+                                consumerStopped.flag();
+                            } else {
+                                testContext.failNow(cr.cause());
+                            }
+                        });
+                    } else {
+                        testContext.failNow(it.cause());
+                    }
+                }));
+            }));
+        }
         @AfterEach
         void cleanup() {
             vertx.close();

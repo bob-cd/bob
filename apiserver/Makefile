@@ -17,7 +17,7 @@ all: setup test compile
 
 .PHONY: setup teardown test
 setup:
-	docker network create bob-net --subnet 10.0.77.0/24
+	docker network create bob-net --subnet 10.0.76.0/24
 	docker run \
 		--detach \
 		--name bob-storage \
@@ -47,7 +47,7 @@ teardown:
 	docker network rm bob-net
 
 test:
-	docker network create bob-net --subnet 10.0.77.0/24
+	docker network create bob-test-net --subnet 10.0.77.0/24
 	docker run \
 		-d \
 		--name bob-test-storage \

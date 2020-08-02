@@ -201,20 +201,22 @@ public class Handlers {
 
         publishToEntities(queue, "resource-provider/create", payload);
 
-        toJsonResponse(routingContext, format("Created Resource Provider %s", payload));
+        toJsonResponse(routingContext, format("Created Resource Provider %s", name));
     }
 
     public static void resourceProviderDeleteHandler(RoutingContext routingContext, RabbitMQClient queue) {
-        final var payload = new JsonObject().put("name", routingContext.request().params().get("name"));
+        final var name = routingContext.request().params().get("name");
+        final var payload = new JsonObject().put("name", name);
 
         logger.info(format("Deleting Resource Provider with %s", payload));
 
-        publishToEntities(queue, "resource-provider/create", payload);
+        publishToEntities(queue, "resource-provider/delete", payload);
 
-        toJsonResponse(routingContext, format("Deleted Resource Provider %s", payload));
+        toJsonResponse(routingContext, format("Deleted Resource Provider %s", name));
     }
 
     public static void resourceProviderListHandler(RoutingContext routingContext, WebClient crux) {
+        // TODO DB interaction
         toJsonResponse(routingContext, crux.get("/"));
     }
 
@@ -230,13 +232,14 @@ public class Handlers {
     }
 
     public static void artifactStoreDeleteHandler(RoutingContext routingContext, RabbitMQClient queue) {
-        final var payload = new JsonObject().put("name", routingContext.request().params().get("name"));
+        final var name = routingContext.request().params().get("name");
+        final var payload = new JsonObject().put("name", name);
 
         logger.info(format("Deleting Artifact Store with %s", payload));
 
         publishToEntities(queue, "artifact-store/delete", payload);
 
-        toJsonResponse(routingContext, format("Deleted Artifact Store %s", payload));
+        toJsonResponse(routingContext, format("Deleted Artifact Store %s", name));
     }
 
     public static void artifactStoreListHandler(RoutingContext routingContext, WebClient crux) {
