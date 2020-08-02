@@ -309,6 +309,147 @@ class APIServerTest {
             }));
         }
 
+        @Test
+        @Order(8)
+        @DisplayName("Start Test Pipeline")
+        void startPipeline(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint requestsServed = testContext.checkpoint(10);
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                for (int i = 0; i < 10; i++) {
+                    client.post("/pipelines/start/groups/dev/names/test")
+                            .send(it -> {
+                                if (it.failed()) {
+                                    testContext.failNow(it.cause());
+                                } else {
+                                    testContext.verify(() -> {
+                                        assertThat(it.result().bodyAsJsonObject().getString("message")).isEqualTo("Successfully Started Pipeline dev test");
+                                        assertThat(it.result().statusCode()).isEqualTo(200);
+                                        requestsServed.flag();
+                                    });
+                                }
+                            });
+                }
+            }));
+        }
+
+        @Test
+        @Order(9)
+        @DisplayName("Consume Start Messages From Queue")
+        void consumeStartMessages(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint queueStarted = testContext.checkpoint();
+            Checkpoint responsesReceived = testContext.checkpoint(10);
+            Checkpoint consumerStopped = testContext.checkpoint();
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                queue.basicConsumer("entities", (it -> {
+                    if (it.succeeded()) {
+                        queueStarted.flag();
+                        RabbitMQConsumer rmqConsumer = it.result();
+                        JsonObject pipelinePath = new JsonObject().put("name", "test").put("group", "dev");
+                        rmqConsumer.handler(message -> {
+                            testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(pipelinePath);
+                                assertThat((message.properties().getType())).isEqualTo("pipeline/start");
+                                responsesReceived.flag();
+                            });
+                        });
+                        rmqConsumer.cancel(cr -> {
+                            if (cr.succeeded()) {
+                                consumerStopped.flag();
+                            } else {
+                                testContext.failNow(cr.cause());
+                            }
+                        });
+                    } else {
+                        testContext.failNow(it.cause());
+                    }
+                }));
+            }));
+        }
+
+        @Test
+        @Order(10)
+        @DisplayName("Stop Test Pipeline")
+        void stopPipeline(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+            final var client = WebClient.create(vertx, clientConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint requestsServed = testContext.checkpoint(10);
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                for (int i = 0; i < 10; i++) {
+                    client.post("/pipelines/stop/groups/dev/names/test/number/42")
+                            .send(it -> {
+                                if (it.failed()) {
+                                    testContext.failNow(it.cause());
+                                } else {
+                                    testContext.verify(() -> {
+                                        assertThat(it.result().bodyAsJsonObject().getString("message")).isEqualTo("Successfully Stopped Pipeline dev test 42");
+                                        assertThat(it.result().statusCode()).isEqualTo(200);
+                                        requestsServed.flag();
+                                    });
+                                }
+                            });
+                }
+            }));
+        }
+
+        @Test
+        @Order(11)
+        @DisplayName("Consume Stop Messages From Queue")
+        void consumeStopMessages(VertxTestContext testContext) {
+            final var queue = RabbitMQClient.create(vertx, rabbitConfig);
+            final var crux = WebClient.create(vertx, cruxConfig);
+
+            Checkpoint serverStarted = testContext.checkpoint();
+            Checkpoint queueStarted = testContext.checkpoint();
+            Checkpoint responsesReceived = testContext.checkpoint(10);
+            Checkpoint consumerStopped = testContext.checkpoint();
+
+            vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), testContext.succeeding(id -> {
+                serverStarted.flag();
+                queue.basicConsumer("entities", (it -> {
+                    if (it.succeeded()) {
+                        queueStarted.flag();
+                        RabbitMQConsumer rmqConsumer = it.result();
+                        JsonObject pipelinePath = new JsonObject().put("name", "test").put("group", "dev").put("number", "42");
+                        rmqConsumer.handler(message -> {
+                            testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(pipelinePath);
+                                assertThat((message.properties().getType())).isEqualTo("pipeline/stop");
+                                responsesReceived.flag();
+                            });
+                        });
+                        rmqConsumer.cancel(cr -> {
+                            if (cr.succeeded()) {
+                                consumerStopped.flag();
+                            } else {
+                                testContext.failNow(cr.cause());
+                            }
+                        });
+                    } else {
+                        System.out.println(format("Cannot start Consumer: %s", it.cause()));
+                        testContext.failNow(it.cause());
+                    }
+                }));
+            }));
+        }
+
         @AfterEach
         void cleanup() {
             vertx.close();

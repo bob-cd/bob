@@ -135,7 +135,7 @@ public class Handlers {
         final var number = params.get("number");
         final var payload = new JsonObject().put("name", name).put("group", group).put("number", number);
 
-        publishToEntities(queue, "pipeline/start", payload);
+        publishToEntities(queue, "pipeline/stop", payload);
 
         toJsonResponse(routingContext, format("Successfully Stopped Pipeline %s %s %s", group, name, number));
     }
