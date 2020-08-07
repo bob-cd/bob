@@ -40,7 +40,8 @@
                                 (:name pipeline)))
         data   (-> pipeline
                    (dissoc :group :name)
-                   (assoc :crux.db/id id))
+                   (assoc :crux.db/id id)
+                   (assoc :type :pipeline))
         result (f/try*
                  (crux/submit-tx db-client [[:crux.tx/put data]]))]
     (if (f/failed? result)
@@ -59,6 +60,7 @@
     "Ok"))
 
 (comment
+  (def client (crux/new-api-client "http://localhost:7778"))
   (let [client (crux/new-api-client "http://localhost:7778")]
     (create client
             nil

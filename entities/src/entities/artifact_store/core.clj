@@ -26,6 +26,7 @@
                  (crux/submit-tx db-client
                                  [[:crux.tx/put
                                    {:crux.db/id (keyword (str "bob.artifact-store/" (:name data)))
+                                    :type       :artifact-store
                                     :url        (:url data)}]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Could not register artifact store: %s" (f/message result)))
