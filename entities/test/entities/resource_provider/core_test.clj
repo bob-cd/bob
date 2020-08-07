@@ -32,6 +32,7 @@
               effect            (crux/entity (crux/db db) :bob.resource-provider/github)]
           (is (= "Ok" create-res))
           (is (= {:crux.db/id :bob.resource-provider/github
+                  :type       :resource-provider
                   :url        "my.resource.com"}
                  effect))))))
   (testing "deletion"

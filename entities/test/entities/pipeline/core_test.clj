@@ -53,6 +53,7 @@
           (is (= "Ok" create-res))
           (is (= (-> pipeline
                      (dissoc :group :name)
+                     (assoc :type :pipeline)
                      (assoc :crux.db/id :bob.pipeline.test/test))
                  effect))))))
   (testing "deletion"

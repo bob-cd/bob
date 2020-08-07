@@ -31,6 +31,7 @@
                            effect         (crux/entity (crux/db db) :bob.artifact-store/s3)]
                        (is (= "Ok" create-res))
                        (is (= {:crux.db/id :bob.artifact-store/s3
+                               :type       :artifact-store
                                :url        "my.store.com"}
                               effect))))))
   (testing "deletion"

@@ -26,6 +26,7 @@
                  (crux/submit-tx db-client
                                  [[:crux.tx/put
                                    {:crux.db/id (keyword (str "bob.resource-provider/" (:name data)))
+                                    :type       :resource-provider
                                     :url        (:url data)}]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Could not register resource provider: %s" (f/message result)))
