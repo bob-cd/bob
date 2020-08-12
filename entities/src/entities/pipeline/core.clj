@@ -60,30 +60,41 @@
     "Ok"))
 
 (comment
-  (def client (crux/new-api-client "http://localhost:7778"))
-  (let [client (crux/new-api-client "http://localhost:7778")]
-    (create client
-            nil
-            {:group     "test"
-             :name      "test"
-             :steps     [{:cmd "echo hello"}
-                         {:needs_resource "source"
-                          :cmd            "ls"}]
-             :vars      {:k1 "v1"
-                         :k2 "v2"}
-             :resources [{:name     "source"
-                          :type     "external"
-                          :provider "git"
-                          :params   {:repo   "https://github.com/bob-cd/bob"
-                                     :branch "master"}}
-                         {:name     "source2"
-                          :type     "external"
-                          :provider "git"
-                          :params   {:repo   "https://github.com/lispyclouds/clj-docker-client"
-                                     :branch "master"}}]
-             :image     "busybox:musl"})
-    (delete client
-            nil
-            {:group "test"
-             :name  "test"})
-    (.close client)))
+  (require '[entities.system :as sys]
+           '[com.stuartsierra.component :as c])
+
+  (def db
+    (c/start (sys/->Database "bob" "localhost" 5432 "bob" "bob")))
+
+  (c/stop db)
+
+  (create (sys/db-client db)
+          nil
+          {:group     "test"
+           :name      "test"
+           :steps     [{:cmd "echo hello"}
+                       {:needs_resource "source"
+                        :cmd            "ls"}]
+           :vars      {:k1 "v1"
+                       :k2 "v2"}
+           :resources [{:name     "source"
+                        :type     "external"
+                        :provider "git"
+                        :params   {:repo   "https://github.com/bob-cd/bob"
+                                   :branch "master"}}
+                       {:name     "source2"
+                        :type     "external"
+                        :provider "git"
+                        :params   {:repo   "https://github.com/lispyclouds/clj-docker-client"
+                                   :branch "master"}}]
+           :image     "busybox:musl"})
+
+  (crux/entity (-> db
+                   sys/db-client
+                   crux/db)
+               :bob.pipeline.test/test)
+
+  (delete (sys/db-client db)
+          nil
+          {:group "test"
+           :name  "test"}))

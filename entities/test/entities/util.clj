@@ -15,14 +15,16 @@
 
 (ns entities.util
   (:require [com.stuartsierra.component :as component]
-            [entities.system :as sys])
-  (:import [entities.system Database]))
+            [entities.system :as sys]))
 
 (defn with-system
   [test-fn]
-  (let [url "http://localhost:7779"
-        system (component/system-map
-                 :database (Database. url)
+  (let [system (component/system-map
+                 :database (sys/map->Database {:db-name     "bob-test"
+                                               :db-host     "localhost"
+                                               :db-port     5433
+                                               :db-user     "bob"
+                                               :db-password "bob"})
                  :queue    (component/using (sys/map->Queue {:queue-host     "localhost"
                                                              :queue-port     5673
                                                              :queue-user     "guest"

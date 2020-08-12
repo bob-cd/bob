@@ -21,6 +21,7 @@ test:
 	docker run \
 		-d \
 		--name bob-test-storage \
+		-p 5433:5432 \
 		-e POSTGRES_DB=bob-test \
 		-e POSTGRES_USER=bob \
 		-e POSTGRES_PASSWORD=bob \
@@ -32,17 +33,9 @@ test:
 		-p 5673:5672 \
 		--network bob-net \
 		rabbitmq:3-alpine
-	docker run \
-		-d \
-		--name bob-test-db \
-		-p 7779:7778 \
-		-e BOB_STORAGE_HOST=bob-test-storage \
-		-e BOB_STORAGE_DATABASE=bob-test \
-		--network bob-net \
-		bobcd/db
 	sleep 7 # TODO: Find a better way to wait till things come up.
 	clojure -A:test --fail-fast
-	docker kill bob-test-storage bob-test-queue bob-test-db && docker rm bob-test-storage bob-test-queue bob-test-db
+	docker kill bob-test-storage bob-test-queue && docker rm bob-test-storage bob-test-queue
 	docker network rm bob-net
 
 compile:

@@ -30,8 +30,11 @@
     (Integer/parseInt (get env/env key (str default)))
     (catch Exception _ default)))
 
-(defonce db-host (:bob-db-host env/env "localhost"))
-(defonce db-port (int-from-env :bob-db-port 7778))
+(defonce storage-host (:bob-storage-host env/env "localhost"))
+(defonce storage-port (int-from-env :bob-storage-port 5432))
+(defonce storage-user (:bob-storage-user env/env "bob"))
+(defonce storage-name (:bob-storage-database env/env "bob"))
+(defonce storage-password (:bob-storage-password env/env "bob"))
 
 (defonce queue-host (:bob-rmq-host env/env "localhost"))
 (defonce queue-port (int-from-env :bob-rmq-port 5672))
@@ -42,10 +45,19 @@
   (db-client [this]))
 
 (defrecord Database
-  [url]
+  [db-name db-host db-port db-user db-password]
   component/Lifecycle
   (start [this]
-    (assoc this :client (crux/new-api-client url)))
+    (log/info "Connecting to DB")
+    (assoc this
+           :client
+           (crux/start-node {:crux.node/topology '[crux.jdbc/topology]
+                             :crux.jdbc/dbtype   "postgresql"
+                             :crux.jdbc/dbname   db-name
+                             :crux.jdbc/host     db-host
+                             :crux.jdbc/port     db-port
+                             :crux.jdbc/user     db-user
+                             :crux.jdbc/password db-password})))
   (stop [this]
     (log/info "Disconnecting DB")
     (.close (:client this))
@@ -94,9 +106,11 @@
                                             :queue-user     queue-user
                                             :queue-password queue-password})
                                [:database])
-    :database (Database. (format "http://%s:%d/"
-                                 db-host
-                                 db-port))))
+    :database (map->Database {:db-name     storage-name
+                              :db-host     storage-host
+                              :db-port     storage-port
+                              :db-user     storage-user
+                              :db-password storage-password})))
 
 (defonce system nil)
 

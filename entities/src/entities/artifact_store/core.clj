@@ -45,15 +45,24 @@
 (comment
   (keyword (str "bob.artifact-store/" "test"))
 
-  (let [client (crux/new-api-client "http://localhost:7778")]
-    (register-artifact-store client
-                             nil
-                             {:name "local"
-                              :url  "http://localhost:8002"})
-    (.close client))
+  (require '[entities.system :as sys]
+           '[com.stuartsierra.component :as c])
 
-  (let [client (crux/new-api-client "http://localhost:7778")]
-    (un-register-artifact-store client
-                                nil
-                                {:name "local"})
-    (.close client)))
+  (def db
+    (c/start (sys/->Database "bob" "localhost" 5432 "bob" "bob")))
+
+  (c/stop db)
+
+  (register-artifact-store (sys/db-client db)
+                           nil
+                           {:name "local"
+                            :url  "http://localhost:8002"})
+
+  (crux/entity (-> db
+                   sys/db-client
+                   crux/db)
+               :bob.artifact-store/local)
+
+  (un-register-artifact-store (sys/db-client db)
+                              nil
+                              {:name "local"}))

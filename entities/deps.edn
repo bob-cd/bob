@@ -19,11 +19,13 @@
            com.novemberain/langohr    {:mvn/version "5.1.0"}
            com.stuartsierra/component {:mvn/version "1.0.0"}
            com.taoensso/timbre        {:mvn/version "4.10.0"}
-           environ                    {:mvn/version "1.2.0"}
-           failjure                   {:mvn/version "2.0.0"}
-           juxt/crux-http-client      {:mvn/version "20.06-1.9.1-beta"}
+           environ/environ            {:mvn/version "1.2.0"}
+           failjure/failjure          {:mvn/version "2.0.0"}
+           juxt/crux-core             {:mvn/version "20.08-1.10.1-beta"}
+           juxt/crux-jdbc             {:mvn/version "20.08-1.10.1-beta"}
+           org.postgresql/postgresql  {:mvn/version "42.2.14"}
            metosin/jsonista           {:mvn/version "0.2.6"}}
- :aliases {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.632"}}
+ :aliases {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.641"}}
                      :main-opts  ["-m" "kaocha.runner" "--reporter" "kaocha.report.progress/report"]}
-           :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}
+           :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.97"}}
                      :main-opts  ["-m" "hf.depstar.uberjar" "entities.jar" "-C" "-S" "-m" "entities.main"]}}}

@@ -43,15 +43,24 @@
   "Ok")
 
 (comment
-  (let [client (crux/new-api-client "http://localhost:7778")]
-    (register-resource-provider client
-                                nil
-                                {:name "local"
-                                 :url  "http://localhost:8002"})
-    (.close client))
+  (require '[entities.system :as sys]
+           '[com.stuartsierra.component :as c])
 
-  (let [client (crux/new-api-client "http://localhost:7778")]
-    (un-register-resource-provider client
-                                   nil
-                                   {:name "local"})
-    (.close client)))
+  (def db
+    (c/start (sys/->Database "bob" "localhost" 5432 "bob" "bob")))
+
+  (c/stop db)
+
+  (register-resource-provider (sys/db-client db)
+                              nil
+                              {:name "local"
+                               :url  "http://localhost:8002"})
+
+  (crux/entity (-> db
+                   sys/db-client
+                   crux/db)
+               :bob.resource-provider/local)
+
+  (un-register-resource-provider (sys/db-client db)
+                                 nil
+                                 {:name "local"}))
