@@ -16,7 +16,7 @@
 {:paths   ["src"]
  :deps    {org.clojure/clojure        {:mvn/version "1.10.1"}
            com.fzakaria/slf4j-timbre  {:mvn/version "0.3.19"}
-           com.novemberain/langohr    {:mvn/version "5.1.0"}
+           com.novemberain/langohr    {:mvn/version "5.2.0"}
            com.stuartsierra/component {:mvn/version "1.0.0"}
            com.taoensso/timbre        {:mvn/version "4.10.0"}
            environ/environ            {:mvn/version "1.2.0"}
