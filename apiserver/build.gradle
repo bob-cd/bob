@@ -27,9 +27,11 @@ version "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven { url "https://clojars.org/repo" }
 }
 
-def vertx_version = "4.0.0-milestone5"
+def vertx_version = "4.0.0.Beta1"
+def crux_version = "20.08-1.10.1-beta"
 
 dependencies {
     implementation "io.vertx:vertx-core:$vertx_version"
@@ -39,6 +41,11 @@ dependencies {
     implementation "io.vertx:vertx-rabbitmq-client:$vertx_version"
     implementation "io.vertx:vertx-config:$vertx_version"
     implementation "org.slf4j:slf4j-simple:1.6.1"
+    implementation "juxt:crux-core:$crux_version"
+    implementation "juxt:crux-jdbc:$crux_version"
+    implementation "org.postgresql:postgresql:42.2.14"
+    implementation "org.clojure:clojure:1.10.1"
+    implementation "metosin:jsonista:0.2.6"
 
     testImplementation "io.vertx:vertx-junit5:$vertx_version"
     testImplementation "org.junit.jupiter:junit-jupiter:5.6.2"

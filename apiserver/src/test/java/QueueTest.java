@@ -15,10 +15,8 @@
  * along with Bob. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -32,10 +30,9 @@ import io.vertx.rabbitmq.RabbitMQOptions;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("👋 A fairly basic test example")
+@DisplayName("Testing the Queue interaction")
 @ExtendWith(VertxExtension.class)
 class APIServerTest {
 
@@ -444,11 +441,6 @@ class APIServerTest {
                 }));
             }));
         }
-
-        // TODO PipelineLogs
-        // TODO PipelineStatus
-        // TODO PipelineArtifactFetch
-        // TODO PipelineList
 
         @Test
         @Order(12)

@@ -15,9 +15,17 @@
  * along with Bob. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import clojure.java.api.Clojure;
+import clojure.lang.IFn;
+import clojure.lang.Keyword;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.AMQP;
+import crux.api.Crux;
+import crux.api.ICruxAPI;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpResponse;
@@ -29,14 +37,44 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.Buffer;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.Map;
 
 import static java.lang.String.format;
 
 public class Handlers {
     private final static Logger logger = LoggerFactory.getLogger(Handlers.class.getName());
+    private final static ICruxAPI node;
+    private final static IFn toJson;
+    private final static ObjectMapper objectMapper = new ObjectMapper();
+
+    static {
+        Clojure.var("clojure.core", "require")
+                .invoke(Clojure.read("jsonista.core"));
+
+        final var nodeConfig = """
+                {:crux.node/topology [crux.jdbc/topology]
+                 :crux.jdbc/dbtype   "postgresql"
+                 :crux.jdbc/dbname   "bob"
+                 :crux.jdbc/host     "localhost"
+                 :crux.jdbc/port     5432
+                 :crux.jdbc/user     "bob"
+                 :crux.jdbc/password "bob"}
+                """;
+
+        toJson = Clojure.var("jsonista.core", "write-value-as-string");
+        node = Crux.startNode((Map<Keyword, ?>) datafy(nodeConfig));
+        node.sync(Duration.ofSeconds(30)); // Become consistent for a max of 30s
+    }
+
+    public static Object datafy(String raw) {
+        return Clojure.read(raw);
+    }
+
+    public static <T> T objectify(Object data, Class<T> cls) throws JsonProcessingException {
+        return objectMapper.readValue((String) toJson.invoke(data), cls);
+    }
 
     private static void toJsonResponse(RoutingContext routingContext, Object content) {
         toJsonResponse(routingContext, content, 200);
@@ -97,7 +135,9 @@ public class Handlers {
         final var group = params.get("group");
         final var name = params.get("name");
         final var pipeline = routingContext.getBodyAsJson();
+
         // TODO make JsonObject from params directly?!?
+
         final var payload = pipeline.put("name", name).put("group", group);
 
         publishToEntities(queue, "pipeline/create", payload);
@@ -180,17 +220,9 @@ public class Handlers {
     }
 
     public static void pipelineListHandler(RoutingContext routingContext, WebClient crux) {
-        final var params = routingContext.request().params();
-        final var group = params.get("group");
-        final var name = params.get("name");
-        final var status = params.get("status");
+        final var query = "{:find [e] :where [[e :type :pipeline]]}";
 
-        logger.info(group);
-        logger.info(name);
-        logger.info(status);
-        // TODO DB interaction
-
-        toJsonResponse(routingContext, format("Listing Pipelines for %s %s %s", group, name, status));
+        toJsonResponse(routingContext, node.db().query(query));
     }
 
     public static void resourceProviderCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {

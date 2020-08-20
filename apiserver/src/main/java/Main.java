@@ -44,8 +44,6 @@ public class Main {
                 final var httpHost = httpConfig.getString("host", "localhost");
                 final var httpPort = httpConfig.getInteger("port", 7777);
 
-                logger.info(conf.toString());
-
                 final var queue = RabbitMQClient.create(vertx, new RabbitMQOptions(rmqConfig));
                 final var crux = WebClient.create(vertx, new WebClientOptions(cruxConfig));
 
