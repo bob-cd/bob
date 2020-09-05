@@ -14,19 +14,21 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 {:paths   ["src"]
- :deps    {org.clojure/clojure             {:mvn/version "1.10.1"}
-           com.fzakaria/slf4j-timbre       {:mvn/version "0.3.19"}
-           com.novemberain/langohr         {:mvn/version "5.1.0"}
-           com.stuartsierra/component      {:mvn/version "1.0.0"}
-           com.taoensso/timbre             {:mvn/version "4.10.0"}
-           environ                         {:mvn/version "1.2.0"}
-           failjure                        {:mvn/version "2.0.0"}
-           clj-http                        {:mvn/version "3.10.1"}
-           juxt/crux-http-client           {:mvn/version "20.06-1.9.1-beta"}
-           lispyclouds/clj-docker-client   {:mvn/version "1.0.1"}
-           metosin/jsonista                {:mvn/version "0.2.6"}
-           org.kamranzafar/jtar            {:mvn/version "2.3"}}
- :aliases {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.632"}}
+ :deps    {org.clojure/clojure           {:mvn/version "1.10.1"}
+           com.fzakaria/slf4j-timbre     {:mvn/version "0.3.19"}
+           com.novemberain/langohr       {:mvn/version "5.2.0"}
+           com.stuartsierra/component    {:mvn/version "1.0.0"}
+           com.taoensso/timbre           {:mvn/version "4.10.0"}
+           environ/environ               {:mvn/version "1.2.0"}
+           failjure/failjure             {:mvn/version "2.0.0"}
+           clj-http                      {:mvn/version "3.10.2"}
+           juxt/crux-core                {:mvn/version "20.09-1.11.0-beta"}
+           juxt/crux-jdbc                {:mvn/version "20.09-1.11.0-beta"}
+           org.postgresql/postgresql     {:mvn/version "42.2.14"}
+           lispyclouds/clj-docker-client {:mvn/version "1.0.1"}
+           metosin/jsonista              {:mvn/version "0.2.6"}
+           org.kamranzafar/jtar          {:mvn/version "2.3"}}
+ :aliases {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.641"}}
                      :main-opts  ["-m" "kaocha.runner" "--reporter" "kaocha.report.progress/report"]}
-           :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.94"}}
+           :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.97"}}
                      :main-opts  ["-m" "hf.depstar.uberjar" "runner.jar" "-C" "-S" "-m" "runner.main"]}}}

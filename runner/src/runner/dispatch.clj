@@ -17,18 +17,18 @@
   (:require [taoensso.timbre :as log]
             [jsonista.core :as json]
             [failjure.core :as f]
-            [runner.runner :as runner]
+            [runner.pipeline.core :as p]
             [runner.errors :as err]))
 
 (def ^:private routes
-  {"pipeline/start" runner/start
-   "pipeline/stop"  runner/stop})
+  {"pipeline/start" p/start})
 
 (def mapper (json/object-mapper {:decode-key-fn true}))
 
 (defn queue-msg-subscriber
   [db-conn chan meta-data payload]
-  (let [msg (f/try* (json/read-value payload mapper))]
+  (let [msg (f/try*
+              (json/read-value payload mapper))]
     (if (f/failed? msg)
       (err/publish-error chan (format "Could not parse '%s' as json" (String. payload "UTF-8")))
       (do

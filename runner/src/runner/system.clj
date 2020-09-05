@@ -16,14 +16,13 @@
 (ns runner.system
   (:require [com.stuartsierra.component :as component]
             [environ.core :as env]
-            [ragtime.repl :as repl]
-            [ragtime.jdbc :as jdbc]
-            [hikari-cp.core :as h]
             [taoensso.timbre :as log]
+            [crux.api :as crux]
             [langohr.core :as rmq]
             [langohr.channel :as lch]
             [langohr.queue :as lq]
-            [langohr.consumers :as lc]))
+            [langohr.consumers :as lc]
+            [runner.dispatch :as d]))
 
 (defn int-from-env
   [key default]
@@ -31,11 +30,11 @@
     (Integer/parseInt (get env/env key (str default)))
     (catch Exception _ default)))
 
-(defonce db-host (:bob-postgres-host env/env "localhost"))
-(defonce db-port (int-from-env :bob-postgres-port 5432))
-(defonce db-user (:bob-postgres-user env/env "bob"))
-(defonce db-name (:bob-postgres-database env/env "bob"))
-(defonce db-password (:bob-postgres-password env/env "bob"))
+(defonce storage-host (:bob-storage-host env/env "localhost"))
+(defonce storage-port (int-from-env :bob-storage-port 5432))
+(defonce storage-user (:bob-storage-user env/env "bob"))
+(defonce storage-name (:bob-storage-database env/env "bob"))
+(defonce storage-password (:bob-storage-password env/env "bob"))
 
 (defonce queue-host (:bob-rmq-host env/env "localhost"))
 (defonce queue-port (int-from-env :bob-rmq-port 5672))
@@ -43,25 +42,29 @@
 (defonce queue-password (:bob-rmq-password env/env "guest"))
 
 (defprotocol IDatabase
-  (db-connection [this]))
+  (db-client [this]))
 
 (defrecord Database
-  [jdbc-url connection-timeout]
+  [db-name db-host db-port db-user db-password]
   component/Lifecycle
   (start [this]
-    (let [data-source      (h/make-datasource {:jdbc-url           jdbc-url
-                                               :connection-timeout connection-timeout})
-          migration-config {:datastore  (jdbc/sql-database {:connection-uri jdbc-url})
-                            :migrations (jdbc/load-resources "migrations")}]
-      (repl/migrate migration-config)
-      (assoc this :conn data-source)))
+    (log/info "Connecting to DB")
+    (assoc this
+           :client
+           (crux/start-node {:crux.node/topology '[crux.jdbc/topology]
+                             :crux.jdbc/dbtype   "postgresql"
+                             :crux.jdbc/dbname   db-name
+                             :crux.jdbc/host     db-host
+                             :crux.jdbc/port     db-port
+                             :crux.jdbc/user     db-user
+                             :crux.jdbc/password db-password})))
   (stop [this]
     (log/info "Disconnecting DB")
-    (h/close-datasource (:conn this))
-    (assoc this :conn nil))
+    (.close (:client this))
+    (assoc this :client nil))
   IDatabase
-  (db-connection [this]
-    (:conn this)))
+  (db-client [this]
+             (:client this)))
 
 (defprotocol IQueue
   (queue-chan [this]))
@@ -103,13 +106,11 @@
                                             :queue-user     queue-user
                                             :queue-password queue-password})
                                [:database])
-    :database (map->Database {:jdbc-url           (format "jdbc:postgresql://%s:%d/%s?user=%s&password=%s"
-                                                          db-host
-                                                          db-port
-                                                          db-name
-                                                          db-user
-                                                          db-password)
-                              :connection-timeout 5000})))
+    :database (map->Database {:db-name     storage-name
+                              :db-host     storage-host
+                              :db-port     storage-port
+                              :db-user     storage-user
+                              :db-password storage-password})))
 
 (defonce system nil)
 

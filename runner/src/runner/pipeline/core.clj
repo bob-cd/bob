@@ -16,51 +16,300 @@
 (ns runner.pipeline.core
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [runner.errors :as err]
-            [runner.pipeline.db :as db])
+            [crux.api :as crux]
+            [runner.errors :as errors]
+            [runner.docker :as docker]
+            [runner.resource.core :as r]
+            [runner.artifact.core :as a])
   (:import [java.util UUID]))
 
-(defn- next-build-number-of
-  "Generates a sequential build number for a pipeline."
-  [db-conn name]
-  (let [result (f/try* (last (db/pipeline-runs db-conn {:pipeline name})))]
-    (if (or (f/failed? result) (nil? result))
-      1
-      (inc (result :number)))))
+(defonce ^:private node-state
+         (atom {:images-for-gc      {}
+                :current-containers {}}))
 
-;; TODO: Avoid doing the first step separately. Do it in the reduce like a normal person.
-(defn- exec-steps
-  "Implements the sequential execution of the list of steps with a starting image.
+(defn log->db
+  [db-client run-id line]
+  (crux/submit-tx db-client
+                  [[:crux.tx/put
+                    {:crux.db/id (keyword (str "bob.pipeline.log/l-" (UUID/randomUUID)))
+                     :type       :log-line
+                     :run-id     run-id
+                     :line       line}]]))
 
-  Dispatches asynchronously and uses a composition of the above functions.
-  Makes an accumulator of current id and the mounted resources
+(defn log-event
+  [db-client run-id line]
+  (log->db db-client run-id (str "[bob] " line)))
 
-  Returns the final id or errors if any."
-  [db-conn image [step & steps] pipeline evars]
-  (let [run-id         (str (UUID/randomUUID))
-        first-resource (:needs_resource step)
-        number         (next-build-number-of db-conn pipeline)]
-    (future (f/try-all [_ (log/infof "Starting new run %d for %s"
-                                     number
-                                     pipeline)
-                        _ (db/insert-run db-conn
-                                         {:id       run-id
-                                          :number   number
-                                          :pipeline pipeline
-                                          :status   "running"})]))))
+(defn mark-image-for-gc
+  [image run-id]
+  (let [images     (get-in @node-state [:images-for-gc run-id])
+        new-images (if (some #{image} images)
+                     images
+                     (cons image images))] ; Should be collected in reverse due to dependency
+    (swap! node-state
+      update
+      :images-for-gc
+      assoc
+      run-id
+      (if (nil? new-images)
+        (list image)
+        new-images))))
+
+(defn gc-images
+  "garbage-collect images by run-id."
+  [run-id]
+  (log/debugf "Deleting all images for run %s" run-id)
+  (run! docker/delete-image (get-in @node-state [:images-for-gc run-id]))
+  (swap! node-state update :images-for-gc dissoc run-id))
+
+(defn resourceful-step
+  "Create a resource mounted image for a step if it needs it."
+  [db-client step group name image run-id]
+  (if-let [resource (:needs_resource step)]
+    (f/try-all [_             (log-event db-client
+                                         run-id
+                                         (str "Fetching and mounting resource " resource))
+                pipeline      (crux/entity (crux/db db-client)
+                                           (keyword (format "bob.pipeline.%s/%s"
+                                                            group
+                                                            name)))
+                resource-info (->> pipeline
+                                   :resources
+                                   (filter #(= resource (:name %)))
+                                   first)]
+      (r/mounted-image-from db-client
+                            resource-info
+                            image)
+      (f/when-failed [err]
+        err))
+    image))
+
+(defn mount-needed?
+  "Checks if the step needs a resource and if it needs to be mounted"
+  [{:keys [mounted]} {:keys [:needs_resource]}]
+  (and needs_resource (not (contains? mounted needs_resource))))
+
+(defn exec-step
+  "Reducer function to excute a step from the previous build state.
+
+  Build state:
+  {:image     current-image-id
+   :mounted   set-of-mounted-resources
+   :run-id    run-id
+   :db-client db-client
+   :env       env-vars
+   :group     pipeline-group
+   :name      pipeline-name}
+  or a Failure shorting the reduce.
+
+  Returns the final build state or a Failure."
+  [{:keys [db-client image run-id env group name]
+    :as   build-state} step]
+  (if (f/failed? build-state)
+    (reduced build-state)
+    (f/try-all [image  (if (mount-needed? build-state step)
+                         (resourceful-step db-client
+                                           step
+                                           group
+                                           name
+                                           image
+                                           run-id)
+                         image)
+                _      (mark-image-for-gc image run-id)
+                id     (docker/create-container image step env)
+                ;; Globally note the current container id, useful for stopping/pausing
+                _      (swap! node-state
+                         update
+                         :current-containers
+                         assoc
+                         run-id
+                         id)
+                result (docker/start-container id
+                                               #(log->db db-client run-id %))
+                _      (if (f/failed? result)
+                         (do
+                           (log/debugf "Removing failed container %s" id)
+                           (docker/delete-container id)
+                           (swap! node-state
+                             update
+                             :current-containers
+                             dissoc
+                             run-id))
+                         result)
+                _      (when-let [artifact (:produces_artifact step)]
+                         (log-event db-client
+                                    run-id
+                                    (str "Uploading artifact " artifact))
+                         (a/upload-artifact db-client
+                                            group
+                                            name
+                                            run-id
+                                            (:name artifact)
+                                            id
+                                            (str (get-in
+                                                   (docker/inspect-container
+                                                     id)
+                                                   [:Config :WorkingDir])
+                                                 "/"
+                                                 (:artifact_path artifact))
+                                            (:artifact_store artifact)))
+                image  (docker/commit-image id "")
+                _      (mark-image-for-gc image run-id)
+                _      (log/debugf "Removing successful container %s" id)
+                _      (docker/delete-container id)
+                _      (swap! node-state
+                         update
+                         :current-containers
+                         dissoc
+                         run-id)]
+      (merge build-state
+             {:image   image
+              :mounted (conj (:mounted build-state) (:needs_resource step))})
+      (f/when-failed [err]
+        (log/errorf "Failed executing step %s with error %s"
+                    step
+                    (f/message err))
+        err))))
 
 (defn start
-  "Asynchronously starts a pipeline in a group by name."
-  [db-conn queue-chan {:keys [group name]}]
-  (f/try-all [pipeline (str group ":" name)
-              image    (:image (db/image-of db-conn {:name pipeline}))
-              steps    (db/ordered-steps db-conn {:pipeline pipeline})
-              vars     (->> (db/evars-by-pipeline db-conn {:pipeline pipeline})
-                            (map #(hash-map (keyword (:key %)) (:value %)))
-                            (into {}))]
-    (do
-      (log/infof "Starting pipeline %s" pipeline)
-      (exec-steps db-conn image steps pipeline vars)
-      "Ok")
-    (f/when-failed [err]
-      (err/publish-error queue-chan (format "Error starting pipeline: %s" (f/message err))))))
+  "Attempts to asynchronously start a pipeline by group and name."
+  [db-client queue-chan {:keys [group name]}]
+  (let [run-id    (str "r-" (UUID/randomUUID))
+        run-db-id (keyword (format "bob.pipeline.run.%s/%s"
+                                   group
+                                   name))
+        run-info  {:crux.db/id run-db-id
+                   :type       :pipeline-run
+                   :run-id     run-id
+                   :group      group
+                   :name       name}]
+    (future
+      (f/try-all [pipeline                   (crux/entity (crux/db db-client)
+                                                          (keyword (format "bob.pipeline.%s/%s"
+                                                                           group
+                                                                           name)))
+                  _                          (when-not pipeline
+                                               (f/fail (str "Unable to find pipeline " group name)))
+                  {:keys [image steps vars]} pipeline
+                  _                          (log/infof "Starting new run: %s" run-id)
+                  txn                        (crux/submit-tx db-client
+                                                             [[:crux.tx/put (assoc run-info :status :running)]])
+                  _                          (crux/await-tx db-client txn)
+                  _                          (log-event db-client run-id (str "Pulling image " image))
+                  _                          (docker/pull-image image)
+                  _                          (mark-image-for-gc image run-id)
+                  build-state                {:image     image
+                                              :mounted   #{}
+                                              :run-id    run-id
+                                              :db-client db-client
+                                              :env       vars
+                                              :group     group
+                                              :name      name}
+                  _                          (reduce exec-step build-state steps) ;; This is WHOLE of Bob!
+                  _                          (gc-images run-id)
+                  txn                        (crux/submit-tx db-client
+                                                             [[:crux.tx/put (assoc run-info :status :passed)]])
+                  _                          (crux/await-tx db-client txn)
+                  _                          (log/infof "Run successful %s" run-id)
+                  _                          (log-event db-client run-id "Run successful")]
+        "Success"
+        (f/when-failed [err]
+          (let [status (:status (crux/entity (crux/db db-client) run-db-id))
+                error  (f/message err)]
+            (when-not (= status :stopped)
+              (log/infof "Marking run %s as failed with reason: %s"
+                         run-id
+                         error)
+              (log-event db-client run-id (str "Run failed: %s" error))
+              (crux/submit-tx db-client
+                              [[:crux.tx/put (assoc run-info :status :failed)]])))
+          (gc-images run-id)
+          (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err))))))))
+
+(comment
+  (reset! node-state
+          {:images-for-gc      {:run-id-1 (list "rabbitmq:3-alpine" "postgres:alpine")}
+           :current-containers {}})
+
+  (mark-image-for-gc "apline:latest" "r-1")
+
+  (gc-images :run-id-1)
+
+  (reset! node-state
+          {:images-for-gc      {}
+           :current-containers {}})
+
+  @node-state
+
+  (require '[runner.system :as sys])
+
+  (def db-client
+    (-> sys/system
+        :database
+        sys/db-client))
+
+  (crux/submit-tx db-client
+                  [[:crux.tx/put
+                    {:crux.db/id :bob.pipeline.test/test
+                     :group      "test"
+                     :name       "test"
+                     :steps      [{:cmd "echo hello"}
+                                  {:needs_resource "source"
+                                   :cmd            "ls"}]
+                     :vars       {:k1 "v1"
+                                  :k2 "v2"}
+                     :resources  [{:name     "source"
+                                   :type     "external"
+                                   :provider "git"
+                                   :params   {:repo   "https://github.com/bob-cd/bob"
+                                              :branch "master"}}]
+                     :image      "busybox:musl"}]])
+
+  (crux/entity (crux/db db-client) :bob.pipeline.test/test)
+
+  (crux/submit-tx db-client
+                  [[:crux.tx/put
+                    {:crux.db/id :bob.resource-provider/git
+                     :url        "http://localhost:8000"}]])
+
+  (crux/entity (crux/db db-client) :bob.resource-provider/git)
+
+  (resourceful-step db-client
+                    {:needs_resource "source"
+                     :cmd            "ls"}
+                    "test"         "test"
+                    "busybox:musl" "a-run-id")
+
+  (->> (crux/q (crux/db db-client)
+               {:find  '[line]
+                :where '[[line :type :log-line] [line :run-id "a-run-id"]]})
+       (map first)
+       (map #(crux/entity (crux/db db-client) %))
+       (map :line))
+
+  (crux/submit-tx db-client
+                  [[:crux.tx/put
+                    {:crux.db/id :bob.artifact-store/local
+                     :url        "http://localhost:8001"}]])
+
+  (crux/entity (crux/db db-client) :bob.artifact-store/local)
+
+  (exec-step {:image     "busybox:musl"
+              :mounted   #{}
+              :run-id    "a-run-id"
+              :db-client db-client
+              :env       {:type "yes"}
+              :group     "test"
+              :name      "test"}
+             {:needs_resource    "source"
+              :cmd               "ls"
+              :produces_artifact {:artifact_path  "README.md"
+                                  :name           "readme"
+                                  :artifact_store "local"}})
+
+  (start db-client
+    nil
+    {:group "test"
+     :name  "test"})
+
+  (crux/entity (crux/db db-client) :bob.pipeline.run.test/test))
