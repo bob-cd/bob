@@ -16,8 +16,7 @@
  */
 
 import clojure.java.api.Clojure;
-import clojure.lang.IFn;
-import clojure.lang.Keyword;
+import clojure.lang.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.AMQP;
@@ -46,26 +45,32 @@ import static java.lang.String.format;
 public class Handlers {
     private final static Logger logger = LoggerFactory.getLogger(Handlers.class.getName());
     private final static ICruxAPI node;
-    private final static IFn toJson;
+    private final static IFn toJson, flatten, vec;
     private final static ObjectMapper objectMapper = new ObjectMapper();
 
     static {
         Clojure.var("clojure.core", "require")
-                .invoke(Clojure.read("jsonista.core"));
+            .invoke(Clojure.read("jsonista.core"));
 
         final var nodeConfig = """
-                {:crux.node/topology [crux.jdbc/topology]
-                 :crux.jdbc/dbtype   "postgresql"
-                 :crux.jdbc/dbname   "bob"
-                 :crux.jdbc/host     "localhost"
-                 :crux.jdbc/port     5432
-                 :crux.jdbc/user     "bob"
-                 :crux.jdbc/password "bob"}
-                """;
+            {:crux.node/topology [crux.jdbc/topology]
+             :crux.jdbc/dbtype   "postgresql"
+             :crux.jdbc/dbname   "bob"
+             :crux.jdbc/host     "localhost"
+             :crux.jdbc/port     5432
+             :crux.jdbc/user     "bob"
+             :crux.jdbc/password "bob"}
+            """;
 
         toJson = Clojure.var("jsonista.core", "write-value-as-string");
+        flatten = Clojure.var("clojure.core", "flatten");
+        vec = Clojure.var("clojure.core", "vec");
         node = Crux.startNode((Map<Keyword, ?>) datafy(nodeConfig));
         node.sync(Duration.ofSeconds(30)); // Become consistent for a max of 30s
+    }
+
+    public static Object toMessage(Object object) {
+        return PersistentHashMap.create(Keyword.intern(Symbol.create("message")), flatten.invoke(vec.invoke(object)));
     }
 
     public static Object datafy(String raw) {
@@ -82,9 +87,16 @@ public class Handlers {
 
     private static void toJsonResponse(RoutingContext routingContext, Object content, int statusCode) {
         routingContext.response()
-                .putHeader("Content-Type", "application/json")
-                .setStatusCode(statusCode)
-                .end(new JsonObject(Map.of("message", content)).encode());
+            .putHeader("Content-Type", "application/json")
+            .setStatusCode(statusCode)
+            .end(new JsonObject(Map.of("message", content)).encode());
+    }
+
+    private static void cruxToJsonResponse(RoutingContext routingContext, Object content, int statusCode) {
+        routingContext.response()
+            .putHeader("Content-Type", "application/json")
+            .setStatusCode(statusCode)
+            .end((String) toJson.invoke(toMessage(content)));
     }
 
     private static void publishToEntities(RabbitMQClient queue, String type, JsonObject payload) {
@@ -102,17 +114,17 @@ public class Handlers {
         // TODO use better health check
         Promise<HttpResponse<Buffer>> cruxCheck = Promise.promise();
         crux.get(7779, "localhost", "/")
-                .expect(ResponsePredicate.SC_OK)
-                .followRedirects(true)
-                .send(it -> {
-                    if (it.succeeded()) {
-                        logger.debug("Health check succeeded for CruxDB!");
-                        cruxCheck.complete();
-                    } else {
-                        logger.error("Health check failed for CruxDB!");
-                        cruxCheck.fail(it.cause());
-                    }
-                });
+            .expect(ResponsePredicate.SC_OK)
+            .followRedirects(true)
+            .send(it -> {
+                if (it.succeeded()) {
+                    logger.debug("Health check succeeded for CruxDB!");
+                    cruxCheck.complete();
+                } else {
+                    logger.error("Health check failed for CruxDB!");
+                    cruxCheck.fail(it.cause());
+                }
+            });
         // TODO use better health check
         Promise<HttpResponse<Buffer>> rabbitCheck = Promise.promise();
         if (queue.isConnected()) {
@@ -220,9 +232,12 @@ public class Handlers {
     }
 
     public static void pipelineListHandler(RoutingContext routingContext, WebClient crux) {
-        final var query = "{:find [e] :where [[e :type :pipeline]]}";
+        final var query = """
+            {:find [(eql/project ?pipelines [*])]
+             :where [[?pipelines :type :pipeline]]}
+            """;
 
-        toJsonResponse(routingContext, node.db().query(query));
+        cruxToJsonResponse(routingContext, node.db().query(datafy(query)), 200);
     }
 
     public static void resourceProviderCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
@@ -296,8 +311,8 @@ public class Handlers {
 
         try {
             routingContext.response()
-                    .putHeader("Content-Type", "application/yaml")
-                    .end(Files.readString(file.toPath()));
+                .putHeader("Content-Type", "application/yaml")
+                .end(Files.readString(file.toPath()));
 
         } catch (IOException e) {
             final var msg = format("Could not read spec file: %s", e.getMessage());
