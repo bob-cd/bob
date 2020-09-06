@@ -18,30 +18,33 @@
             [crux.api :as crux]
             [failjure.core :as f]
             [clj-http.client :as http]
+            [runner.util :as u]
             [runner.docker :as docker]
             [runner.artifact.core :as a]))
 
 (deftest upload-artifact-test
   (docker/pull-image "busybox:musl")
-  (let [db-client (crux/new-api-client "http://localhost:7779")
-        id        (docker/create-container "busybox:musl")]
-    (crux/submit-tx db-client
-                    [[:crux.tx/put
-                      {:crux.db/id :bob.artifact-store/local
-                       :url        "http://localhost:8001"}]])
-    (Thread/sleep 1000)
-    (testing "successful artifact upload"
-      (is (= "Ok"
-             (a/upload-artifact db-client "dev" "test" "r-1" "file" id "/root" "local")))
-      (is (= 200
-             (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file")))))
-    (testing "unsuccessful artifact upload"
-      (is (f/failed? (a/upload-artifact db-client "dev" "test" "r-1" "file1" id "/invalid-path" "local")))
-      (is (= 404
-             (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file1"
-                                {:throw-exceptions false})))))
-    (docker/delete-container id)
-    (crux/submit-tx db-client
-                    [[:crux.tx/delete :bob.artifact-store/local]])
-    (Thread/sleep 1000))
+  (u/with-system (fn [db _]
+                   (let [id (docker/create-container "busybox:musl")]
+                     (crux/await-tx db
+                                    (crux/submit-tx db
+                                                    [[:crux.tx/put
+                                                      {:crux.db/id :bob.artifact-store/local
+                                                       :url        "http://localhost:8001"}]]))
+
+                     (testing "successful artifact upload"
+                       (is (= "Ok"
+                              (a/upload-artifact db "dev" "test" "r-1" "file" id "/root" "local")))
+                       (is (= 200
+                              (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file")))))
+                     (docker/delete-container id)
+
+                     (testing "unsuccessful artifact upload"
+                       (is (f/failed? (a/upload-artifact db "dev" "test" "r-1" "file1" id "/invalid-path" "local")))
+                       (is (= 404
+                              (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file1"
+                                                 {:throw-exceptions false})))))
+                     (crux/await-tx db
+                                    (crux/submit-tx db
+                                                    [[:crux.tx/delete :bob.artifact-store/local]])))))
   (docker/delete-image "busybox:musl"))

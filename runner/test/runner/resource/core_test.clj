@@ -20,11 +20,10 @@
             [crux.api :as crux]
             [clj-docker-client.core :as docker]
             [failjure.core :as f]
+            [runner.util :as u]
             [runner.docker :as d]
             [runner.resource.core :as r])
   (:import [org.kamranzafar.jtar TarInputStream]))
-
-(def db-client (crux/new-api-client "http://localhost:7779"))
 
 (deftest ^:integration resource-fetch-test
   (testing "successful resource fetch"
@@ -47,34 +46,36 @@
     (is (s/starts-with? entry "source/"))))
 
 (deftest ^:integration valid-resource-provider-test
-  (crux/submit-tx db-client
-                  [[:crux.tx/put
-                    {:crux.db/id :bob.resource-provider/git
-                     :url        "http://localhost:8000"}]])
-  (Thread/sleep 1000)
-  (testing "valid resource provider"
-    (is (r/valid-resource-provider? db-client {:provider "git"})))
-  (testing "invalid resource provider"
-    (is (not (r/valid-resource-provider? db-client {:provider "invalid"}))))
-  (crux/submit-tx db-client
-                  [[:crux.tx/delete :bob.resource-provider/git]])
-  (Thread/sleep 1000))
+  (u/with-system (fn [db _]
+                   (crux/await-tx db
+                                  (crux/submit-tx db
+                                                  [[:crux.tx/put
+                                                    {:crux.db/id :bob.resource-provider/git
+                                                     :url        "http://localhost:8000"}]]))
+                   (testing "valid resource provider"
+                     (is (r/valid-resource-provider? db {:provider "git"})))
+                   (testing "invalid resource provider"
+                     (is (not (r/valid-resource-provider? db {:provider "invalid"}))))
+                   (crux/await-tx db
+                                  (crux/submit-tx db
+                                                  [[:crux.tx/delete :bob.resource-provider/git]])))))
 
 (deftest ^:integration url-generation-test
-  (crux/submit-tx db-client
-                  [[:crux.tx/put
-                    {:crux.db/id :bob.resource-provider/git
-                     :url        "http://localhost:8000"}]])
-  (Thread/sleep 1000)
-  (testing "generate url for a resource provider"
-    (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
-           (r/url-of db-client
-                     {:provider "git"
-                      :params   {:repo   "a-repo"
-                                 :branch "a-branch"}}))))
-  (crux/submit-tx db-client
-                  [[:crux.tx/delete :bob.resource-provider/git]])
-  (Thread/sleep 1000))
+  (u/with-system (fn [db _]
+                   (crux/await-tx db
+                                  (crux/submit-tx db
+                                                  [[:crux.tx/put
+                                                    {:crux.db/id :bob.resource-provider/git
+                                                     :url        "http://localhost:8000"}]]))
+                   (testing "generate url for a resource provider"
+                     (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
+                            (r/url-of db
+                                      {:provider "git"
+                                       :params   {:repo   "a-repo"
+                                                  :branch "a-branch"}}))))
+                   (crux/await-tx db
+                                  (crux/submit-tx db
+                                                  [[:crux.tx/delete :bob.resource-provider/git]])))))
 
 (deftest ^:integration initial-image-test
   (d/pull-image "busybox:musl")
@@ -91,29 +92,30 @@
   (d/delete-image "busybox:musl"))
 
 (deftest ^:integration mounted-image-test
-  (crux/submit-tx db-client
-                  [[:crux.tx/put
-                    {:crux.db/id :bob.resource-provider/git
-                     :url        "http://localhost:8000"}]])
-  (Thread/sleep 1000)
-  (d/pull-image "busybox:musl")
-  (testing "successful mount"
-    (let [image  (r/mounted-image-from db-client
-                                       {:name     "source"
-                                        :provider "git"
-                                        :params   {:repo   "https://github.com/lispyclouds/bob-example"
-                                                   :branch "master"}}
-                                       "busybox:musl")
-          images (->> (docker/invoke d/images {:op :ImageList})
-                      (map :Id))]
-      (is (some #{image} images))
-      (d/delete-image "busybox:musl")
-      (crux/submit-tx db-client
-                      [[:crux.tx/delete :bob.resource-provider/git]])
-      (Thread/sleep 1000)))
-  (testing "unsuccessful mount"
-    (is (f/failed? (r/mounted-image-from db-client
-                                         {:name     "source"
-                                          :provider "invalid"}
-                                         "invalid"))))
-  (d/delete-image "busybox:musl"))
+  (u/with-system (fn [db _]
+                   (crux/await-tx db
+                                  (crux/submit-tx db
+                                                  [[:crux.tx/put
+                                                    {:crux.db/id :bob.resource-provider/git
+                                                     :url        "http://localhost:8000"}]]))
+                   (d/pull-image "busybox:musl")
+                   (testing "successful mount"
+                     (let [image  (r/mounted-image-from db
+                                                        {:name     "source"
+                                                         :provider "git"
+                                                         :params   {:repo   "https://github.com/lispyclouds/bob-example"
+                                                                    :branch "master"}}
+                                                        "busybox:musl")
+                           images (->> (docker/invoke d/images {:op :ImageList})
+                                       (map :Id))]
+                       (is (some #{image} images))
+                       (d/delete-image "busybox:musl")
+                       (crux/await-tx db
+                                      (crux/submit-tx db
+                                                      [[:crux.tx/delete :bob.resource-provider/git]]))))
+                   (testing "unsuccessful mount"
+                     (is (f/failed? (r/mounted-image-from db
+                                                          {:name     "source"
+                                                           :provider "invalid"}
+                                                          "invalid"))))
+                   (d/delete-image "busybox:musl"))))

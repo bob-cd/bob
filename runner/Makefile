@@ -21,6 +21,7 @@ test:
 	docker run \
 		-d \
 		--name bob-test-storage \
+		-p 5433:5432 \
 		-e POSTGRES_DB=bob-test \
 		-e POSTGRES_USER=bob \
 		-e POSTGRES_PASSWORD=bob \
@@ -28,12 +29,10 @@ test:
 		postgres:alpine
 	docker run \
 		-d \
-		--name bob-test-db \
-		-p 7779:7778 \
-		-e BOB_STORAGE_HOST=bob-test-storage \
-		-e BOB_STORAGE_DATABASE=bob-test \
+		--name bob-test-queue \
+		-p 5673:5672 \
 		--network bob-net \
-		bobcd/db
+		rabbitmq:3-alpine
 	docker run \
 		-d \
 		--name resource-git \
@@ -48,7 +47,7 @@ test:
 		bobcd/artifact-local
 	sleep 7 # TODO: Find a better way to wait till things come up.
 	clojure -A:test --fail-fast
-	docker kill bob-test-storage bob-test-db resource-git artifact-local && docker rm bob-test-storage bob-test-db resource-git artifact-local
+	docker kill bob-test-storage bob-test-queue resource-git artifact-local && docker rm bob-test-storage bob-test-queue resource-git artifact-local
 	docker network rm bob-net
 
 compile:
