@@ -101,4 +101,12 @@
                                                         {:needs_resource "source"
                                                          :cmd            "ls"}
                                                         "test"         "test"
-                                                        "busybox:musl" "a-run-id")))))))
+                                                        "busybox:musl" "a-run-id"))))))
+
+  (testing "mount needed for step"
+    (is (p/mount-needed? {:mounted #{"another-resource"}} {:needs_resource "a-resource"}))
+    (is (p/mount-needed? {:mounted #{}} {:needs_resource "a-resource"})))
+
+  (testing "mount not needed for step"
+    (is (not (p/mount-needed? {:mounted #{"a-resource"}} {:needs_resource "a-resource"})))
+    (is (not (p/mount-needed? {:mounted #{"a-resource"}} {})))))
