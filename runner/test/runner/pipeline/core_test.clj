@@ -16,6 +16,7 @@
 (ns runner.pipeline.core-test
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
+            [failjure.core :as f]
             [runner.util :as u]
             [runner.docker :as d]
             [runner.docker-test :as dt]
@@ -61,3 +62,43 @@
       (is (not (contains? state "another-run-id")))
       (is (empty? (->> (dt/image-ls)
                        (filter #(= % "busybox:musl"))))))))
+
+(deftest ^:integration resource-mounts
+  (u/with-system (fn [db _]
+                   (testing "successful resource provisioning of a step"
+                     (d/pull-image "busybox:musl")
+                     (crux/await-tx db
+                                    (crux/submit-tx db
+                                                    [[:crux.tx/put
+                                                      {:crux.db/id :bob.resource-provider/git
+                                                       :url        "http://localhost:8000"}]]))
+                     (crux/await-tx db
+                                    (crux/submit-tx db
+                                                    [[:crux.tx/put
+                                                      {:crux.db/id :bob.pipeline.test/test
+                                                       :group      "test"
+                                                       :name       "test"
+                                                       :steps      []
+                                                       :vars       {}
+                                                       :resources  [{:name     "source"
+                                                                     :type     "external"
+                                                                     :provider "git"
+                                                                     :params   {:repo   "https://github.com/bob-cd/bob"
+                                                                                :branch "master"}}]
+                                                       :image      "busybox:musl"}]]))
+                     (let [image (p/resourceful-step db
+                                                     {:needs_resource "source"
+                                                      :cmd            "ls"}
+                                                     "test"         "test"
+                                                     "busybox:musl" "a-run-id")]
+                       (is (not (f/failed? image)))
+                       (d/delete-image image))
+                     (d/delete-image "busybox:musl"))))
+
+  (u/with-system (fn [db _]
+                   (testing "unsuccessful resource provisioning of a step"
+                     (is (f/failed? (p/resourceful-step db
+                                                        {:needs_resource "source"
+                                                         :cmd            "ls"}
+                                                        "test"         "test"
+                                                        "busybox:musl" "a-run-id")))))))
