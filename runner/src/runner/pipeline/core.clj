@@ -175,12 +175,12 @@
   "Attempts to asynchronously start a pipeline by group and name."
   [db-client queue-chan {:keys [group name]}]
   (let [run-id    (str "r-" (UUID/randomUUID))
-        run-db-id (keyword (format "bob.pipeline.run.%s/%s"
+        run-db-id (keyword (format "bob.pipeline.%s.%s.run/%s"
                                    group
-                                   name))
+                                   name
+                                   run-id))
         run-info  {:crux.db/id run-db-id
                    :type       :pipeline-run
-                   :run-id     run-id
                    :group      group
                    :name       name}]
     (future
@@ -189,7 +189,9 @@
                                                                            group
                                                                            name)))
                   _                          (when-not pipeline
-                                               (f/fail (str "Unable to find pipeline " group name)))
+                                               (f/fail (format "Unable to find pipeline %s/%s"
+                                                               group
+                                                               name)))
                   {:keys [image steps vars]} pipeline
                   _                          (log/infof "Starting new run: %s" run-id)
                   txn                        (crux/submit-tx db-client
@@ -280,13 +282,6 @@
                     "test"         "test"
                     "busybox:musl" "a-run-id")
 
-  (->> (crux/q (crux/db db-client)
-               {:find  '[line]
-                :where '[[line :type :log-line] [line :run-id "a-run-id"]]})
-       (map first)
-       (map #(crux/entity (crux/db db-client) %))
-       (map :line))
-
   (crux/submit-tx db-client
                   [[:crux.tx/put
                     {:crux.db/id :bob.artifact-store/local
@@ -312,4 +307,11 @@
     {:group "test"
      :name  "test"})
 
-  (crux/entity (crux/db db-client) :bob.pipeline.run.test/test))
+  (crux/q (crux/db db-client)
+          '{:find  [(eql/project log [:line])]
+            :where [[log :type :log-line]
+                    [log :run-id "r-60a0d2e8-ec6e-4004-8136-978f4e042f25"]]})
+
+  (crux/q (crux/db db-client)
+          '{:find  [(eql/project run [*])]
+            :where [[run :type :pipeline-run]]}))

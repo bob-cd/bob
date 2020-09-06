@@ -89,7 +89,7 @@
                   "errors"
                   {:exclusive   false
                    :auto-delete false})
-      (lc/subscribe chan queue-name (partial d/queue-msg-subscriber (:conn database)) {:auto-ack true})
+      (lc/subscribe chan queue-name (partial d/queue-msg-subscriber (:client database)) {:auto-ack true})
       (log/infof "Subscribed to %s" queue-name)
       (assoc this :conn conn :chan chan)))
   (stop [this]
