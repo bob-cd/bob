@@ -17,6 +17,8 @@
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
             [runner.util :as u]
+            [runner.docker :as d]
+            [runner.docker-test :as dt]
             [runner.pipeline.core :as p]))
 
 (deftest ^:integration logging-to-db
@@ -46,3 +48,16 @@
                                     :where [[log :run-id "another-run-id"]]})
                                 first
                                 first)))))))
+
+(deftest ^:integration garbage-collection
+  (testing "mark image"
+    (let [state (p/mark-image-for-gc "a-image" "a-run-id")]
+      (is (= (list "a-image") (get-in state [:images-for-gc "a-run-id"])))))
+
+  (testing "mark and sweep"
+    (d/pull-image "busybox:musl")
+    (p/mark-image-for-gc "busybox:musl" "another-run-id")
+    (let [state (p/gc-images "another-run-id")]
+      (is (not (contains? state "another-run-id")))
+      (is (empty? (->> (dt/image-ls)
+                       (filter #(= % "busybox:musl"))))))))
