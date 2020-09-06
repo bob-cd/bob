@@ -32,4 +32,17 @@
                                   '{:find  [(eql/project log [:type :run-id :line])]
                                     :where [[log :run-id "a-run-id"]]})
                                 first
+                                first))))
+
+                   (testing "log event"
+                     (p/log-event db "another-run-id" "another log line")
+                     (Thread/sleep 1000)
+                     (is (= {:type   :log-line
+                             :run-id "another-run-id"
+                             :line   "[bob] another log line"}
+                            (-> (crux/db db)
+                                (crux/q
+                                  '{:find  [(eql/project log [:type :run-id :line])]
+                                    :where [[log :run-id "another-run-id"]]})
+                                first
                                 first)))))))
