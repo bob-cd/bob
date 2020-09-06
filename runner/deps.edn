@@ -24,11 +24,11 @@
            clj-http                      {:mvn/version "3.10.2"}
            juxt/crux-core                {:mvn/version "20.09-1.11.0-beta"}
            juxt/crux-jdbc                {:mvn/version "20.09-1.11.0-beta"}
-           org.postgresql/postgresql     {:mvn/version "42.2.14"}
+           org.postgresql/postgresql     {:mvn/version "42.2.16"}
            lispyclouds/clj-docker-client {:mvn/version "1.0.1"}
-           metosin/jsonista              {:mvn/version "0.2.6"}
+           metosin/jsonista              {:mvn/version "0.2.7"}
            org.kamranzafar/jtar          {:mvn/version "2.3"}}
- :aliases {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.641"}}
+ :aliases {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.672"}}
                      :main-opts  ["-m" "kaocha.runner" "--reporter" "kaocha.report.progress/report"]}
-           :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.0.97"}}
+           :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.104"}}
                      :main-opts  ["-m" "hf.depstar.uberjar" "runner.jar" "-C" "-S" "-m" "runner.main"]}}}
