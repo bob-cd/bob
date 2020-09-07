@@ -17,6 +17,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
             [failjure.core :as f]
+            [clj-http.client :as http]
             [runner.util :as u]
             [runner.docker :as d]
             [runner.docker-test :as dt]
@@ -166,4 +167,31 @@
                            final-state   (p/exec-step initial-state step)]
                        (is (not (f/failed? final-state)))
                        (is (contains? (:mounted final-state) "source")))
-                     (p/gc-images "a-resource-run-id")))))
+                     (p/gc-images "a-resource-run-id"))))
+
+  (testing "successful step with artifact execution"
+    (d/pull-image "busybox:musl")
+    (u/with-system
+      (fn [db _]
+        (crux/await-tx db
+                       (crux/submit-tx db
+                                       [[:crux.tx/put
+                                         {:crux.db/id :bob.artifact-store/local
+                                          :url        "http://localhost:8001"}]]))
+        (let [initial-state {:image     "busybox:musl"
+                             :mounted   #{}
+                             :run-id    "a-artifact-run-id"
+                             :db-client db
+                             :env       {}
+                             :group     "test"
+                             :name      "test"}
+              step          {:cmd               "touch text.txt"
+                             :produces_artifact {:artifact_path  "text.txt"
+                                                 :name           "text"
+                                                 :artifact_store "local"}}
+              final-state   (p/exec-step initial-state step)]
+          (is (not (f/failed? final-state)))
+          (is (empty? (:mounted final-state)))
+          (is (= 200
+                 (:status (http/get "http://localhost:8001/bob_artifact/test/test/a-artifact-run-id/text")))))
+        (p/gc-images "a-artifact-run-id")))))
