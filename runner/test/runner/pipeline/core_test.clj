@@ -110,3 +110,23 @@
   (testing "mount not needed for step"
     (is (not (p/mount-needed? {:mounted #{"a-resource"}} {:needs_resource "a-resource"})))
     (is (not (p/mount-needed? {:mounted #{"a-resource"}} {})))))
+
+(deftest ^:integration step-executions
+  (testing "reduces upon build failure"
+    (is (reduced? (p/exec-step (f/fail "this is fine") {}))))
+
+  (testing "successful simple step execution"
+    (d/pull-image "busybox:musl")
+    (u/with-system (fn [db _]
+                     (let [initial-state {:image     "busybox:musl"
+                                          :mounted   #{}
+                                          :run-id    "a-simple-run-id"
+                                          :db-client db
+                                          :env       {}
+                                          :group     "test"
+                                          :name      "test"}
+                           step          {:cmd "whoami"}
+                           final-state   (p/exec-step initial-state step)]
+                       (is (not= "busybox:musl" (:image final-state)))
+                       (is (empty? (:mounted final-state))))
+                     (p/gc-images "a-simple-run-id")))))
