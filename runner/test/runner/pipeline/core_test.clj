@@ -127,6 +127,43 @@
                                           :name      "test"}
                            step          {:cmd "whoami"}
                            final-state   (p/exec-step initial-state step)]
+                       (is (not (f/failed? final-state)))
                        (is (not= "busybox:musl" (:image final-state)))
                        (is (empty? (:mounted final-state))))
-                     (p/gc-images "a-simple-run-id")))))
+                     (p/gc-images "a-simple-run-id"))))
+
+  (testing "successful step with resource execution"
+    (d/pull-image "busybox:musl")
+    (u/with-system (fn [db _]
+                     (crux/await-tx db
+                                    (crux/submit-tx db
+                                                    [[:crux.tx/put
+                                                      {:crux.db/id :bob.resource-provider/git
+                                                       :url        "http://localhost:8000"}]]))
+                     (crux/await-tx db
+                                    (crux/submit-tx db
+                                                    [[:crux.tx/put
+                                                      {:crux.db/id :bob.pipeline.test/test
+                                                       :group      "test"
+                                                       :name       "test"
+                                                       :steps      []
+                                                       :vars       {}
+                                                       :resources  [{:name     "source"
+                                                                     :type     "external"
+                                                                     :provider "git"
+                                                                     :params   {:repo   "https://github.com/bob-cd/bob"
+                                                                                :branch "master"}}]
+                                                       :image      "busybox:musl"}]]))
+                     (let [initial-state {:image     "busybox:musl"
+                                          :mounted   #{}
+                                          :run-id    "a-resource-run-id"
+                                          :db-client db
+                                          :env       {}
+                                          :group     "test"
+                                          :name      "test"}
+                           step          {:cmd            "ls"
+                                          :needs_resource "source"}
+                           final-state   (p/exec-step initial-state step)]
+                       (is (not (f/failed? final-state)))
+                       (is (contains? (:mounted final-state) "source")))
+                     (p/gc-images "a-resource-run-id")))))
