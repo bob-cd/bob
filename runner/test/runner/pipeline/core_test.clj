@@ -245,4 +245,18 @@
 
 (deftest ^:integration failed-step-executions
   (testing "reduces upon build failure"
-    (is (reduced? (p/exec-step (f/fail "this is fine") {})))))
+    (is (reduced? (p/exec-step (f/fail "this is fine") {}))))
+
+  (testing "wrong command step failure"
+    (u/with-system (fn [db _]
+                     (let [initial-state {:image     "busybox:musl"
+                                          :mounted   #{}
+                                          :run-id    "a-simple-run-id"
+                                          :db-client db
+                                          :env       {}
+                                          :group     "test"
+                                          :name      "test"}
+                           step          {:cmd "this-bombs"}
+                           final-state   (p/exec-step initial-state step)]
+                       (is (f/failed? final-state)))
+                     (p/gc-images "a-simple-run-id")))))

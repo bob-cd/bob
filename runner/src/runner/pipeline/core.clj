@@ -107,61 +107,60 @@
     :as   build-state} step]
   (if (f/failed? build-state)
     (reduced build-state)
-    (f/try-all [image  (if (mount-needed? build-state step)
-                         (resourceful-step db-client
-                                           step
+    (f/try-all [image (if (mount-needed? build-state step)
+                        (resourceful-step db-client
+                                          step
+                                          group
+                                          name
+                                          image
+                                          run-id)
+                        image)
+                _     (mark-image-for-gc image run-id)
+                id    (docker/create-container image step env)
+                ;; Globally note the current container id, useful for stopping/pausing
+                _     (swap! node-state
+                        update
+                        :current-containers
+                        assoc
+                        run-id
+                        id)
+                _     (let [result (docker/start-container id
+                                                           #(log->db db-client run-id %))]
+                        (when (f/failed? result)
+                          (log/debugf "Removing failed container %s" id)
+                          (docker/delete-container id)
+                          (swap! node-state
+                            update
+                            :current-containers
+                            dissoc
+                            run-id))
+                        result)
+                _     (when-let [artifact (:produces_artifact step)]
+                        (log-event db-client
+                                   run-id
+                                   (str "Uploading artifact " artifact))
+                        (a/upload-artifact db-client
                                            group
                                            name
-                                           image
-                                           run-id)
-                         image)
-                _      (mark-image-for-gc image run-id)
-                id     (docker/create-container image step env)
-                ;; Globally note the current container id, useful for stopping/pausing
-                _      (swap! node-state
-                         update
-                         :current-containers
-                         assoc
-                         run-id
-                         id)
-                result (docker/start-container id
-                                               #(log->db db-client run-id %))
-                _      (if (f/failed? result)
-                         (do
-                           (log/debugf "Removing failed container %s" id)
-                           (docker/delete-container id)
-                           (swap! node-state
-                             update
-                             :current-containers
-                             dissoc
-                             run-id))
-                         result)
-                _      (when-let [artifact (:produces_artifact step)]
-                         (log-event db-client
-                                    run-id
-                                    (str "Uploading artifact " artifact))
-                         (a/upload-artifact db-client
-                                            group
-                                            name
-                                            run-id
-                                            (:name artifact)
-                                            id
-                                            (str (get-in
-                                                   (docker/inspect-container
-                                                     id)
-                                                   [:Config :WorkingDir])
-                                                 "/"
-                                                 (:artifact_path artifact))
-                                            (:artifact_store artifact)))
-                image  (docker/commit-image id "")
-                _      (mark-image-for-gc image run-id)
-                _      (log/debugf "Removing successful container %s" id)
-                _      (docker/delete-container id)
-                _      (swap! node-state
-                         update
-                         :current-containers
-                         dissoc
-                         run-id)]
+                                           run-id
+                                           (:name artifact)
+                                           id
+                                           (str (get-in
+                                                  (docker/inspect-container
+                                                    id)
+                                                  [:Config :WorkingDir])
+                                                "/"
+                                                (:artifact_path artifact))
+                                           (:artifact_store artifact)))
+                image (docker/commit-image id "")
+                _     (mark-image-for-gc image run-id)
+                _     (log/debugf "Removing successful container %s" id)
+                _     (docker/delete-container id)
+                _     (swap! node-state
+                        update
+                        :current-containers
+                        dissoc
+                        run-id)]
       (merge build-state
              {:image   image
               :mounted (if-let [resource (:needs_resource step)]
