@@ -215,7 +215,7 @@
                   _                          (crux/await-tx db-client txn)
                   _                          (log/infof "Run successful %s" run-id)
                   _                          (log-event db-client run-id "Run successful")]
-        "Success"
+        run-id
         (f/when-failed [err]
           (let [status (:status (crux/entity (crux/db db-client) run-db-id))
                 error  (f/message err)]
