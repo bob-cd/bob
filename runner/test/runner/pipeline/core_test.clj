@@ -288,4 +288,33 @@
                                          (into #{}))]
                        (is (not (f/failed? result)))
                        (is (contains? statuses :running))
-                       (is (contains? statuses :passed)))))))
+                       (is (contains? statuses :passed))))))
+
+  (testing "failed pipeline run"
+    (u/with-system (fn [db queue]
+                     (crux/await-tx db
+                                    (crux/submit-tx db
+                                                    [[:crux.tx/put
+                                                      {:crux.db/id :bob.pipeline.test/test
+                                                       :group      "test"
+                                                       :name       "test"
+                                                       :steps      [{:cmd "echo hello"}
+                                                                    {:cmd "this-bombs"}]
+                                                       :vars       {:k1 "v1"}
+                                                       :image      "busybox:musl"}]]))
+                     (let [result   @(p/start db
+                                       queue
+                                       {:group "test"
+                                        :name  "test"})
+                           id       (f/message result)
+                           history  (crux/entity-history (crux/db db)
+                                                         (keyword (str "bob.pipeline.test.test.run/" id))
+                                                         :desc
+                                                         {:with-docs? true})
+                           statuses (->> history
+                                         (map :crux.db/doc)
+                                         (map :status)
+                                         (into #{}))]
+                       (is (f/failed? result))
+                       (is (contains? statuses :running))
+                       (is (contains? statuses :failed)))))))

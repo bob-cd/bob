@@ -227,7 +227,8 @@
               (crux/submit-tx db-client
                               [[:crux.tx/put (assoc run-info :status :failed)]])))
           (gc-images run-id)
-          (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err))))))))
+          (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
+          (f/fail run-id))))))
 
 (comment
   (reset! node-state
