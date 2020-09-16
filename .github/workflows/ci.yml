@@ -18,7 +18,7 @@ name: "Test-and-Publish"
 on: [push, pull_request]
 
 jobs:
-  test-neobob:
+  test:
     runs-on: "ubuntu-latest"
 
     steps:
@@ -33,7 +33,7 @@ jobs:
       - name: "Prepare tools-deps"
         uses: DeLaGuardo/setup-clojure@2.0
         with:
-          tools-deps: 1.10.1.536
+          tools-deps: 1.10.1.561
 
       - name: "Apply Cache"
         uses: "actions/cache@v1"
@@ -44,3 +44,42 @@ jobs:
 
       - name: "Run all tests"
         run: "make test" # TODO: Run in parallel with namespaced resources
+
+      - name: "Build JARs"
+        run: "make -j2 compile"
+
+      - name: "Collect Artifacts"
+        uses: "actions/upload-artifact@v2"
+        with:
+          name: "bob-jars"
+          path: |
+            entities/entities.jar
+            runner/runner.jar
+
+  build-and-push:
+    needs: "test"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: "Checkout code"
+        uses: "actions/checkout@v2"
+
+      - name: "Download Artifacts"
+        uses: "actions/download-artifact@v2"
+        with:
+          name: "bob-jars"
+          path: "artifacts"
+
+      - name: "Move Docker images"
+        run: |
+          mv artifacts/entities/entities.jar entities/ && \
+          mv artifacts/runner/runner.jar runner/
+
+      - name: "Build Docker images"
+        run: "make -j2 docker-image"
+
+      - name: "Publish to Docker Hub"
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker login --username="${{ secrets.DOCKERHUB_USERNAME }}" --password="${{ secrets.DOCKERHUB_PASSWORD }}" && \
+          make -j2 docker-push

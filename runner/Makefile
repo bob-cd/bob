@@ -53,7 +53,7 @@ test:
 compile:
 	clojure -Spom && clojure -A:uberjar
 
-docker-image: compile
+docker-image:
 	docker build -t bobcd/runner .
 
 docker-push: docker-image

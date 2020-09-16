@@ -22,6 +22,8 @@ all: entities runner
 
 test: test-entities test-runner
 
+compile: compile-entities compile-runner
+
 docker-image: docker-image-entities docker-image-runner
 
 docker-push: docker-push-entities docker-push-runner
@@ -34,6 +36,12 @@ runner: $(runner_dir)
 
 test-entities: $(entities_dir)
 	$(MAKE) --directory=$(entities-dir) test
+
+compile-entities: $(entities_dir)
+	$(MAKE) --directory=$(entities-dir) compile
+
+compile-runner: $(runner_dir)
+	$(MAKE) --directory=$(runner-dir) compile
 
 test-runner: $(runner_dir)
 	$(MAKE) --directory=$(runner-dir) test
