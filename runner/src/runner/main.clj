@@ -15,12 +15,14 @@
 
 (ns runner.main
   (:require [clojure.repl :as repl]
-            [taoensso.timbre :as log])
+            [taoensso.timbre :as log]
+            [runner.system :as system])
   (:gen-class))
 
 (defn shutdown!
   [& _]
   (log/info "Received SIGINT, Shutting down ...")
+  (system/stop)
   (shutdown-agents)
   (log/info "Shutdown complete.")
   (System/exit 0))
@@ -28,4 +30,4 @@
 (defn -main
   [& _]
   (repl/set-break-handler! shutdown!)
-  (log/info "Hello"))
+  (system/start))

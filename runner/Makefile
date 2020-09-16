@@ -53,5 +53,12 @@ test:
 compile:
 	clojure -Spom && clojure -A:uberjar
 
+docker-image: compile
+	docker build -t bobcd/runner .
+
+docker-push: docker-image
+	docker push bobcd/runner
+
 clean:
 	rm -rf .cpcache runner.jar pom.xml
+	docker rmi bobcd/runner || true

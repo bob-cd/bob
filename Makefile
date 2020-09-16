@@ -13,27 +13,43 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-entities_dir := "entities"
-runner_dir := "runner"
+entities-dir := "entities"
+runner-dir := "runner"
 
-.PHONY: test $(entities_dir) $(runner_dir)
+.PHONY: test $(entities-dir) $(runner-dir)
 
 all: entities runner
 
-test: test_entities test_runner
+test: test-entities test-runner
+
+docker-image: docker-image-entities docker-image-runner
+
+docker-push: docker-push-entities docker-push-runner
 
 entities: $(entities_dir)
-	$(MAKE) --directory=$(entities_dir) compile
+	$(MAKE) --directory=$(entities-dir) compile
 
-runner: $(consumer_dir)
-	$(MAKE) --directory=$(runner_dir) compile
+runner: $(runner_dir)
+	$(MAKE) --directory=$(runner-dir) compile
 
-test_entities: $(producer_dir)
-	$(MAKE) --directory=$(entities_dir) test
+test-entities: $(entities_dir)
+	$(MAKE) --directory=$(entities-dir) test
 
-test_runner: $(consumer_dir)
-	$(MAKE) --directory=$(runner_dir) test
+test-runner: $(runner_dir)
+	$(MAKE) --directory=$(runner-dir) test
+
+docker-image-entities: $(entities-dir)
+	$(MAKE) --directory=$(entities-dir) docker-image
+
+docker-image-runner: $(runner-dir)
+	$(MAKE) --directory=$(runner-dir) docker-image
+
+docker-push-entities: $(entities-dir)
+	$(MAKE) --directory=$(entities-dir) docker-push
+
+docker-push-runner: $(runner-dir)
+	$(MAKE) --directory=$(runner-dir) docker-push
 
 clean:
-	$(MAKE) --directory=$(runner_dir) clean
-	$(MAKE) --directory=$(entities_dir) clean
+	$(MAKE) --directory=$(runner-dir) clean
+	$(MAKE) --directory=$(entities-dir) clean
