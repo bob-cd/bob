@@ -176,10 +176,7 @@
   "Attempts to asynchronously start a pipeline by group and name."
   [db-client queue-chan {:keys [group name]}]
   (let [run-id    (str "r-" (UUID/randomUUID))
-        run-db-id (keyword (format "bob.pipeline.%s.%s.run/%s"
-                                   group
-                                   name
-                                   run-id))
+        run-db-id (keyword (str "bob.pipeline.run/" run-id))
         run-info  {:crux.db/id run-db-id
                    :type       :pipeline-run
                    :group      group

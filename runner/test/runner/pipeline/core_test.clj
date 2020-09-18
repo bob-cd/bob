@@ -279,7 +279,7 @@
                                        {:group "test"
                                         :name  "test"})
                            history  (crux/entity-history (crux/db db)
-                                                         (keyword (str "bob.pipeline.test.test.run/" result))
+                                                         (keyword (str "bob.pipeline.run/" result))
                                                          :desc
                                                          {:with-docs? true})
                            statuses (->> history
@@ -308,7 +308,7 @@
                                         :name  "test"})
                            id       (f/message result)
                            history  (crux/entity-history (crux/db db)
-                                                         (keyword (str "bob.pipeline.test.test.run/" id))
+                                                         (keyword (str "bob.pipeline.run/" id))
                                                          :desc
                                                          {:with-docs? true})
                            statuses (->> history
