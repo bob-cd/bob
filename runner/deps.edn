@@ -21,9 +21,9 @@
            com.taoensso/timbre           {:mvn/version "4.10.0"}
            environ/environ               {:mvn/version "1.2.0"}
            failjure/failjure             {:mvn/version "2.0.0"}
-           clj-http                      {:mvn/version "3.10.2"}
-           juxt/crux-core                {:mvn/version "20.09-1.11.0-beta"}
-           juxt/crux-jdbc                {:mvn/version "20.09-1.11.0-beta"}
+           clj-http                      {:mvn/version "3.10.3"}
+           juxt/crux-core                {:mvn/version "20.09-1.12.0-beta"}
+           juxt/crux-jdbc                {:mvn/version "20.09-1.12.0-beta"}
            org.postgresql/postgresql     {:mvn/version "42.2.16"}
            lispyclouds/clj-docker-client {:mvn/version "1.0.1"}
            metosin/jsonista              {:mvn/version "0.2.7"}

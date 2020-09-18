@@ -1,6 +1,6 @@
 ## RabbitMQ message schemas:
 
-This listens on the queue: `entities`
+This listens on the queue `jobs` and errors are on the queue `errors`.
 
 ### Create/Modify a [Pipeline](https://bob-cd.github.io/pages/concepts/pipeline.html)
 

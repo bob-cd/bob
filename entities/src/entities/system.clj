@@ -17,6 +17,7 @@
   (:require [com.stuartsierra.component :as component]
             [environ.core :as env]
             [crux.api :as crux]
+            [crux.jdbc :as jdbc]
             [taoensso.timbre :as log]
             [langohr.core :as rmq]
             [langohr.channel :as lch]
@@ -51,13 +52,16 @@
     (log/info "Connecting to DB")
     (assoc this
            :client
-           (crux/start-node {:crux.node/topology '[crux.jdbc/topology]
-                             :crux.jdbc/dbtype   "postgresql"
-                             :crux.jdbc/dbname   db-name
-                             :crux.jdbc/host     db-host
-                             :crux.jdbc/port     db-port
-                             :crux.jdbc/user     db-user
-                             :crux.jdbc/password db-password})))
+           (crux/start-node {::jdbc/connection-pool {:dialect 'crux.jdbc.psql/->dialect
+                                                     :db-spec {:dbname   db-name
+                                                               :host     db-host
+                                                               :port     db-port
+                                                               :user     db-user
+                                                               :password db-password}}
+                             :crux/tx-log           {:crux/module     `crux.jdbc/->tx-log
+                                                     :connection-pool ::jdbc/connection-pool}
+                             :crux/document-store   {:crux/module     `crux.jdbc/->document-store
+                                                     :connection-pool ::jdbc/connection-pool}})))
   (stop [this]
     (log/info "Disconnecting DB")
     (.close (:client this))
