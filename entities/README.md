@@ -1,14 +1,40 @@
-# Bob Entities (please help us with a better name!)
+# Entities (please help us with a better name!)
 
-Following the [diagram](https://github.com/bob-cd/bob/issues/70#issuecomment-611661635), this is the service that is responsible for performing the CRUD of the core components of Bob, namely:
-- Pipeline
-- Artifact Store
-- Resource Provider
+Following the [diagram](https://github.com/bob-cd/bob/issues/70#issuecomment-611661635), this is the service that is responsible for performing the registration and de-registration of the core components of Bob, namely:
+- [Pipeline](https://bob-cd.github.io/pages/concepts/pipeline.html)
+- [Resource Provider](https://bob-cd.github.io/pages/concepts/pipeline.html)
+- [Artifact Store](https://bob-cd.github.io/pages/concepts/artifact.html)
 
 ## How does this work
 - This is implemented in Clojure/JVM
-- Uses RabbitMQ to receive messages and perform the necessary effects
-- Uses crux+postgres for temporal persistence
+- Uses [RabbitMQ](https://www.rabbitmq.com/) to receive messages and perform the necessary effects
+- Uses [Crux](https://www.opencrux.com/) backed by [PostgreSQL](https://www.postgresql.org/) for temporal persistence
+
+## Configuration
+The [environ library](https://github.com/weavejester/environ) is used and therefore several variables can be
+set by specifying them as environment variable or as java system property. Possible variables are:
+
+| java system properties | environment variables | defaults  |
+|------------------------|-----------------------|-----------|
+| bob-storage-host       | BOB_STORAGE_HOST      | localhost |
+| bob-storage-port       | BOB_STORAGE_PORT      | 5432      |
+| bob-storage-user       | BOB_STORAGE_USER      | bob       |
+| bob-storage-database   | BOB_STORAGE_DATABASE  | bob       |
+| bob-storage-password   | BOB_STORAGE_PASSWORD  | bob       |
+| bob-queue-host         | BOB_QUEUE_HOST        | localhost |
+| bob-queue-port         | BOB_QUEUE_PORT        | 5672      |
+| bob-queue-user         | BOB_QUEUE_USER        | guest     |
+| bob-queue-password     | BOB_QUEUE_PASSWORD    | guest     |
+
+The priority of your configuration is following:
+1. Environment variables
+1. Java system properties
+1. Defaults
+
+## Message Schemas
+
+### Queue [Schema](/entities/Queue.md)
+### Database [Schema](/entities/Db.md)
 
 ## Building and Running
 
@@ -33,5 +59,3 @@ Following the [diagram](https://github.com/bob-cd/bob/issues/70#issuecomment-611
 
 ### Running integration tests
 - Run `make test` from this dir. (needs docker)
-
-#### Of course this is a MASSIVE work in progress!
