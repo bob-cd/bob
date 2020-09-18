@@ -36,10 +36,10 @@
 (defonce storage-name (:bob-storage-database env/env "bob"))
 (defonce storage-password (:bob-storage-password env/env "bob"))
 
-(defonce queue-host (:bob-rmq-host env/env "localhost"))
-(defonce queue-port (int-from-env :bob-rmq-port 5672))
-(defonce queue-user (:bob-rmq-user env/env "guest"))
-(defonce queue-password (:bob-rmq-password env/env "guest"))
+(defonce queue-host (:bob-queue-host env/env "localhost"))
+(defonce queue-port (int-from-env :bob-queue-port 5672))
+(defonce queue-user (:bob-queue-user env/env "guest"))
+(defonce queue-password (:bob-queue-password env/env "guest"))
 
 (defprotocol IDatabase
   (db-client [this]))

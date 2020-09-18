@@ -1,18 +1,16 @@
 # Bob the Builder [![](https://github.com/bob-cd/bob/workflows/Test-and-Publish/badge.svg)](https://github.com/bob-cd/bob/actions?query=workflow%3ATest-and-Publish)
 
 [![License: AGPL v3+](https://img.shields.io/badge/license-AGPL%20v3%2B-blue.svg)](http://www.gnu.org/licenses/agpl-3.0)
-[![Dependencies Status](https://versions.deps.co/bob-cd/bob/status.png)](https://versions.deps.co/bob-cd/bob)
 
 [![project chat](https://img.shields.io/badge/slack-join_chat-brightgreen.svg)](https://clojurians.slack.com/messages/CPBAYJJF6)
 
 ## This is what [CI/CD](https://en.wikipedia.org/wiki/CI/CD) should've been.
 
+### 🚧 Warning: This branch is for the upcoming version of Bob and is going through heavy development and flux, for the earlier version see this [branch](https://github.com/bob-cd/bob/tree/master) 🚧
+
 ### [Why](https://bob-cd.github.io/pages/why-bob.html) Bob
 
-## 🚧 This is a proof of concept and isn't fully functional yet. 🚧
 See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the roadmap and planned work.
-
-### 🚧 Warning: This branch is for the upcoming version of Bob and is going through heavy development and flux, for the earlier version see this [branch](https://github.com/bob-cd/bob/tree/master).
 
 ### Check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
 

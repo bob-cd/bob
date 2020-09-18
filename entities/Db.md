@@ -3,7 +3,7 @@
 ### [Pipeline](https://bob-cd.github.io/pages/concepts/pipeline.html)
 
 ```clojure
-{:crux.db/id :bob.pipeline.test/test
+{:crux.db/id :bob.pipeline.<group-name>/<pipeline-name>
  :type       :pipeline
  :steps      [{:cmd "echo hello"}
               {:needs_resource "source"
@@ -21,7 +21,7 @@
 ### [Resource Provider](https://bob-cd.github.io/pages/concepts/resource.html)
 
 ```clojure
-{:crux.db/id :bob.pipeline.resource-provider/github-provider
+{:crux.db/id :bob.resource-provider/github-provider
  :type       :resource-provider
  :url        "http://localhost:8000"}
 ```
@@ -29,7 +29,7 @@
 ### [Artifact Store](https://bob-cd.github.io/pages/concepts/artifact.html)
 
 ```clojure
-{:crux.db/id :bob.pipeline.artifact-store/local-store
+{:crux.db/id :bob.artifact-store/local-store
  :type       :artifact-store
  :url        "http://localhost:8001"}
 ```
