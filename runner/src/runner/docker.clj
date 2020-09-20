@@ -295,6 +295,13 @@
       (log/errorf "Error fetching container archive: %s" err)
       err)))
 
+(defn container-ls
+  "Returns the list of running containers"
+  []
+  (f/try*
+    (docker/invoke containers
+                   {:op :ContainerList})))
+
 (comment
   (pull-image "alpine:latest")
 
@@ -321,4 +328,6 @@
 
   (put-container-archive "conny" (io/input-stream "src.tar") "/root")
 
-  (get-container-archive "conny" "/root/files"))
+  (get-container-archive "conny" "/root/files")
+
+  (container-ls))

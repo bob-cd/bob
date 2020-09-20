@@ -169,6 +169,7 @@
   (testing "success"
     (let [id     (d/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
           _      (future (d/start-container id #(println %)))
+          _      (Thread/sleep 1000)
           _      (d/kill-container id)
           status (d/status-of id)]
       (is (not (:running? status)))
@@ -217,4 +218,17 @@
       (d/delete-container id)))
   (testing "failure"
     (is (f/failed? (d/inspect-container "invalid-id"))))
+  (d/delete-image image))
+
+(deftest ^:integration list-running-containers
+  (d/pull-image image)
+  (testing "success"
+    (let [containers-before (d/container-ls)
+          id                (d/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
+          _                 (future (d/start-container id #(println %)))
+          _                 (Thread/sleep 1000)
+          containers-after  (d/container-ls)]
+      (is (= 1 (- (count containers-after) (count containers-before))))
+      (d/kill-container id)
+      (d/delete-container id)))
   (d/delete-image image))
