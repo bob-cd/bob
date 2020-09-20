@@ -24,7 +24,8 @@
             [langohr.queue :as lq]
             [langohr.exchange  :as le]
             [langohr.consumers :as lc]
-            [runner.dispatch :as d]))
+            [runner.dispatch :as d])
+  (:import [java.util UUID]))
 
 (defn int-from-env
   [key default]
@@ -86,9 +87,13 @@
           chan            (lch/open conn)
           job-queue       "bob.jobs"
           direct-exchange "bob.direct"
-          error-queue     "bob.errors"]
+          error-queue     "bob.errors"
+          fanout-exchange "bob.fanout"
+          broadcast-queue (str "bob.broadcasts." (UUID/randomUUID))
+          subscriber      (partial d/queue-msg-subscriber (:client database))]
       (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
       (le/declare chan direct-exchange "direct" {:durable false})
+      (le/declare chan fanout-exchange "fanout" {:durable false})
       (lq/declare chan
                   job-queue
                   {:exclusive   false
@@ -97,9 +102,16 @@
                   error-queue
                   {:exclusive   false
                    :auto-delete false})
+      (lq/declare chan
+                  broadcast-queue
+                  {:exclusive   true
+                   :auto-delete true})
       (lq/bind chan job-queue direct-exchange)
-      (lc/subscribe chan job-queue (partial d/queue-msg-subscriber (:client database)) {:auto-ack true})
+      (lq/bind chan broadcast-queue fanout-exchange)
+      (lc/subscribe chan job-queue subscriber {:auto-ack true})
+      (lc/subscribe chan broadcast-queue subscriber {:auto-ack true})
       (log/infof "Subscribed to %s" job-queue)
+      (log/infof "Subscribed to %s" broadcast-queue)
       (assoc this :conn conn :chan chan)))
   (stop [this]
     (log/info "Disconnecting queue")
