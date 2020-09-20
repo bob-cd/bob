@@ -270,8 +270,7 @@
                                                       {:crux.db/id :bob.pipeline.test/test
                                                        :group      "test"
                                                        :name       "test"
-                                                       :steps      [{:cmd "echo hello"}
-                                                                    {:cmd "sh -c \"echo ${k1}\""}]
+                                                       :steps      [{:cmd "echo hello"} {:cmd "sh -c \"echo ${k1}\""}]
                                                        :vars       {:k1 "v1"}
                                                        :image      "busybox:musl"}]]))
                      (let [result   @(p/start db
@@ -298,8 +297,7 @@
                                                       {:crux.db/id :bob.pipeline.test/test
                                                        :group      "test"
                                                        :name       "test"
-                                                       :steps      [{:cmd "echo hello"}
-                                                                    {:cmd "this-bombs"}]
+                                                       :steps      [{:cmd "echo hello"} {:cmd "this-bombs"}]
                                                        :vars       {:k1 "v1"}
                                                        :image      "busybox:musl"}]]))
                      (let [result   @(p/start db
@@ -318,3 +316,53 @@
                        (is (f/failed? result))
                        (is (contains? statuses :running))
                        (is (contains? statuses :failed)))))))
+
+(deftest ^:integration pipeline-stop
+  (testing "container in node"
+    (d/pull-image "busybox:musl")
+    (let [id (d/create-container "busybox:musl" {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
+          _  (future (d/start-container id #(println %)))
+          _  (Thread/sleep 1000)]
+      (is (p/container-in-node? id))
+      (is (not (p/container-in-node? "invalid")))
+      (d/kill-container id)
+      (d/delete-container id))
+    (d/delete-image "busybox:musl"))
+
+  (testing "stopping a pipeline run"
+    (u/with-system
+      (fn [db queue]
+        (crux/await-tx db
+                       (crux/submit-tx db
+                                       [[:crux.tx/put
+                                         {:crux.db/id :bob.pipeline.test/stop-test
+                                          :steps      [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
+                                          :image      "busybox:musl"}]]))
+        (let [_        (p/start db
+                         queue
+                         {:group "test"
+                          :name  "stop-test"})
+              _        (Thread/sleep 5000) ;; Longer, possibly flaky wait
+              run-id   (->> (crux/q (crux/db db)
+                                    '{:find  [(eql/project run [:crux.db/id])]
+                                      :where [[run :type :pipeline-run] [run :group "test"] [run :name "stop-test"]]})
+                            first
+                            (map :crux.db/id)
+                            first
+                            name)
+              _        (p/stop db
+                         queue
+                         {:group  "test"
+                          :name   "stop-test"
+                          :run_id run-id})
+              history  (crux/entity-history (crux/db db)
+                                            (keyword (str "bob.pipeline.run/" run-id))
+                                            :desc
+                                            {:with-docs? true})
+              statuses (->> history
+                            (map :crux.db/doc)
+                            (map :status)
+                            (into #{}))]
+          (is (not (contains? statuses :failed)))
+          (is (contains? statuses :running))
+          (is (contains? statuses :stopped)))))))

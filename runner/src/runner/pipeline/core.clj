@@ -14,7 +14,8 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns runner.pipeline.core
-  (:require [failjure.core :as f]
+  (:require [clojure.string :as s]
+            [failjure.core :as f]
             [taoensso.timbre :as log]
             [crux.api :as crux]
             [runner.errors :as errors]
@@ -227,6 +228,33 @@
           (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
           (f/fail run-id))))))
 
+(defn container-in-node?
+  "Checks if the container with `id` is running in the local Docker daemon."
+  [id]
+  (some #(s/starts-with? (:Id %) id)
+        (docker/container-ls)))
+
+(defn stop
+  "Attempts to idempotently stop a pipeline by group, name and run_id
+
+  Sets the :status in Db to :stopped and kills the container if present.
+  This triggers a pipeline failure which is specially dealt with."
+  [db-client _queue-chan {:keys [group name run_id]}]
+  (when-let [container (get-in @node-state [:current-containers run_id])]
+    (log/infof "Stopping run %s for pipeline %s %s"
+               run_id
+               group
+               name)
+    (crux/await-tx db-client
+                   (crux/submit-tx db-client
+                                   [[:crux.tx/put
+                                     {:crux.db/id (keyword (str "bob.pipeline.run/" run_id))
+                                      :type       :pipeline-run
+                                      :group      group
+                                      :name       name
+                                      :status     :stopped}]]))
+    (docker/kill-container container)))
+
 (comment
   (reset! node-state
           {:images-for-gc      {:run-id-1 (list "rabbitmq:3-alpine" "postgres:alpine")}
@@ -310,6 +338,30 @@
           '{:find  [(eql/project log [:line])]
             :where [[log :type :log-line] [log :run-id "r-60a0d2e8-ec6e-4004-8136-978f4e042f25"]]})
 
-  (crux/q (crux/db db-client)
-          '{:find  [(eql/project run [*])]
-            :where [[run :type :pipeline-run]]}))
+  (->> (crux/q (crux/db db-client)
+               '{:find  [(eql/project run [:crux.db/id])]
+                 :where [[run :type :pipeline-run]]})
+       first
+       (map :crux.db/id)
+       (map name))
+
+  (container-in-node? "ab5b1c2850d5")
+
+  (crux/submit-tx db-client
+                  [[:crux.tx/put
+                    {:crux.db/id :bob.pipeline.test/stop-test
+                     :steps      [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
+                     :image      "busybox:musl"}]])
+
+  (crux/entity (crux/db db-client) :bob.pipeline.test/stop-test)
+
+  (start db-client
+    nil
+    {:group "test"
+     :name  "stop-test"})
+
+  (stop db-client
+    nil
+    {:group  "test"
+     :name   "stop-test"
+     :run_id "r-ff185a8a-b6a6-48df-8630-650b025cafad"}))
