@@ -23,7 +23,7 @@
   (log/error message)
   (lb/publish chan
               "" ; Default exchange
-              "errors"
+              "bob.errors"
               (json/write-value-as-string {:message message})
               {:content-type "application/json"
                :type         "message/error"}))

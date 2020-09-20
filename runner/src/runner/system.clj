@@ -22,6 +22,7 @@
             [langohr.core :as rmq]
             [langohr.channel :as lch]
             [langohr.queue :as lq]
+            [langohr.exchange  :as le]
             [langohr.consumers :as lc]
             [runner.dispatch :as d]))
 
@@ -77,24 +78,28 @@
   [database queue-host queue-port queue-user queue-password]
   component/Lifecycle
   (start [this]
-    (let [conn       (rmq/connect {:host     queue-host
-                                   :port     queue-port
-                                   :username queue-user
-                                   :vhost    "/"
-                                   :password queue-password})
-          chan       (lch/open conn)
-          queue-name "jobs"]
+    (let [conn            (rmq/connect {:host     queue-host
+                                        :port     queue-port
+                                        :username queue-user
+                                        :vhost    "/"
+                                        :password queue-password})
+          chan            (lch/open conn)
+          job-queue       "bob.jobs"
+          direct-exchange "bob.direct"
+          error-queue     "bob.errors"]
       (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
+      (le/declare chan direct-exchange "direct" {:durable false})
       (lq/declare chan
-                  queue-name
+                  job-queue
                   {:exclusive   false
                    :auto-delete false})
       (lq/declare chan
-                  "errors"
+                  error-queue
                   {:exclusive   false
                    :auto-delete false})
-      (lc/subscribe chan queue-name (partial d/queue-msg-subscriber (:client database)) {:auto-ack true})
-      (log/infof "Subscribed to %s" queue-name)
+      (lq/bind chan job-queue direct-exchange)
+      (lc/subscribe chan job-queue (partial d/queue-msg-subscriber (:client database)) {:auto-ack true})
+      (log/infof "Subscribed to %s" job-queue)
       (assoc this :conn conn :chan chan)))
   (stop [this]
     (log/info "Disconnecting queue")
