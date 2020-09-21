@@ -33,9 +33,9 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 healthy:
-                  value: {
-                    "message": "Yes we can! 🔨 🔨"
-                  }
+                  value:
+                    message: "Yes we can! 🔨 🔨"
+
         default:
           description: Failed health check
           content:
@@ -44,9 +44,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 unhealthy:
-                  value: {
-                    "message": "Health check failed: Postgres not healthy"
-                  }
+                  value:
+                    message: "Health check failed: Postgres not healthy"
 
   /pipelines/groups/{group}/names/{name}:
     post:
@@ -81,41 +80,29 @@ paths:
                   $ref: "#/components/schemas/Pipeline"
             examples:
               pipeline:
-                value: {
-                  "image": "gradle:jdk11",
-                  "vars": {
-                    "LOG_LEVEL": "error"
-                  },
-                  "steps": [
-                  {
-                    "cmd": "echo build started."
-                  },
-                  {
-                    "needs_resource": "source-code",
-                    "cmd": "gradle test"
-                  },
-                  {
-                    "cmd": "gradle shadowJar",
-                    "produces_artifact": {
-                      "name": "uberjar",
-                      "path": "build/libs/bob-example-1.0-SNAPSHOT-all.jar",
-                      "store": "local"
-                    }
-                  }
-                  ],
-                  "resources": [{
-                    "name": "source-code",
-                    "type": "external",
-                    "provider": "git",
-                    "params": {
-                      "repo": "https://github.com/lispyclouds/bob-example",
-                      "branch": "master"
-                    }
-                  }]
-                }
+                value:
+                  image: gradle:jdk11
+                  vars:
+                    LOG_LEVEL: error
+                  steps:
+                    - cmd: echo build started.
+                    - needs_resource: source-code
+                      cmd: gradle test
+                    - cmd: gradle shadowJar
+                      produces_artifact:
+                        name: uberjar
+                        path: build/libs/bob-example-1.0-SNAPSHOT-all.jar
+                        store: local
+                  resources:
+                    - name: source-code
+                      type: external
+                      provider: git
+                      params:
+                        repo: https://github.com/lispyclouds/bob-example
+                        branch: master
 
       responses:
-        "200":
+        "202":
           description: Successful creation of the pipeline
           content:
             application/json:
@@ -123,9 +110,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 success:
-                  value: {
-                    "message": "Ok"
-                  }
+                  value:
+                    message: "Ok"
         default:
           description: Failed creation of the pipeline
           content:
@@ -134,9 +120,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 failure:
-                  value: {
-                    "message": "Pipeline creation error: Check params or if its already created"
-                  }
+                  value:
+                    message: "Pipeline creation error: Check params or if its already created"
     delete:
       operationId: PipelineDelete
       summary: Deletes a pipeline
@@ -156,7 +141,7 @@ paths:
             type: string
 
       responses:
-        "200":
+        "202":
           description: Successful deletion of the pipeline
           content:
             application/json:
@@ -164,9 +149,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 success:
-                  value: {
-                    "message": "Ok"
-                  }
+                  value:
+                    message: "Ok"
 
   /pipelines/start/groups/{group}/names/{name}:
     post:
@@ -188,7 +172,7 @@ paths:
             type: string
 
       responses:
-        "200":
+        "202":
           description: Successfully start the pipeline
           content:
             application/json:
@@ -196,9 +180,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 success:
-                  value: {
-                    "message": "Ok"
-                  }
+                  value:
+                    message: "Ok"
         default:
           description: Failed to start the pipeline
           content:
@@ -211,7 +194,7 @@ paths:
                     "message": "Error starting pipeline: <some error message>"
                   }
 
-  /pipelines/stop/groups/{group}/names/{name}/number/{number}:
+  /pipelines/stop/groups/{group}/names/{name}/id/{id}:
     post:
       operationId: PipelineStop
       summary: Stops a pipeline
@@ -229,15 +212,15 @@ paths:
           description: The name of the pipeline
           schema:
             type: string
-        - name: number
+        - name: id
           required: true
           in: path
-          description: The number of the pipeline run
+          description: The id of the pipeline run
           schema:
-            type: integer
+            type: string
 
       responses:
-        "200":
+        "202":
           description: Successful stopping of the pipeline
           content:
             application/json:
@@ -245,10 +228,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 success:
-                  value: {
-                    "message": "Ok"
-                  }
-
+                  value:
+                    message: "Ok"
         default:
           description: Failed stopping of the pipeline
           content:
@@ -257,11 +238,10 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 failure:
-                  value: {
-                    "message": "Failed to stop pipeline: <some error message>"
-                  }
+                  value:
+                    message: "Failed to stop pipeline: <some error message>"
 
-  /pipelines/logs/groups/{group}/names/{name}/number/{number}/offset/{offset}/lines/{lines}:
+  /pipelines/logs/groups/{group}/names/{name}/id/{id}/offset/{offset}/lines/{lines}:
     get:
       operationId: PipelineLogs
       summary: Fetches the logs of a pipeline
@@ -279,12 +259,12 @@ paths:
           description: The name of the pipeline
           schema:
             type: string
-        - name: number
+        - name: id
           required: true
           in: path
-          description: The number of the pipeline run
+          description: The id of the pipeline run
           schema:
-            type: integer
+            type: string
         - name: offset
           required: true
           in: path
@@ -307,16 +287,14 @@ paths:
                 $ref: "#/components/schemas/PipelineLogsResponse"
               examples:
                 success:
-                  value: {
-                    "message": [
-                      "[bob] log line 1",
-                      "log line 2",
-                      "log line 3",
-                      "log line 4",
-                      "[bob] log line 5",
-                      "log line 6",
-                    ]
-                  }
+                  value:
+                    message:
+                      - "[bob] log line 1"
+                      - "log line 2"
+                      - "log line 3"
+                      - "log line 4"
+                      - "[bob] log line 5"
+                      - "log line 6"
         default:
           description: Failed log fetch
           content:
@@ -325,11 +303,10 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 failure:
-                  value: {
-                    "message": "Failed to fetch logs for pipeline group:name: <some error message>"
-                  }
+                  value:
+                    message: "Failed to fetch logs for pipeline group:name: <some error message>"
 
-  /pipelines/status/groups/{group}/names/{name}/number/{number}:
+  /pipelines/status/groups/{group}/names/{name}/id/{id}:
     get:
       operationId: PipelineStatus
       summary: Fetches the status of the pipeline
@@ -347,12 +324,12 @@ paths:
           description: The name of the pipeline
           schema:
             type: string
-        - name: number
+        - name: id
           required: true
           in: path
-          description: The number of the pipeline run
+          description: The id of the pipeline run
           schema:
-            type: integer
+            type: string
 
       responses:
         "200":
@@ -363,21 +340,17 @@ paths:
                 $ref: "#/components/schemas/StatusResponse"
               examples:
                 passed:
-                  value: {
-                    "message": "passed"
-                  }
+                  value:
+                    message: "passed"
                 running:
-                  value: {
-                    "message": "running"
-                  }
+                  value:
+                    message: "running"
                 failed:
-                  value: {
-                    "message": "failed"
-                  }
+                  value:
+                    message: "failed"
                 stopped:
-                  value: {
-                    "message": "stopped"
-                  }
+                  value:
+                    message: "stopped"
         default:
           description: Failed status fetch of the pipeline
           content:
@@ -386,11 +359,10 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 failure:
-                  value: {
-                    "message": "No such pipeline"
-                  }
+                  value:
+                    message: "No such pipeline"
 
-  /pipelines/groups/{group}/names/{name}/number/{number}/artifacts/store/{store-name}/name/{artifact-name}:
+  /pipelines/groups/{group}/names/{name}/id/{id}/artifacts/artifact-stores/{store-name}/name/{artifact-name}:
     get:
       operationId: PipelineArtifactFetch
       summary: Fetches the artifact from pipeline of an artifact store
@@ -408,12 +380,12 @@ paths:
           description: The name of the pipeline
           schema:
             type: string
-        - name: number
+        - name: id
           required: true
           in: path
-          description: The number of the pipeline run
+          description: The id of the pipeline run
           schema:
-            type: integer
+            type: string
         - name: store-name
           required: true
           in: path
@@ -443,17 +415,14 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 store-failure:
-                  value: {
-                    "message": "Cannot reach artifact store: <some error message>"
-                  }
+                  value:
+                    message: "Cannot reach artifact store: <some error message>"
                 fetch-failure:
-                  value: {
-                    "message": "Error fetching artifact: <some error message>"
-                  }
+                  value:
+                    message: "Error fetching artifact: <some error message>"
                 failure:
-                  value: {
-                    "message": "No such artifact store registered"
-                  }
+                  value:
+                    message: "No such artifact store registered"
 
   /pipelines:
     get:
@@ -489,21 +458,13 @@ paths:
                 $ref: "#/components/schemas/PipelinesResponse"
               examples:
                 success:
-                  value: {
-                    "message": [
-                    {
-                      "name": "build",
-                      "data": {
-                        "image": "busybox:musl",
-                        "steps": [
-                        {
-                          "cmd": "echo hello"
-                        }
-                        ]
-                      }
-                    }
-                    ]
-                  }
+                  value:
+                    message:
+                      - name: build
+                        data:
+                          image: busybox:musl
+                          steps:
+                            - cmd: echo hello
         default:
           description: Failed listing of pipelines
           content:
@@ -512,9 +473,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 failure:
-                  value: {
-                    "message": "Failed to fetch pipelines <some error message>"
-                  }
+                  value:
+                    message: "Failed to fetch pipelines <some error message>"
 
   /resource-providers/{name}:
     post:
@@ -541,12 +501,11 @@ paths:
                   $ref: "#/components/schemas/ResourceProviderAttributes"
             examples:
               attrs:
-                value: {
-                  "url": "http://my-resource-provider:8000"
-                }
+                value:
+                  url: "http://my-resource-provider:8000"
 
       responses:
-        "200":
+        "202":
           description: Successfully created a resource provider
           content:
             application/json:
@@ -554,9 +513,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 success:
-                  value: {
-                    "message": "Ok"
-                  }
+                  value:
+                    message: "Ok"
         default:
           description: Failed to create a resource provider
           content:
@@ -565,9 +523,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 failure:
-                  value: {
-                    "message": "Resource Provider may already be registered"
-                  }
+                  value:
+                    message: "Resource Provider may already be registered"
     delete:
       operationId: ResourceProviderDelete
       summary: Deletes a resource provider by name
@@ -581,7 +538,7 @@ paths:
             type: string
 
       responses:
-        "200":
+        "202":
           description: Successfully delete a resource provider
           content:
             application/json:
@@ -589,9 +546,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 success:
-                  value: {
-                    "message": "Ok"
-                  }
+                  value:
+                    message: "Ok"
 
   /resource-providers:
     get:
@@ -607,12 +563,10 @@ paths:
                 $ref: "#/components/schemas/ResourceProvidersResponse"
               examples:
                 resource-providers:
-                  value: {
-                    "message": [
-                      "github-provider",
-                      "salsa-provider"
-                    ]
-                  }
+                  value:
+                    message:
+                      - "github-provider"
+                      - "salsa-provider"
 
   /artifact-stores/{name}:
     post:
@@ -639,12 +593,11 @@ paths:
                   $ref: "#/components/schemas/ArtifactStoreAttributes"
             examples:
               attributes:
-                value: {
-                  "url": "http://my-artifact-store:8000"
-                }
+                value:
+                  url: "http://my-artifact-store:8000"
 
       responses:
-        "200":
+        "202":
           description: Successfully created an artifact store
           content:
             application/json:
@@ -652,9 +605,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 success:
-                  value: {
-                    "message": "Ok"
-                  }
+                  value:
+                    message: "Ok"
         default:
           description: Failed to create an artifact store
           content:
@@ -663,9 +615,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 failure:
-                  value: {
-                    "message": "Artifact Store may already be registered"
-                  }
+                  value:
+                    message: "Artifact Store may already be registered"
     delete:
       operationId: ArtifactStoreDelete
       summary: Deletes an artifact store by name
@@ -679,7 +630,7 @@ paths:
             type: string
 
       responses:
-        "200":
+        "202":
           description: Successfully delete an artifact store
           content:
             application/json:
@@ -687,9 +638,8 @@ paths:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
                 success:
-                  value: {
-                    "message": "Ok"
-                  }
+                  value:
+                    message: "Ok"
 
   /artifact-stores:
     get:
@@ -705,12 +655,10 @@ paths:
                 $ref: "#/components/schemas/ArtifactStoresResponse"
               examples:
                 artifact-stores:
-                  value: {
-                    "message": [
-                      "s3-store",
-                      "file-store"
-                    ]
-                  }
+                  value:
+                    message:
+                      - "s3-store"
+                      - "file-store"
 
 components:
   schemas:
