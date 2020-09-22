@@ -114,7 +114,7 @@ public class APIServerTest {
     @Test
     @Order(2)
     @DisplayName("Test Pipeline Create")
-    void testPipelineCreate(VertxTestContext testContext) {
+    void testPipelineCreateSuccess(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
@@ -131,7 +131,7 @@ public class APIServerTest {
                                 .put("group", "dev");
 
                             rmqConsumer.handler(message -> testContext.verify(() -> {
-                                assertThat(message.body().toJsonObject()).isEqualTo(json.getJsonObject("pipeline").mergeIn(pipelinePath));
+                                assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(pipelinePath));
                                 assertThat(message.properties().getType()).isEqualTo("pipeline/create");
 
                                 testContext.completeNow();
@@ -157,6 +157,29 @@ public class APIServerTest {
                     testContext.failNow(file.cause());
                 }
             })));
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("Test Pipeline Create")
+    void testPipelineCreateFailure(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client.post("/pipelines/groups/dev/names/test")
+                .putHeader("Content-Type", "application/json")
+                .sendJsonObject(new JsonObject(), ar -> {
+                    if (ar.failed()) {
+                        testContext.failNow(ar.cause());
+                    } else {
+                        testContext.verify(() -> {
+                            assertThat(ar.result().statusCode()).isEqualTo(400);
+
+                            testContext.completeNow();
+                        });
+                    }
+                })));
     }
 
     @AfterEach

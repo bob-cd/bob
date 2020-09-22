@@ -72,12 +72,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - pipeline
-              properties:
-                pipeline:
-                  $ref: "#/components/schemas/Pipeline"
+              $ref: "#/components/schemas/Pipeline"
             examples:
               pipeline:
                 value:

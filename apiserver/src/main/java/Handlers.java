@@ -83,7 +83,6 @@ public class Handlers {
         final var name = params.get("name");
         final var pipeline = routingContext
             .getBodyAsJson()
-            .getJsonObject("pipeline")
             .put("group", group)
             .put("name", name);
 
