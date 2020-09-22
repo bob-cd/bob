@@ -16,42 +16,56 @@
  */
 
 import io.vertx.config.ConfigRetriever;
+import io.vertx.config.ConfigRetrieverOptions;
+import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.rabbitmq.RabbitMQClient;
 import io.vertx.rabbitmq.RabbitMQOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.lang.String.format;
 
 public class Main {
     private final static Logger logger = LoggerFactory.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
         final var vertx = Vertx.vertx(new VertxOptions().setHAEnabled(true));
+        final var configRetrieverOptions = new ConfigRetrieverOptions()
+            .addStore(new ConfigStoreOptions().setType("env"));
 
-        ConfigRetriever.create(vertx).getConfig(config -> {
+        ConfigRetriever.create(vertx, configRetrieverOptions).getConfig(config -> {
             if (config.succeeded()) {
                 final var conf = config.result();
-                final var rmqConfig = conf.getJsonObject("rabbitmq");
-                final var cruxConfig = conf.getJsonObject("crux");
-                final var httpConfig = conf.getJsonObject("http");
 
-                final var apiSpec = httpConfig.getString("apiSpec", "/bob/api.yaml");
-                final var httpHost = httpConfig.getString("host", "localhost");
-                final var httpPort = httpConfig.getInteger("port", 7777);
+                final var dbName = conf.getString("DB_NAME", "bob");
+                final var dbHost = conf.getString("DB_HOST", "localhost");
+                final var dbPort = conf.getInteger("DB_PORT", 5432);
+                final var dbUser = conf.getString("DB_USER", "bob");
+                final var dbPassword = conf.getString("DB_PASSWORD", "bob");
 
-                final var queue = RabbitMQClient.create(vertx, new RabbitMQOptions(rmqConfig));
-                final var crux = WebClient.create(vertx, new WebClientOptions(cruxConfig));
+                final var queueHost = conf.getString("QUEUE_HOST", "localhost");
+                final var queuePort = conf.getInteger("QUEUE_PORT", 5672);
+                final var queueUser = conf.getString("QUEUE_USER", "guest");
+                final var queuePassword = conf.getString("QUEUE_PASSWORD", "guest");
 
-                vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, crux), v -> {
+                final var apiHost = conf.getString("API_HOST", "0.0.0.0");
+                final var apiPort = conf.getInteger("API_PORT", 7777);
+
+                final var node = new DB(dbName, dbHost, dbPort, dbUser, dbPassword).node;
+                final var queue = RabbitMQClient.create(
+                    vertx,
+                    new RabbitMQOptions()
+                        .setHost(queueHost)
+                        .setPort(queuePort)
+                        .setUser(queueUser)
+                        .setPassword(queuePassword)
+                );
+
+                vertx.deployVerticle(new APIServer("/bob/api.yaml", apiHost, apiPort, queue, node), v -> {
                     if (v.succeeded())
-                        logger.info(format("Deployed on verticle: %s", v.result()));
+                        logger.info("Deployed on verticle: " + v.result());
                     else
-                        logger.error(format("Deployment error: %s", v.cause()));
+                        logger.error("Deployment error: " + v.cause());
                 });
             }
         });

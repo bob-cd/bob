@@ -19,7 +19,7 @@ plugins {
     id "java"
     id "application"
     id "com.github.johnrengelman.shadow" version "6.0.0"
-    id "com.github.ben-manes.versions" version "0.28.0"
+    id "com.github.ben-manes.versions" version "0.33.0"
 }
 
 group "org.bob-cd"
@@ -30,26 +30,25 @@ repositories {
     maven { url "https://clojars.org/repo" }
 }
 
-def vertx_version = "4.0.0.Beta1"
-def crux_version = "20.08-1.10.1-beta"
+def vertxVersion = "4.0.0-milestone5"
+def cruxVersion = "20.09-1.12.0-beta"
 
 dependencies {
-    implementation "io.vertx:vertx-core:$vertx_version"
-    implementation "io.vertx:vertx-web:$vertx_version"
-    implementation "io.vertx:vertx-web-client:$vertx_version"
-    implementation "io.vertx:vertx-web-api-contract:$vertx_version"
-    implementation "io.vertx:vertx-rabbitmq-client:$vertx_version"
-    implementation "io.vertx:vertx-config:$vertx_version"
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-web:$vertxVersion"
+    implementation "io.vertx:vertx-web-client:$vertxVersion"
+    implementation "io.vertx:vertx-web-api-contract:$vertxVersion"
+    implementation "io.vertx:vertx-rabbitmq-client:$vertxVersion"
+    implementation "io.vertx:vertx-config:$vertxVersion"
     implementation "org.slf4j:slf4j-simple:1.6.1"
-    implementation "juxt:crux-core:$crux_version"
-    implementation "juxt:crux-jdbc:$crux_version"
-    implementation "org.postgresql:postgresql:42.2.14"
-    implementation "org.clojure:clojure:1.10.1"
-    implementation "metosin:jsonista:0.2.6"
+    implementation "juxt:crux-core:$cruxVersion"
+    implementation "juxt:crux-jdbc:$cruxVersion"
+    implementation "org.postgresql:postgresql:42.2.16"
+    implementation "metosin:jsonista:0.2.7"
 
-    testImplementation "io.vertx:vertx-junit5:$vertx_version"
-    testImplementation "org.junit.jupiter:junit-jupiter:5.6.2"
-    testImplementation "org.assertj:assertj-core:3.8.0"
+    testImplementation "io.vertx:vertx-junit5:$vertxVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.7.0"
+    testImplementation "org.assertj:assertj-core:3.17.2"
 }
 
 tasks.withType(JavaCompile) {
@@ -65,26 +64,19 @@ tasks.withType(JavaExec) {
 }
 
 compileJava {
-    sourceCompatibility = "14"
-    targetCompatibility = "14"
+    sourceCompatibility = "15"
+    targetCompatibility = "15"
 }
 
 test {
-    systemProperty 'rabbitmq.port', 5673
-    systemProperty 'crux.port', 7779
     useJUnitPlatform()
     testLogging {
         exceptionFormat = 'full'
-        //showStandardStreams = true
     }
 }
 
 shadowJar {
-    archivesBaseName = "bob-api-server"
-
-    manifest {
-        attributes "Main-Class": "Main"
-    }
+    archiveFileName = "api-server.jar"
 }
 
 mainClassName = "Main"

@@ -13,55 +13,34 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-all: setup test compile
+all: test compile
 
-.PHONY: setup teardown test
-setup:
-	docker network create bob-net --subnet 10.0.76.0/24
-	docker run \
-		--detach \
-		--name bob-storage \
-		-e POSTGRES_DB=bob \
-		-e POSTGRES_USER=bob \
-		-e POSTGRES_PASSWORD=bob \
-		--publish 5432:5432 \
-		--network bob-net \
-		postgres:alpine
-	docker run \
-		--detach \
-		--name bob-queue \
-		--publish 5672:5672 \
-		--publish 15672:15672 \
-		--network bob-net \
-		rabbitmq:3-management-alpine
-
-teardown:
-	docker rm -f bob-storage bob-queue bob-db
-	docker network rm bob-net
-
+.PHONY: test
 test:
-	docker network create bob-test-net --subnet 10.0.77.0/24
+	docker network create bob-net
 	docker run \
 		-d \
 		--name bob-test-storage \
+		-p 5433:5432 \
 		-e POSTGRES_DB=bob-test \
 		-e POSTGRES_USER=bob \
 		-e POSTGRES_PASSWORD=bob \
-		--network bob-test-net \
+		--network bob-net \
 		postgres:alpine
 	docker run \
 		-d \
 		--name bob-test-queue \
 		-p 5673:5672 \
-		--network bob-test-net \
+		--network bob-net \
 		rabbitmq:3-alpine
 	sleep 7 # TODO: Find a better way to wait till things come up.
-	gradle test
-	docker kill bob-test-storage bob-test-queue bob-test-db && docker rm bob-test-storage bob-test-queue bob-test-db
+	gradle test --fail-fast
+	docker kill bob-test-storage bob-test-queue && docker rm bob-test-storage bob-test-queue
 	docker network rm bob-net
 
 compile:
 	gradle shadowJar
 
 clean:
-	rm -rf build/ bin/ gradle/ .gradle/ .settings/ .classpath .project
+	gradle clean
+	docker rmi bobcd/apiserver || true

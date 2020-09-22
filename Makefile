@@ -15,36 +15,35 @@
 
 entities-dir := "entities"
 runner-dir := "runner"
+apiserver-dir := "apiserver"
 
-.PHONY: test $(entities-dir) $(runner-dir)
+.PHONY: test $(entities-dir) $(runner-dir) $(apiserver-dir)
 
-all: entities runner
+all: entities runner apiserver
 
-test: test-entities test-runner
-
-compile: compile-entities compile-runner
+test: test-entities test-runner test-apiserver
 
 docker-image: docker-image-entities docker-image-runner
 
 docker-push: docker-push-entities docker-push-runner
 
-entities: $(entities_dir)
+entities: $(entities-dir)
 	$(MAKE) --directory=$(entities-dir) compile
 
-runner: $(runner_dir)
+runner: $(runner-dir)
 	$(MAKE) --directory=$(runner-dir) compile
 
-test-entities: $(entities_dir)
+apiserver: $(apiserver-dir)
+	$(MAKE) --directory=$(apiserver-dir) compile
+
+test-entities: $(entities-dir)
 	$(MAKE) --directory=$(entities-dir) test
 
-compile-entities: $(entities_dir)
-	$(MAKE) --directory=$(entities-dir) compile
-
-compile-runner: $(runner_dir)
-	$(MAKE) --directory=$(runner-dir) compile
-
-test-runner: $(runner_dir)
+test-runner: $(runner-dir)
 	$(MAKE) --directory=$(runner-dir) test
+
+test-apiserver: $(apiserver-dir)
+	$(MAKE) --directory=$(apiserver-dir) test
 
 docker-image-entities: $(entities-dir)
 	$(MAKE) --directory=$(entities-dir) docker-image
@@ -61,3 +60,4 @@ docker-push-runner: $(runner-dir)
 clean:
 	$(MAKE) --directory=$(runner-dir) clean
 	$(MAKE) --directory=$(entities-dir) clean
+	$(MAKE) --directory=$(apiserver-dir) clean

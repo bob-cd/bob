@@ -1,6 +1,5 @@
 build/
 .gradle/
-gradle/
 test.tar.gz
 .idea/
 *.iml
