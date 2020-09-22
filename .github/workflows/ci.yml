@@ -46,7 +46,7 @@ jobs:
         run: "make test" # TODO: Run in parallel with namespaced resources
 
       - name: "Build JARs"
-        run: "make -j2 compile"
+        run: "make -j3 compile"
 
       - name: "Collect Artifacts"
         uses: "actions/upload-artifact@v2"
@@ -55,6 +55,7 @@ jobs:
           path: |
             entities/entities.jar
             runner/runner.jar
+            apiserver/build/libs/apiserver.jar
 
   build-and-push:
     needs: "test"
@@ -73,13 +74,14 @@ jobs:
       - name: "Move Docker images"
         run: |
           mv artifacts/entities/entities.jar entities/ && \
-          mv artifacts/runner/runner.jar runner/
+          mv artifacts/runner/runner.jar runner/ && \
+          mv artifacts/apiserver/build apiserver/
 
       - name: "Build Docker images"
-        run: "make -j2 docker-image"
+        run: "make -j3 docker-image"
 
       - name: "Publish to Docker Hub"
         if: github.ref == 'refs/heads/master'
         run: |
           docker login --username="${{ secrets.DOCKERHUB_USERNAME }}" --password="${{ secrets.DOCKERHUB_PASSWORD }}" && \
-          make -j2 docker-push
+          make -j3 docker-push

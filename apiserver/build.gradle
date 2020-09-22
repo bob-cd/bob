@@ -76,7 +76,7 @@ test {
 }
 
 shadowJar {
-    archiveFileName = "api-server.jar"
+    archiveFileName = "apiserver.jar"
 }
 
 mainClassName = "Main"

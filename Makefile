@@ -23,6 +23,8 @@ all: entities runner apiserver
 
 test: test-entities test-runner test-apiserver
 
+compile: entities runner apiserver
+
 docker-image: docker-image-entities docker-image-runner
 
 docker-push: docker-push-entities docker-push-runner

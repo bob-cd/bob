@@ -41,6 +41,12 @@ test:
 compile:
 	gradle shadowJar
 
+docker-image:
+	docker build -t bobcd/apiserver .
+
+docker-push: docker-image
+	docker push bobcd/apiserver
+
 clean:
 	gradle clean
 	docker rmi bobcd/apiserver || true
