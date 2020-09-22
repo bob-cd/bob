@@ -89,4 +89,16 @@ public class Handlers {
         publishToQueue(queue, "pipeline/create", "bob.direct", "bob.entities", pipeline);
         toJsonResponse(routingContext, "Ok");
     }
+
+    public static void pipelineDeleteHandler(RoutingContext routingContext, RabbitMQClient queue) {
+        final var params = routingContext.request().params();
+        final var group = params.get("group");
+        final var name = params.get("name");
+        final var pipeline = new JsonObject()
+            .put("group", group)
+            .put("name", name);
+
+        publishToQueue(queue, "pipeline/delete", "bob.direct", "bob.entities", pipeline);
+        toJsonResponse(routingContext, "Ok");
+    }
 }

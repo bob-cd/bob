@@ -112,7 +112,7 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(2)
+    @Order(3)
     @DisplayName("Test Pipeline Create")
     void testPipelineCreateSuccess(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -160,8 +160,8 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(3)
-    @DisplayName("Test Pipeline Create")
+    @Order(4)
+    @DisplayName("Test Pipeline Create Failure")
     void testPipelineCreateFailure(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
@@ -180,6 +180,47 @@ public class APIServerTest {
                         });
                     }
                 })));
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("Test Pipeline Deletion")
+    void testPipelineDeletion(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var payload = new JsonObject()
+            .put("name", "test")
+            .put("group", "dev");
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
+            queue.basicConsumer("bob.entities", new QueueOptions().setAutoAck(true), it -> {
+                if (it.succeeded()) {
+                    final var rmqConsumer = it.result();
+
+                    rmqConsumer.handler(message -> testContext.verify(() -> {
+                        assertThat(message.body().toJsonObject()).isEqualTo(payload);
+                        assertThat(message.properties().getType()).isEqualTo("pipeline/delete");
+
+                        testContext.completeNow();
+                    }));
+                } else {
+                    testContext.failNow(it.cause());
+                }
+            });
+
+            client.delete("/pipelines/groups/dev/names/test")
+                .putHeader("Content-Type", "application/json")
+                .send(ar -> {
+                    if (ar.failed()) {
+                        testContext.failNow(ar.cause());
+                    } else {
+                        testContext.verify(() -> {
+                            assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                            assertThat(ar.result().statusCode()).isEqualTo(202);
+                        });
+                    }
+                });
+        }));
     }
 
     @AfterEach
