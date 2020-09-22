@@ -18,11 +18,13 @@
 import crux.api.ICruxAPI;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import io.vertx.rabbitmq.QueueOptions;
 import io.vertx.rabbitmq.RabbitMQClient;
 import io.vertx.rabbitmq.RabbitMQOptions;
 import org.junit.jupiter.api.AfterEach;
@@ -92,7 +94,6 @@ public class APIServerTest {
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
             client.get("/can-we-build-it")
-                .as(BodyCodec.jsonObject())
                 .send(ar -> {
                     if (ar.failed()) {
                         testContext.failNow(ar.cause());
@@ -102,12 +103,60 @@ public class APIServerTest {
 
                             assertThat(result.statusCode()).isEqualTo(200);
                             assertThat(result.getHeader("Content-Type")).isEqualTo("application/json");
-                            assertThat(result.body().getString("message")).isEqualTo("Yes we can! 🔨 🔨");
+                            assertThat(result.bodyAsJsonObject().getString("message")).isEqualTo("Yes we can! 🔨 🔨");
 
                             testContext.completeNow();
                         });
                     }
                 })));
+    }
+
+    @Test
+    @Order(2)
+    @DisplayName("Test Pipeline Create")
+    void testPipelineCreate(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            vertx.fileSystem().readFile("src/test/resources/createComplexPipeline.payload.json", file -> {
+                if (file.succeeded()) {
+                    final var json = new JsonObject(file.result());
+
+                    queue.basicConsumer("bob.entities", new QueueOptions().setAutoAck(true), it -> {
+                        if (it.succeeded()) {
+                            final var rmqConsumer = it.result();
+                            final var pipelinePath = new JsonObject()
+                                .put("name", "test")
+                                .put("group", "dev");
+
+                            rmqConsumer.handler(message -> testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(json.getJsonObject("pipeline").mergeIn(pipelinePath));
+                                assertThat(message.properties().getType()).isEqualTo("pipeline/create");
+
+                                testContext.completeNow();
+                            }));
+                        } else {
+                            testContext.failNow(it.cause());
+                        }
+                    });
+
+                    client.post("/pipelines/groups/dev/names/test")
+                        .putHeader("Content-Type", "application/json")
+                        .sendJsonObject(json, ar -> {
+                            if (ar.failed()) {
+                                testContext.failNow(ar.cause());
+                            } else {
+                                testContext.verify(() -> {
+                                    assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                                    assertThat(ar.result().statusCode()).isEqualTo(202);
+                                });
+                            }
+                        });
+                } else {
+                    testContext.failNow(file.cause());
+                }
+            })));
     }
 
     @AfterEach

@@ -47,7 +47,7 @@ public class Handlers {
 
         queueClient.basicPublish(exchange, queue, props, payload.toBuffer(), it -> {
             if (it.succeeded())
-                logger.debug("Published message with type %s on entities!".formatted(type));
+                logger.info("Published message with type %s on %s!".formatted(type, queue));
             else
                 logger.error("Error publishing message on entities: " + it.cause().getMessage());
         });
@@ -75,5 +75,19 @@ public class Handlers {
             toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28", 200);
         else
             toJsonResponse(routingContext, "Failed Health Check", 503);
+    }
+
+    public static void pipelineCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
+        final var params = routingContext.request().params();
+        final var group = params.get("group");
+        final var name = params.get("name");
+        final var pipeline = routingContext
+            .getBodyAsJson()
+            .getJsonObject("pipeline")
+            .put("group", group)
+            .put("name", name);
+
+        publishToQueue(queue, "pipeline/create", "bob.direct", "bob.entities", pipeline);
+        toJsonResponse(routingContext, "Ok");
     }
 }

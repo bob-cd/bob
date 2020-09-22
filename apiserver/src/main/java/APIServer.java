@@ -51,6 +51,12 @@ public class APIServer extends AbstractVerticle {
             .start()
             .compose(_it -> queue.exchangeDeclare("bob.direct", "direct", false, false))
             .compose(_it -> queue.exchangeDeclare("bob.fanout", "fanout", false, false))
+            .compose(_it -> queue.queueDeclare("bob.entities", true, false, false))
+            .compose(_it -> queue.queueDeclare("bob.jobs", true, false, false))
+            .compose(_it -> queue.queueDeclare("bob.errors", true, false, false))
+            .compose(_it -> queue.queueBind("bob.jobs", "bob.direct", "bob.jobs"))
+            .compose(_it -> queue.queueBind("bob.jobs", "bob.fanout", "bob.jobs"))
+            .compose(_it -> queue.queueBind("bob.entities", "bob.direct", "bob.entities"))
             .compose(_it -> openAPI3RouterFrom(this.vertx, this.apiSpec))
             .compose(router -> serverFrom(this.vertx, router, this.host, this.port, this.queue, this.node))
             .onFailure(err -> startPromise.fail(err.getCause()))
@@ -75,8 +81,9 @@ public class APIServer extends AbstractVerticle {
         Vertx vertx, OpenAPI3RouterFactory routerFactory, String host, int port, RabbitMQClient queue, ICruxAPI node
     ) {
         final var router = routerFactory
-            .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, queue, node))
             .addHandlerByOperationId("GetApiSpec", Handlers::apiSpecHandler)
+            .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, queue, node))
+            .addHandlerByOperationId("PipelineCreate", ctx -> Handlers.pipelineCreateHandler(ctx, queue))
             .addGlobalHandler(LoggerHandler.create())
             .getRouter();
 
