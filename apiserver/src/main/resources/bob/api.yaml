@@ -214,16 +214,6 @@ paths:
                 success:
                   value:
                     message: "Ok"
-        default:
-          description: Failed stopping of the pipeline
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimpleResponse"
-              examples:
-                failure:
-                  value:
-                    message: "Failed to stop pipeline: <some error message>"
 
   /pipelines/logs/groups/{group}/names/{name}/id/{id}/offset/{offset}/lines/{lines}:
     get:

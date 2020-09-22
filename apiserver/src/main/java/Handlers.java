@@ -113,4 +113,17 @@ public class Handlers {
         publishToQueue(queue, "pipeline/start", "bob.direct", "bob.jobs", pipeline);
         toJsonResponse(routingContext, "Ok");
     }
+
+    public static void pipelineStopHandler(RoutingContext routingContext, RabbitMQClient queue) {
+        final var params = routingContext.request().params();
+        final var group = params.get("group");
+        final var name = params.get("name");
+        final var pipeline = new JsonObject()
+            .put("group", group)
+            .put("name", name);
+
+        // # is the routing key to deliver to all bound queues
+        publishToQueue(queue, "pipeline/stop", "bob.fanout", "#", pipeline);
+        toJsonResponse(routingContext, "Ok");
+    }
 }
