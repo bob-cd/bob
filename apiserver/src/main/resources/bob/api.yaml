@@ -177,17 +177,6 @@ paths:
                 success:
                   value:
                     message: "Ok"
-        default:
-          description: Failed to start the pipeline
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimpleResponse"
-              examples:
-                failure:
-                  value: {
-                    "message": "Error starting pipeline: <some error message>"
-                  }
 
   /pipelines/stop/groups/{group}/names/{name}/id/{id}:
     post:
