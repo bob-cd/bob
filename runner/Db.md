@@ -5,6 +5,7 @@
 ```clojure
 {:crux.db/id :bob.pipeline.log/l-<UUID>
  :type       :log-line
+ :time       <java.util.Date instant>
  :run-id     "<UUID of associated run>"
  :line       "this is a log line from a run"}
 ```

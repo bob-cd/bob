@@ -15,6 +15,7 @@
 
 (ns runner.pipeline.core
   (:require [clojure.string :as s]
+            [clojure.instant :as ins]
             [failjure.core :as f]
             [taoensso.timbre :as log]
             [crux.api :as crux]
@@ -22,7 +23,8 @@
             [runner.docker :as docker]
             [runner.resource.core :as r]
             [runner.artifact.core :as a])
-  (:import [java.util UUID]))
+  (:import [java.util UUID]
+           [java.time Instant]))
 
 (defonce ^:private node-state
          (atom {:images-for-gc      {}
@@ -34,6 +36,7 @@
                   [[:crux.tx/put
                     {:crux.db/id (keyword (str "bob.pipeline.log/l-" (UUID/randomUUID)))
                      :type       :log-line
+                     :time       (ins/read-instant-date (str (Instant/now))) ;; TODO: Maybe a better way to do this?
                      :run-id     run-id
                      :line       line}]]))
 
