@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #   This file is part of Bob.
 #
 #   Bob is free software: you can redistribute it and/or modify
@@ -13,16 +15,8 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-FROM docker:dind
+set -e
 
-RUN apk add -u wget
-RUN wget https://cdn.azul.com/zulu/bin/zulu15.27.17-ca-jdk15.0.0-linux_musl_x64.tar.gz
-RUN tar -zxvf *.tar.gz
-RUN rm *.tar.gz
-RUN mv zulu* /opt/jdk
+/usr/local/bin/dockerd-entrypoint.sh &
 
-COPY runner.jar /opt/runner.jar
-COPY entrypoint.sh /opt
-RUN chmod +x /opt/entrypoint.sh
-
-ENTRYPOINT ["/opt/entrypoint.sh"]
+/opt/jdk/bin/java -jar /opt/runner.jar
