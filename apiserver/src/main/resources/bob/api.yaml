@@ -178,7 +178,7 @@ paths:
                   value:
                     message: "Ok"
 
-  /pipelines/stop/groups/{group}/names/{name}/id/{id}:
+  /pipelines/stop/groups/{group}/names/{name}/runs/{id}:
     post:
       operationId: PipelineStop
       summary: Stops a pipeline

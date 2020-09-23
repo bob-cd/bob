@@ -93,6 +93,6 @@ public class APIServer extends AbstractVerticle {
             .requestHandler(router)
             .listen(port, host)
             .onSuccess(_it -> logger.info("Bob is listening on port " + port))
-            .onFailure(err -> logger.error(err.getCause().toString()));
+            .onFailure(err -> logger.error(err.getMessage()));
     }
 }

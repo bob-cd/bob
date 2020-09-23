@@ -271,7 +271,8 @@ public class APIServerTest {
         final var client = WebClient.create(vertx, clientConfig);
         final var payload = new JsonObject()
             .put("name", "test")
-            .put("group", "dev");
+            .put("group", "dev")
+            .put("run_id", "a-run-id");
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
             queue
@@ -294,7 +295,7 @@ public class APIServerTest {
                     });
 
                     client
-                        .post("/pipelines/stop/groups/dev/names/test/id/a-run-id")
+                        .post("/pipelines/stop/groups/dev/names/test/runs/a-run-id")
                         .send(ar -> {
                             if (ar.failed()) {
                                 testContext.failNow(ar.cause());

@@ -118,9 +118,11 @@ public class Handlers {
         final var params = routingContext.request().params();
         final var group = params.get("group");
         final var name = params.get("name");
+        final var id = params.get("id");
         final var pipeline = new JsonObject()
             .put("group", group)
-            .put("name", name);
+            .put("name", name)
+            .put("run_id", id);
 
         publishMessage(queue, "pipeline/stop", "bob.fanout", "", pipeline);
         toJsonResponse(routingContext, "Ok");
