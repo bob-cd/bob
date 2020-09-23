@@ -18,6 +18,7 @@
 import crux.api.ICruxAPI;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -36,6 +37,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Test the Bob API")
@@ -43,6 +52,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class APIServerTest {
     Vertx vertx;
+    Connection conn;
+
     final String apiSpec = "/bob/api.yaml";
     final String httpHost = "localhost";
     final int httpPort = 7778;
@@ -51,12 +62,13 @@ public class APIServerTest {
     final WebClientOptions clientConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(httpPort);
 
     @BeforeEach
-    void prepare() {
+    void prepare() throws SQLException {
         vertx = Vertx.vertx(
             new VertxOptions()
                 .setMaxEventLoopExecuteTime(1000)
                 .setPreferNativeTransport(true)
         );
+        conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob");
     }
 
     @Test
@@ -310,8 +322,60 @@ public class APIServerTest {
                 .onFailure(testContext::failNow)));
     }
 
+    @Test
+    @Order(8)
+    @DisplayName("Test Log Fetch")
+    void testLogFetch(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var expectedLogs = new JsonArray()
+            .add("line 1")
+            .add("line 2")
+            .add("line 3")
+            .add("line 4")
+            .add("line 5");
+        final var query =
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.pipeline.log/l-%s
+               :type       :log-line
+               :time       #inst "%s"
+               :run-id     "a-run-id"
+               :line       "%s"}]]
+            """;
+
+        expectedLogs.forEach(log ->
+            node.awaitTx(
+                node.submitTx((List<List<?>>) DB.datafy(query.formatted(UUID.randomUUID(), Instant.now(), log))),
+                Duration.ofSeconds(5)
+            )
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client.get("/pipelines/logs/runs/a-run-id/offset/0/lines/5")
+                .send(ar -> {
+                    if (ar.failed()) {
+                        testContext.failNow(ar.cause());
+                    } else {
+                        testContext.verify(() -> {
+                            final var result = ar.result();
+
+                            assertThat(result.statusCode()).isEqualTo(200);
+                            assertThat(result.getHeader("Content-Type")).isEqualTo("application/json");
+                            assertThat(result.bodyAsJsonObject().getJsonArray("message")).isEqualTo(expectedLogs);
+
+                            testContext.completeNow();
+                        });
+                    }
+                })));
+    }
+
     @AfterEach
-    void cleanup() {
+    void cleanup() throws SQLException {
+        final var st = conn.createStatement();
+        st.execute("DROP TABLE tx_events;");
+        st.close();
+        conn.close();
         vertx.close();
     }
 }

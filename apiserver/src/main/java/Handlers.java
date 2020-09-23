@@ -15,8 +15,12 @@
  * along with Bob. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import clojure.lang.Keyword;
+import clojure.lang.PersistentArrayMap;
+import clojure.lang.Symbol;
 import com.rabbitmq.client.AMQP;
 import crux.api.ICruxAPI;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.rabbitmq.RabbitMQClient;
@@ -27,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Handlers {
     private final static Logger logger = LoggerFactory.getLogger(Handlers.class.getName());
@@ -126,5 +131,38 @@ public class Handlers {
 
         publishMessage(queue, "pipeline/stop", "bob.fanout", "", pipeline);
         toJsonResponse(routingContext, "Ok");
+    }
+
+    public static void pipelineLogsHandler(RoutingContext routingContext, ICruxAPI node) {
+        final var params = routingContext.request().params();
+        final var id = params.get("id");
+        final var offset = params.get("offset");
+        final var lines = params.get("lines");
+        final var query = DB.datafy(
+            """
+            {:find     [(eql/project log [:line]) time]
+             :where    [[log :type :log-line]
+                        [log :time time]
+                        [log :run-id "%s"]]
+             :order-by [[time :asc]]
+             :limit    %s
+             :offset   %s}
+            """.formatted(id, lines, offset)
+        );
+        final var logKey = Keyword.intern(Symbol.create("line"));
+
+        try {
+            final var logs = node
+                .db()
+                .query(query)
+                .stream()
+                .map(r -> r.get(0))
+                .map(r -> ((PersistentArrayMap) r).get(logKey).toString())
+                .collect(Collectors.toList());
+
+            toJsonResponse(routingContext, new JsonArray(logs), 200);
+        } catch (Exception e) {
+            toJsonResponse(routingContext, e.getMessage(), 500);
+        }
     }
 }

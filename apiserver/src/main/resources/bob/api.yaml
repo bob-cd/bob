@@ -215,24 +215,12 @@ paths:
                   value:
                     message: "Ok"
 
-  /pipelines/logs/groups/{group}/names/{name}/id/{id}/offset/{offset}/lines/{lines}:
+  /pipelines/logs/runs/{id}/offset/{offset}/lines/{lines}:
     get:
       operationId: PipelineLogs
       summary: Fetches the logs of a pipeline
 
       parameters:
-        - name: group
-          required: true
-          in: path
-          description: The group of the pipeline
-          schema:
-            type: string
-        - name: name
-          required: true
-          in: path
-          description: The name of the pipeline
-          schema:
-            type: string
         - name: id
           required: true
           in: path
