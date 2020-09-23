@@ -97,7 +97,7 @@
                   error-queue
                   {:exclusive   false
                    :auto-delete false})
-      (lq/bind chan entities-queue direct-exchange)
+      (lq/bind chan entities-queue direct-exchange {:routing-key entities-queue})
       (lc/subscribe chan entities-queue (partial d/queue-msg-subscriber (db-client database)) {:auto-ack true})
       (log/infof "Subscribed to %s" entities-queue)
       (assoc this :conn conn :chan chan)))

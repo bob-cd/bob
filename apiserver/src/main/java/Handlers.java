@@ -42,12 +42,12 @@ public class Handlers {
             .end(new JsonObject(Map.of("message", content)).encode());
     }
 
-    private static void publishToQueue(RabbitMQClient queueClient, String type, String exchange, String queue, JsonObject payload) {
+    private static void publishMessage(RabbitMQClient queueClient, String type, String exchange, String routingKey, JsonObject payload) {
         final var props = new AMQP.BasicProperties.Builder().type(type).build();
 
-        queueClient.basicPublish(exchange, queue, props, payload.toBuffer(), it -> {
+        queueClient.basicPublish(exchange, routingKey, props, payload.toBuffer(), it -> {
             if (it.succeeded())
-                logger.info("Published message with type %s on %s!".formatted(type, queue));
+                logger.info("Published message with type %s on %s!".formatted(type, routingKey));
             else
                 logger.error("Error publishing message on entities: " + it.cause().getMessage());
         });
@@ -86,7 +86,7 @@ public class Handlers {
             .put("group", group)
             .put("name", name);
 
-        publishToQueue(queue, "pipeline/create", "bob.direct", "bob.entities", pipeline);
+        publishMessage(queue, "pipeline/create", "bob.direct", "bob.entities", pipeline);
         toJsonResponse(routingContext, "Ok");
     }
 
@@ -98,7 +98,7 @@ public class Handlers {
             .put("group", group)
             .put("name", name);
 
-        publishToQueue(queue, "pipeline/delete", "bob.direct", "bob.entities", pipeline);
+        publishMessage(queue, "pipeline/delete", "bob.direct", "bob.entities", pipeline);
         toJsonResponse(routingContext, "Ok");
     }
 
@@ -110,7 +110,7 @@ public class Handlers {
             .put("group", group)
             .put("name", name);
 
-        publishToQueue(queue, "pipeline/start", "bob.direct", "bob.jobs", pipeline);
+        publishMessage(queue, "pipeline/start", "bob.direct", "bob.jobs", pipeline);
         toJsonResponse(routingContext, "Ok");
     }
 
@@ -122,8 +122,7 @@ public class Handlers {
             .put("group", group)
             .put("name", name);
 
-        // # is the routing key to deliver to all bound queues
-        publishToQueue(queue, "pipeline/stop", "bob.fanout", "#", pipeline);
+        publishMessage(queue, "pipeline/stop", "bob.fanout", "", pipeline);
         toJsonResponse(routingContext, "Ok");
     }
 }

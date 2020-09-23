@@ -106,7 +106,7 @@
                   broadcast-queue
                   {:exclusive   true
                    :auto-delete true})
-      (lq/bind chan job-queue direct-exchange)
+      (lq/bind chan job-queue direct-exchange {:routing-key job-queue})
       (lq/bind chan broadcast-queue fanout-exchange)
       (lc/subscribe chan job-queue subscriber {:auto-ack true})
       (lc/subscribe chan broadcast-queue subscriber {:auto-ack true})

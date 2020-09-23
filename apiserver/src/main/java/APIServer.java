@@ -55,7 +55,6 @@ public class APIServer extends AbstractVerticle {
             .compose(_it -> queue.queueDeclare("bob.jobs", true, false, false))
             .compose(_it -> queue.queueDeclare("bob.errors", true, false, false))
             .compose(_it -> queue.queueBind("bob.jobs", "bob.direct", "bob.jobs"))
-            .compose(_it -> queue.queueBind("bob.jobs", "bob.fanout", "bob.jobs"))
             .compose(_it -> queue.queueBind("bob.entities", "bob.direct", "bob.entities"))
             .compose(_it -> openAPI3RouterFrom(this.vertx, this.apiSpec))
             .compose(router -> serverFrom(this.vertx, router, this.host, this.port, this.queue, this.node))

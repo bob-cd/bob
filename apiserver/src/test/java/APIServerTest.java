@@ -273,34 +273,40 @@ public class APIServerTest {
             .put("name", "test")
             .put("group", "dev");
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
-            queue.basicConsumer("bob.jobs", new QueueOptions().setAutoAck(true), it -> {
-                if (it.succeeded()) {
-                    final var rmqConsumer = it.result();
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            queue
+                .queueDeclare("bob.test.broadcasts", true, true, true)
+                .compose(_it -> queue.queueBind("bob.test.broadcasts", "bob.fanout", ""))
+                .onSuccess(_it -> {
+                    queue.basicConsumer("bob.test.broadcasts", new QueueOptions().setAutoAck(true), c -> {
+                        if (c.succeeded()) {
+                            final var rmqConsumer = c.result();
 
-                    rmqConsumer.handler(message -> testContext.verify(() -> {
-                        assertThat(message.body().toJsonObject()).isEqualTo(payload);
-                        assertThat(message.properties().getType()).isEqualTo("pipeline/stop");
+                            rmqConsumer.handler(message -> testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(payload);
+                                assertThat(message.properties().getType()).isEqualTo("pipeline/stop");
 
-                        testContext.completeNow();
-                    }));
-                } else {
-                    testContext.failNow(it.cause());
-                }
-            });
+                                testContext.completeNow();
+                            }));
+                        } else {
+                            testContext.failNow(c.cause());
+                        }
+                    });
 
-            client.post("/pipelines/stop/groups/dev/names/test/id/a-run-id")
-                .send(ar -> {
-                    if (ar.failed()) {
-                        testContext.failNow(ar.cause());
-                    } else {
-                        testContext.verify(() -> {
-                            assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Ok");
-                            assertThat(ar.result().statusCode()).isEqualTo(202);
+                    client
+                        .post("/pipelines/stop/groups/dev/names/test/id/a-run-id")
+                        .send(ar -> {
+                            if (ar.failed()) {
+                                testContext.failNow(ar.cause());
+                            } else {
+                                testContext.verify(() -> {
+                                    assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                                    assertThat(ar.result().statusCode()).isEqualTo(202);
+                                });
+                            }
                         });
-                    }
-                });
-        }));
+                })
+                .onFailure(testContext::failNow)));
     }
 
     @AfterEach
