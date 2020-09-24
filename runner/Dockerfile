@@ -13,13 +13,22 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-FROM docker:dind
+FROM alpine:latest AS jdk
 
-RUN apk add -u wget
 RUN wget https://cdn.azul.com/zulu/bin/zulu15.27.17-ca-jdk15.0.0-linux_musl_x64.tar.gz
 RUN tar -zxvf *.tar.gz
 RUN rm *.tar.gz
-RUN mv zulu* /opt/jdk
+RUN mv zulu* jdk
+
+WORKDIR /jdk
+
+# TODO: See if these modules are enough?
+RUN bin/jlink --compress=2 --module-path jmods --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop --output jlinked
+
+
+FROM docker:dind
+
+COPY --from=jdk /jdk/jlinked /opt/jdk/
 
 COPY runner.jar /opt/runner.jar
 COPY entrypoint.sh /opt
