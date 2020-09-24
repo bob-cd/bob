@@ -301,6 +301,16 @@ paths:
                 stopped:
                   value:
                     message: "stopped"
+        "404":
+          description: Cannot find status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Cannot find status"
         default:
           description: Failed status fetch of the pipeline
           content:

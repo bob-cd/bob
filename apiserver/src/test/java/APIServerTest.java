@@ -411,6 +411,32 @@ public class APIServerTest {
                 })));
     }
 
+    @Test
+    @Order(10)
+    @DisplayName("Test Failed Pipeline status")
+    void testFailedPipelineStatus(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client.get("/pipelines/status/runs/another-run-id")
+                .send(ar -> {
+                    if (ar.failed()) {
+                        testContext.failNow(ar.cause());
+                    } else {
+                        testContext.verify(() -> {
+                            final var result = ar.result();
+
+                            assertThat(result.statusCode()).isEqualTo(404);
+                            assertThat(result.getHeader("Content-Type")).isEqualTo("application/json");
+                            assertThat(result.bodyAsJsonObject().getString("message")).isEqualTo("Cannot find status");
+
+                            testContext.completeNow();
+                        });
+                    }
+                })));
+    }
+
     @AfterEach
     void cleanup() throws SQLException {
         final var st = conn.createStatement();
