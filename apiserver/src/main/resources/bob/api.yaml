@@ -266,26 +266,14 @@ paths:
               examples:
                 failure:
                   value:
-                    message: "Failed to fetch logs for pipeline group:name: <some error message>"
+                    message: "<some error message>"
 
-  /pipelines/status/groups/{group}/names/{name}/id/{id}:
+  /pipelines/status/runs/{id}:
     get:
       operationId: PipelineStatus
       summary: Fetches the status of the pipeline
 
       parameters:
-        - name: group
-          required: true
-          in: path
-          description: The group of the pipeline
-          schema:
-            type: string
-        - name: name
-          required: true
-          in: path
-          description: The name of the pipeline
-          schema:
-            type: string
         - name: id
           required: true
           in: path
@@ -322,7 +310,7 @@ paths:
               examples:
                 failure:
                   value:
-                    message: "No such pipeline"
+                    message: "<some error message>"
 
   /pipelines/groups/{group}/names/{name}/id/{id}/artifacts/artifact-stores/{store-name}/name/{artifact-name}:
     get:

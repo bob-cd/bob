@@ -165,4 +165,36 @@ public class Handlers {
             toJsonResponse(routingContext, e.getMessage(), 500);
         }
     }
+
+    public static void pipelineStatusHandler(RoutingContext routingContext, ICruxAPI node) {
+        final var params = routingContext.request().params();
+        final var id = params.get("id");
+        final var query = DB.datafy(
+            """
+            {:find  [(eql/project run [:status])]
+             :where [[run :type :pipeline-run]
+                     [run :crux.db/id :bob.pipeline.run/l-%s]]}
+            """.formatted(id)
+        );
+        final var key = Keyword.intern(Symbol.create("status"));
+
+        try {
+            final var status = node
+                .db()
+                .query(query)
+                .stream()
+                .findFirst()
+                .map(r -> r.get(0))
+                .map(r -> ((PersistentArrayMap) r).get(key))
+                .map(r -> ((Keyword) r).getName());
+
+            if (status.isPresent()) {
+                toJsonResponse(routingContext, status.get(), 200);
+            } else {
+                toJsonResponse(routingContext, "Cannot find status", 404);
+            }
+        } catch (Exception e) {
+            toJsonResponse(routingContext, e.getMessage(), 500);
+        }
+    }
 }

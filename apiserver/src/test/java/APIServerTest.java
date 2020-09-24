@@ -370,6 +370,47 @@ public class APIServerTest {
                 })));
     }
 
+    @Test
+    @Order(9)
+    @DisplayName("Test Pipeline status")
+    void testPipelineStatus(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var query = DB.datafy(
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.pipeline.run/l-a-run-id
+               :type       :pipeline-run
+               :group      "dev"
+               :name       "test"
+               :status     :running}]]
+            """
+        );
+
+        node.awaitTx(
+            node.submitTx((List<List<?>>) query),
+            Duration.ofSeconds(5)
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client.get("/pipelines/status/runs/a-run-id")
+                .send(ar -> {
+                    if (ar.failed()) {
+                        testContext.failNow(ar.cause());
+                    } else {
+                        testContext.verify(() -> {
+                            final var result = ar.result();
+
+                            assertThat(result.statusCode()).isEqualTo(200);
+                            assertThat(result.getHeader("Content-Type")).isEqualTo("application/json");
+                            assertThat(result.bodyAsJsonObject().getString("message")).isEqualTo("running");
+
+                            testContext.completeNow();
+                        });
+                    }
+                })));
+    }
+
     @AfterEach
     void cleanup() throws SQLException {
         final var st = conn.createStatement();
