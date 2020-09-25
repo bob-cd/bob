@@ -20,9 +20,11 @@ import clojure.lang.PersistentArrayMap;
 import clojure.lang.Symbol;
 import com.rabbitmq.client.AMQP;
 import crux.api.ICruxAPI;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.WebClient;
 import io.vertx.rabbitmq.RabbitMQClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -193,6 +195,55 @@ public class Handlers {
             } else {
                 toJsonResponse(routingContext, "Cannot find status", 404);
             }
+        } catch (Exception e) {
+            toJsonResponse(routingContext, e.getMessage(), 500);
+        }
+    }
+
+    public static void pipelineArtifactHandler(RoutingContext routingContext, ICruxAPI node, Vertx vertx) {
+        final var params = routingContext.request().params();
+        final var group = params.get("group");
+        final var name = params.get("name");
+        final var id = params.get("id");
+        final var storeName = params.get("store-name");
+        final var artifactName = params.get("artifact-name");
+
+        try {
+            final var baseUrl = node
+                .db()
+                .entity(Keyword.intern("bob.artifact-store", storeName));
+
+            if (baseUrl == null) {
+                toJsonResponse(routingContext, "Cannot locate artifact store " + storeName, 404);
+                return;
+            }
+
+            final var url = String.join(
+                "/",
+                (String) baseUrl.get(Keyword.intern(Symbol.create("url"))),
+                "bob_artifact",
+                group,
+                name,
+                id,
+                artifactName
+            );
+
+            WebClient.create(vertx)
+                .getAbs(url)
+                .send()
+                .onSuccess(
+                    res -> {
+                        if (res.statusCode() == 200) {
+                            routingContext
+                                .response()
+                                .putHeader("Content-Type", "application/tar")
+                                .end(res.body());
+                        } else {
+                            toJsonResponse(routingContext, "Error location artifact " + artifactName, res.statusCode());
+                        }
+                    }
+                )
+                .onFailure(err -> toJsonResponse(routingContext, err.getMessage(), 503));
         } catch (Exception e) {
             toJsonResponse(routingContext, e.getMessage(), 500);
         }

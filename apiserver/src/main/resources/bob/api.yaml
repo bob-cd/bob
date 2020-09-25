@@ -322,7 +322,7 @@ paths:
                   value:
                     message: "<some error message>"
 
-  /pipelines/groups/{group}/names/{name}/id/{id}/artifacts/artifact-stores/{store-name}/name/{artifact-name}:
+  /pipelines/groups/{group}/names/{name}/runs/{id}/artifact-stores/{store-name}/artifact/{artifact-name}:
     get:
       operationId: PipelineArtifactFetch
       summary: Fetches the artifact from pipeline of an artifact store
@@ -374,15 +374,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/SimpleResponse"
               examples:
-                store-failure:
-                  value:
-                    message: "Cannot reach artifact store: <some error message>"
-                fetch-failure:
-                  value:
-                    message: "Error fetching artifact: <some error message>"
                 failure:
                   value:
-                    message: "No such artifact store registered"
+                    message: "<some error message>"
 
   /pipelines:
     get:

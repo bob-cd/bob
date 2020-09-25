@@ -23,6 +23,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.codec.BodyCodec;
+import io.vertx.ext.web.multipart.MultipartForm;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.rabbitmq.QueueOptions;
@@ -31,10 +32,7 @@ import io.vertx.rabbitmq.RabbitMQOptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.sql.Connection;
@@ -49,16 +47,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Test the Bob API")
 @ExtendWith(VertxExtension.class)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class APIServerTest {
     Vertx vertx;
     Connection conn;
+    ICruxAPI node;
 
     final String apiSpec = "/bob/api.yaml";
     final String httpHost = "localhost";
     final int httpPort = 7778;
     final RabbitMQOptions queueConfig = new RabbitMQOptions().setHost("localhost").setPort(5673);
-    final ICruxAPI node = new DB("bob-test", "localhost", 5433, "bob", "bob").node;
     final WebClientOptions clientConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(httpPort);
 
     @BeforeEach
@@ -68,11 +65,12 @@ public class APIServerTest {
                 .setMaxEventLoopExecuteTime(1000)
                 .setPreferNativeTransport(true)
         );
+
+        node = new DB("bob-test", "localhost", 5433, "bob", "bob").node;
         conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob");
     }
 
     @Test
-    @Order(1)
     @DisplayName("Test API Spec path")
     void testAPISpecPath(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -98,7 +96,6 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(2)
     @DisplayName("Test Health Check")
     void testHealthCheck(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -124,7 +121,6 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(3)
     @DisplayName("Test Pipeline Create")
     void testPipelineCreateSuccess(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -172,7 +168,6 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(4)
     @DisplayName("Test Pipeline Create Failure")
     void testPipelineCreateFailure(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -195,7 +190,6 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(5)
     @DisplayName("Test Pipeline Deletion")
     void testPipelineDeletion(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -236,7 +230,6 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(6)
     @DisplayName("Test Pipeline Start")
     void testPipelineStart(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -276,7 +269,6 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(7)
     @DisplayName("Test Pipeline Stop")
     void testPipelineStop(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -323,7 +315,6 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(8)
     @DisplayName("Test Log Fetch")
     void testLogFetch(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -371,7 +362,6 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(9)
     @DisplayName("Test Pipeline status")
     void testPipelineStatus(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -412,7 +402,6 @@ public class APIServerTest {
     }
 
     @Test
-    @Order(10)
     @DisplayName("Test Failed Pipeline status")
     void testFailedPipelineStatus(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -435,6 +424,45 @@ public class APIServerTest {
                         });
                     }
                 })));
+    }
+
+    @Test
+    @DisplayName("Test Pipeline Artifact Fetch")
+    void testPipelineArtifactFetch(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var query = DB.datafy(
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.artifact-store/local
+               :type       :artifact-store
+               :url        "http://localhost:8001"}]]
+            """
+        );
+
+        node.awaitTx(
+            node.submitTx((List<List<?>>) query),
+            Duration.ofSeconds(5)
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
+            final var form = MultipartForm.create()
+                .binaryFileUpload("data", "test.tar", "src/test/resources/test.tar", "application/tar");
+
+            client
+                .post(8001, "localhost", "/bob_artifact/dev/test/a-run-id/file")
+                .sendMultipartForm(form)
+                .compose(_it -> client
+                    .get("/pipelines/groups/dev/names/test/runs/a-run-id/artifact-stores/local/artifact/file")
+                    .send())
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.statusCode()).isEqualTo(200);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/tar");
+
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow);
+        }));
     }
 
     @AfterEach

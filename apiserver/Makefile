@@ -33,9 +33,15 @@ test:
 		-p 5673:5672 \
 		--network bob-net \
 		rabbitmq:3-alpine
+	docker run \
+		-d \
+		--name artifact-local \
+		-p 8001:8001 \
+		--network bob-net \
+		bobcd/artifact-local
 	sleep 7 # TODO: Find a better way to wait till things come up.
 	gradle test --fail-fast
-	docker kill bob-test-storage bob-test-queue && docker rm bob-test-storage bob-test-queue
+	docker kill bob-test-storage bob-test-queue artifact-local && docker rm bob-test-storage bob-test-queue artifact-local
 	docker network rm bob-net
 
 compile:

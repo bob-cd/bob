@@ -88,6 +88,7 @@ public class APIServer extends AbstractVerticle {
             .addHandlerByOperationId("PipelineStop", ctx -> Handlers.pipelineStopHandler(ctx, queue))
             .addHandlerByOperationId("PipelineLogs", ctx -> Handlers.pipelineLogsHandler(ctx, node))
             .addHandlerByOperationId("PipelineStatus", ctx -> Handlers.pipelineStatusHandler(ctx, node))
+            .addHandlerByOperationId("PipelineArtifactFetch", ctx -> Handlers.pipelineArtifactHandler(ctx, node, vertx))
             .addGlobalHandler(LoggerHandler.create())
             .getRouter();
 
