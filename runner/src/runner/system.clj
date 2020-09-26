@@ -92,20 +92,23 @@
           broadcast-queue (str "bob.broadcasts." (UUID/randomUUID))
           subscriber      (partial d/queue-msg-subscriber (:client database))]
       (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
-      (le/declare chan direct-exchange "direct" {:durable false})
-      (le/declare chan fanout-exchange "fanout" {:durable false})
+      (le/declare chan direct-exchange "direct" {:durable true})
+      (le/declare chan fanout-exchange "fanout" {:durable true})
       (lq/declare chan
                   job-queue
                   {:exclusive   false
-                   :auto-delete false})
+                   :auto-delete false
+                   :durable     true})
       (lq/declare chan
                   error-queue
                   {:exclusive   false
-                   :auto-delete false})
+                   :auto-delete false
+                   :durable     true})
       (lq/declare chan
                   broadcast-queue
                   {:exclusive   true
-                   :auto-delete true})
+                   :auto-delete true
+                   :durable     true})
       (lq/bind chan job-queue direct-exchange {:routing-key job-queue})
       (lq/bind chan broadcast-queue fanout-exchange)
       (lc/subscribe chan job-queue subscriber {:auto-ack true})

@@ -88,15 +88,17 @@
           direct-exchange "bob.direct"
           error-queue     "bob.errors"]
       (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
-      (le/declare chan direct-exchange "direct" {:durable false})
+      (le/declare chan direct-exchange "direct" {:durable true})
       (lq/declare chan
                   entities-queue
                   {:exclusive   false
-                   :auto-delete false})
+                   :auto-delete false
+                   :durable     true})
       (lq/declare chan
                   error-queue
                   {:exclusive   false
-                   :auto-delete false})
+                   :auto-delete false
+                   :durable     true})
       (lq/bind chan entities-queue direct-exchange {:routing-key entities-queue})
       (lc/subscribe chan entities-queue (partial d/queue-msg-subscriber (db-client database)) {:auto-ack true})
       (log/infof "Subscribed to %s" entities-queue)

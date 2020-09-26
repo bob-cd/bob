@@ -18,7 +18,7 @@
            com.fzakaria/slf4j-timbre  {:mvn/version "0.3.19"}
            com.novemberain/langohr    {:mvn/version "5.2.0"}
            com.stuartsierra/component {:mvn/version "1.0.0"}
-           com.taoensso/timbre        {:mvn/version "4.10.0"}
+           com.taoensso/timbre        {:mvn/version "5.0.1"}
            environ/environ            {:mvn/version "1.2.0"}
            failjure/failjure          {:mvn/version "2.0.0"}
            juxt/crux-core             {:mvn/version "20.09-1.12.0-beta"}
