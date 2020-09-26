@@ -77,22 +77,19 @@ public class APIServerTest {
         final var client = WebClient.create(vertx, clientConfig);
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-            client.get("/api.yaml")
+            client
+                .get("/api.yaml")
                 .as(BodyCodec.string())
-                .send(ar -> {
-                    if (ar.failed()) {
-                        testContext.failNow(ar.cause());
-                    } else {
-                        testContext.verify(() -> {
-                            final var result = ar.result();
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
 
-                            assertThat(result.statusCode()).isEqualTo(200);
-                            assertThat(result.getHeader("Content-Type")).isEqualTo("application/yaml");
+                        assertThat(res.statusCode()).isEqualTo(200);
+                        assertThat(res.getHeader("Content-Type")).isEqualTo("application/yaml");
 
-                            testContext.completeNow();
-                        });
-                    }
-                })));
+                        testContext.completeNow();
+                    })
+                )
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -102,22 +99,18 @@ public class APIServerTest {
         final var client = WebClient.create(vertx, clientConfig);
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-            client.get("/can-we-build-it")
-                .send(ar -> {
-                    if (ar.failed()) {
-                        testContext.failNow(ar.cause());
-                    } else {
-                        testContext.verify(() -> {
-                            final var result = ar.result();
+            client
+                .get("/can-we-build-it")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                        assertThat(res.statusCode()).isEqualTo(200);
+                        assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                        assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Yes we can! 🔨 🔨");
 
-                            assertThat(result.statusCode()).isEqualTo(200);
-                            assertThat(result.getHeader("Content-Type")).isEqualTo("application/json");
-                            assertThat(result.bodyAsJsonObject().getString("message")).isEqualTo("Yes we can! 🔨 🔨");
-
-                            testContext.completeNow();
-                        });
-                    }
-                })));
+                        testContext.completeNow();
+                    })
+                )
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -131,9 +124,9 @@ public class APIServerTest {
                 if (file.succeeded()) {
                     final var json = new JsonObject(file.result());
 
-                    queue.basicConsumer("bob.entities", new QueueOptions().setAutoAck(true), it -> {
-                        if (it.succeeded()) {
-                            final var rmqConsumer = it.result();
+                    queue
+                        .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                        .onSuccess(rmqConsumer -> {
                             final var pipelinePath = new JsonObject()
                                 .put("name", "test")
                                 .put("group", "dev");
@@ -144,23 +137,15 @@ public class APIServerTest {
 
                                 testContext.completeNow();
                             }));
-                        } else {
-                            testContext.failNow(it.cause());
-                        }
-                    });
-
-                    client.post("/pipelines/groups/dev/names/test")
-                        .putHeader("Content-Type", "application/json")
-                        .sendJsonObject(json, ar -> {
-                            if (ar.failed()) {
-                                testContext.failNow(ar.cause());
-                            } else {
-                                testContext.verify(() -> {
-                                    assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Ok");
-                                    assertThat(ar.result().statusCode()).isEqualTo(202);
-                                });
-                            }
-                        });
+                        })
+                        .compose(_it -> client.post("/pipelines/groups/dev/names/test")
+                            .putHeader("Content-Type", "application/json")
+                            .sendJsonObject(json))
+                        .onSuccess(res -> testContext.verify(() -> {
+                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                            assertThat(res.statusCode()).isEqualTo(202);
+                        }))
+                        .onFailure(testContext::failNow);
                 } else {
                     testContext.failNow(file.cause());
                 }
@@ -174,19 +159,16 @@ public class APIServerTest {
         final var client = WebClient.create(vertx, clientConfig);
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-            client.post("/pipelines/groups/dev/names/test")
+            client
+                .post("/pipelines/groups/dev/names/test")
                 .putHeader("Content-Type", "application/json")
-                .sendJsonObject(new JsonObject(), ar -> {
-                    if (ar.failed()) {
-                        testContext.failNow(ar.cause());
-                    } else {
-                        testContext.verify(() -> {
-                            assertThat(ar.result().statusCode()).isEqualTo(400);
+                .sendJsonObject(new JsonObject())
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.statusCode()).isEqualTo(400);
 
-                            testContext.completeNow();
-                        });
-                    }
-                })));
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -198,35 +180,23 @@ public class APIServerTest {
             .put("name", "test")
             .put("group", "dev");
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
-            queue.basicConsumer("bob.entities", new QueueOptions().setAutoAck(true), it -> {
-                if (it.succeeded()) {
-                    final var rmqConsumer = it.result();
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            queue
+                .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                .onSuccess(rmqConsumer -> rmqConsumer.handler(message -> testContext.verify(() -> {
+                    assertThat(message.body().toJsonObject()).isEqualTo(payload);
+                    assertThat(message.properties().getType()).isEqualTo("pipeline/delete");
 
-                    rmqConsumer.handler(message -> testContext.verify(() -> {
-                        assertThat(message.body().toJsonObject()).isEqualTo(payload);
-                        assertThat(message.properties().getType()).isEqualTo("pipeline/delete");
-
-                        testContext.completeNow();
-                    }));
-                } else {
-                    testContext.failNow(it.cause());
-                }
-            });
-
-            client.delete("/pipelines/groups/dev/names/test")
-                .putHeader("Content-Type", "application/json")
-                .send(ar -> {
-                    if (ar.failed()) {
-                        testContext.failNow(ar.cause());
-                    } else {
-                        testContext.verify(() -> {
-                            assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Ok");
-                            assertThat(ar.result().statusCode()).isEqualTo(202);
-                        });
-                    }
-                });
-        }));
+                    testContext.completeNow();
+                })))
+                .compose(_it -> client.delete("/pipelines/groups/dev/names/test")
+                    .putHeader("Content-Type", "application/json")
+                    .send())
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(res.statusCode()).isEqualTo(202);
+                }))
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -238,34 +208,23 @@ public class APIServerTest {
             .put("name", "test")
             .put("group", "dev");
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
-            queue.basicConsumer("bob.jobs", new QueueOptions().setAutoAck(true), it -> {
-                if (it.succeeded()) {
-                    final var rmqConsumer = it.result();
-
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            queue
+                .basicConsumer("bob.jobs", new QueueOptions().setAutoAck(true))
+                .onSuccess(rmqConsumer ->
                     rmqConsumer.handler(message -> testContext.verify(() -> {
                         assertThat(message.body().toJsonObject()).isEqualTo(payload);
                         assertThat(message.properties().getType()).isEqualTo("pipeline/start");
 
                         testContext.completeNow();
-                    }));
-                } else {
-                    testContext.failNow(it.cause());
-                }
-            });
-
-            client.post("/pipelines/start/groups/dev/names/test")
-                .send(ar -> {
-                    if (ar.failed()) {
-                        testContext.failNow(ar.cause());
-                    } else {
-                        testContext.verify(() -> {
-                            assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Ok");
-                            assertThat(ar.result().statusCode()).isEqualTo(202);
-                        });
-                    }
-                });
-        }));
+                    })))
+                .compose(_it -> client.post("/pipelines/start/groups/dev/names/test")
+                    .send())
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(res.statusCode()).isEqualTo(202);
+                }))
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -282,35 +241,21 @@ public class APIServerTest {
             queue
                 .queueDeclare("bob.test.broadcasts", true, true, true)
                 .compose(_it -> queue.queueBind("bob.test.broadcasts", "bob.fanout", ""))
-                .onSuccess(_it -> {
-                    queue.basicConsumer("bob.test.broadcasts", new QueueOptions().setAutoAck(true), c -> {
-                        if (c.succeeded()) {
-                            final var rmqConsumer = c.result();
+                .compose(_it -> queue.basicConsumer("bob.test.broadcasts", new QueueOptions().setAutoAck(true)))
+                .onSuccess(rmqConsumer ->
+                    rmqConsumer.handler(message -> testContext.verify(() -> {
+                        assertThat(message.body().toJsonObject()).isEqualTo(payload);
+                        assertThat(message.properties().getType()).isEqualTo("pipeline/stop");
 
-                            rmqConsumer.handler(message -> testContext.verify(() -> {
-                                assertThat(message.body().toJsonObject()).isEqualTo(payload);
-                                assertThat(message.properties().getType()).isEqualTo("pipeline/stop");
-
-                                testContext.completeNow();
-                            }));
-                        } else {
-                            testContext.failNow(c.cause());
-                        }
-                    });
-
-                    client
-                        .post("/pipelines/stop/groups/dev/names/test/runs/a-run-id")
-                        .send(ar -> {
-                            if (ar.failed()) {
-                                testContext.failNow(ar.cause());
-                            } else {
-                                testContext.verify(() -> {
-                                    assertThat(ar.result().bodyAsJsonObject().getString("message")).isEqualTo("Ok");
-                                    assertThat(ar.result().statusCode()).isEqualTo(202);
-                                });
-                            }
-                        });
-                })
+                        testContext.completeNow();
+                    })))
+                .compose(_it -> client
+                    .post("/pipelines/stop/groups/dev/names/test/runs/a-run-id")
+                    .send())
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(res.statusCode()).isEqualTo(202);
+                }))
                 .onFailure(testContext::failNow)));
     }
 
@@ -343,22 +288,18 @@ public class APIServerTest {
         );
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-            client.get("/pipelines/logs/runs/a-run-id/offset/0/lines/5")
-                .send(ar -> {
-                    if (ar.failed()) {
-                        testContext.failNow(ar.cause());
-                    } else {
-                        testContext.verify(() -> {
-                            final var result = ar.result();
+            client
+                .get("/pipelines/logs/runs/a-run-id/offset/0/lines/5")
+                .send()
+                .onSuccess(res ->
+                    testContext.verify(() -> {
+                        assertThat(res.statusCode()).isEqualTo(200);
+                        assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                        assertThat(res.bodyAsJsonObject().getJsonArray("message")).isEqualTo(expectedLogs);
 
-                            assertThat(result.statusCode()).isEqualTo(200);
-                            assertThat(result.getHeader("Content-Type")).isEqualTo("application/json");
-                            assertThat(result.bodyAsJsonObject().getJsonArray("message")).isEqualTo(expectedLogs);
-
-                            testContext.completeNow();
-                        });
-                    }
-                })));
+                        testContext.completeNow();
+                    }))
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -383,22 +324,18 @@ public class APIServerTest {
         );
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-            client.get("/pipelines/status/runs/a-run-id")
-                .send(ar -> {
-                    if (ar.failed()) {
-                        testContext.failNow(ar.cause());
-                    } else {
-                        testContext.verify(() -> {
-                            final var result = ar.result();
+            client
+                .get("/pipelines/status/runs/a-run-id")
+                .send()
+                .onSuccess(res ->
+                    testContext.verify(() -> {
+                        assertThat(res.statusCode()).isEqualTo(200);
+                        assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                        assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("running");
 
-                            assertThat(result.statusCode()).isEqualTo(200);
-                            assertThat(result.getHeader("Content-Type")).isEqualTo("application/json");
-                            assertThat(result.bodyAsJsonObject().getString("message")).isEqualTo("running");
-
-                            testContext.completeNow();
-                        });
-                    }
-                })));
+                        testContext.completeNow();
+                    }))
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -408,22 +345,18 @@ public class APIServerTest {
         final var client = WebClient.create(vertx, clientConfig);
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-            client.get("/pipelines/status/runs/another-run-id")
-                .send(ar -> {
-                    if (ar.failed()) {
-                        testContext.failNow(ar.cause());
-                    } else {
-                        testContext.verify(() -> {
-                            final var result = ar.result();
+            client
+                .get("/pipelines/status/runs/another-run-id")
+                .send()
+                .onSuccess(res ->
+                    testContext.verify(() -> {
+                        assertThat(res.statusCode()).isEqualTo(404);
+                        assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                        assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Cannot find status");
 
-                            assertThat(result.statusCode()).isEqualTo(404);
-                            assertThat(result.getHeader("Content-Type")).isEqualTo("application/json");
-                            assertThat(result.bodyAsJsonObject().getString("message")).isEqualTo("Cannot find status");
-
-                            testContext.completeNow();
-                        });
-                    }
-                })));
+                        testContext.completeNow();
+                    }))
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -461,6 +394,10 @@ public class APIServerTest {
 
                     testContext.completeNow();
                 }))
+                .onSuccess(_it -> client
+                    .delete(8001, "localhost", "/bob_artifact/dev/test/a-run-id/file")
+                    .send()
+                )
                 .onFailure(testContext::failNow);
         }));
     }
@@ -471,7 +408,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
             client
                 .get("/pipelines/groups/dev/names/test/runs/a-run-id/artifact-stores/local/artifact/file")
                 .send()
@@ -482,8 +419,7 @@ public class APIServerTest {
 
                     testContext.completeNow();
                 }))
-                .onFailure(testContext::failNow);
-        }));
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -505,7 +441,7 @@ public class APIServerTest {
             Duration.ofSeconds(5)
         );
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
             client
                 .get("/pipelines/groups/dev/names/test/runs/a-run-id/artifact-stores/local/artifact/file")
                 .send()
@@ -516,8 +452,7 @@ public class APIServerTest {
 
                     testContext.completeNow();
                 }))
-                .onFailure(testContext::failNow);
-        }));
+                .onFailure(testContext::failNow)));
     }
 
     @AfterEach
