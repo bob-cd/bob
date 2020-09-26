@@ -15,6 +15,7 @@
 
 (ns entities.util
   (:require [com.stuartsierra.component :as component]
+            [next.jdbc :as jdbc]
             [entities.system :as sys]))
 
 (defn with-system
@@ -32,7 +33,15 @@
                                             [:database]))
         {:keys [database queue]
          :as   com}
-        (component/start system)]
+        (component/start system)
+        ds (jdbc/get-datasource {:dbtype   "postgresql"
+                                 :dbname   "bob-test"
+                                 :user     "bob"
+                                 :password "bob"
+                                 :host     "localhost"
+                                 :port     5433})]
     (test-fn (sys/db-client database)
              (sys/queue-chan queue))
-    (component/stop com)))
+    (component/stop com)
+    ;; Reset DB fully for Crux
+    (jdbc/execute! ds ["DELETE FROM tx_events;"])))

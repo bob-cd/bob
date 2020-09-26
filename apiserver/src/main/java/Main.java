@@ -37,19 +37,19 @@ public class Main {
             if (config.succeeded()) {
                 final var conf = config.result();
 
-                final var dbName = conf.getString("DB_NAME", "bob");
-                final var dbHost = conf.getString("DB_HOST", "localhost");
-                final var dbPort = conf.getInteger("DB_PORT", 5432);
-                final var dbUser = conf.getString("DB_USER", "bob");
-                final var dbPassword = conf.getString("DB_PASSWORD", "bob");
+                final var dbName = conf.getString("BOB_STORAGE_NAME", "bob");
+                final var dbHost = conf.getString("BOB_STORAGE_HOST", "localhost");
+                final var dbPort = conf.getInteger("BOB_STORAGE_PORT", 5432);
+                final var dbUser = conf.getString("BOB_STORAGE_USER", "bob");
+                final var dbPassword = conf.getString("BOB_STORAGE_PASSWORD", "bob");
 
-                final var queueHost = conf.getString("QUEUE_HOST", "localhost");
-                final var queuePort = conf.getInteger("QUEUE_PORT", 5672);
-                final var queueUser = conf.getString("QUEUE_USER", "guest");
-                final var queuePassword = conf.getString("QUEUE_PASSWORD", "guest");
+                final var queueHost = conf.getString("BOB_QUEUE_HOST", "localhost");
+                final var queuePort = conf.getInteger("BOB_QUEUE_PORT", 5672);
+                final var queueUser = conf.getString("BOB_QUEUE_USER", "guest");
+                final var queuePassword = conf.getString("BOB_QUEUE_PASSWORD", "guest");
 
-                final var apiHost = conf.getString("API_HOST", "0.0.0.0");
-                final var apiPort = conf.getInteger("API_PORT", 7777);
+                final var apiHost = conf.getString("BOB_API_HOST", "0.0.0.0");
+                final var apiPort = conf.getInteger("BOB_API_PORT", 7777);
 
                 final var node = new DB(dbName, dbHost, dbPort, dbUser, dbPassword).node;
                 final var queue = RabbitMQClient.create(

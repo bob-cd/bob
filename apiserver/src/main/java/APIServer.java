@@ -19,7 +19,6 @@ import crux.api.ICruxAPI;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import io.vertx.ext.web.handler.LoggerHandler;
@@ -49,15 +48,15 @@ public class APIServer extends AbstractVerticle {
     public void start(Promise<Void> startPromise) {
         this.queue
             .start()
-            .compose(_it -> queue.exchangeDeclare("bob.direct", "direct", false, false))
-            .compose(_it -> queue.exchangeDeclare("bob.fanout", "fanout", false, false))
+            .compose(_it -> queue.exchangeDeclare("bob.direct", "direct", true, false))
+            .compose(_it -> queue.exchangeDeclare("bob.fanout", "fanout", true, false))
             .compose(_it -> queue.queueDeclare("bob.entities", true, false, false))
             .compose(_it -> queue.queueDeclare("bob.jobs", true, false, false))
             .compose(_it -> queue.queueDeclare("bob.errors", true, false, false))
             .compose(_it -> queue.queueBind("bob.jobs", "bob.direct", "bob.jobs"))
             .compose(_it -> queue.queueBind("bob.entities", "bob.direct", "bob.entities"))
-            .compose(_it -> openAPI3RouterFrom(this.vertx, this.apiSpec))
-            .compose(router -> serverFrom(this.vertx, router, this.host, this.port, this.queue, this.node))
+            .compose(_it -> makeRouter())
+            .compose(this::makeServer)
             .onFailure(err -> startPromise.fail(err.getCause()))
             .onSuccess(_it -> startPromise.complete());
     }
@@ -68,34 +67,32 @@ public class APIServer extends AbstractVerticle {
         this.queue.stop(_it -> stopPromise.complete());
     }
 
-    private static Future<OpenAPI3RouterFactory> openAPI3RouterFrom(Vertx vertx, String apiSpec) {
+    private Future<OpenAPI3RouterFactory> makeRouter() {
         final Promise<OpenAPI3RouterFactory> promise = Promise.promise();
 
-        OpenAPI3RouterFactory.create(vertx, apiSpec, promise);
+        OpenAPI3RouterFactory.create(this.vertx, this.apiSpec, promise);
 
         return promise.future();
     }
 
-    private static Future<HttpServer> serverFrom(
-        Vertx vertx, OpenAPI3RouterFactory routerFactory, String host, int port, RabbitMQClient queue, ICruxAPI node
-    ) {
+    private Future<HttpServer> makeServer(OpenAPI3RouterFactory routerFactory) {
         final var router = routerFactory
             .addHandlerByOperationId("GetApiSpec", Handlers::apiSpecHandler)
-            .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, queue, node))
-            .addHandlerByOperationId("PipelineCreate", ctx -> Handlers.pipelineCreateHandler(ctx, queue))
-            .addHandlerByOperationId("PipelineDelete", ctx -> Handlers.pipelineDeleteHandler(ctx, queue))
-            .addHandlerByOperationId("PipelineStart", ctx -> Handlers.pipelineStartHandler(ctx, queue))
-            .addHandlerByOperationId("PipelineStop", ctx -> Handlers.pipelineStopHandler(ctx, queue))
-            .addHandlerByOperationId("PipelineLogs", ctx -> Handlers.pipelineLogsHandler(ctx, node))
-            .addHandlerByOperationId("PipelineStatus", ctx -> Handlers.pipelineStatusHandler(ctx, node))
-            .addHandlerByOperationId("PipelineArtifactFetch", ctx -> Handlers.pipelineArtifactHandler(ctx, node, vertx))
+            .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, this.queue, this.node))
+            .addHandlerByOperationId("PipelineCreate", ctx -> Handlers.pipelineCreateHandler(ctx, this.queue))
+            .addHandlerByOperationId("PipelineDelete", ctx -> Handlers.pipelineDeleteHandler(ctx, this.queue))
+            .addHandlerByOperationId("PipelineStart", ctx -> Handlers.pipelineStartHandler(ctx, this.queue))
+            .addHandlerByOperationId("PipelineStop", ctx -> Handlers.pipelineStopHandler(ctx, this.queue))
+            .addHandlerByOperationId("PipelineLogs", ctx -> Handlers.pipelineLogsHandler(ctx, this.node))
+            .addHandlerByOperationId("PipelineStatus", ctx -> Handlers.pipelineStatusHandler(ctx, this.node))
+            .addHandlerByOperationId("PipelineArtifactFetch", ctx -> Handlers.pipelineArtifactHandler(ctx, this.node, this.vertx))
             .addGlobalHandler(LoggerHandler.create())
             .getRouter();
 
-        return vertx.createHttpServer()
+        return this.vertx.createHttpServer()
             .requestHandler(router)
-            .listen(port, host)
-            .onSuccess(_it -> logger.info("Bob is listening on port " + port))
+            .listen(this.port, this.host)
+            .onSuccess(_it -> logger.info("Bob is listening on port " + this.port))
             .onFailure(err -> logger.error(err.getMessage()));
     }
 }

@@ -468,7 +468,7 @@ public class APIServerTest {
     @AfterEach
     void cleanup() throws SQLException {
         final var st = conn.createStatement();
-        st.execute("DROP TABLE tx_events;");
+        st.execute("DELETE FROM tx_events;");
         st.close();
         conn.close();
         vertx.close();

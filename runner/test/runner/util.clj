@@ -44,4 +44,4 @@
              (sys/queue-chan queue))
     (component/stop com)
     ;; Reset DB fully for Crux
-    (jdbc/execute! ds ["DROP TABLE tx_events;"])))
+    (jdbc/execute! ds ["DELETE FROM tx_events;"])))
