@@ -248,4 +248,27 @@ public class Handlers {
             toJsonResponse(routingContext, e.getMessage(), 500);
         }
     }
+
+    public static void resourceProviderCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
+        final var params = routingContext.request().params();
+        final var name = params.get("name");
+        final var resourceProvider= routingContext
+                .getBodyAsJson()
+                .put("name", name);
+
+        publishMessage(queue, "resource-provider/create", "bob.direct", "bob.entities", resourceProvider);
+        toJsonResponse(routingContext, "Ok");
+    }
+
+    public static void artifactStoreCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
+        final var params = routingContext.request().params();
+        final var name = params.get("name");
+        final var resourceProvider= routingContext
+                .getBodyAsJson()
+                .put("name", name);
+
+        publishMessage(queue, "artifact-store/create", "bob.direct", "bob.entities", resourceProvider);
+        toJsonResponse(routingContext, "Ok");
+    }
+
 }

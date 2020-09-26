@@ -455,6 +455,70 @@ public class APIServerTest {
                 .onFailure(testContext::failNow)));
     }
 
+    @Test
+    @DisplayName("Test Resource Provider Create")
+    void testResourceProviderCreateSuccess(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var json = new JsonObject().put("url", "http://myresourceprovider");
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+                queue
+                        .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                        .onSuccess(rmqConsumer -> {
+                            final var resourceProvider= new JsonObject()
+                                    .put("name", "myresourceprovider")
+                                    .put("url", "http://myresourceprovider");
+
+                            rmqConsumer.handler(message -> testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(resourceProvider));
+                                assertThat(message.properties().getType()).isEqualTo("resource-provider/create");
+
+                                testContext.completeNow();
+                            }));
+                        })
+                        .compose(_it -> client.post("/resource-providers/myresourceprovider")
+                                .putHeader("Content-Type", "application/json")
+                                .sendJsonObject(json))
+                        .onSuccess(res -> testContext.verify(() -> {
+                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                            assertThat(res.statusCode()).isEqualTo(202);
+                        }))
+                        .onFailure(testContext::failNow)));
+    }
+
+    @Test
+    @DisplayName("Test Artifact Store Create")
+    void testArtifactStoreCreateSuccess(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var json = new JsonObject().put("url", "http://myartifactstore");
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+                queue
+                        .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                        .onSuccess(rmqConsumer -> {
+                            final var artifactStore= new JsonObject()
+                                    .put("name", "myartifactstore")
+                                    .put("url", "http://myartifactstore");
+
+                            rmqConsumer.handler(message -> testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(artifactStore));
+                                assertThat(message.properties().getType()).isEqualTo("artifact-store/create");
+
+                                testContext.completeNow();
+                            }));
+                        })
+                        .compose(_it -> client.post("/artifact-stores/myartifactstore")
+                                .putHeader("Content-Type", "application/json")
+                                .sendJsonObject(json))
+                        .onSuccess(res -> testContext.verify(() -> {
+                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                            assertThat(res.statusCode()).isEqualTo(202);
+                        }))
+                        .onFailure(testContext::failNow)));
+    }
+
     @AfterEach
     void cleanup() throws SQLException {
         final var st = conn.createStatement();
