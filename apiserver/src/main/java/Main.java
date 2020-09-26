@@ -33,10 +33,10 @@ public class Main {
         final var configRetrieverOptions = new ConfigRetrieverOptions()
             .addStore(new ConfigStoreOptions().setType("env"));
 
-        ConfigRetriever.create(vertx, configRetrieverOptions).getConfig(config -> {
-            if (config.succeeded()) {
-                final var conf = config.result();
-
+        ConfigRetriever
+            .create(vertx, configRetrieverOptions)
+            .getConfig()
+            .compose(conf -> {
                 final var dbName = conf.getString("BOB_STORAGE_DATABASE", "bob");
                 final var dbHost = conf.getString("BOB_STORAGE_HOST", "localhost");
                 final var dbPort = conf.getInteger("BOB_STORAGE_PORT", 5432);
@@ -61,13 +61,9 @@ public class Main {
                         .setPassword(queuePassword)
                 );
 
-                vertx.deployVerticle(new APIServer("/bob/api.yaml", apiHost, apiPort, queue, node), v -> {
-                    if (v.succeeded())
-                        logger.info("Deployed on verticle: " + v.result());
-                    else
-                        logger.error("Deployment error: " + v.cause());
-                });
-            }
-        });
+                return vertx.deployVerticle(new APIServer("/bob/api.yaml", apiHost, apiPort, queue, node));
+            })
+            .onSuccess(id -> logger.info("Deployed on verticle: " + id))
+            .onFailure(err -> logger.error("Deployment error: " + err.getMessage()));
     }
 }
