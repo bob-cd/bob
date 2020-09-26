@@ -39,7 +39,6 @@
                                 (:group pipeline)
                                 (:name pipeline)))
         data   (-> pipeline
-                   (dissoc :group :name)
                    (assoc :crux.db/id id)
                    (assoc :type :pipeline))
         result (f/try*

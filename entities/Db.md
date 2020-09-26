@@ -4,6 +4,8 @@
 
 ```clojure
 {:crux.db/id :bob.pipeline.<group-name>/<pipeline-name>
+ :group      <group-name>
+ :name       <pipeline-name>
  :type       :pipeline
  :steps      [{:cmd "echo hello"}
               {:needs_resource "source"
