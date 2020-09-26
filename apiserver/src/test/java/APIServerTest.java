@@ -465,6 +465,61 @@ public class APIServerTest {
         }));
     }
 
+    @Test
+    @DisplayName("Test Failed Pipeline Artifact Fetch With No Store")
+    void testFailedPipelineArtifactFetchWithNoStore(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
+            client
+                .get("/pipelines/groups/dev/names/test/runs/a-run-id/artifact-stores/local/artifact/file")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.statusCode()).isEqualTo(404);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Cannot locate artifact store local");
+
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow);
+        }));
+    }
+
+    @Test
+    @DisplayName("Test Failed Pipeline Artifact Fetch With No Artifact")
+    void testFailedPipelineArtifactFetchWithNoArtifact(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var query = DB.datafy(
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.artifact-store/local
+               :type       :artifact-store
+               :url        "http://localhost:8001"}]]
+            """
+        );
+
+        node.awaitTx(
+            node.submitTx((List<List<?>>) query),
+            Duration.ofSeconds(5)
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
+            client
+                .get("/pipelines/groups/dev/names/test/runs/a-run-id/artifact-stores/local/artifact/file")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.statusCode()).isEqualTo(404);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Error locating artifact file");
+
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow);
+        }));
+    }
+
     @AfterEach
     void cleanup() throws SQLException {
         final var st = conn.createStatement();

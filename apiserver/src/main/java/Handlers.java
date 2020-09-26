@@ -239,7 +239,7 @@ public class Handlers {
                                 .putHeader("Content-Type", "application/tar")
                                 .end(res.body());
                         } else {
-                            toJsonResponse(routingContext, "Error location artifact " + artifactName, res.statusCode());
+                            toJsonResponse(routingContext, "Error locating artifact " + artifactName, res.statusCode());
                         }
                     }
                 )
