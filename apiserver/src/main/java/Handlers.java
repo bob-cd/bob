@@ -287,14 +287,32 @@ public class Handlers {
         toJsonResponse(routingContext, "Ok");
     }
 
+    public static void resourceProviderDeleteHandler(RoutingContext routingContext, RabbitMQClient queue) {
+        final var params = routingContext.request().params();
+        final var name = params.get("name");
+        final var resourceProvider = new JsonObject().put("name", name);
+
+        publishMessage(queue, "resource-provider/delete", "bob.direct", "bob.entities", resourceProvider);
+        toJsonResponse(routingContext, "Ok");
+    }
+
     public static void artifactStoreCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
         final var params = routingContext.request().params();
         final var name = params.get("name");
-        final var resourceProvider= routingContext
+        final var artifactStore = routingContext
                 .getBodyAsJson()
                 .put("name", name);
 
-        publishMessage(queue, "artifact-store/create", "bob.direct", "bob.entities", resourceProvider);
+        publishMessage(queue, "artifact-store/create", "bob.direct", "bob.entities", artifactStore);
+        toJsonResponse(routingContext, "Ok");
+    }
+
+    public static void artifactStoreDeleteHandler(RoutingContext routingContext, RabbitMQClient queue) {
+        final var params = routingContext.request().params();
+        final var name = params.get("name");
+        final var artifactStore = new JsonObject().put("name", name);
+
+        publishMessage(queue, "artifact-store/delete", "bob.direct", "bob.entities", artifactStore);
         toJsonResponse(routingContext, "Ok");
     }
 

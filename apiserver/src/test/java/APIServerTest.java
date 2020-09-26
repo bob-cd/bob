@@ -538,6 +538,36 @@ public class APIServerTest {
     }
 
     @Test
+    @DisplayName("Test Resource Provider Delete")
+    void testResourceProviderDeleteSuccess(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+                queue
+                        .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                        .onSuccess(rmqConsumer -> {
+                            final var resourceProvider= new JsonObject()
+                                    .put("name", "myresourceprovider");
+
+                            rmqConsumer.handler(message -> testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(resourceProvider);
+                                assertThat(message.properties().getType()).isEqualTo("resource-provider/delete");
+
+                                testContext.completeNow();
+                            }));
+                        })
+                        .compose(_it -> client.delete("/resource-providers/myresourceprovider")
+                                .putHeader("Content-Type", "application/json")
+                                .send())
+                        .onSuccess(res -> testContext.verify(() -> {
+                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                            assertThat(res.statusCode()).isEqualTo(202);
+                        }))
+                        .onFailure(testContext::failNow)));
+    }
+
+    @Test
     @DisplayName("Test Artifact Store Create")
     void testArtifactStoreCreateSuccess(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -562,6 +592,36 @@ public class APIServerTest {
                         .compose(_it -> client.post("/artifact-stores/myartifactstore")
                                 .putHeader("Content-Type", "application/json")
                                 .sendJsonObject(json))
+                        .onSuccess(res -> testContext.verify(() -> {
+                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                            assertThat(res.statusCode()).isEqualTo(202);
+                        }))
+                        .onFailure(testContext::failNow)));
+    }
+
+    @Test
+    @DisplayName("Test Artifact Store Delete")
+    void testArtifactStoreDeleteSuccess(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+                queue
+                        .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                        .onSuccess(rmqConsumer -> {
+                            final var artifactStore= new JsonObject()
+                                    .put("name", "myartifactstore");
+
+                            rmqConsumer.handler(message -> testContext.verify(() -> {
+                                assertThat(message.body().toJsonObject()).isEqualTo(artifactStore);
+                                assertThat(message.properties().getType()).isEqualTo("artifact-store/delete");
+
+                                testContext.completeNow();
+                            }));
+                        })
+                        .compose(_it -> client.delete("/artifact-stores/myartifactstore")
+                                .putHeader("Content-Type", "application/json")
+                                .send())
                         .onSuccess(res -> testContext.verify(() -> {
                             assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
                             assertThat(res.statusCode()).isEqualTo(202);
