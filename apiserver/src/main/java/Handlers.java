@@ -52,12 +52,10 @@ public class Handlers {
     private static void publishMessage(RabbitMQClient queueClient, String type, String exchange, String routingKey, JsonObject payload) {
         final var props = new AMQP.BasicProperties.Builder().type(type).build();
 
-        queueClient.basicPublish(exchange, routingKey, props, payload.toBuffer(), it -> {
-            if (it.succeeded())
-                logger.info("Published message with type %s on %s!".formatted(type, routingKey));
-            else
-                logger.error("Error publishing message on entities: " + it.cause().getMessage());
-        });
+        queueClient
+            .basicPublish(exchange, routingKey, props, payload.toBuffer())
+            .onSuccess(_it -> logger.info("Published message with type %s on %s!".formatted(type, routingKey)))
+            .onFailure(it -> logger.error("Error publishing message on entities: " + it.getMessage()));
     }
 
     public static void apiSpecHandler(RoutingContext routingContext) {
@@ -244,6 +242,35 @@ public class Handlers {
                     }
                 )
                 .onFailure(err -> toJsonResponse(routingContext, err.getMessage(), 503));
+        } catch (Exception e) {
+            toJsonResponse(routingContext, e.getMessage(), 500);
+        }
+    }
+
+    public static void pipelineListHandler(RoutingContext routingContext, ICruxAPI node) {
+        final var params = routingContext.request().params();
+        final var groupClause = params.contains("group") ? "[pipeline :group \"%s\"]".formatted(params.get("group")) : "";
+        final var nameClause = params.contains("name") ? "[pipeline :name \"%s\"]".formatted(params.get("name")) : "";
+        final var statusClause = params.contains("status") ? "[run :type :pipeline-run] [run :status :%s]".formatted(params.get("status")) : "";
+        final var query = DB.datafy(
+            """
+            {:find  [(eql/project pipeline [:steps :vars :resources :image :group :name])]
+             :where [[pipeline :type :pipeline] %s %s %s]}
+            """.formatted(groupClause, nameClause, statusClause)
+        );
+
+        try {
+            final var pipelines = node
+                .db()
+                .query(query)
+                .stream()
+                .map(it -> it.get(0))
+                .map(DB::toJson)
+                .collect(Collectors.toList());
+
+            System.out.println(pipelines);
+
+            toJsonResponse(routingContext, pipelines, 200);
         } catch (Exception e) {
             toJsonResponse(routingContext, e.getMessage(), 500);
         }

@@ -37,7 +37,7 @@ public class Main {
             if (config.succeeded()) {
                 final var conf = config.result();
 
-                final var dbName = conf.getString("BOB_STORAGE_NAME", "bob");
+                final var dbName = conf.getString("BOB_STORAGE_DATABASE", "bob");
                 final var dbHost = conf.getString("BOB_STORAGE_HOST", "localhost");
                 final var dbPort = conf.getInteger("BOB_STORAGE_PORT", 5432);
                 final var dbUser = conf.getString("BOB_STORAGE_USER", "bob");

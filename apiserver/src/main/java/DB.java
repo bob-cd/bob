@@ -18,16 +18,14 @@
 
 import clojure.java.api.Clojure;
 import clojure.lang.IFn;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import crux.api.Crux;
 import crux.api.ICruxAPI;
+import io.vertx.core.json.JsonObject;
 
 import java.time.Duration;
 
 public class DB {
     public final ICruxAPI node;
-    private final static ObjectMapper objectMapper = new ObjectMapper();
     private final static IFn toJson;
 
     static {
@@ -65,7 +63,7 @@ public class DB {
         return Clojure.read(raw);
     }
 
-    public static <T> T objectify(Object data, Class<T> cls) throws JsonProcessingException {
-        return objectMapper.readValue((String) toJson.invoke(data), cls);
+    public static JsonObject toJson(Object data) {
+        return new JsonObject((String) toJson.invoke(data));
     }
 }

@@ -414,11 +414,11 @@ paths:
                 success:
                   value:
                     message:
-                      - name: build
-                        data:
-                          image: busybox:musl
-                          steps:
-                            - cmd: echo hello
+                      - group: dev
+                        name: test
+                        image: busybox:musl
+                        steps:
+                          - cmd: echo hello
         default:
           description: Failed listing of pipelines
           content:

@@ -456,6 +456,56 @@ public class APIServerTest {
     }
 
     @Test
+    @DisplayName("Test Pipelines List")
+    void testPipelinesList(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var query = DB.datafy(
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.pipeline.dev/test1
+               :type       :pipeline
+               :group      "dev"
+               :name       "test1"
+               :image      "busybox:musl"
+               :steps      [{:cmd "echo yes"}]}]
+             [:crux.tx/put
+              {:crux.db/id :bob.pipeline.dev/test2
+               :type       :pipeline
+               :group      "dev"
+               :name       "test2"
+               :image      "alpine:latest"
+               :steps      [{:cmd "echo yesnt"}]}]
+             [:crux.tx/put
+              {:crux.db/id :bob.pipeline.prod/test1
+               :type       :pipeline
+               :group      "prod"
+               :name       "test1"
+               :image      "alpine:latest"
+               :steps      [{:cmd "echo boo"}]}]]
+            """
+        );
+
+        node.awaitTx(
+            node.submitTx((List<List<?>>) query),
+            Duration.ofSeconds(5)
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client
+                .get("/pipelines")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.statusCode()).isEqualTo(200);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(3); // TODO: Check the actual objects
+
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow)));
+    }
+
+    @Test
     @DisplayName("Test Resource Provider Create")
     void testResourceProviderCreateSuccess(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
