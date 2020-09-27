@@ -25,9 +25,9 @@ test: test-entities test-runner test-apiserver
 
 compile: entities runner apiserver
 
-docker-image: docker-image-entities docker-image-runner
+docker-image: docker-image-entities docker-image-runner docker-image-apiserver
 
-docker-push: docker-push-entities docker-push-runner
+docker-push: docker-push-entities docker-push-runner docker-push-apiserver
 
 entities: $(entities-dir)
 	$(MAKE) --directory=$(entities-dir) compile
@@ -53,11 +53,17 @@ docker-image-entities: $(entities-dir)
 docker-image-runner: $(runner-dir)
 	$(MAKE) --directory=$(runner-dir) docker-image
 
+docker-image-apiserver: $(apiserver-dir)
+	$(MAKE) --directory=$(apiserver-dir) docker-image
+
 docker-push-entities: $(entities-dir)
 	$(MAKE) --directory=$(entities-dir) docker-push
 
 docker-push-runner: $(runner-dir)
 	$(MAKE) --directory=$(runner-dir) docker-push
+
+docker-push-apiserver: $(apiserver-dir)
+	$(MAKE) --directory=$(apiserver-dir) docker-push
 
 clean:
 	$(MAKE) --directory=$(runner-dir) clean
