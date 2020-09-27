@@ -27,6 +27,7 @@
                                  [[:crux.tx/put
                                    {:crux.db/id (keyword (str "bob.resource-provider/" (:name data)))
                                     :type       :resource-provider
+                                    :name       (:name data)
                                     :url        (:url data)}]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Could not register resource provider: %s" (f/message result)))
@@ -55,6 +56,12 @@
                               nil
                               {:name "local"
                                :url  "http://localhost:8002"})
+
+  (crux/q (-> db
+              sys/db-client
+              crux/db)
+          '{:find [(eql/project resource-provider [:name :url])]
+            :where [[resource-provider :type :resource-provider]]})
 
   (crux/entity (-> db
                    sys/db-client

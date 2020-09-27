@@ -268,8 +268,6 @@ public class Handlers {
                 .map(DB::toJson)
                 .collect(Collectors.toList());
 
-            System.out.println(pipelines);
-
             toJsonResponse(routingContext, pipelines, 200);
         } catch (Exception e) {
             toJsonResponse(routingContext, e.getMessage(), 500);
@@ -294,6 +292,30 @@ public class Handlers {
 
         publishMessage(queue, "resource-provider/delete", "bob.direct", "bob.entities", resourceProvider);
         toJsonResponse(routingContext, "Ok");
+    }
+
+    public static void resourceProviderListHandler(RoutingContext routingContext, ICruxAPI node) {
+        final var params = routingContext.request().params();
+        final var query = DB.datafy(
+            """
+            {:find  [(eql/project resource-provider [:name :url])]
+             :where [[resource-provider :type :resource-provider]]}
+            """
+        );
+
+        try {
+            final var resourceProvider = node
+                .db()
+                .query(query)
+                .stream()
+                .map(it -> it.get(0))
+                .map(DB::toJson)
+                .collect(Collectors.toList());
+
+            toJsonResponse(routingContext, resourceProvider, 200);
+        } catch (Exception e) {
+            toJsonResponse(routingContext, e.getMessage(), 500);
+        }
     }
 
     public static void artifactStoreCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
