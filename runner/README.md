@@ -51,7 +51,7 @@ The priority of your configuration is following:
 - Run `docker run -it --name bob-queue -p 5672:5672 -p 15672:15672 rabbitmq:3-management-alpine` to run the latest management enabled RabbitMQ instance on port `5672` and the admin control on port `15672`. The default credentials are `guest:guest`.
 - Run `docker run --rm -it --name bob-storage -p 5432:5432 -e POSTGRES_DB=bob -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob postgres:alpine` to run the latest PostgreSQL instance on port `5432`.
 
-### Ways of connecting Entities to the cluster
+### Ways of connecting Runner to the cluster
 - To build an uberjar run `clojure -Spom && clojure -A:uberjar` to obtain a `runner.jar`. Running `java -jar runner.jar` should connect to it all nicely.
 - To run directly without building a JAR, run `clj -m runner.main` from this dir.
 
