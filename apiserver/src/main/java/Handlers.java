@@ -277,9 +277,9 @@ public class Handlers {
     public static void resourceProviderCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
         final var params = routingContext.request().params();
         final var name = params.get("name");
-        final var resourceProvider= routingContext
-                .getBodyAsJson()
-                .put("name", name);
+        final var resourceProvider = routingContext
+            .getBodyAsJson()
+            .put("name", name);
 
         publishMessage(queue, "resource-provider/create", "bob.direct", "bob.entities", resourceProvider);
         toJsonResponse(routingContext, "Ok");
@@ -295,7 +295,6 @@ public class Handlers {
     }
 
     public static void resourceProviderListHandler(RoutingContext routingContext, ICruxAPI node) {
-        final var params = routingContext.request().params();
         final var query = DB.datafy(
             """
             {:find  [(eql/project resource-provider [:name :url])]
@@ -322,8 +321,8 @@ public class Handlers {
         final var params = routingContext.request().params();
         final var name = params.get("name");
         final var artifactStore = routingContext
-                .getBodyAsJson()
-                .put("name", name);
+            .getBodyAsJson()
+            .put("name", name);
 
         publishMessage(queue, "artifact-store/create", "bob.direct", "bob.entities", artifactStore);
         toJsonResponse(routingContext, "Ok");
@@ -339,7 +338,6 @@ public class Handlers {
     }
 
     public static void artifactStoreListHandler(RoutingContext routingContext, ICruxAPI node) {
-        final var params = routingContext.request().params();
         final var query = DB.datafy(
             """
             {:find  [(eql/project artifact-store [:name :url])]
@@ -361,5 +359,4 @@ public class Handlers {
             toJsonResponse(routingContext, e.getMessage(), 500);
         }
     }
-
 }

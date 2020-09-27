@@ -6,7 +6,7 @@
 
 ## This is what [CI/CD](https://en.wikipedia.org/wiki/CI/CD) should've been.
 
-### 🚧 Warning: This branch is for the upcoming version of Bob and is going through heavy development and flux, for the earlier version see this [branch](https://github.com/bob-cd/bob/tree/master) 🚧
+### 🚧 This is a proof of concept and isn't fully functional yet. 🚧
 
 ### [Why](https://bob-cd.github.io/pages/why-bob.html) Bob
 
