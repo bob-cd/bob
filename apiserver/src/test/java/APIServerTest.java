@@ -568,6 +568,27 @@ public class APIServerTest {
     }
 
     @Test
+    @DisplayName("Test Resource Provider Empty List")
+    void testResourceProviderEmptyList(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client
+                .get("/resource-providers")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    System.out.println(res.bodyAsString());
+                    assertThat(res.statusCode()).isEqualTo(200);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(0); // TODO: Check the actual objects
+
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow)));
+    }
+
+    @Test
     @DisplayName("Test Resource Provider List")
     void testResourceProviderList(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
@@ -586,20 +607,6 @@ public class APIServerTest {
                :url        "http://localhost:8001"}]]
             """
         );
-
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-            client
-                .get("/resource-providers")
-                .send()
-                .onSuccess(res -> testContext.verify(() -> {
-                    System.out.println(res.bodyAsString());
-                    assertThat(res.statusCode()).isEqualTo(200);
-                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
-                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(0); // TODO: Check the actual objects
-
-                    testContext.completeNow();
-                }))
-                .onFailure(testContext::failNow)));
 
         node.awaitTx(
             node.submitTx((List<List<?>>) query),
@@ -679,6 +686,27 @@ public class APIServerTest {
                 .onSuccess(res -> testContext.verify(() -> {
                     assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
                     assertThat(res.statusCode()).isEqualTo(202);
+                }))
+                .onFailure(testContext::failNow)));
+    }
+
+    @Test
+    @DisplayName("Test Artifact Store Empty List")
+    void testArtifactStoreEmptyList(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client
+                .get("/artifact-stores")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    System.out.println(res.bodyAsString());
+                    assertThat(res.statusCode()).isEqualTo(200);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(0); // TODO: Check the actual objects
+
+                    testContext.completeNow();
                 }))
                 .onFailure(testContext::failNow)));
     }
