@@ -513,28 +513,28 @@ public class APIServerTest {
         final var json = new JsonObject().put("url", "http://myresourceprovider");
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-                queue
-                        .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
-                        .onSuccess(rmqConsumer -> {
-                            final var resourceProvider= new JsonObject()
-                                    .put("name", "myresourceprovider")
-                                    .put("url", "http://myresourceprovider");
+            queue
+                .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                .onSuccess(rmqConsumer -> {
+                    final var resourceProvider = new JsonObject()
+                        .put("name", "myresourceprovider")
+                        .put("url", "http://myresourceprovider");
 
-                            rmqConsumer.handler(message -> testContext.verify(() -> {
-                                assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(resourceProvider));
-                                assertThat(message.properties().getType()).isEqualTo("resource-provider/create");
+                    rmqConsumer.handler(message -> testContext.verify(() -> {
+                        assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(resourceProvider));
+                        assertThat(message.properties().getType()).isEqualTo("resource-provider/create");
 
-                                testContext.completeNow();
-                            }));
-                        })
-                        .compose(_it -> client.post("/resource-providers/myresourceprovider")
-                                .putHeader("Content-Type", "application/json")
-                                .sendJsonObject(json))
-                        .onSuccess(res -> testContext.verify(() -> {
-                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
-                            assertThat(res.statusCode()).isEqualTo(202);
-                        }))
-                        .onFailure(testContext::failNow)));
+                        testContext.completeNow();
+                    }));
+                })
+                .compose(_it -> client.post("/resource-providers/myresourceprovider")
+                    .putHeader("Content-Type", "application/json")
+                    .sendJsonObject(json))
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(res.statusCode()).isEqualTo(202);
+                }))
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -544,27 +544,81 @@ public class APIServerTest {
         final var client = WebClient.create(vertx, clientConfig);
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-                queue
-                        .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
-                        .onSuccess(rmqConsumer -> {
-                            final var resourceProvider= new JsonObject()
-                                    .put("name", "myresourceprovider");
+            queue
+                .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                .onSuccess(rmqConsumer -> {
+                    final var resourceProvider = new JsonObject()
+                        .put("name", "myresourceprovider");
 
-                            rmqConsumer.handler(message -> testContext.verify(() -> {
-                                assertThat(message.body().toJsonObject()).isEqualTo(resourceProvider);
-                                assertThat(message.properties().getType()).isEqualTo("resource-provider/delete");
+                    rmqConsumer.handler(message -> testContext.verify(() -> {
+                        assertThat(message.body().toJsonObject()).isEqualTo(resourceProvider);
+                        assertThat(message.properties().getType()).isEqualTo("resource-provider/delete");
 
-                                testContext.completeNow();
-                            }));
-                        })
-                        .compose(_it -> client.delete("/resource-providers/myresourceprovider")
-                                .putHeader("Content-Type", "application/json")
-                                .send())
-                        .onSuccess(res -> testContext.verify(() -> {
-                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
-                            assertThat(res.statusCode()).isEqualTo(202);
-                        }))
-                        .onFailure(testContext::failNow)));
+                        testContext.completeNow();
+                    }));
+                })
+                .compose(_it -> client.delete("/resource-providers/myresourceprovider")
+                    .putHeader("Content-Type", "application/json")
+                    .send())
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(res.statusCode()).isEqualTo(202);
+                }))
+                .onFailure(testContext::failNow)));
+    }
+
+    @Test
+    @DisplayName("Test Resource Provider List")
+    void testResourceProviderList(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var query = DB.datafy(
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.resource-provider.dev/test1
+               :type       :resource-provider
+               :name       "test1"
+               :url        "http://localhost:8000"}]
+             [:crux.tx/put
+              {:crux.db/id :bob.resource-provider.dev/test2
+               :type       :resource-provider
+               :name       "test2"
+               :url        "http://localhost:8001"}]]
+            """
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client
+                .get("/resource-providers")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    System.out.println(res.bodyAsString());
+                    assertThat(res.statusCode()).isEqualTo(200);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(0); // TODO: Check the actual objects
+
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow)));
+
+        node.awaitTx(
+            node.submitTx((List<List<?>>) query),
+            Duration.ofSeconds(5)
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client
+                .get("/resource-providers")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    System.out.println(res.bodyAsString());
+                    assertThat(res.statusCode()).isEqualTo(200);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(2); // TODO: Check the actual objects
+
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -575,28 +629,28 @@ public class APIServerTest {
         final var json = new JsonObject().put("url", "http://myartifactstore");
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-                queue
-                        .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
-                        .onSuccess(rmqConsumer -> {
-                            final var artifactStore= new JsonObject()
-                                    .put("name", "myartifactstore")
-                                    .put("url", "http://myartifactstore");
+            queue
+                .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                .onSuccess(rmqConsumer -> {
+                    final var artifactStore = new JsonObject()
+                        .put("name", "myartifactstore")
+                        .put("url", "http://myartifactstore");
 
-                            rmqConsumer.handler(message -> testContext.verify(() -> {
-                                assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(artifactStore));
-                                assertThat(message.properties().getType()).isEqualTo("artifact-store/create");
+                    rmqConsumer.handler(message -> testContext.verify(() -> {
+                        assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(artifactStore));
+                        assertThat(message.properties().getType()).isEqualTo("artifact-store/create");
 
-                                testContext.completeNow();
-                            }));
-                        })
-                        .compose(_it -> client.post("/artifact-stores/myartifactstore")
-                                .putHeader("Content-Type", "application/json")
-                                .sendJsonObject(json))
-                        .onSuccess(res -> testContext.verify(() -> {
-                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
-                            assertThat(res.statusCode()).isEqualTo(202);
-                        }))
-                        .onFailure(testContext::failNow)));
+                        testContext.completeNow();
+                    }));
+                })
+                .compose(_it -> client.post("/artifact-stores/myartifactstore")
+                    .putHeader("Content-Type", "application/json")
+                    .sendJsonObject(json))
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(res.statusCode()).isEqualTo(202);
+                }))
+                .onFailure(testContext::failNow)));
     }
 
     @Test
@@ -606,27 +660,81 @@ public class APIServerTest {
         final var client = WebClient.create(vertx, clientConfig);
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
-                queue
-                        .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
-                        .onSuccess(rmqConsumer -> {
-                            final var artifactStore= new JsonObject()
-                                    .put("name", "myartifactstore");
+            queue
+                .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
+                .onSuccess(rmqConsumer -> {
+                    final var artifactStore = new JsonObject()
+                        .put("name", "myartifactstore");
 
-                            rmqConsumer.handler(message -> testContext.verify(() -> {
-                                assertThat(message.body().toJsonObject()).isEqualTo(artifactStore);
-                                assertThat(message.properties().getType()).isEqualTo("artifact-store/delete");
+                    rmqConsumer.handler(message -> testContext.verify(() -> {
+                        assertThat(message.body().toJsonObject()).isEqualTo(artifactStore);
+                        assertThat(message.properties().getType()).isEqualTo("artifact-store/delete");
 
-                                testContext.completeNow();
-                            }));
-                        })
-                        .compose(_it -> client.delete("/artifact-stores/myartifactstore")
-                                .putHeader("Content-Type", "application/json")
-                                .send())
-                        .onSuccess(res -> testContext.verify(() -> {
-                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
-                            assertThat(res.statusCode()).isEqualTo(202);
-                        }))
-                        .onFailure(testContext::failNow)));
+                        testContext.completeNow();
+                    }));
+                })
+                .compose(_it -> client.delete("/artifact-stores/myartifactstore")
+                    .putHeader("Content-Type", "application/json")
+                    .send())
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(res.statusCode()).isEqualTo(202);
+                }))
+                .onFailure(testContext::failNow)));
+    }
+
+    @Test
+    @DisplayName("Test Artifact Store List")
+    void testArtifactStoreList(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var query = DB.datafy(
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.artifact-store.dev/test1
+               :type       :artifact-store
+               :name       "test1"
+               :url        "http://localhost:8000"}]
+             [:crux.tx/put
+              {:crux.db/id :bob.artifact-store.dev/test2
+               :type       :artifact-store
+               :name       "test2"
+               :url        "http://localhost:8001"}]]
+            """
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client
+                .get("/artifact-stores")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    System.out.println(res.bodyAsString());
+                    assertThat(res.statusCode()).isEqualTo(200);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(0); // TODO: Check the actual objects
+
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow)));
+
+        node.awaitTx(
+            node.submitTx((List<List<?>>) query),
+            Duration.ofSeconds(5)
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+            client
+                .get("/artifact-stores")
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    System.out.println(res.bodyAsString());
+                    assertThat(res.statusCode()).isEqualTo(200);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(2); // TODO: Check the actual objects
+
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow)));
     }
 
     @AfterEach

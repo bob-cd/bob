@@ -32,7 +32,8 @@
                        (is (= "Ok" create-res))
                        (is (= {:crux.db/id :bob.artifact-store/s3
                                :type       :artifact-store
-                               :url        "my.store.com"}
+                               :url        "my.store.com"
+                               :name       "s3"}
                               effect))))))
   (testing "deletion"
     (u/with-system (fn [db queue-chan]

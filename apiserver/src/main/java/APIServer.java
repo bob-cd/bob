@@ -89,8 +89,10 @@ public class APIServer extends AbstractVerticle {
             .addHandlerByOperationId("PipelineList", ctx -> Handlers.pipelineListHandler(ctx, this.node))
             .addHandlerByOperationId("ResourceProviderCreate", ctx -> Handlers.resourceProviderCreateHandler(ctx, this.queue))
             .addHandlerByOperationId("ResourceProviderDelete", ctx -> Handlers.resourceProviderDeleteHandler(ctx, this.queue))
+            .addHandlerByOperationId("ResourceProviderList", ctx -> Handlers.resourceProviderListHandler(ctx, this.node))
             .addHandlerByOperationId("ArtifactStoreCreate", ctx -> Handlers.artifactStoreCreateHandler(ctx, this.queue))
             .addHandlerByOperationId("ArtifactStoreDelete", ctx -> Handlers.artifactStoreDeleteHandler(ctx, this.queue))
+            .addHandlerByOperationId("ArtifactStoreList", ctx -> Handlers.artifactStoreListHandler(ctx, this.node))
             .addGlobalHandler(LoggerHandler.create())
             .getRouter();
 

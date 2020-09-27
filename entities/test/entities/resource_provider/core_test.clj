@@ -33,7 +33,8 @@
           (is (= "Ok" create-res))
           (is (= {:crux.db/id :bob.resource-provider/github
                   :type       :resource-provider
-                  :url        "my.resource.com"}
+                  :url        "my.resource.com"
+                  :name       "github"}
                  effect))))))
   (testing "deletion"
     (u/with-system
