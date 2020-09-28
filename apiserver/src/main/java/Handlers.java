@@ -173,7 +173,7 @@ public class Handlers {
             """
             {:find  [(eql/project run [:status])]
              :where [[run :type :pipeline-run]
-                     [run :crux.db/id :bob.pipeline.run/l-%s]]}
+                     [run :crux.db/id :bob.pipeline.run/%s]]}
             """.formatted(id)
         );
         final var key = Keyword.intern(Symbol.create("status"));

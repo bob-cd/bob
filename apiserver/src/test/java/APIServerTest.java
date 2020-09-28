@@ -310,7 +310,7 @@ public class APIServerTest {
         final var query = DB.datafy(
             """
             [[:crux.tx/put
-              {:crux.db/id :bob.pipeline.run/l-a-run-id
+              {:crux.db/id :bob.pipeline.run/a-run-id
                :type       :pipeline-run
                :group      "dev"
                :name       "test"
@@ -510,15 +510,15 @@ public class APIServerTest {
     void testResourceProviderCreateSuccess(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
-        final var json = new JsonObject().put("url", "http://myresourceprovider");
+        final var json = new JsonObject().put("url", "http://my-resource-provider");
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
             queue
                 .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer -> {
                     final var resourceProvider = new JsonObject()
-                        .put("name", "myresourceprovider")
-                        .put("url", "http://myresourceprovider");
+                        .put("name", "my-resource-provider")
+                        .put("url", "http://my-resource-provider");
 
                     rmqConsumer.handler(message -> testContext.verify(() -> {
                         assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(resourceProvider));
@@ -527,7 +527,7 @@ public class APIServerTest {
                         testContext.completeNow();
                     }));
                 })
-                .compose(_it -> client.post("/resource-providers/myresourceprovider")
+                .compose(_it -> client.post("/resource-providers/my-resource-provider")
                     .putHeader("Content-Type", "application/json")
                     .sendJsonObject(json))
                 .onSuccess(res -> testContext.verify(() -> {
@@ -548,7 +548,7 @@ public class APIServerTest {
                 .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer -> {
                     final var resourceProvider = new JsonObject()
-                        .put("name", "myresourceprovider");
+                        .put("name", "my-resource-provider");
 
                     rmqConsumer.handler(message -> testContext.verify(() -> {
                         assertThat(message.body().toJsonObject()).isEqualTo(resourceProvider);
@@ -557,7 +557,7 @@ public class APIServerTest {
                         testContext.completeNow();
                     }));
                 })
-                .compose(_it -> client.delete("/resource-providers/myresourceprovider")
+                .compose(_it -> client.delete("/resource-providers/my-resource-provider")
                     .putHeader("Content-Type", "application/json")
                     .send())
                 .onSuccess(res -> testContext.verify(() -> {
@@ -633,15 +633,15 @@ public class APIServerTest {
     void testArtifactStoreCreateSuccess(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
-        final var json = new JsonObject().put("url", "http://myartifactstore");
+        final var json = new JsonObject().put("url", "http://my-artifact-store");
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
             queue
                 .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer -> {
                     final var artifactStore = new JsonObject()
-                        .put("name", "myartifactstore")
-                        .put("url", "http://myartifactstore");
+                        .put("name", "my-artifact-store")
+                        .put("url", "http://my-artifact-store");
 
                     rmqConsumer.handler(message -> testContext.verify(() -> {
                         assertThat(message.body().toJsonObject()).isEqualTo(json.mergeIn(artifactStore));
@@ -650,7 +650,7 @@ public class APIServerTest {
                         testContext.completeNow();
                     }));
                 })
-                .compose(_it -> client.post("/artifact-stores/myartifactstore")
+                .compose(_it -> client.post("/artifact-stores/my-artifact-store")
                     .putHeader("Content-Type", "application/json")
                     .sendJsonObject(json))
                 .onSuccess(res -> testContext.verify(() -> {
@@ -671,7 +671,7 @@ public class APIServerTest {
                 .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer -> {
                     final var artifactStore = new JsonObject()
-                        .put("name", "myartifactstore");
+                        .put("name", "my-artifact-store");
 
                     rmqConsumer.handler(message -> testContext.verify(() -> {
                         assertThat(message.body().toJsonObject()).isEqualTo(artifactStore);
@@ -680,7 +680,7 @@ public class APIServerTest {
                         testContext.completeNow();
                     }));
                 })
-                .compose(_it -> client.delete("/artifact-stores/myartifactstore")
+                .compose(_it -> client.delete("/artifact-stores/my-artifact-store")
                     .putHeader("Content-Type", "application/json")
                     .send())
                 .onSuccess(res -> testContext.verify(() -> {
