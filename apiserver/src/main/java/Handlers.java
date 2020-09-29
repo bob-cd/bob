@@ -73,13 +73,24 @@ public class Handlers {
         }
     }
 
-    public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, ICruxAPI node) {
+    public static void healthCheck(RabbitMQClient queue, ICruxAPI node) throws Exception {
         // TODO use better health check
 
-        if (node.status() != null && queue.isConnected())
+        if (node.status() == null)
+            throw new Exception("DB is unhealthy");
+
+        if (!queue.isConnected())
+            throw new Exception("Queue is unhealthy");
+    }
+
+    public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, ICruxAPI node) {
+        try {
+            healthCheck(queue, node);
+
             toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28", 200);
-        else
-            toJsonResponse(routingContext, "Failed Health Check", 503);
+        } catch (Exception e) {
+            toJsonResponse(routingContext, "Failed Health Check: " + e.getMessage(), 503);
+        }
     }
 
     public static void pipelineCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {

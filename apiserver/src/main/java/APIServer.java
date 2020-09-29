@@ -96,6 +96,14 @@ public class APIServer extends AbstractVerticle {
             .addGlobalHandler(LoggerHandler.create())
             .getRouter();
 
+        this.vertx.setPeriodic(5000, _it -> {
+            try {
+                Handlers.healthCheck(this.queue, this.node);
+            } catch (Exception e) {
+                logger.error("Health check failing: " + e.getMessage());
+            }
+        });
+
         return this.vertx.createHttpServer()
             .requestHandler(router)
             .listen(this.port, this.host)
