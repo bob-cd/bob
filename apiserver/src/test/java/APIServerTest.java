@@ -578,7 +578,6 @@ public class APIServerTest {
                 .get("/resource-providers")
                 .send()
                 .onSuccess(res -> testContext.verify(() -> {
-                    System.out.println(res.bodyAsString());
                     assertThat(res.statusCode()).isEqualTo(200);
                     assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
                     assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(0); // TODO: Check the actual objects
@@ -618,7 +617,6 @@ public class APIServerTest {
                 .get("/resource-providers")
                 .send()
                 .onSuccess(res -> testContext.verify(() -> {
-                    System.out.println(res.bodyAsString());
                     assertThat(res.statusCode()).isEqualTo(200);
                     assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
                     assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(2); // TODO: Check the actual objects
@@ -701,7 +699,6 @@ public class APIServerTest {
                 .get("/artifact-stores")
                 .send()
                 .onSuccess(res -> testContext.verify(() -> {
-                    System.out.println(res.bodyAsString());
                     assertThat(res.statusCode()).isEqualTo(200);
                     assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
                     assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(0); // TODO: Check the actual objects
@@ -736,7 +733,6 @@ public class APIServerTest {
                 .get("/artifact-stores")
                 .send()
                 .onSuccess(res -> testContext.verify(() -> {
-                    System.out.println(res.bodyAsString());
                     assertThat(res.statusCode()).isEqualTo(200);
                     assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
                     assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(0); // TODO: Check the actual objects
@@ -755,7 +751,6 @@ public class APIServerTest {
                 .get("/artifact-stores")
                 .send()
                 .onSuccess(res -> testContext.verify(() -> {
-                    System.out.println(res.bodyAsString());
                     assertThat(res.statusCode()).isEqualTo(200);
                     assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
                     assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(2); // TODO: Check the actual objects
