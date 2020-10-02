@@ -81,7 +81,7 @@ jobs:
         run: "make -j3 docker-image"
 
       - name: "Publish to Docker Hub"
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         run: |
           docker login --username="${{ secrets.DOCKERHUB_USERNAME }}" --password="${{ secrets.DOCKERHUB_PASSWORD }}" && \
           make -j3 docker-push

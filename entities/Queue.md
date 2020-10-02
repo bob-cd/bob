@@ -38,7 +38,7 @@ payload:
       "provider": "git",
       "params": {
         "repo": "https://github.com/bob-cd/bob",
-        "branch": "master"
+        "branch": "main"
       }
     }
   ],

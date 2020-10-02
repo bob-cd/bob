@@ -30,12 +30,12 @@
     (is (instance?
           java.io.InputStream
           (r/fetch-resource
-            "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=master"))))
+            "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"))))
   (testing "unsuccessful resource fetch"
     (is (f/failed? (r/fetch-resource "http://invalid-url")))))
 
 (deftest ^:integration tar-prefix-test
-  (let [url   "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=master"
+  (let [url   "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"
         tar   (r/fetch-resource url)
         path  (r/prefix-dir-on-tar! (TarInputStream. tar) "source")
         entry (-> path
@@ -80,7 +80,7 @@
 (deftest ^:integration initial-image-test
   (d/pull-image "busybox:musl")
   (testing "successful image creation"
-    (let [url    "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=master"
+    (let [url    "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"
           stream (r/fetch-resource url)
           image  (r/initial-image-of stream "busybox:musl" nil "source")
           images (->> (docker/invoke d/images {:op :ImageList})
@@ -104,7 +104,7 @@
                                                         {:name     "source"
                                                          :provider "git"
                                                          :params   {:repo   "https://github.com/lispyclouds/bob-example"
-                                                                    :branch "master"}}
+                                                                    :branch "main"}}
                                                         "busybox:musl")
                            images (->> (docker/invoke d/images {:op :ImageList})
                                        (map :Id))]

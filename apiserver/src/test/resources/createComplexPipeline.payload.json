@@ -27,7 +27,7 @@
       "provider": "git",
       "params": {
         "repo": "https://github.com/lispyclouds/bob-example",
-        "branch": "master"
+        "branch": "main"
       }
     }
   ]

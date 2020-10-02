@@ -16,7 +16,7 @@
               :type     "external"
               :provider "git"
               :params   {:repo   "https://github.com/bob-cd/bob"
-                         :branch "master"}}]
+                         :branch "main"}}]
  :image      "busybox:musl"}
 ```
 

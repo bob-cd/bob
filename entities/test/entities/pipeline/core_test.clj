@@ -40,12 +40,12 @@
                                        :type     "external"
                                        :provider "git"
                                        :params   {:repo   "https://github.com/bob-cd/bob"
-                                                  :branch "master"}}
+                                                  :branch "main"}}
                                       {:name     "source2"
                                        :type     "external"
                                        :provider "git"
                                        :params   {:repo   "https://github.com/lispyclouds/clj-docker-client"
-                                                  :branch "master"}}]
+                                                  :branch "main"}}]
                           :image     "busybox:musl"}
               create-res (p/create db queue-chan pipeline)
               _          (Thread/sleep 1000)

@@ -134,11 +134,11 @@
       err)))
 
 (comment
-  (fetch-resource "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=master")
+  (fetch-resource "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main")
 
   (http/get "http://localhost:8000/ping")
 
-  (-> (fetch-resource "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=master")
+  (-> (fetch-resource "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main")
       TarInputStream.
       (prefix-dir-on-tar! "source"))
 

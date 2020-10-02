@@ -294,7 +294,7 @@
                                    :type     "external"
                                    :provider "git"
                                    :params   {:repo   "https://github.com/bob-cd/bob"
-                                              :branch "master"}}]
+                                              :branch "main"}}]
                      :image      "busybox:musl"}]])
 
   (crux/entity (crux/db db-client) :bob.pipeline.test/test)

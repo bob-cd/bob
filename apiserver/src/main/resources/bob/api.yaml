@@ -94,7 +94,7 @@ paths:
                       provider: git
                       params:
                         repo: https://github.com/lispyclouds/bob-example
-                        branch: master
+                        branch: main
 
       responses:
         "202":

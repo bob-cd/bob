@@ -85,7 +85,7 @@
                                                                      :type     "external"
                                                                      :provider "git"
                                                                      :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                                :branch "master"}}]
+                                                                                :branch "main"}}]
                                                        :image      "busybox:musl"}]]))
                      (let [image (p/resourceful-step db
                                                      {:needs_resource "source"
@@ -150,7 +150,7 @@
                                                                      :type     "external"
                                                                      :provider "git"
                                                                      :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                                :branch "master"}}]
+                                                                                :branch "main"}}]
                                                        :image      "busybox:musl"}]]))
                      (let [initial-state {:image     "busybox:musl"
                                           :mounted   #{}
@@ -221,7 +221,7 @@
                                                         :type     "external"
                                                         :provider "git"
                                                         :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                   :branch "master"}}]
+                                                                   :branch "main"}}]
                                           :image      "busybox:musl"}]]))
         (let [initial-state {:image     "busybox:musl"
                              :mounted   #{}

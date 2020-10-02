@@ -80,12 +80,12 @@
                         :type     "external"
                         :provider "git"
                         :params   {:repo   "https://github.com/bob-cd/bob"
-                                   :branch "master"}}
+                                   :branch "main"}}
                        {:name     "source2"
                         :type     "external"
                         :provider "git"
                         :params   {:repo   "https://github.com/lispyclouds/clj-docker-client"
-                                   :branch "master"}}]
+                                   :branch "main"}}]
            :image     "busybox:musl"})
 
   (crux/entity (-> db
