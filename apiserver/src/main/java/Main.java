@@ -50,6 +50,7 @@ public class Main {
 
                 final var apiHost = conf.getString("BOB_API_HOST", "0.0.0.0");
                 final var apiPort = conf.getInteger("BOB_API_PORT", 7777);
+                final var healthCheckFreq = conf.getInteger("BOB_HEALTH_CHECK_FREQ", 5000);
 
                 final var node = new DB(dbName, dbHost, dbPort, dbUser, dbPassword).node;
                 final var queue = RabbitMQClient.create(
@@ -61,7 +62,9 @@ public class Main {
                         .setPassword(queuePassword)
                 );
 
-                return vertx.deployVerticle(new APIServer("/bob/api.yaml", apiHost, apiPort, queue, node));
+                return vertx.deployVerticle(new APIServer(
+                    "/bob/api.yaml", apiHost, apiPort, queue, node, healthCheckFreq
+                ));
             })
             .onSuccess(id -> logger.info("Deployed on verticle: " + id))
             .onFailure(err -> logger.error("Deployment error: " + err.getMessage()));

@@ -32,16 +32,17 @@ public class APIServer extends AbstractVerticle {
     private final static Logger logger = LoggerFactory.getLogger(APIServer.class.getName());
     private final String apiSpec;
     private final String host;
-    private final int port;
+    private final int port, healthCheckFreq;
     private final RabbitMQClient queue;
     private final ICruxAPI node;
 
-    public APIServer(String apiSpec, String host, int port, RabbitMQClient queue, ICruxAPI node) {
+    public APIServer(String apiSpec, String host, int port, RabbitMQClient queue, ICruxAPI node, int healthCheckFreq) {
         this.apiSpec = apiSpec;
         this.host = host;
         this.port = port;
         this.queue = queue;
         this.node = node;
+        this.healthCheckFreq = healthCheckFreq;
     }
 
     @Override
@@ -78,7 +79,7 @@ public class APIServer extends AbstractVerticle {
     private Future<HttpServer> makeServer(OpenAPI3RouterFactory routerFactory) {
         final var router = routerFactory
             .addHandlerByOperationId("GetApiSpec", Handlers::apiSpecHandler)
-            .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, this.queue, this.node))
+            .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, this.queue, this.node, this.vertx))
             .addHandlerByOperationId("PipelineCreate", ctx -> Handlers.pipelineCreateHandler(ctx, this.queue))
             .addHandlerByOperationId("PipelineDelete", ctx -> Handlers.pipelineDeleteHandler(ctx, this.queue))
             .addHandlerByOperationId("PipelineStart", ctx -> Handlers.pipelineStartHandler(ctx, this.queue))
@@ -96,11 +97,9 @@ public class APIServer extends AbstractVerticle {
             .addGlobalHandler(LoggerHandler.create())
             .getRouter();
 
-        this.vertx.setPeriodic(5000, _it -> {
-            final var checks = HealthCheck.check(queue, node);
-
-            if (!checks.isEmpty())
-                logger.error("Health checks failing: " + checks);
+        this.vertx.setPeriodic(this.healthCheckFreq, _it -> {
+            HealthCheck.check(queue, node, vertx)
+                .onFailure(err -> logger.error("Health checks failing: " + err.getMessage()));
         });
 
         return this.vertx.createHttpServer()

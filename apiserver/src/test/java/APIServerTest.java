@@ -54,7 +54,7 @@ public class APIServerTest {
 
     final String apiSpec = "/bob/api.yaml";
     final String httpHost = "localhost";
-    final int httpPort = 7778;
+    final int httpPort = 7778, healthCheckFreq = 5000;
     final RabbitMQOptions queueConfig = new RabbitMQOptions().setHost("localhost").setPort(5673);
     final WebClientOptions clientConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(httpPort);
 
@@ -76,7 +76,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/api.yaml")
                 .as(BodyCodec.string())
@@ -98,7 +98,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/can-we-build-it")
                 .send()
@@ -119,7 +119,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             vertx.fileSystem().readFile("src/test/resources/createComplexPipeline.payload.json", file -> {
                 if (file.succeeded()) {
                     final var json = new JsonObject(file.result());
@@ -158,7 +158,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .post("/pipelines/groups/dev/names/test")
                 .putHeader("Content-Type", "application/json")
@@ -180,7 +180,7 @@ public class APIServerTest {
             .put("name", "test")
             .put("group", "dev");
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             queue
                 .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer -> rmqConsumer.handler(message -> testContext.verify(() -> {
@@ -208,7 +208,7 @@ public class APIServerTest {
             .put("name", "test")
             .put("group", "dev");
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             queue
                 .basicConsumer("bob.jobs", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer ->
@@ -237,7 +237,7 @@ public class APIServerTest {
             .put("group", "dev")
             .put("run_id", "a-run-id");
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             queue
                 .queueDeclare("bob.test.broadcasts", true, true, true)
                 .compose(_it -> queue.queueBind("bob.test.broadcasts", "bob.fanout", ""))
@@ -287,7 +287,7 @@ public class APIServerTest {
             )
         );
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/pipelines/logs/runs/a-run-id/offset/0/lines/5")
                 .send()
@@ -323,7 +323,7 @@ public class APIServerTest {
             Duration.ofSeconds(5)
         );
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/pipelines/status/runs/a-run-id")
                 .send()
@@ -344,7 +344,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/pipelines/status/runs/another-run-id")
                 .send()
@@ -378,7 +378,7 @@ public class APIServerTest {
             Duration.ofSeconds(5)
         );
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id -> {
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id -> {
             final var form = MultipartForm.create()
                 .binaryFileUpload("data", "test.tar", "src/test/resources/test.tar", "application/tar");
 
@@ -408,7 +408,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/pipelines/groups/dev/names/test/runs/a-run-id/artifact-stores/local/artifact/file")
                 .send()
@@ -441,7 +441,7 @@ public class APIServerTest {
             Duration.ofSeconds(5)
         );
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/pipelines/groups/dev/names/test/runs/a-run-id/artifact-stores/local/artifact/file")
                 .send()
@@ -491,7 +491,7 @@ public class APIServerTest {
             Duration.ofSeconds(5)
         );
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/pipelines")
                 .send()
@@ -512,7 +512,7 @@ public class APIServerTest {
         final var client = WebClient.create(vertx, clientConfig);
         final var json = new JsonObject().put("url", "http://my-resource-provider");
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             queue
                 .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer -> {
@@ -543,7 +543,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             queue
                 .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer -> {
@@ -573,7 +573,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/resource-providers")
                 .send()
@@ -612,7 +612,7 @@ public class APIServerTest {
             Duration.ofSeconds(5)
         );
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/resource-providers")
                 .send()
@@ -633,7 +633,7 @@ public class APIServerTest {
         final var client = WebClient.create(vertx, clientConfig);
         final var json = new JsonObject().put("url", "http://my-artifact-store");
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             queue
                 .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer -> {
@@ -664,7 +664,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             queue
                 .basicConsumer("bob.entities", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer -> {
@@ -694,7 +694,7 @@ public class APIServerTest {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/artifact-stores")
                 .send()
@@ -728,7 +728,7 @@ public class APIServerTest {
             """
         );
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/artifact-stores")
                 .send()
@@ -746,7 +746,7 @@ public class APIServerTest {
             Duration.ofSeconds(5)
         );
 
-        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node), testContext.succeeding(id ->
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/artifact-stores")
                 .send()

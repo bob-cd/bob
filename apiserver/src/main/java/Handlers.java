@@ -73,13 +73,14 @@ public class Handlers {
         }
     }
 
-    public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, ICruxAPI node) {
-        final var checks = HealthCheck.check(queue, node);
-
-        if (checks.isEmpty())
-            toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28", 200);
-        else
-            toJsonResponse(routingContext, checks, 503);
+    public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, ICruxAPI node, Vertx vertx) {
+        HealthCheck.check(queue, node, vertx)
+            .onSuccess(_it ->
+                toJsonResponse(routingContext, "Yes we can! \uD83D\uDD28 \uD83D\uDD28", 200)
+            )
+            .onFailure(err ->
+                toJsonResponse(routingContext, err.getMessage(), 503)
+            );
     }
 
     public static void pipelineCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
