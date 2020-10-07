@@ -23,7 +23,7 @@ RUN mv zulu* jdk
 WORKDIR /jdk
 
 # TODO: See if these modules are enough?
-RUN bin/jlink --compress=2 --module-path jmods --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop --output jlinked
+RUN bin/jlink --compress=2 --module-path jmods --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management --output jlinked
 
 
 FROM docker:dind
