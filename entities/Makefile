@@ -34,12 +34,12 @@ test:
 		--network bob-net \
 		rabbitmq:3-alpine
 	sleep 7 # TODO: Find a better way to wait till things come up.
-	clojure -A:test --fail-fast
+	clojure -M:test --fail-fast
 	docker kill bob-test-storage bob-test-queue && docker rm bob-test-storage bob-test-queue
 	docker network rm bob-net
 
 compile:
-	clojure -Spom && clojure -A:uberjar
+	clojure -Spom && clojure -M:uberjar
 
 docker-image:
 	docker build -t bobcd/entities .

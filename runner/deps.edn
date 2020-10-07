@@ -15,15 +15,15 @@
 
 {:paths   ["src"]
  :deps    {org.clojure/clojure           {:mvn/version "1.10.1"}
-           com.fzakaria/slf4j-timbre     {:mvn/version "0.3.19"}
+           com.fzakaria/slf4j-timbre     {:mvn/version "0.3.20"}
            com.novemberain/langohr       {:mvn/version "5.2.0"}
            com.stuartsierra/component    {:mvn/version "1.0.0"}
-           com.taoensso/timbre           {:mvn/version "5.0.1"}
+           com.taoensso/timbre           {:mvn/version "5.1.0"}
            environ/environ               {:mvn/version "1.2.0"}
            failjure/failjure             {:mvn/version "2.0.0"}
-           clj-http                      {:mvn/version "3.10.3"}
-           juxt/crux-core                {:mvn/version "20.09-1.12.0-beta"}
-           juxt/crux-jdbc                {:mvn/version "20.09-1.12.0-beta"}
+           clj-http/clj-http             {:mvn/version "3.10.3"}
+           juxt/crux-core                {:mvn/version "20.09-1.12.1-beta"}
+           juxt/crux-jdbc                {:mvn/version "20.09-1.12.1-beta"}
            org.postgresql/postgresql     {:mvn/version "42.2.16"}
            lispyclouds/clj-docker-client {:mvn/version "1.0.1"}
            metosin/jsonista              {:mvn/version "0.2.7"}
