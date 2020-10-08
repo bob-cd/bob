@@ -42,14 +42,14 @@ public class HealthCheck {
             Future.succeededFuture() :
             Future.failedFuture("DB is unhealthy");
 
-    private static final Function<HealthContext, Future<String>> artifactStoresCheck = context -> {
+    private static Future<String> externalSystemCheck(HealthContext context, String system) {
         try {
             final Promise<String> promise = Promise.promise();
             final var query = DB.datafy(
                 """
-                {:find  [(eql/project store [:url])]
-                 :where [[store :type :artifact-store]]}
-                """
+                {:find  [(eql/project system [:url])]
+                 :where [[system :type :%s]]}
+                """.formatted(system)
             );
             final var key = Keyword.intern(Symbol.create("url"));
             final var httpClient = WebClient.create(context.vertx());
@@ -87,13 +87,19 @@ public class HealthCheck {
         } catch (Exception e) {
             return Future.failedFuture("Resource provider(s) unhealthy " + e.getMessage());
         }
-    };
+    }
+
+    private static final Function<HealthContext, Future<String>> artifactStoresCheck = context ->
+        externalSystemCheck(context, "artifact-store");
+
+    private static final Function<HealthContext, Future<String>> resourceProviderCheck = context ->
+        externalSystemCheck(context, "resource-provider");
 
     public static Future<String> check(RabbitMQClient queue, ICruxAPI node, Vertx vertx) {
         final var ctx = new HealthContext(queue, node, vertx);
         final Promise<String> promise = Promise.promise();
 
-        final var checks = List.of(queueCheck, dbCheck, artifactStoresCheck)
+        final var checks = List.of(queueCheck, dbCheck, artifactStoresCheck, resourceProviderCheck)
             .stream()
             .map(fn -> fn.apply(ctx))
             .collect(Collectors.toList());

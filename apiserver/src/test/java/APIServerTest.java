@@ -82,7 +82,6 @@ public class APIServerTest {
                 .as(BodyCodec.string())
                 .send()
                 .onSuccess(res -> testContext.verify(() -> {
-
                         assertThat(res.statusCode()).isEqualTo(200);
                         assertThat(res.getHeader("Content-Type")).isEqualTo("application/yaml");
 
