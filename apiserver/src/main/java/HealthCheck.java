@@ -85,7 +85,7 @@ public class HealthCheck {
 
             return promise.future();
         } catch (Exception e) {
-            return Future.failedFuture("Resource provider(s) unhealthy " + e.getMessage());
+            return Future.failedFuture("External system(s) %s unhealthy: %s".formatted(system, e.getMessage()));
         }
     }
 

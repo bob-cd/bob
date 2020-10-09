@@ -17,4 +17,4 @@ FROM openjdk:15-slim
 
 COPY build/libs/apiserver.jar .
 
-ENTRYPOINT ["java", "-jar", "apiserver.jar"]
+ENTRYPOINT ["java", "--enable-preview", "-jar", "apiserver.jar"]
