@@ -30,8 +30,7 @@ import java.io.IOException;
 
 public class APIServer extends AbstractVerticle {
     private final static Logger logger = LoggerFactory.getLogger(APIServer.class.getName());
-    private final String apiSpec;
-    private final String host;
+    private final String apiSpec, host;
     private final int port, healthCheckFreq;
     private final RabbitMQClient queue;
     private final ICruxAPI node;

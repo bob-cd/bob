@@ -35,6 +35,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.net.ConnectException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -59,14 +60,14 @@ public class APIServerTest {
     final WebClientOptions clientConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(httpPort);
 
     @BeforeEach
-    void prepare() throws SQLException {
+    void prepare() throws SQLException, ConnectException {
         vertx = Vertx.vertx(
             new VertxOptions()
                 .setMaxEventLoopExecuteTime(1000)
                 .setPreferNativeTransport(true)
         );
 
-        node = new DB("bob-test", "localhost", 5433, "bob", "bob").node;
+        node = new DB("bob-test", "localhost", 5433, "bob", "bob", 10, 2000).node;
         conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob");
     }
 

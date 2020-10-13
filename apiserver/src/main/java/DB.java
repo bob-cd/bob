@@ -22,6 +22,7 @@ import crux.api.Crux;
 import crux.api.ICruxAPI;
 import io.vertx.core.json.JsonObject;
 
+import java.net.ConnectException;
 import java.time.Duration;
 
 public class DB {
@@ -34,7 +35,15 @@ public class DB {
         toJson = Clojure.var("jsonista.core", "write-value-as-string");
     }
 
-    public DB(String dbName, String dbHost, int dbPort, String dbUser, String dbPassword) {
+    public DB(
+        String dbName,
+        String dbHost,
+        int dbPort,
+        String dbUser,
+        String dbPassword,
+        int connectionRetryAttempts,
+        int connectionRetryDelay
+    ) throws ConnectException {
         final var connectionPool = datafy(
             """
             {:dialect crux.jdbc.psql/->dialect
@@ -46,16 +55,38 @@ public class DB {
             """.formatted(dbName, dbHost, dbPort, dbUser, dbPassword)
         );
 
-        this.node = Crux.startNode(configurator -> {
-            configurator.with("crux/tx-log", txLog -> {
-                txLog.module("crux.jdbc/->tx-log");
-                txLog.set("connection-pool", connectionPool);
-            });
-            configurator.with("crux/document-store", docStore -> {
-                docStore.module("crux.jdbc/->document-store");
-                docStore.set("connection-pool", connectionPool);
-            });
-        });
+        ICruxAPI connectedNode = null;
+        while (connectionRetryAttempts > 0) {
+            try {
+                connectedNode = Crux.startNode(configurator -> {
+                    configurator.with("crux/tx-log", txLog -> {
+                        txLog.module("crux.jdbc/->tx-log");
+                        txLog.set("connection-pool", connectionPool);
+                    });
+                    configurator.with("crux/document-store", docStore -> {
+                        docStore.module("crux.jdbc/->document-store");
+                        docStore.set("connection-pool", connectionPool);
+                    });
+                });
+
+                break;
+            } catch (Exception e) {
+                System.err.printf(
+                    "DB connection failed with %s, retrying %d.%n", e.getMessage(), connectionRetryAttempts
+                );
+                connectionRetryAttempts--;
+                try {
+                    Thread.sleep(connectionRetryDelay);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+
+        if (connectionRetryAttempts == 0)
+            throw new ConnectException("Could not connect to DB");
+
+        this.node = connectedNode;
         this.node.sync(Duration.ofSeconds(30)); // Become consistent for a max of 30s
     }
 
