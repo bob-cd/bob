@@ -22,9 +22,11 @@
             [langohr.core :as rmq]
             [langohr.channel :as lch]
             [langohr.queue :as lq]
-            [langohr.exchange  :as le]
+            [langohr.exchange :as le]
             [langohr.consumers :as lc]
-            [entities.dispatch :as d]))
+            [failjure.core :as f]
+            [entities.dispatch :as d])
+  (:import [java.net ConnectException]))
 
 (defn int-from-env
   [key default]
@@ -43,6 +45,24 @@
 (defonce queue-user (:bob-queue-user env/env "guest"))
 (defonce queue-password (:bob-queue-password env/env "guest"))
 
+(defonce connection-retry-attempts (int-from-env :bob-connection-retry-attempts 10))
+(defonce connection-retry-delay (int-from-env :bob-connection-retry-delay 2000))
+
+(defn try-connect
+  ([conn-fn]
+   (try-connect conn-fn connection-retry-attempts))
+  ([conn-fn n]
+   (if (= n 0)
+     (throw (ConnectException. "Cannot connect to system"))
+     (let [res (f/try*
+                 (conn-fn))]
+       (if (f/failed? res)
+         (do
+           (log/warnf "Connection failed with %s, retrying %d" (f/message res) n)
+           (Thread/sleep connection-retry-delay)
+           (recur conn-fn (dec n)))
+         res)))))
+
 (defprotocol IDatabase
   (db-client [this]))
 
@@ -53,16 +73,17 @@
     (log/info "Connecting to DB")
     (assoc this
            :client
-           (crux/start-node {::jdbc/connection-pool {:dialect 'crux.jdbc.psql/->dialect
-                                                     :db-spec {:dbname   db-name
-                                                               :host     db-host
-                                                               :port     db-port
-                                                               :user     db-user
-                                                               :password db-password}}
-                             :crux/tx-log           {:crux/module     `crux.jdbc/->tx-log
-                                                     :connection-pool ::jdbc/connection-pool}
-                             :crux/document-store   {:crux/module     `crux.jdbc/->document-store
-                                                     :connection-pool ::jdbc/connection-pool}})))
+           (try-connect
+             #(crux/start-node {::jdbc/connection-pool {:dialect 'crux.jdbc.psql/->dialect
+                                                        :db-spec {:dbname   db-name
+                                                                  :host     db-host
+                                                                  :port     db-port
+                                                                  :user     db-user
+                                                                  :password db-password}}
+                                :crux/tx-log           {:crux/module     `crux.jdbc/->tx-log
+                                                        :connection-pool ::jdbc/connection-pool}
+                                :crux/document-store   {:crux/module     `crux.jdbc/->document-store
+                                                        :connection-pool ::jdbc/connection-pool}}))))
   (stop [this]
     (log/info "Disconnecting DB")
     (.close (:client this))
@@ -78,11 +99,11 @@
   [database queue-host queue-port queue-user queue-password]
   component/Lifecycle
   (start [this]
-    (let [conn            (rmq/connect {:host     queue-host
-                                        :port     queue-port
-                                        :username queue-user
-                                        :vhost    "/"
-                                        :password queue-password})
+    (let [conn            (try-connect #(rmq/connect {:host     queue-host
+                                                      :port     queue-port
+                                                      :username queue-user
+                                                      :vhost    "/"
+                                                      :password queue-password}))
           chan            (lch/open conn)
           entities-queue  "bob.entities"
           direct-exchange "bob.direct"
