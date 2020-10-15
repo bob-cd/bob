@@ -16,17 +16,19 @@ The logs are streamed live directly to the Database.
 The [environ library](https://github.com/weavejester/environ) is used and therefore several variables can be
 set by specifying them as environment variable or as java system property. Possible variables are:
 
-| java system properties | environment variables | defaults  |
-|------------------------|-----------------------|-----------|
-| bob-storage-host       | BOB_STORAGE_HOST      | localhost |
-| bob-storage-port       | BOB_STORAGE_PORT      | 5432      |
-| bob-storage-user       | BOB_STORAGE_USER      | bob       |
-| bob-storage-database   | BOB_STORAGE_DATABASE  | bob       |
-| bob-storage-password   | BOB_STORAGE_PASSWORD  | bob       |
-| bob-queue-host         | BOB_QUEUE_HOST        | localhost |
-| bob-queue-port         | BOB_QUEUE_PORT        | 5672      |
-| bob-queue-user         | BOB_QUEUE_USER        | guest     |
-| bob-queue-password     | BOB_QUEUE_PASSWORD    | guest     |
+| java system properties        | environment variables         | defaults  |
+|-------------------------------|-------------------------------|-----------|
+| bob-storage-host              | BOB_STORAGE_HOST              | localhost |
+| bob-storage-port              | BOB_STORAGE_PORT              | 5432      |
+| bob-storage-user              | BOB_STORAGE_USER              | bob       |
+| bob-storage-database          | BOB_STORAGE_DATABASE          | bob       |
+| bob-storage-password          | BOB_STORAGE_PASSWORD          | bob       |
+| bob-queue-host                | BOB_QUEUE_HOST                | localhost |
+| bob-queue-port                | BOB_QUEUE_PORT                | 5672      |
+| bob-queue-user                | BOB_QUEUE_USER                | guest     |
+| bob-queue-password            | BOB_QUEUE_PASSWORD            | guest     |
+| bob-connection-retry-attempts | BOB_CONNECTION_RETRY_ATTEMPTS | 10        |
+| bob-connection-retry-delay    | BOB_CONNECTION_RETRY_DELAY    | 2000      |
 
 The priority of your configuration is following:
 1. Environment variables
