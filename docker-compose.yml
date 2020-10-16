@@ -1,0 +1,74 @@
+version: "3.8"
+services:
+
+  runner:
+    image: bobcd/runner:latest
+    networks:
+      - bob-net
+    depends_on:
+      - storage
+      - queue
+    environment:
+      BOB_STORAGE_HOST: "storage"
+      BOB_QUEUE_HOST: "queue"
+    privileged: true
+    userns_mode: "host"
+
+  entities:
+    image: bobcd/entities
+    networks:
+      - bob-net
+    depends_on:
+      - storage
+      - queue
+    environment:
+      BOB_STORAGE_HOST: "storage"
+      BOB_QUEUE_HOST: "queue"
+
+  apiserver:
+    image: bobcd/apiserver
+    ports:
+      - "7777:7777"
+    networks:
+      - bob-net
+    depends_on:
+      - queue
+      - storage
+    environment:
+      BOB_STORAGE_HOST: "storage"
+      BOB_QUEUE_HOST: "queue"
+
+  queue:
+    image: rabbitmq:3-alpine
+    networks:
+      - bob-net
+
+  storage:
+    image: postgres:alpine
+    networks:
+      - bob-net
+    volumes:
+      - "pgdata:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_DB: "bob"
+      POSTGRES_USER: "bob"
+      POSTGRES_PASSWORD: "bob"
+
+  artifact:
+    image: bobcd/artifact-local
+    networks:
+      - bob-net
+    volumes:
+      - "artifactdata:/opt/artifacts"
+
+  resource:
+    image: bobcd/resource-git
+    networks:
+      - bob-net
+
+networks:
+  bob-net:
+
+volumes:
+  pgdata:
+  artifactdata:
