@@ -1,3 +1,5 @@
+# vi: set ft=dockerfile :
+
 #   This file is part of Bob.
 #
 #   Bob is free software: you can redistribute it and/or modify
@@ -23,12 +25,13 @@ RUN /usr/lib/jvm/default-jvm/bin/jlink \
     --output jlinked
 
 
-# IMPORTANT: This container needs docker to run. Mount the host's docker.sock to /var/run/docker.sock
-FROM alpine:3
+FROM docker:dind
 
 WORKDIR /opt
 
 COPY --from=jdk /jlinked jdk
 COPY runner.jar .
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
-ENTRYPOINT ["jdk/bin/java", "-jar", "runner.jar"]
+ENTRYPOINT ["/opt/entrypoint.sh"]

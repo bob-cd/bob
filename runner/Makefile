@@ -55,9 +55,11 @@ compile:
 
 docker-image:
 	docker build -t bobcd/runner .
+	docker build -t bobcd/runner:self-contained -f Dockerfile.selfcontained .
 
 docker-push: docker-image
 	docker push bobcd/runner
+	docker push bobcd/runner:self-contained
 
 clean:
 	rm -rf .cpcache runner.jar pom.xml

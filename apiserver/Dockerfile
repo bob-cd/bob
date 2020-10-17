@@ -13,7 +13,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-FROM openjdk:15-slim
+FROM azul/zulu-openjdk-alpine:15-jre
 
 COPY build/libs/apiserver.jar .
 
