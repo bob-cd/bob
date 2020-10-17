@@ -1,18 +1,33 @@
-version: "3.8"
-services:
+#   This file is part of Bob.
+#
+#   Bob is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU Affero General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Bob is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
+version: "3.8"
+
+services:
   runner:
-    image: bobcd/runner:latest
+    image: bobcd/runner
     networks:
       - bob-net
     depends_on:
       - storage
       - queue
     environment:
-      BOB_STORAGE_HOST: "storage"
-      BOB_QUEUE_HOST: "queue"
-    privileged: true
-    userns_mode: "host"
+      BOB_STORAGE_HOST: storage
+      BOB_QUEUE_HOST: queue
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
   entities:
     image: bobcd/entities
@@ -22,21 +37,21 @@ services:
       - storage
       - queue
     environment:
-      BOB_STORAGE_HOST: "storage"
-      BOB_QUEUE_HOST: "queue"
+      BOB_STORAGE_HOST: storage
+      BOB_QUEUE_HOST: queue
 
   apiserver:
     image: bobcd/apiserver
     ports:
-      - "7777:7777"
+      - 7777:7777
     networks:
       - bob-net
     depends_on:
       - queue
       - storage
     environment:
-      BOB_STORAGE_HOST: "storage"
-      BOB_QUEUE_HOST: "queue"
+      BOB_STORAGE_HOST: storage
+      BOB_QUEUE_HOST: queue
 
   queue:
     image: rabbitmq:3-alpine
@@ -48,18 +63,18 @@ services:
     networks:
       - bob-net
     volumes:
-      - "pgdata:/var/lib/postgresql/data"
+      - pgdata:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: "bob"
-      POSTGRES_USER: "bob"
-      POSTGRES_PASSWORD: "bob"
+      POSTGRES_DB: bob
+      POSTGRES_USER: bob
+      POSTGRES_PASSWORD: bob
 
   artifact:
     image: bobcd/artifact-local
     networks:
       - bob-net
     volumes:
-      - "artifactdata:/opt/artifacts"
+      - artifactdata:/opt/artifacts
 
   resource:
     image: bobcd/resource-git
