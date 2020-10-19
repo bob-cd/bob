@@ -183,9 +183,9 @@
                              :group     "test"
                              :name      "test"}
               step          {:cmd               "touch text.txt"
-                             :produces_artifact {:artifact_path  "text.txt"
-                                                 :name           "text"
-                                                 :artifact_store "local"}}
+                             :produces_artifact {:path  "text.txt"
+                                                 :name  "text"
+                                                 :store "local"}}
               final-state   (p/exec-step initial-state step)]
           (is (not (f/failed? final-state)))
           (is (empty? (:mounted final-state)))
@@ -232,9 +232,9 @@
                              :name      "test"}
               step          {:needs_resource    "source"
                              :cmd               "ls"
-                             :produces_artifact {:artifact_path  "README.md"
-                                                 :name           "text"
-                                                 :artifact_store "local"}}
+                             :produces_artifact {:path  "README.md"
+                                                 :name  "text"
+                                                 :store "local"}}
               final-state   (p/exec-step initial-state step)]
           (is (not (f/failed? final-state)))
           (is (contains? (:mounted final-state) "source"))

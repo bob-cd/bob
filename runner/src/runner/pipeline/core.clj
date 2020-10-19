@@ -154,8 +154,8 @@
                                                     id)
                                                   [:Config :WorkingDir])
                                                 "/"
-                                                (:artifact_path artifact))
-                                           (:artifact_store artifact)))
+                                                (:path artifact))
+                                           (:store artifact)))
                 image (docker/commit-image id "")
                 _     (mark-image-for-gc image run-id)
                 _     (log/debugf "Removing successful container %s" id)
@@ -328,9 +328,9 @@
               :name      "test"}
              {:needs_resource    "source"
               :cmd               "ls"
-              :produces_artifact {:artifact_path  "README.md"
-                                  :name           "readme"
-                                  :artifact_store "local"}})
+              :produces_artifact {:path  "README.md"
+                                  :name  "readme"
+                                  :store "local"}})
 
   (start db-client
     nil
