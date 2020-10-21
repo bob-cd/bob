@@ -42,12 +42,12 @@
       (f/when-failed [err]
         (log/errorf "Error in uploading artifact: %s" (f/message err))
         (f/try*
-          (docker/delete-container run-id))
+          (docker/delete-container container-id))
         err))
     (do
       (log/error "Error locating Artifact Store")
       (f/try*
-        (docker/delete-container run-id))
+        (docker/delete-container container-id))
       (f/fail "No such artifact store registered"))))
 
 (comment
