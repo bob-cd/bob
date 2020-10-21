@@ -38,13 +38,13 @@ test:
 		--name resource-git \
 		-p 8000:8000 \
 		--network bob-net \
-		bobcd/resource-git
+		ghcr.io/bob-cd/resource-git
 	docker run \
 		-d \
 		--name artifact-local \
 		-p 8001:8001 \
 		--network bob-net \
-		bobcd/artifact-local
+		ghcr.io/bob-cd/artifact-local
 	sleep 7 # TODO: Find a better way to wait till things come up.
 	clojure -M:test --fail-fast
 	docker kill bob-test-storage bob-test-queue resource-git artifact-local && docker rm bob-test-storage bob-test-queue resource-git artifact-local
@@ -54,13 +54,13 @@ compile:
 	clojure -Spom && clojure -M:uberjar
 
 docker-image:
-	docker build -t bobcd/runner .
-	docker build -t bobcd/runner:self-contained -f Dockerfile.selfcontained .
+	docker build -t ghcr.io/bob-cd/runner .
+	docker build -t ghcr.io/bob-cd/runner:self-contained -f Dockerfile.selfcontained .
 
 docker-push: docker-image
-	docker push bobcd/runner
-	docker push bobcd/runner:self-contained
+	docker push ghcr.io/bob-cd/runner
+	docker push ghcr.io/bob-cd/runner:self-contained
 
 clean:
 	rm -rf .cpcache runner.jar pom.xml
-	docker rmi bobcd/runner || true
+	docker rmi ghcr.io/bob-cd/runner || true

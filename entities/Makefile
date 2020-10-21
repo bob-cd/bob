@@ -42,11 +42,11 @@ compile:
 	clojure -Spom && clojure -M:uberjar
 
 docker-image:
-	docker build -t bobcd/entities .
+	docker build -t ghcr.io/bob-cd/entities .
 
 docker-push: docker-image
-	docker push bobcd/entities
+	docker push ghcr.io/bob-cd/entities
 
 clean:
 	rm -rf .cpcache entities.jar pom.xml
-	docker rmi bobcd/runner || true
+	docker rmi ghcr.io/bob-cd/entities || true

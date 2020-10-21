@@ -83,5 +83,5 @@ jobs:
       - name: "Publish to Docker Hub"
         if: github.ref == 'refs/heads/main'
         run: |
-          docker login --username="${{ secrets.DOCKERHUB_USERNAME }}" --password="${{ secrets.DOCKERHUB_PASSWORD }}" && \
+          echo "${{ secrets.GCR_PAT }}" | docker login --username lispyclouds --password-stdin && \
           make -j3 docker-push

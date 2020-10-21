@@ -38,7 +38,7 @@ test:
 		--name artifact-local \
 		-p 8001:8001 \
 		--network bob-net \
-		bobcd/artifact-local
+		ghcr.io/bob-cd/artifact-local
 	sleep 7 # TODO: Find a better way to wait till things come up.
 	gradle test --fail-fast
 	docker kill bob-test-storage bob-test-queue artifact-local && docker rm bob-test-storage bob-test-queue artifact-local
@@ -48,11 +48,11 @@ compile:
 	gradle shadowJar
 
 docker-image:
-	docker build -t bobcd/apiserver .
+	docker build -t ghcr.io/bob-cd/apiserver .
 
 docker-push: docker-image
-	docker push bobcd/apiserver
+	docker push ghcr.io/bob-cd/apiserver
 
 clean:
 	gradle clean
-	docker rmi bobcd/apiserver || true
+	docker rmi ghcr.io/bob-cd/apiserver || true

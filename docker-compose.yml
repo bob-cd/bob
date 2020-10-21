@@ -17,7 +17,7 @@ version: "3.8"
 
 services:
   runner:
-    image: bobcd/runner
+    image: ghcr.io/bob-cd/runner
     networks:
       - bob-net
     depends_on:
@@ -30,7 +30,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   entities:
-    image: bobcd/entities
+    image: ghcr.io/bob-cd/entities
     networks:
       - bob-net
     depends_on:
@@ -41,7 +41,7 @@ services:
       BOB_QUEUE_HOST: queue
 
   apiserver:
-    image: bobcd/apiserver
+    image: ghcr.io/bob-cd/apiserver
     ports:
       - 7777:7777
     networks:
@@ -70,14 +70,14 @@ services:
       POSTGRES_PASSWORD: bob
 
   artifact:
-    image: bobcd/artifact-local
+    image: ghcr.io/bob-cd/artifact-local
     networks:
       - bob-net
     volumes:
       - artifactdata:/opt/artifacts
 
   resource:
-    image: bobcd/resource-git
+    image: ghcr.io/bob-cd/resource-git
     networks:
       - bob-net
 
