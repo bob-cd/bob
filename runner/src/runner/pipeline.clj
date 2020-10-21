@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns runner.pipeline.core
+(ns runner.pipeline
   (:require [clojure.string :as s]
             [clojure.instant :as ins]
             [failjure.core :as f]
@@ -21,8 +21,8 @@
             [crux.api :as crux]
             [runner.errors :as errors]
             [runner.docker :as docker]
-            [runner.resource.core :as r]
-            [runner.artifact.core :as a])
+            [runner.resource :as r]
+            [runner.artifact :as a])
   (:import [java.util UUID]
            [java.time Instant]))
 

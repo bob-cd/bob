@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns runner.resource.core
+(ns runner.resource
   (:require [clojure.string :as s]
             [clojure.java.io :as io]
             [failjure.core :as f]

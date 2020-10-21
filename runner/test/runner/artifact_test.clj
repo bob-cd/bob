@@ -13,14 +13,14 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns runner.artifact.core-test
+(ns runner.artifact-test
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
             [failjure.core :as f]
             [clj-http.client :as http]
             [runner.util :as u]
             [runner.docker :as docker]
-            [runner.artifact.core :as a]))
+            [runner.artifact :as a]))
 
 (deftest upload-artifact-test
   (docker/pull-image "busybox:musl")

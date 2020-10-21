@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns runner.pipeline.core-test
+(ns runner.pipeline-test
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
             [failjure.core :as f]
@@ -21,7 +21,7 @@
             [runner.util :as u]
             [runner.docker :as d]
             [runner.docker-test :as dt]
-            [runner.pipeline.core :as p]))
+            [runner.pipeline :as p]))
 
 (deftest ^:integration logging-to-db
   (u/with-system (fn [db _]

@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns runner.resource.core-test
+(ns runner.resource-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.string :as s]
             [clojure.java.io :as io]
@@ -22,7 +22,7 @@
             [failjure.core :as f]
             [runner.util :as u]
             [runner.docker :as d]
-            [runner.resource.core :as r])
+            [runner.resource :as r])
   (:import [org.kamranzafar.jtar TarInputStream]))
 
 (deftest ^:integration resource-fetch-test

@@ -17,7 +17,7 @@
   (:require [taoensso.timbre :as log]
             [jsonista.core :as json]
             [failjure.core :as f]
-            [runner.pipeline.core :as p]
+            [runner.pipeline :as p]
             [runner.errors :as err]))
 
 (def ^:private routes
