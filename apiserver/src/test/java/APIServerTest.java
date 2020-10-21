@@ -728,6 +728,11 @@ public class APIServerTest {
             """
         );
 
+        node.awaitTx(
+            node.submitTx((List<List<?>>) query),
+            Duration.ofSeconds(5)
+        );
+
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/artifact-stores")
@@ -735,7 +740,7 @@ public class APIServerTest {
                 .onSuccess(res -> testContext.verify(() -> {
                     assertThat(res.statusCode()).isEqualTo(200);
                     assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
-                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(0); // TODO: Check the actual objects
+                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(2); // TODO: Check the actual objects
 
                     testContext.completeNow();
                 }))
