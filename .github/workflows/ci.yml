@@ -39,7 +39,7 @@ jobs:
         uses: "actions/cache@v1"
         with:
           path: "~/.m2/repository"
-          key: "${{ runner.os }}-bob-${{ hashFiles('{entities,runner}/deps.edn') }}"
+          key: "${{ runner.os }}-bob-${{ hashFiles('{entities,runner}/deps.edn', 'apiserver/build.gradle') }}"
           restore-keys: "${{ runner.os }}-bob-"
 
       - name: "Run all tests"
@@ -80,8 +80,8 @@ jobs:
       - name: "Build Docker images"
         run: "make -j3 docker-image"
 
-      - name: "Publish to Docker Hub"
+      - name: "Publish Docker images"
         if: github.ref == 'refs/heads/main'
         run: |
-          echo "${{ secrets.GCR_PAT }}" | docker login --username lispyclouds --password-stdin && \
+          echo "${{ secrets.GCR_PAT }}" | docker login ghcr.io --username lispyclouds --password-stdin && \
           make -j3 docker-push
