@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns entities.pipeline.core
+(ns entities.pipeline
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
             [crux.api :as crux]

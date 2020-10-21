@@ -13,11 +13,11 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns entities.pipeline.core-test
+(ns entities.pipeline-test
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
             [entities.util :as u]
-            [entities.pipeline.core :as p]))
+            [entities.pipeline :as p]))
 
 ;; TODO: Better way to wait for consistency than sleep
 

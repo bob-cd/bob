@@ -23,9 +23,10 @@
            failjure/failjure          {:mvn/version "2.0.0"}
            juxt/crux-core             {:mvn/version "20.09-1.12.1-beta"}
            juxt/crux-jdbc             {:mvn/version "20.09-1.12.1-beta"}
-           org.postgresql/postgresql  {:mvn/version "42.2.17"}
+           org.postgresql/postgresql  {:mvn/version "42.2.18"}
            metosin/jsonista           {:mvn/version "0.2.7"}}
- :aliases {:test    {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.690"}}
+ :aliases {:test    {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.0.700"}
+                                  org.clojure/test.check {:mvn/version "1.1.0"}}
                      :main-opts  ["-m" "kaocha.runner" "--reporter" "kaocha.report.progress/report"]}
-           :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.128"}}
+           :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.132"}}
                      :main-opts  ["-m" "hf.depstar.uberjar" "entities.jar" "-C" "-S" "-m" "entities.main"]}}}

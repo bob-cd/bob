@@ -17,9 +17,9 @@
   (:require [taoensso.timbre :as log]
             [jsonista.core :as json]
             [failjure.core :as f]
-            [entities.pipeline.core :as pipeline]
-            [entities.artifact-store.core :as artifact-store]
-            [entities.resource-provider.core :as resource-provider]
+            [entities.pipeline :as pipeline]
+            [entities.artifact-store :as artifact-store]
+            [entities.resource-provider :as resource-provider]
             [entities.errors :as err]))
 
 (def ^:private routes

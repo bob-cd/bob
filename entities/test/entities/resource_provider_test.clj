@@ -13,11 +13,11 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns entities.resource-provider.core-test
+(ns entities.resource-provider-test
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
             [entities.util :as u]
-            [entities.resource-provider.core :as resource-provider]))
+            [entities.resource-provider :as resource-provider]))
 
 ;; TODO: Better way to wait for consistency than sleep
 

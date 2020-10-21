@@ -13,11 +13,11 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns entities.artifact-store.core-test
+(ns entities.artifact-store-test
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
             [entities.util :as u]
-            [entities.artifact-store.core :as artifact-store]))
+            [entities.artifact-store :as artifact-store]))
 
 ;; TODO: Better way to wait for consistency than sleep
 
