@@ -17,6 +17,9 @@ all: test compile
 
 .PHONY: test
 test:
+	docker kill bob-test-storage bob-test-queue resource-git artifact-local && \
+		docker rm bob-test-storage bob-test-queue resource-git artifact-local || true
+	docker network rm bob-net || true
 	docker network create bob-net
 	docker run \
 		-d \
@@ -47,7 +50,8 @@ test:
 		ghcr.io/bob-cd/artifact-local
 	sleep 7 # TODO: Find a better way to wait till things come up.
 	clojure -M:test --fail-fast
-	docker kill bob-test-storage bob-test-queue resource-git artifact-local && docker rm bob-test-storage bob-test-queue resource-git artifact-local
+	docker kill bob-test-storage bob-test-queue resource-git artifact-local && \
+		docker rm bob-test-storage bob-test-queue resource-git artifact-local
 	docker network rm bob-net
 
 compile:

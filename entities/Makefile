@@ -17,6 +17,9 @@ all: test compile
 
 .PHONY: test
 test:
+	docker kill bob-test-storage bob-test-queue && \
+		docker rm bob-test-storage bob-test-queue || true
+	docker network rm bob-net || true
 	docker network create bob-net
 	docker run \
 		-d \
@@ -35,7 +38,8 @@ test:
 		rabbitmq:3-alpine
 	sleep 7 # TODO: Find a better way to wait till things come up.
 	clojure -M:test --fail-fast
-	docker kill bob-test-storage bob-test-queue && docker rm bob-test-storage bob-test-queue
+	docker kill bob-test-storage bob-test-queue && \
+		docker rm bob-test-storage bob-test-queue
 	docker network rm bob-net
 
 compile:

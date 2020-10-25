@@ -33,7 +33,7 @@ jobs:
       - name: "Prepare tools-deps"
         uses: DeLaGuardo/setup-clojure@2.0
         with:
-          tools-deps: 1.10.1.716
+          tools-deps: 1.10.1.727
 
       - name: "Apply Cache"
         uses: "actions/cache@v1"

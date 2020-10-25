@@ -53,4 +53,8 @@ Same as [Runner](/runner) and [Entities](/entities)
 - To run directly without building a JAR, run `gradle run` from this dir.
 
 ### Running integration tests
-- Run `make test` from this dir. (needs docker)
+
+Run `make clean test` from this dir. (needs docker)
+
+Note: For people using multi java version tooling like [jenv](https://www.jenv.be/), you may need to set the `JAVA_HOME` variable for the make:
+`make -e "JAVA_HOME=<path to java home>" clean test`

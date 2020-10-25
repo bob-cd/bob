@@ -60,4 +60,7 @@ The priority of your configuration is following:
 - When loaded into the editor/REPL, find the `reset` fn in this [namespace](/entities/src/entities/system.clj). Eval this when there is change to reload the state cleanly.
 
 ### Running integration tests
-- Run `make test` from this dir. (needs docker)
+Run `make clean test` from this dir. (needs docker)
+
+Note: For people using multi java version tooling like [jenv](https://www.jenv.be/), you may need to set the `JAVA_HOME` variable for the make:
+`make -e "JAVA_HOME=<path to java home>" clean test`
