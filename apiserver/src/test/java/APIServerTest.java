@@ -745,21 +745,47 @@ public class APIServerTest {
                     testContext.completeNow();
                 }))
                 .onFailure(testContext::failNow)));
+    }
+
+    @Test
+    @DisplayName("Test query endpoint")
+    void testQuery(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var query =
+            """
+            {:find  [(eql/project artifact-store [:name :url])]
+             :where [[artifact-store :type :artifact-store]]}
+            """;
+        final var txn = DB.datafy(
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.artifact-store.dev/test1
+               :type       :artifact-store
+               :name       "test1"
+               :url        "http://localhost:8000"}]
+             [:crux.tx/put
+              {:crux.db/id :bob.artifact-store.dev/test2
+               :type       :artifact-store
+               :name       "test2"
+               :url        "http://localhost:8001"}]]
+            """
+        );
 
         node.awaitTx(
-            node.submitTx((List<List<?>>) query),
+            node.submitTx((List<List<?>>) txn),
             Duration.ofSeconds(5)
         );
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
-                .get("/artifact-stores")
+                .get("/query")
+                .addQueryParam("q", query)
                 .send()
                 .onSuccess(res -> testContext.verify(() -> {
                     assertThat(res.statusCode()).isEqualTo(200);
                     assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
-                    assertThat(res.bodyAsJsonObject().getJsonArray("message")).hasSize(2); // TODO: Check the actual objects
-
+                    assertThat(res.bodyAsJsonArray()).hasSize(2);
                     testContext.completeNow();
                 }))
                 .onFailure(testContext::failNow)));

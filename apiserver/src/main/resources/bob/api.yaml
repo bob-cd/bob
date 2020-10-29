@@ -614,6 +614,47 @@ paths:
                       - "s3-store"
                       - "file-store"
 
+  /query:
+    get:
+      operationId: Query
+      summary: Runs a query on Crux, intended for point in time analytics
+
+      parameters:
+        - name: q
+          description: Query to execute
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: t
+          description: Point in time
+          required: false
+          in: query
+          schema:
+            type: date-time
+
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                sucess:
+                  value: []
+
+        default:
+          description: Failed query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "Query failed: <Error>"
+
 components:
   schemas:
     SimpleResponse:
