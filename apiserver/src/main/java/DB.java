@@ -95,6 +95,10 @@ public class DB {
     }
 
     public static JsonObject toJson(Object data) {
-        return new JsonObject((String) toJson.invoke(data));
+        return new JsonObject(stringify(data));
+    }
+
+    public static String stringify(Object data) {
+        return toJson.invoke(data).toString();
     }
 }

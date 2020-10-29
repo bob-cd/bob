@@ -32,6 +32,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -356,6 +359,24 @@ public class Handlers {
                 .collect(Collectors.toList());
 
             toJsonResponse(routingContext, artifactStore, 200);
+        } catch (Exception e) {
+            toJsonResponse(routingContext, e.getMessage(), 500);
+        }
+    }
+
+    public static void queryHandler(RoutingContext routingContext, ICruxAPI node) {
+        try {
+            final var query = DB.datafy(routingContext.request().params().get("q"));
+            final var time = routingContext.request().params().get("t");
+            final var db = time == null ?
+                node.db() :
+                node.db(Date.from(Instant.from(DateTimeFormatter.ISO_INSTANT.parse(time))));
+            final var result = db.query(query);
+
+            routingContext.response()
+                .putHeader("Content-Type", "application/json")
+                .setStatusCode(200)
+                .end(DB.stringify(result));
         } catch (Exception e) {
             toJsonResponse(routingContext, e.getMessage(), 500);
         }
