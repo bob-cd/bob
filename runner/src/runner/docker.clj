@@ -302,6 +302,20 @@
     (docker/invoke containers
                    {:op :ContainerList})))
 
+(defn pause-container
+  "Idempotently pause a container"
+  [id]
+  (docker/invoke containers
+                 {:op     :ContainerPause
+                  :params {:id id}}))
+
+(defn unpause-container
+  "Idempotently unpause a container"
+  [id]
+  (docker/invoke containers
+                 {:op     :ContainerUnpause
+                  :params {:id id}}))
+
 (comment
   (pull-image "alpine:latest")
 
@@ -330,4 +344,13 @@
 
   (get-container-archive "conny" "/root/files")
 
-  (container-ls))
+  (container-ls)
+
+  (pause-container "yes")
+
+  (-> "yes"
+      inspect-container
+      :State
+      :Paused)
+
+  (unpause-container "yes"))
