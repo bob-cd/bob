@@ -41,6 +41,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -786,6 +788,59 @@ public class APIServerTest {
                     assertThat(res.statusCode()).isEqualTo(200);
                     assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
                     assertThat(res.bodyAsJsonArray()).hasSize(2);
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow)));
+    }
+
+    @Test
+    @DisplayName("Test timed query")
+    void testQueryTime(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var query =
+            """
+            {:find  [(eql/project artifact-store [:name :url])]
+             :where [[artifact-store :type :artifact-store]]}
+            """;
+        final var txn = DB.datafy(
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.artifact-store.dev/test1
+               :type       :artifact-store
+               :name       "test1"
+               :url        "http://localhost:8000"}]]
+            """
+        );
+
+        final var deleteTxn = DB.datafy(
+            """
+            [[:crux.tx/delete :bob.artifact-store.dev/test1]]
+            """
+        );
+
+        node.awaitTx(
+            node.submitTx((List<List<?>>) txn),
+            Duration.ofSeconds(5)
+        );
+
+        final var txnTime = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+
+        node.awaitTx(
+            node.submitTx((List<List<?>>) deleteTxn),
+            Duration.ofSeconds(5)
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
+            client
+                .get("/query")
+                .addQueryParam("q", query)
+                .addQueryParam("t", txnTime)
+                .send()
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.statusCode()).isEqualTo(200);
+                    assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                    assertThat(res.bodyAsJsonArray()).hasSize(1);
                     testContext.completeNow();
                 }))
                 .onFailure(testContext::failNow)));
