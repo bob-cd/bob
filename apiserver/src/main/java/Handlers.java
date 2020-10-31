@@ -381,4 +381,15 @@ public class Handlers {
             toJsonResponse(routingContext, e.getMessage(), 500);
         }
     }
+
+    public static void errorsHandler(RoutingContext routingContext, RabbitMQClient queue) {
+        queue
+            .basicGet("bob.errors", true)
+            .onSuccess(message -> toJsonResponse(
+                routingContext,
+                message != null ? message.body().toString() : "No more errors",
+                200)
+            )
+            .onFailure(err -> toJsonResponse(routingContext, err.getMessage(), 500));
+    }
 }
