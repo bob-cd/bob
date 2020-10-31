@@ -870,6 +870,26 @@ public class APIServerTest {
                     .onFailure(testContext::failNow)));
     }
 
+    @Test
+    @DisplayName("Test empty error fetch")
+    void testEmptyErrorFetch(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq),
+            testContext.succeeding(id ->
+                client
+                    .get("/error")
+                    .send()
+                    .onSuccess(res -> testContext.verify(() -> {
+                        assertThat(res.statusCode()).isEqualTo(200);
+                        assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                        assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("No more errors");
+                        testContext.completeNow();
+                    }))
+                    .onFailure(testContext::failNow)));
+    }
+
     @AfterEach
     void cleanup() throws SQLException {
         final var st = conn.createStatement();
