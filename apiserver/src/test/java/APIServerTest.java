@@ -18,6 +18,7 @@
 import crux.api.ICruxAPI;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
@@ -844,6 +845,29 @@ public class APIServerTest {
                     testContext.completeNow();
                 }))
                 .onFailure(testContext::failNow)));
+    }
+
+    @Test
+    @DisplayName("Test error fetch")
+    void testErrorFetch(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq),
+            testContext.succeeding(id ->
+                queue
+                    .basicPublish("", "bob.errors", Buffer.buffer("yes"))
+                    .onSuccess(_it -> client
+                        .get("/error")
+                        .send()
+                        .onSuccess(res -> testContext.verify(() -> {
+                            assertThat(res.statusCode()).isEqualTo(200);
+                            assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                            assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("yes");
+                            testContext.completeNow();
+                        }))
+                    )
+                    .onFailure(testContext::failNow)));
     }
 
     @AfterEach
