@@ -62,6 +62,15 @@ public class APIServerTest {
     final RabbitMQOptions queueConfig = new RabbitMQOptions().setHost("localhost").setPort(5673);
     final WebClientOptions clientConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(httpPort);
 
+    private static boolean isUUID(String uuid) {
+        try {
+            UUID.fromString(uuid);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @BeforeEach
     void prepare() throws SQLException, ConnectException {
         vertx = Vertx.vertx(
@@ -207,16 +216,17 @@ public class APIServerTest {
     void testPipelineStart(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
         final var client = WebClient.create(vertx, clientConfig);
-        final var payload = new JsonObject()
-            .put("name", "test")
-            .put("group", "dev");
 
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             queue
                 .basicConsumer("bob.jobs", new QueueOptions().setAutoAck(true))
                 .onSuccess(rmqConsumer ->
                     rmqConsumer.handler(message -> testContext.verify(() -> {
-                        assertThat(message.body().toJsonObject()).isEqualTo(payload);
+                        final var body = message.body().toJsonObject();
+
+                        assertThat(body.getString("name")).isEqualTo("test");
+                        assertThat(body.getString("group")).isEqualTo("dev");
+                        assertThat(isUUID(body.getString("run_id").replaceFirst("r-", "")));
                         assertThat(message.properties().getType()).isEqualTo("pipeline/start");
 
                         testContext.completeNow();
@@ -224,7 +234,7 @@ public class APIServerTest {
                 .compose(_it -> client.post("/pipelines/start/groups/dev/names/test")
                     .send())
                 .onSuccess(res -> testContext.verify(() -> {
-                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(isUUID(res.bodyAsJsonObject().getString("message").replaceFirst("r-", "")));
                     assertThat(res.statusCode()).isEqualTo(202);
                 }))
                 .onFailure(testContext::failNow)));

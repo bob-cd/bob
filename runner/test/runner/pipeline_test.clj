@@ -275,8 +275,9 @@
                                                        :image      "busybox:musl"}]]))
                      (let [result   @(p/start db
                                        queue
-                                       {:group "test"
-                                        :name  "test"})
+                                       {:group  "test"
+                                        :name   "test"
+                                        :run_id "a-run-id"})
                            history  (crux/entity-history (crux/db db)
                                                          (keyword (str "bob.pipeline.run/" result))
                                                          :desc
@@ -302,8 +303,9 @@
                                                        :image      "busybox:musl"}]]))
                      (let [result   @(p/start db
                                        queue
-                                       {:group "test"
-                                        :name  "test"})
+                                       {:group  "test"
+                                        :name   "test"
+                                        :run_id "a-run-id"})
                            id       (f/message result)
                            history  (crux/entity-history (crux/db db)
                                                          (keyword (str "bob.pipeline.run/" id))
@@ -340,23 +342,17 @@
                                           :image      "busybox:musl"}]]))
         (let [_        (p/start db
                          queue
-                         {:group "test"
-                          :name  "stop-test"})
+                         {:group  "test"
+                          :name   "stop-test"
+                          :run_id "a-run-id"})
               _        (Thread/sleep 5000) ;; Longer, possibly flaky wait
-              run-id   (->> (crux/q (crux/db db)
-                                    '{:find  [(eql/project run [:crux.db/id])]
-                                      :where [[run :type :pipeline-run] [run :group "test"] [run :name "stop-test"]]})
-                            first
-                            (map :crux.db/id)
-                            first
-                            name)
               _        (p/stop db
                          queue
                          {:group  "test"
                           :name   "stop-test"
-                          :run_id run-id})
+                          :run_id "a-run-id"})
               history  (crux/entity-history (crux/db db)
-                                            (keyword (str "bob.pipeline.run/" run-id))
+                                            (keyword "bob.pipeline.run/a-run-id")
                                             :desc
                                             {:with-docs? true})
               statuses (->> history

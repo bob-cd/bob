@@ -178,9 +178,8 @@
 
 (defn start
   "Attempts to asynchronously start a pipeline by group and name."
-  [db-client queue-chan {:keys [group name]}]
-  (let [run-id    (str "r-" (UUID/randomUUID))
-        run-db-id (keyword (str "bob.pipeline.run/" run-id))
+  [db-client queue-chan {:keys [group name run_id]}]
+  (let [run-db-id (keyword (str "bob.pipeline.run/" run_id))
         run-info  {:crux.db/id run-db-id
                    :type       :pipeline-run
                    :group      group
@@ -195,41 +194,41 @@
                                                                group
                                                                name)))
                   {:keys [image steps vars]} pipeline
-                  _                          (log/infof "Starting new run: %s" run-id)
+                  _                          (log/infof "Starting new run: %s" run_id)
                   txn                        (crux/submit-tx db-client
                                                              [[:crux.tx/put (assoc run-info :status :running)]])
                   _                          (crux/await-tx db-client txn)
-                  _                          (log-event db-client run-id (str "Pulling image " image))
+                  _                          (log-event db-client run_id (str "Pulling image " image))
                   _                          (docker/pull-image image)
-                  _                          (mark-image-for-gc image run-id)
+                  _                          (mark-image-for-gc image run_id)
                   build-state                {:image     image
                                               :mounted   #{}
-                                              :run-id    run-id
+                                              :run-id    run_id
                                               :db-client db-client
                                               :env       vars
                                               :group     group
                                               :name      name}
                   _                          (reduce exec-step build-state steps) ;; This is WHOLE of Bob!
-                  _                          (gc-images run-id)
+                  _                          (gc-images run_id)
                   txn                        (crux/submit-tx db-client
                                                              [[:crux.tx/put (assoc run-info :status :passed)]])
                   _                          (crux/await-tx db-client txn)
-                  _                          (log/infof "Run successful %s" run-id)
-                  _                          (log-event db-client run-id "Run successful")]
-        run-id
+                  _                          (log/infof "Run successful %s" run_id)
+                  _                          (log-event db-client run_id "Run successful")]
+        run_id
         (f/when-failed [err]
           (let [status (:status (crux/entity (crux/db db-client) run-db-id))
                 error  (f/message err)]
             (when-not (= status :stopped)
               (log/infof "Marking run %s as failed with reason: %s"
-                         run-id
+                         run_id
                          error)
-              (log-event db-client run-id (str "Run failed: %s" error))
+              (log-event db-client run_id (str "Run failed: %s" error))
               (crux/submit-tx db-client
                               [[:crux.tx/put (assoc run-info :status :failed)]])))
-          (gc-images run-id)
+          (gc-images run_id)
           (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
-          (f/fail run-id))))))
+          (f/fail run_id))))))
 
 (defn container-in-node?
   "Checks if the container with `id` is running in the local Docker daemon."

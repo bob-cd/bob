@@ -20,7 +20,8 @@ payload:
 ```json
 {
   "group": "dev",
-  "name": "test"
+  "name": "test",
+  "run_id": "r-unique_run_uuid"
 }
 ```
 

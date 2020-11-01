@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class Handlers {
@@ -115,12 +116,14 @@ public class Handlers {
         final var params = routingContext.request().params();
         final var group = params.get("group");
         final var name = params.get("name");
+        final var id = "r-" + UUID.randomUUID();
         final var pipeline = new JsonObject()
             .put("group", group)
-            .put("name", name);
+            .put("name", name)
+            .put("run_id", id);
 
         publishMessage(queue, "pipeline/start", "bob.direct", "bob.jobs", pipeline);
-        toJsonResponse(routingContext, "Ok");
+        toJsonResponse(routingContext, id);
     }
 
     public static void pipelineStopHandler(RoutingContext routingContext, RabbitMQClient queue) {
