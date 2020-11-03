@@ -17,7 +17,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
             [failjure.core :as f]
-            [clj-http.client :as http]
+            [java-http-clj.core :as http]
             [runner.util :as u]
             [runner.docker :as docker]
             [runner.artifact :as a]))
@@ -42,8 +42,7 @@
                      (testing "unsuccessful artifact upload"
                        (is (f/failed? (a/upload-artifact db "dev" "test" "r-1" "file1" id "/invalid-path" "local")))
                        (is (= 404
-                              (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file1"
-                                                 {:throw-exceptions false})))))
+                              (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file1")))))
                      (crux/await-tx db
                                     (crux/submit-tx db
                                                     [[:crux.tx/delete :bob.artifact-store/local]])))))

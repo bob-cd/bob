@@ -18,7 +18,7 @@
             [clojure.java.io :as io]
             [failjure.core :as f]
             [taoensso.timbre :as log]
-            [clj-http.client :as http]
+            [java-http-clj.core :as http]
             [crux.api :as crux]
             [runner.docker :as docker])
   (:import [java.io BufferedOutputStream File FileOutputStream]
@@ -28,8 +28,7 @@
   "Downloads a resource(tar file) and returns the stream."
   [url]
   (f/try-all [_        (log/infof "Fetching resource from %s" url)
-              ;; TODO: Potential out of memory issues here?
-              resource (:body (http/get url {:as :stream}))]
+              resource (:body (http/get url {} {:as :input-stream}))]
     resource
     (f/when-failed [err]
       (log/errorf "Failed to fetch resource: %s" (f/message err))

@@ -17,7 +17,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [crux.api :as crux]
             [failjure.core :as f]
-            [clj-http.client :as http]
+            [java-http-clj.core :as http]
             [runner.util :as u]
             [runner.docker :as d]
             [runner.docker-test :as dt]

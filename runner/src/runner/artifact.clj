@@ -16,7 +16,7 @@
 (ns runner.artifact
   (:require [clojure.string :as s]
             [taoensso.timbre :as log]
-            [clj-http.client :as http]
+            [java-http-clj.core :as http]
             [crux.api :as crux]
             [failjure.core :as f]
             [runner.docker :as docker]))
@@ -36,8 +36,8 @@
                                       run-id
                                       upload-url)
                 _          (http/post upload-url
-                                      {:multipart [{:name    "data" ; Another API constraint
-                                                    :content stream}]})]
+                                      {:body stream
+                                       :as   :input-stream})]
       "Ok"
       (f/when-failed [err]
         (log/errorf "Error in uploading artifact: %s" (f/message err))
@@ -60,7 +60,7 @@
         sys/db-client))
 
   (http/post "http://localhost:8001/bob_artifact/dev/test/r-1/tar"
-             {:multipart [{:name    "data"
-                           :content (io/input-stream "test/test.tar")}]})
+             {:body (io/input-stream "test/test.tar")
+              :as   :input-stream})
 
   (upload-artifact db-client "dev" "test" "r-1" "jar" "conny" "/root" "local"))

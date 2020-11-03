@@ -19,7 +19,7 @@ FROM azul/zulu-openjdk-alpine:15 AS jdk
 RUN /usr/lib/jvm/default-jvm/bin/jlink \
     --compress=2 \
     --module-path jmods \
-    --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management \
+    --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http \
     --output jlinked
 
 
