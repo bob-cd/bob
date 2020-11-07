@@ -20,7 +20,8 @@
             [taoensso.timbre :as log]
             [java-http-clj.core :as http]
             [crux.api :as crux]
-            [runner.docker :as docker])
+            [runner.docker :as docker]
+            [runner.artifact :as a])
   (:import [java.io BufferedOutputStream File FileOutputStream]
            [org.kamranzafar.jtar TarInputStream TarOutputStream]))
 
@@ -65,18 +66,31 @@
   (some? (crux/entity (crux/db db-client) (keyword (str "bob.resource-provider/" (:provider resource))))))
 
 (defn url-of
-  "Generates a URL for the external resource of a pipeline."
-  [db-client resource]
-  (let [provider-id (keyword (str "bob.resource-provider/" (:provider resource)))
-        url         (:url (crux/entity (crux/db db-client) provider-id))]
-    (format "%s/bob_resource?%s"
-            url
-            (s/join
-              "&"
-              (map #(format "%s=%s"
-                            (name (key %))
-                            (val %))
-                   (:params resource))))))
+  "Generates a URL for the resource fetch of a pipeline."
+  [db-client {:keys [name type provider params]}]
+  (case type
+    "external" (let [url   (->> provider
+                                (str "bob.resource-provider/")
+                                keyword
+                                (crux/entity (crux/db db-client))
+                                :url)
+                     query (s/join "&"
+                                   (map #(format "%s=%s"
+                                                 (clojure.core/name (key %))
+                                                 (val %))
+                                        params))]
+                 (format "%s/bob_resource?%s"
+                         url
+                         query))
+    "internal" (let [base-url                    (a/store-url db-client provider)
+                     resource-name               name
+                     {:keys [group name run_id]} params]
+                 (format "%s/bob_artifact/%s/%s/%s/%s"
+                         base-url
+                         group
+                         name
+                         run_id
+                         resource-name))))
 
 (defn initial-image-of
   "Takes an InputStream of the resource, name and image and builds the initial image.
@@ -150,15 +164,31 @@
         :database
         sys/db-client))
 
+  (crux/submit-tx db-client
+                  [[:crux.tx/put
+                    {:crux.db/id :bob.resource-provider/git
+                     :type       :resource-provider
+                     :name       "git"
+                     :url        "http://localhost:8000"}]])
+
   (valid-resource-provider? db-client {:provider "git"})
 
   (url-of db-client
-          {:provider "git"
+          {:name     "source"
+           :type     "external"
+           :provider "git"
            :params   {:repo   "a-repo"
                       :branch "a-branch"}})
 
+  (s/join "&"
+    (map #(format "%s=%s"
+                  (name (key %))
+                  (val %))
+          {:repo "a-repo" :branch "a-branch"}))
+
   (mounted-image-from db-client
                       {:name     "source"
+                       :type     "external"
                        :provider "git"
                        :params   {:repo   "a-repo"
                                   :branch "a-branch"}}

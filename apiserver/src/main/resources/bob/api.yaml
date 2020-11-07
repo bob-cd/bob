@@ -709,6 +709,7 @@ components:
           type: string
           enum:
             - external
+            - internal
         provider:
           type: string
           description: Unique name of the registered resource provider

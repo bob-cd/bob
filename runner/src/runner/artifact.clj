@@ -21,10 +21,14 @@
             [failjure.core :as f]
             [runner.docker :as docker]))
 
+(defn store-url
+  [db-client store]
+  (:url (crux/entity (crux/db db-client) (keyword (str "bob.artifact-store/" store)))))
+
 (defn upload-artifact
   "Opens up a stream to the path in a container by id and POSTs it to the artifact store."
   [db-client group name run-id artifact-name container-id path store-name]
-  (if-let [{url :url} (crux/entity (crux/db db-client) (keyword (str "bob.artifact-store/" store-name)))]
+  (if-let [url (store-url db-client store-name)]
     (f/try-all [_          (log/debugf "Streaming from container %s on path %s"
                                        container-id
                                        path)

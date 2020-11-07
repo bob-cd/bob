@@ -67,12 +67,28 @@
                                                   [[:crux.tx/put
                                                     {:crux.db/id :bob.resource-provider/git
                                                      :url        "http://localhost:8000"}]]))
-                   (testing "generate url for a resource provider"
+                   (crux/await-tx db
+                                  (crux/submit-tx db
+                                                  [[:crux.tx/put
+                                                    {:crux.db/id :bob.artifact-store/local
+                                                     :url        "http://localhost:8001"}]]))
+                   (testing "generate url for an external resource"
                      (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
                             (r/url-of db
-                                      {:provider "git"
+                                      {:name     "source"
+                                       :provider "git"
+                                       :type     "external"
                                        :params   {:repo   "a-repo"
                                                   :branch "a-branch"}}))))
+                   (testing "generate url for an internal resource"
+                     (is (= "http://localhost:8001/bob_artifact/dev/test/a-run-id/jar"
+                            (r/url-of db
+                                      {:name     "jar"
+                                       :provider "local"
+                                       :type     "internal"
+                                       :params   {:group  "dev"
+                                                  :name   "test"
+                                                  :run_id "a-run-id"}}))))
                    (crux/await-tx db
                                   (crux/submit-tx db
                                                   [[:crux.tx/delete :bob.resource-provider/git]])))))
@@ -102,6 +118,7 @@
                    (testing "successful mount"
                      (let [image  (r/mounted-image-from db
                                                         {:name     "source"
+                                                         :type     "external"
                                                          :provider "git"
                                                          :params   {:repo   "https://github.com/lispyclouds/bob-example"
                                                                     :branch "main"}}
