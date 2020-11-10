@@ -126,6 +126,11 @@
                   :params {:name image}})
   image)
 
+(defonce host-config
+         {:Mounts [{:Target "/var/run/docker.sock"
+                    :Source "/var/run/docker.sock"
+                    :Type   "bind"}]})
+
 (defn create-container
   "Creates a container from an image.
 
@@ -137,7 +142,8 @@
    (f/try-all [_      (log/debugf "Creating a container from %s" image)
                result (docker/invoke containers
                                      {:op               :ContainerCreate
-                                      :params           {:body {:Image image}}
+                                      :params           {:body {:Image      image
+                                                                :HostConfig host-config}}
                                       :throw-exception? true})]
      (:Id result)
      (f/when-failed [err]
@@ -157,13 +163,15 @@
                                            command
                                            formatted-evars
                                            working-dir)
-               result          (docker/invoke containers
-                                              {:op               :ContainerCreate
-                                               :params           {:body {:Image      image
-                                                                         :Cmd        command
-                                                                         :Env        formatted-evars
-                                                                         :WorkingDir working-dir}}
-                                               :throw-exception? true})]
+               result          (docker/invoke
+                                 containers
+                                 {:op               :ContainerCreate
+                                  :params           {:body {:Image      image
+                                                            :Cmd        command
+                                                            :Env        formatted-evars
+                                                            :WorkingDir working-dir
+                                                            :HostConfig host-config}}
+                                  :throw-exception? true})]
      (:Id result)
      (f/when-failed [err]
        (log/errorf "Could not create container: %s" (f/message err))
@@ -329,6 +337,8 @@
                     {:k1 "v1"})
 
   (create-container "busybox:musl" {:cmd "sh -c 'sleep 1; exit 1'"})
+
+  (create-container "docker:stable" {:cmd "docker info"})
 
   (inspect-container "conny")
 
