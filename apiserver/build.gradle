@@ -19,7 +19,7 @@ plugins {
     id "java"
     id "application"
     id "com.github.johnrengelman.shadow" version "6.1.0"
-    id "com.github.ben-manes.versions" version "0.33.0"
+    id "com.github.ben-manes.versions" version "0.36.0"
 }
 
 group "org.bob-cd"
@@ -48,7 +48,7 @@ dependencies {
 
     testImplementation "io.vertx:vertx-junit5:$vertxVersion"
     testImplementation "org.junit.jupiter:junit-jupiter:5.7.0"
-    testImplementation "org.assertj:assertj-core:3.17.2"
+    testImplementation "org.assertj:assertj-core:3.18.1"
 }
 
 tasks.withType(JavaCompile) {
@@ -70,6 +70,7 @@ compileJava {
 
 test {
     useJUnitPlatform()
+
     testLogging {
         exceptionFormat = 'full'
         showStandardStreams = true

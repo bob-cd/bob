@@ -31,14 +31,16 @@ jobs:
           java-version: "15"
 
       - name: "Prepare tools-deps"
-        uses: DeLaGuardo/setup-clojure@2.0
+        uses: "DeLaGuardo/setup-clojure@master"
         with:
-          tools-deps: 1.10.1.727
+          cli: '1.10.1.727'
 
       - name: "Apply Cache"
-        uses: "actions/cache@v1"
+        uses: "actions/cache@v2"
         with:
-          path: "~/.m2/repository"
+          path: |
+            ~/.m2/repository
+            ~/.gradle/caches
           key: "${{ runner.os }}-bob-${{ hashFiles('{entities,runner}/deps.edn', 'apiserver/build.gradle') }}"
           restore-keys: "${{ runner.os }}-bob-"
 
