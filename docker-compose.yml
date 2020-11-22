@@ -13,7 +13,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-version: "3.8"
+version: "3"
 
 services:
   runner:
@@ -24,8 +24,8 @@ services:
       - storage
       - queue
     environment:
-      BOB_STORAGE_HOST: storage
-      BOB_QUEUE_HOST: queue
+      BOB_STORAGE_URL: jdbc:postgresql://storage:5432/bob
+      BOB_QUEUE_URL: amqp://queue:5672
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
@@ -37,8 +37,8 @@ services:
       - storage
       - queue
     environment:
-      BOB_STORAGE_HOST: storage
-      BOB_QUEUE_HOST: queue
+      BOB_STORAGE_URL: jdbc:postgresql://storage:5432/bob
+      BOB_QUEUE_URL: amqp://queue:5672
 
   apiserver:
     image: ghcr.io/bob-cd/apiserver
@@ -50,8 +50,8 @@ services:
       - queue
       - storage
     environment:
-      BOB_STORAGE_HOST: storage
-      BOB_QUEUE_HOST: queue
+      BOB_STORAGE_URL: jdbc:postgresql://localhost:5432/bob
+      BOB_QUEUE_URL: amqp://queue:5672
 
   queue:
     image: rabbitmq:3-alpine

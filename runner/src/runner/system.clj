@@ -35,14 +35,12 @@
     (Integer/parseInt (get env/env key (str default)))
     (catch Exception _ default)))
 
-(defonce storage-host (:bob-storage-host env/env "localhost"))
-(defonce storage-port (int-from-env :bob-storage-port 5432))
+(defonce storage-url (:bob-storage-host env/env "jdbc:postgresql://localhost:5432/bob"))
 (defonce storage-user (:bob-storage-user env/env "bob"))
 (defonce storage-name (:bob-storage-database env/env "bob"))
 (defonce storage-password (:bob-storage-password env/env "bob"))
 
-(defonce queue-host (:bob-queue-host env/env "localhost"))
-(defonce queue-port (int-from-env :bob-queue-port 5672))
+(defonce queue-url (:bob-queue-url env/env "amqp://localhost:5672"))
 (defonce queue-user (:bob-queue-user env/env "guest"))
 (defonce queue-password (:bob-queue-password env/env "guest"))
 
@@ -68,7 +66,7 @@
   (db-client [this]))
 
 (defrecord Database
-  [db-name db-host db-port db-user db-password]
+  [db-url db-user db-password]
   component/Lifecycle
   (start [this]
     (log/info "Connecting to DB")
@@ -76,9 +74,7 @@
            :client
            (try-connect
              #(crux/start-node {::jdbc/connection-pool {:dialect 'crux.jdbc.psql/->dialect
-                                                        :db-spec {:dbname   db-name
-                                                                  :host     db-host
-                                                                  :port     db-port
+                                                        :db-spec {:jdbcUrl  db-url
                                                                   :user     db-user
                                                                   :password db-password}}
                                 :crux/tx-log           {:crux/module     `crux.jdbc/->tx-log
@@ -97,13 +93,11 @@
   (queue-chan [this]))
 
 (defrecord Queue
-  [database queue-host queue-port queue-user queue-password]
+  [database queue-url queue-user queue-password]
   component/Lifecycle
   (start [this]
-    (let [conn            (try-connect #(rmq/connect {:host     queue-host
-                                                      :port     queue-port
+    (let [conn            (try-connect #(rmq/connect {:uri      queue-url
                                                       :username queue-user
-                                                      :vhost    "/"
                                                       :password queue-password}))
           chan            (lch/open conn)
           job-queue       "bob.jobs"
@@ -146,14 +140,11 @@
 
 (def system-map
   (component/system-map
-    :queue    (component/using (map->Queue {:queue-host     queue-host
-                                            :queue-port     queue-port
+    :queue    (component/using (map->Queue {:queue-url      queue-url
                                             :queue-user     queue-user
                                             :queue-password queue-password})
                                [:database])
-    :database (map->Database {:db-name     storage-name
-                              :db-host     storage-host
-                              :db-port     storage-port
+    :database (map->Database {:db-url      storage-url
                               :db-user     storage-user
                               :db-password storage-password})))
 
@@ -176,5 +167,4 @@
   (start))
 
 (comment
-  (reset)
-  (int-from-env :yalla 42))
+  (reset))

@@ -21,13 +21,10 @@
 (defn with-system
   [test-fn]
   (let [system (component/system-map
-                 :database (sys/map->Database {:db-name     "bob-test"
-                                               :db-host     "localhost"
-                                               :db-port     5433
+                 :database (sys/map->Database {:db-url      "jdbc:postgresql://localhost:5433/bob-test"
                                                :db-user     "bob"
                                                :db-password "bob"})
-                 :queue    (component/using (sys/map->Queue {:queue-host     "localhost"
-                                                             :queue-port     5673
+                 :queue    (component/using (sys/map->Queue {:queue-url      "amqp://localhost:5673"
                                                              :queue-user     "guest"
                                                              :queue-password "guest"})
                                             [:database]))

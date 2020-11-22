@@ -56,8 +56,7 @@ public class APIServerTest {
     Connection conn;
     ICruxAPI node;
 
-    final String apiSpec = "/bob/api.yaml";
-    final String httpHost = "localhost";
+    final String apiSpec = "/bob/api.yaml", httpHost = "localhost";
     final int httpPort = 7778, healthCheckFreq = 5000;
     final RabbitMQOptions queueConfig = new RabbitMQOptions().setHost("localhost").setPort(5673);
     final WebClientOptions clientConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(httpPort);
@@ -73,14 +72,16 @@ public class APIServerTest {
 
     @BeforeEach
     void prepare() throws SQLException, ConnectException {
+        final String dbURL = "jdbc:postgresql://localhost:5433/bob-test";
+
         vertx = Vertx.vertx(
             new VertxOptions()
                 .setMaxEventLoopExecuteTime(1000)
                 .setPreferNativeTransport(true)
         );
 
-        node = new DB("bob-test", "localhost", 5433, "bob", "bob", 10, 2000).node;
-        conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/bob-test?user=bob&password=bob");
+        node = new DB(dbURL, "bob", "bob", 10, 2000).node;
+        conn = DriverManager.getConnection("%s?user=bob&password=bob".formatted(dbURL));
     }
 
     @Test

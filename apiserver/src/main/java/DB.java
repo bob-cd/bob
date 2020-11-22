@@ -36,9 +36,7 @@ public class DB {
     }
 
     public DB(
-        String dbName,
-        String dbHost,
-        int dbPort,
+        String dbUrl,
         String dbUser,
         String dbPassword,
         int connectionRetryAttempts,
@@ -47,12 +45,10 @@ public class DB {
         final var connectionPool = datafy(
             """
             {:dialect crux.jdbc.psql/->dialect
-             :db-spec {:dbname   "%s"
-                       :host     "%s"
-                       :port     %d
+             :db-spec {:jdbcUrl  "%s"
                        :user     "%s"
                        :password "%s"}}
-            """.formatted(dbName, dbHost, dbPort, dbUser, dbPassword)
+            """.formatted(dbUrl, dbUser, dbPassword)
         );
 
         ICruxAPI connectedNode = null;

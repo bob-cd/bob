@@ -13,22 +13,19 @@ This is intended as the coherent gateway for the Bob cluster having the schema c
 ## Configuration
 This can be configured with environment variables. Possible variables are:
 
-| environment variables         | defaults  |
-|-------------------------------|-----------|
-| BOB_STORAGE_HOST              | localhost |
-| BOB_STORAGE_PORT              | 5432      |
-| BOB_STORAGE_USER              | bob       |
-| BOB_STORAGE_DATABASE          | bob       |
-| BOB_STORAGE_PASSWORD          | bob       |
-| BOB_QUEUE_HOST                | localhost |
-| BOB_QUEUE_PORT                | 5672      |
-| BOB_QUEUE_USER                | guest     |
-| BOB_QUEUE_PASSWORD            | guest     |
-| BOB_API_HOST                  | 0.0.0.0   |
-| BOB_API_PORT                  | 7777      |
-| BOB_HEALTH_CHECK_FREQ         | 5000      |
-| BOB_CONNECTION_RETRY_ATTEMPTS | 10        |
-| BOB_CONNECTION_RETRY_DELAY    | 2000      |
+| environment variables         | defaults                             |
+|-------------------------------|--------------------------------------|
+| BOB_STORAGE_URL               | jdbc:postgresql://localhost:5432/bob |
+| BOB_STORAGE_USER              | bob                                  |
+| BOB_STORAGE_PASSWORD          | bob                                  |
+| BOB_QUEUE_URL                 | amqp://localhost:5672                |
+| BOB_QUEUE_USER                | guest                                |
+| BOB_QUEUE_PASSWORD            | guest                                |
+| BOB_API_HOST                  | 0.0.0.0                              |
+| BOB_API_PORT                  | 7777                                 |
+| BOB_HEALTH_CHECK_FREQ         | 5000                                 |
+| BOB_CONNECTION_RETRY_ATTEMPTS | 10                                   |
+| BOB_CONNECTION_RETRY_DELAY    | 2000                                 |
 
 ## Message Schemas
 

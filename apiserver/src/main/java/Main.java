@@ -41,14 +41,11 @@ public class Main {
             .create(vertx, configRetrieverOptions)
             .getConfig()
             .compose(conf -> {
-                final var dbName = conf.getString("BOB_STORAGE_DATABASE", "bob");
-                final var dbHost = conf.getString("BOB_STORAGE_HOST", "localhost");
-                final var dbPort = conf.getInteger("BOB_STORAGE_PORT", 5432);
-                final var dbUser = conf.getString("BOB_STORAGE_USER", "bob");
-                final var dbPassword = conf.getString("BOB_STORAGE_PASSWORD", "bob");
+                final var storageUrl = conf.getString("BOB_STORAGE_URL", "jdbc:postgresql://localhost:5432/bob");
+                final var storageUser = conf.getString("BOB_STORAGE_USER", "bob");
+                final var storagePassword = conf.getString("BOB_STORAGE_PASSWORD", "bob");
 
-                final var queueHost = conf.getString("BOB_QUEUE_HOST", "localhost");
-                final var queuePort = conf.getInteger("BOB_QUEUE_PORT", 5672);
+                final var queueUrl = conf.getString("BOB_QUEUE_URL", "amqp://localhost:5672");
                 final var queueUser = conf.getString("BOB_QUEUE_USER", "guest");
                 final var queuePassword = conf.getString("BOB_QUEUE_PASSWORD", "guest");
 
@@ -61,7 +58,7 @@ public class Main {
                 final ICruxAPI node;
                 try {
                     node = new DB(
-                        dbName, dbHost, dbPort, dbUser, dbPassword, connectionRetryAttempts, connectionRetryDelay
+                        storageUrl, storageUser, storagePassword, connectionRetryAttempts, connectionRetryDelay
                     ).node;
                 } catch (ConnectException e) {
                     return Future.failedFuture(e);
@@ -70,8 +67,7 @@ public class Main {
                 final var queue = RabbitMQClient.create(
                     vertx,
                     new RabbitMQOptions()
-                        .setHost(queueHost)
-                        .setPort(queuePort)
+                        .setUri(queueUrl)
                         .setUser(queueUser)
                         .setPassword(queuePassword)
                         .setConnectionRetries(connectionRetryAttempts)

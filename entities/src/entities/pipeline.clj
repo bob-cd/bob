@@ -63,7 +63,7 @@
            '[com.stuartsierra.component :as c])
 
   (def db
-    (c/start (sys/->Database "bob" "localhost" 5432 "bob" "bob")))
+    (c/start (sys/->Database "jdbc:postgresql://localhost:5432/bob" "bob" "bob")))
 
   (c/stop db)
 
