@@ -70,12 +70,12 @@ public class Main {
                         .setUri(queueUrl)
                         .setUser(queueUser)
                         .setPassword(queuePassword)
-                        .setConnectionRetries(connectionRetryAttempts)
-                        .setConnectionRetryDelay(connectionRetryDelay)
+                        .setReconnectAttempts(connectionRetryAttempts)
+                        .setReconnectInterval(connectionRetryDelay)
                 );
 
                 return vertx.deployVerticle(new APIServer(
-                    "/bob/api.yaml", apiHost, apiPort, queue, node, healthCheckFreq
+                    "bob/api.yaml", apiHost, apiPort, queue, node, healthCheckFreq
                 ));
             })
             .onSuccess(id -> logger.info("Deployed on verticle: " + id))

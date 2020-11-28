@@ -56,7 +56,7 @@ public class APIServerTest {
     Connection conn;
     ICruxAPI node;
 
-    final String apiSpec = "/bob/api.yaml", httpHost = "localhost";
+    final String apiSpec = "bob/api.yaml", httpHost = "localhost";
     final int httpPort = 7778, healthCheckFreq = 5000;
     final RabbitMQOptions queueConfig = new RabbitMQOptions().setHost("localhost").setPort(5673);
     final WebClientOptions clientConfig = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(httpPort);
@@ -794,7 +794,7 @@ public class APIServerTest {
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/query")
-                .addQueryParam("q", query)
+                .addQueryParam("q", query.strip())
                 .send()
                 .onSuccess(res -> testContext.verify(() -> {
                     assertThat(res.statusCode()).isEqualTo(200);
@@ -846,7 +846,7 @@ public class APIServerTest {
         vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
             client
                 .get("/query")
-                .addQueryParam("q", query)
+                .addQueryParam("q", query.strip())
                 .addQueryParam("t", txnTime)
                 .send()
                 .onSuccess(res -> testContext.verify(() -> {

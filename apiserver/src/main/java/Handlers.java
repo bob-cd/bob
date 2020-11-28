@@ -29,9 +29,6 @@ import io.vertx.rabbitmq.RabbitMQClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -62,19 +59,16 @@ public class Handlers {
             .onFailure(it -> logger.error("Error publishing message on entities: " + it.getMessage()));
     }
 
-    public static void apiSpecHandler(RoutingContext routingContext) {
-        final var file = new File(Handlers.class.getResource("bob/api.yaml").getFile());
-
-        try {
-            routingContext
-                .response()
-                .putHeader("Content-Type", "application/yaml")
-                .end(Files.readString(file.toPath()));
-        } catch (IOException e) {
-            final var msg = "Could not read spec file: " + e.getMessage();
-            logger.error(msg);
-            toJsonResponse(routingContext, msg, 500);
-        }
+    public static void apiSpecHandler(RoutingContext routingContext, Vertx vertx) {
+        vertx
+            .fileSystem()
+            .readFile("bob/api.yaml")
+            .onSuccess(buffer ->
+                routingContext
+                    .response()
+                    .putHeader("Content-Type", "application/yaml")
+                    .end(buffer))
+            .onFailure(err -> toJsonResponse(routingContext, err.getMessage(), 500));
     }
 
     public static void healthCheckHandler(RoutingContext routingContext, RabbitMQClient queue, ICruxAPI node, Vertx vertx) {

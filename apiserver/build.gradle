@@ -30,7 +30,7 @@ repositories {
     maven { url "https://clojars.org/repo" }
 }
 
-def vertxVersion = "4.0.0-milestone5"
+def vertxVersion = "4.0.0.CR2"
 def cruxVersion = "20.09-1.12.1-beta"
 
 dependencies {
@@ -38,6 +38,7 @@ dependencies {
     implementation "io.vertx:vertx-web:$vertxVersion"
     implementation "io.vertx:vertx-web-client:$vertxVersion"
     implementation "io.vertx:vertx-web-api-contract:$vertxVersion"
+    implementation "io.vertx:vertx-web-openapi:$vertxVersion"
     implementation "io.vertx:vertx-rabbitmq-client:$vertxVersion"
     implementation "io.vertx:vertx-config:$vertxVersion"
     implementation "org.slf4j:slf4j-simple:1.6.1"

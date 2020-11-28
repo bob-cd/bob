@@ -631,7 +631,7 @@ paths:
           required: false
           in: query
           schema:
-            type: date-time
+            type: string
 
       responses:
         "200":
@@ -642,7 +642,7 @@ paths:
                 type: object
               examples:
                 sucess:
-                  value: []
+                  value: [ ]
 
         default:
           description: Failed query
@@ -780,7 +780,6 @@ components:
       properties:
         message:
           $ref: "#/components/schemas/StringList"
-          description: The lines of logs from the pipeline run
 
     PipelinesResponse:
       type: object
@@ -815,7 +814,6 @@ components:
       properties:
         message:
           $ref: "#/components/schemas/StringList"
-          description: The names of registered resource providers
 
     ResourceProviderAttributes:
       type: object
@@ -842,4 +840,3 @@ components:
       properties:
         message:
           $ref: "#/components/schemas/StringList"
-          description: The names of registered artifact stores

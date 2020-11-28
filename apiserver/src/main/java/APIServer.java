@@ -20,8 +20,8 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
-import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import io.vertx.ext.web.handler.LoggerHandler;
+import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.rabbitmq.RabbitMQClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,48 +55,37 @@ public class APIServer extends AbstractVerticle {
             .compose(_it -> queue.queueDeclare("bob.errors", true, false, false))
             .compose(_it -> queue.queueBind("bob.jobs", "bob.direct", "bob.jobs"))
             .compose(_it -> queue.queueBind("bob.entities", "bob.direct", "bob.entities"))
-            .compose(_it -> makeRouter())
+            .compose(_it -> RouterBuilder.create(this.vertx, this.apiSpec))
             .compose(this::makeServer)
             .onFailure(err -> startPromise.fail(err.getCause()))
             .onSuccess(_it -> startPromise.complete());
     }
 
-    @Override
     public void stop(Promise<Void> stopPromise) throws IOException {
         this.node.close();
         this.queue.stop(_it -> stopPromise.complete());
     }
 
-    private Future<OpenAPI3RouterFactory> makeRouter() {
-        final Promise<OpenAPI3RouterFactory> promise = Promise.promise();
-
-        OpenAPI3RouterFactory.create(this.vertx, this.apiSpec, promise);
-
-        return promise.future();
-    }
-
-    private Future<HttpServer> makeServer(OpenAPI3RouterFactory routerFactory) {
-        final var router = routerFactory
-            .addHandlerByOperationId("GetApiSpec", Handlers::apiSpecHandler)
-            .addHandlerByOperationId("HealthCheck", ctx -> Handlers.healthCheckHandler(ctx, this.queue, this.node, this.vertx))
-            .addHandlerByOperationId("PipelineCreate", ctx -> Handlers.pipelineCreateHandler(ctx, this.queue))
-            .addHandlerByOperationId("PipelineDelete", ctx -> Handlers.pipelineDeleteHandler(ctx, this.queue))
-            .addHandlerByOperationId("PipelineStart", ctx -> Handlers.pipelineStartHandler(ctx, this.queue))
-            .addHandlerByOperationId("PipelineStop", ctx -> Handlers.pipelineStopHandler(ctx, this.queue))
-            .addHandlerByOperationId("PipelineLogs", ctx -> Handlers.pipelineLogsHandler(ctx, this.node))
-            .addHandlerByOperationId("PipelineStatus", ctx -> Handlers.pipelineStatusHandler(ctx, this.node))
-            .addHandlerByOperationId("PipelineArtifactFetch", ctx -> Handlers.pipelineArtifactHandler(ctx, this.node, this.vertx))
-            .addHandlerByOperationId("PipelineList", ctx -> Handlers.pipelineListHandler(ctx, this.node))
-            .addHandlerByOperationId("ResourceProviderCreate", ctx -> Handlers.resourceProviderCreateHandler(ctx, this.queue))
-            .addHandlerByOperationId("ResourceProviderDelete", ctx -> Handlers.resourceProviderDeleteHandler(ctx, this.queue))
-            .addHandlerByOperationId("ResourceProviderList", ctx -> Handlers.resourceProviderListHandler(ctx, this.node))
-            .addHandlerByOperationId("ArtifactStoreCreate", ctx -> Handlers.artifactStoreCreateHandler(ctx, this.queue))
-            .addHandlerByOperationId("ArtifactStoreDelete", ctx -> Handlers.artifactStoreDeleteHandler(ctx, this.queue))
-            .addHandlerByOperationId("ArtifactStoreList", ctx -> Handlers.artifactStoreListHandler(ctx, this.node))
-            .addHandlerByOperationId("Query", ctx -> Handlers.queryHandler(ctx, this.node))
-            .addHandlerByOperationId("GetError", ctx -> Handlers.errorsHandler(ctx, this.queue))
-            .addGlobalHandler(LoggerHandler.create())
-            .getRouter();
+    private Future<HttpServer> makeServer(RouterBuilder routerBuilder) {
+        routerBuilder.rootHandler(LoggerHandler.create());
+        routerBuilder.operation("GetApiSpec").handler(ctx -> Handlers.apiSpecHandler(ctx, this.vertx));
+        routerBuilder.operation("HealthCheck").handler(ctx -> Handlers.healthCheckHandler(ctx, this.queue, this.node, this.vertx));
+        routerBuilder.operation("PipelineCreate").handler(ctx -> Handlers.pipelineCreateHandler(ctx, this.queue));
+        routerBuilder.operation("PipelineDelete").handler(ctx -> Handlers.pipelineDeleteHandler(ctx, this.queue));
+        routerBuilder.operation("PipelineStart").handler(ctx -> Handlers.pipelineStartHandler(ctx, this.queue));
+        routerBuilder.operation("PipelineStop").handler(ctx -> Handlers.pipelineStopHandler(ctx, this.queue));
+        routerBuilder.operation("PipelineLogs").handler(ctx -> Handlers.pipelineLogsHandler(ctx, this.node));
+        routerBuilder.operation("PipelineStatus").handler(ctx -> Handlers.pipelineStatusHandler(ctx, this.node));
+        routerBuilder.operation("PipelineArtifactFetch").handler(ctx -> Handlers.pipelineArtifactHandler(ctx, this.node, this.vertx));
+        routerBuilder.operation("PipelineList").handler(ctx -> Handlers.pipelineListHandler(ctx, this.node));
+        routerBuilder.operation("ResourceProviderCreate").handler(ctx -> Handlers.resourceProviderCreateHandler(ctx, this.queue));
+        routerBuilder.operation("ResourceProviderDelete").handler(ctx -> Handlers.resourceProviderDeleteHandler(ctx, this.queue));
+        routerBuilder.operation("ResourceProviderList").handler(ctx -> Handlers.resourceProviderListHandler(ctx, this.node));
+        routerBuilder.operation("ArtifactStoreCreate").handler(ctx -> Handlers.artifactStoreCreateHandler(ctx, this.queue));
+        routerBuilder.operation("ArtifactStoreDelete").handler(ctx -> Handlers.artifactStoreDeleteHandler(ctx, this.queue));
+        routerBuilder.operation("ArtifactStoreList").handler(ctx -> Handlers.artifactStoreListHandler(ctx, this.node));
+        routerBuilder.operation("Query").handler(ctx -> Handlers.queryHandler(ctx, this.node));
+        routerBuilder.operation("GetError").handler(ctx -> Handlers.errorsHandler(ctx, this.queue));
 
         this.vertx.setPeriodic(this.healthCheckFreq, _it ->
             HealthCheck
@@ -105,7 +94,7 @@ public class APIServer extends AbstractVerticle {
         );
 
         return this.vertx.createHttpServer()
-            .requestHandler(router)
+            .requestHandler(routerBuilder.createRouter())
             .listen(this.port, this.host)
             .onSuccess(_it -> logger.info("Bob is listening on port " + this.port))
             .onFailure(err -> logger.error(err.getMessage()));
