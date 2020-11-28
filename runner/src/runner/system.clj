@@ -35,7 +35,7 @@
     (Integer/parseInt (get env/env key (str default)))
     (catch Exception _ default)))
 
-(defonce storage-url (:bob-storage-host env/env "jdbc:postgresql://localhost:5432/bob"))
+(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5432/bob"))
 (defonce storage-user (:bob-storage-user env/env "bob"))
 (defonce storage-name (:bob-storage-database env/env "bob"))
 (defonce storage-password (:bob-storage-password env/env "bob"))
