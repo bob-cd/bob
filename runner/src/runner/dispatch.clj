@@ -21,8 +21,10 @@
             [runner.errors :as err]))
 
 (def ^:private routes
-  {"pipeline/start" p/start
-   "pipeline/stop"  p/stop})
+  {"pipeline/start"   p/start
+   "pipeline/stop"    p/stop
+   "pipeline/pause"   p/pause
+   "pipeline/unpause" p/unpause})
 
 (def mapper (json/object-mapper {:decode-key-fn true}))
 

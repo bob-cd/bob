@@ -215,6 +215,80 @@ paths:
                   value:
                     message: "Ok"
 
+  /pipelines/pause/groups/{group}/names/{name}/runs/{id}:
+    post:
+      operationId: PipelinePause
+      summary: Pauses a pipeline
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+        - name: id
+          required: true
+          in: path
+          description: The id of the pipeline run
+          schema:
+            type: string
+
+      responses:
+        "202":
+          description: Successful pausing of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+
+  /pipelines/unpause/groups/{group}/names/{name}/runs/{id}:
+    post:
+      operationId: PipelineUnpause
+      summary: Unpauses a pipeline
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+        - name: id
+          required: true
+          in: path
+          description: The id of the pipeline run
+          schema:
+            type: string
+
+      responses:
+        "202":
+          description: Successful unpausing of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+
   /pipelines/logs/runs/{id}/offset/{offset}/lines/{lines}:
     get:
       operationId: PipelineLogs
@@ -806,6 +880,7 @@ components:
         - passed
         - failed
         - stopped
+        - paused
 
     ResourceProvidersResponse:
       type: object

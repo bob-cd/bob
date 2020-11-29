@@ -14,8 +14,7 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns runner.pipeline
-  (:require [clojure.string :as s]
-            [clojure.instant :as ins]
+  (:require [clojure.instant :as ins]
             [failjure.core :as f]
             [taoensso.timbre :as log]
             [crux.api :as crux]
@@ -230,14 +229,8 @@
           (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
           (f/fail run_id))))))
 
-(defn container-in-node?
-  "Checks if the container with `id` is running in the local Docker daemon."
-  [id]
-  (some #(s/starts-with? (:Id %) id)
-        (docker/container-ls)))
-
 (defn stop
-  "Attempts to idempotently stop a pipeline by group, name and run_id
+  "Idempotently stops a pipeline by group, name and run_id
 
   Sets the :status in Db to :stopped and kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
@@ -256,6 +249,44 @@
                                       :name       name
                                       :status     :stopped}]]))
     (docker/kill-container container)))
+
+(defn- pause-unpause-impl
+  [db-client pause? {:keys [group name run_id]}]
+  (when-let [container (get-in @node-state [:current-containers run_id])]
+    (log/infof "%s run %s for pipeline %s %s"
+               (if pause?
+                 "Pausing"
+                 "Unpausing")
+               run_id
+               group
+               name)
+    (crux/await-tx db-client
+                   (crux/submit-tx db-client
+                                   [[:crux.tx/put
+                                     {:crux.db/id (keyword (str "bob.pipeline.run/" run_id))
+                                      :type       :pipeline-run
+                                      :group      group
+                                      :name       name
+                                      :status     (if pause?
+                                                    :paused
+                                                    :running)}]]))
+    (if pause?
+      (docker/pause-container container)
+      (docker/unpause-container container))))
+
+(defn pause
+  "Idempotently pauses a pipeline by group, name and run_id
+
+  Sets the :status in Db to :paused and pauses the container if present."
+  [db-client _queue-chan run-info]
+  (pause-unpause-impl db-client true run-info))
+
+(defn unpause
+  "Idempotently unpauses a pipeline by group, name and run_id
+
+  Sets the :status in Db to :running and unpauses the container if present."
+  [db-client _queue-chan run-info]
+  (pause-unpause-impl db-client false run-info))
 
 (comment
   (reset! node-state
@@ -346,8 +377,6 @@
        first
        (map :crux.db/id)
        (map name))
-
-  (container-in-node? "ab5b1c2850d5")
 
   (crux/submit-tx db-client
                   [[:crux.tx/put

@@ -134,6 +134,21 @@ public class Handlers {
         toJsonResponse(routingContext, "Ok");
     }
 
+    public static void pipelinePauseUnpauseHandler(RoutingContext routingContext, RabbitMQClient queue, boolean pause) {
+        final var params = routingContext.request().params();
+        final var group = params.get("group");
+        final var name = params.get("name");
+        final var id = params.get("id");
+        final var pipeline = new JsonObject()
+            .put("group", group)
+            .put("name", name)
+            .put("run_id", id);
+        final var type = pause ? "pipeline/pause" : "pipeline/unpause";
+
+        publishMessage(queue, type, "bob.fanout", "", pipeline);
+        toJsonResponse(routingContext, "Ok");
+    }
+
     public static void pipelineLogsHandler(RoutingContext routingContext, ICruxAPI node) {
         final var params = routingContext.request().params();
         final var id = params.get("id");

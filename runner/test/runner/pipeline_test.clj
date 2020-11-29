@@ -320,17 +320,6 @@
                        (is (contains? statuses :failed)))))))
 
 (deftest ^:integration pipeline-stop
-  (testing "container in node"
-    (d/pull-image "busybox:musl")
-    (let [id (d/create-container "busybox:musl" {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
-          _  (future (d/start-container id #(println %)))
-          _  (Thread/sleep 1000)]
-      (is (p/container-in-node? id))
-      (is (not (p/container-in-node? "invalid")))
-      (d/kill-container id)
-      (d/delete-container id))
-    (d/delete-image "busybox:musl"))
-
   (testing "stopping a pipeline run"
     (u/with-system
       (fn [db queue]
@@ -362,3 +351,46 @@
           (is (not (contains? statuses :failed)))
           (is (contains? statuses :running))
           (is (contains? statuses :stopped)))))))
+
+(deftest ^:integration pipeline-pause-unpause
+  (testing "pausing/unpausing a pipeline run"
+    (u/with-system
+      (fn [db queue]
+        (crux/await-tx db
+                       (crux/submit-tx db
+                                       [[:crux.tx/put
+                                         {:crux.db/id :bob.pipeline.test/pause-test
+                                          :steps      [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
+                                          :image      "busybox:musl"}]]))
+        (let [_        (p/start db
+                         queue
+                         {:group  "test"
+                          :name   "pause-test"
+                          :run_id "a-run-id"})
+              _        (Thread/sleep 5000) ;; Longer, possibly flaky wait
+              _        (p/pause db
+                                queue
+                                {:group  "test"
+                                 :name   "pause-test"
+                                 :run_id "a-run-id"})
+              _        (p/unpause db
+                                  queue
+                                  {:group  "test"
+                                   :name   "pause-test"
+                                   :run_id "a-run-id"})
+              _        (p/stop db
+                         queue
+                         {:group  "test"
+                          :name   "pause-test"
+                          :run_id "a-run-id"})
+              history  (crux/entity-history (crux/db db)
+                                            (keyword "bob.pipeline.run/a-run-id")
+                                            :desc
+                                            {:with-docs? true})
+              statuses (->> history
+                            (map :crux.db/doc)
+                            (map :status)
+                            (into #{}))]
+          (is (not (contains? statuses :failed)))
+          (is (contains? statuses :running))
+          (is (contains? statuses :paused)))))))

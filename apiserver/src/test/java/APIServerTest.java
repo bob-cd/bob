@@ -274,6 +274,70 @@ public class APIServerTest {
     }
 
     @Test
+    @DisplayName("Test Pipeline Pause")
+    void testPipelinePause(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var payload = new JsonObject()
+            .put("name", "test")
+            .put("group", "dev")
+            .put("run_id", "a-run-id");
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
+            queue
+                .queueDeclare("bob.test.broadcasts", true, true, true)
+                .compose(_it -> queue.queueBind("bob.test.broadcasts", "bob.fanout", ""))
+                .compose(_it -> queue.basicConsumer("bob.test.broadcasts", new QueueOptions().setAutoAck(true)))
+                .onSuccess(rmqConsumer ->
+                    rmqConsumer.handler(message -> testContext.verify(() -> {
+                        assertThat(message.body().toJsonObject()).isEqualTo(payload);
+                        assertThat(message.properties().getType()).isEqualTo("pipeline/pause");
+
+                        testContext.completeNow();
+                    })))
+                .compose(_it -> client
+                    .post("/pipelines/pause/groups/dev/names/test/runs/a-run-id")
+                    .send())
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(res.statusCode()).isEqualTo(202);
+                }))
+                .onFailure(testContext::failNow)));
+    }
+
+    @Test
+    @DisplayName("Test Pipeline Unpause")
+    void testPipelineUnpause(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var payload = new JsonObject()
+            .put("name", "test")
+            .put("group", "dev")
+            .put("run_id", "a-run-id");
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
+            queue
+                .queueDeclare("bob.test.broadcasts", true, true, true)
+                .compose(_it -> queue.queueBind("bob.test.broadcasts", "bob.fanout", ""))
+                .compose(_it -> queue.basicConsumer("bob.test.broadcasts", new QueueOptions().setAutoAck(true)))
+                .onSuccess(rmqConsumer ->
+                    rmqConsumer.handler(message -> testContext.verify(() -> {
+                        assertThat(message.body().toJsonObject()).isEqualTo(payload);
+                        assertThat(message.properties().getType()).isEqualTo("pipeline/unpause");
+
+                        testContext.completeNow();
+                    })))
+                .compose(_it -> client
+                    .post("/pipelines/unpause/groups/dev/names/test/runs/a-run-id")
+                    .send())
+                .onSuccess(res -> testContext.verify(() -> {
+                    assertThat(res.bodyAsJsonObject().getString("message")).isEqualTo("Ok");
+                    assertThat(res.statusCode()).isEqualTo(202);
+                }))
+                .onFailure(testContext::failNow)));
+    }
+
+    @Test
     @DisplayName("Test Log Fetch")
     void testLogFetch(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);
