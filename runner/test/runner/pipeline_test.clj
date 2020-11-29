@@ -333,15 +333,15 @@
                          queue
                          {:group  "test"
                           :name   "stop-test"
-                          :run_id "a-run-id"})
+                          :run_id "a-stop-id"})
               _        (Thread/sleep 5000) ;; Longer, possibly flaky wait
               _        (p/stop db
                          queue
                          {:group  "test"
                           :name   "stop-test"
-                          :run_id "a-run-id"})
+                          :run_id "a-stop-id"})
               history  (crux/entity-history (crux/db db)
-                                            (keyword "bob.pipeline.run/a-run-id")
+                                            (keyword "bob.pipeline.run/a-stop-id")
                                             :desc
                                             {:with-docs? true})
               statuses (->> history
@@ -366,25 +366,25 @@
                          queue
                          {:group  "test"
                           :name   "pause-test"
-                          :run_id "a-run-id"})
+                          :run_id "a-pause-id"})
               _        (Thread/sleep 5000) ;; Longer, possibly flaky wait
               _        (p/pause db
                                 queue
                                 {:group  "test"
                                  :name   "pause-test"
-                                 :run_id "a-run-id"})
+                                 :run_id "a-pause-id"})
               _        (p/unpause db
                                   queue
                                   {:group  "test"
                                    :name   "pause-test"
-                                   :run_id "a-run-id"})
+                                   :run_id "a-pause-id"})
               _        (p/stop db
                          queue
                          {:group  "test"
                           :name   "pause-test"
-                          :run_id "a-run-id"})
+                          :run_id "a-pause-id"})
               history  (crux/entity-history (crux/db db)
-                                            (keyword "bob.pipeline.run/a-run-id")
+                                            (keyword "bob.pipeline.run/a-pause-id")
                                             :desc
                                             {:with-docs? true})
               statuses (->> history
