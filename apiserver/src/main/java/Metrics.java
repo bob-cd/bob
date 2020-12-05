@@ -33,4 +33,9 @@ public class Metrics {
         .name("bob_errors")
         .help("Number of errors")
         .register();
+    static final Gauge runningJobs = Gauge
+        .build()
+        .name("bob_running_jobs")
+        .help("Number of jobs currently running")
+        .register();
 }

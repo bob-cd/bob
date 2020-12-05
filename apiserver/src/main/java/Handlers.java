@@ -71,9 +71,22 @@ class MetricsHandler implements Handler<RoutingContext> {
 
     private final CollectorRegistry registry = CollectorRegistry.defaultRegistry;
     private final RabbitMQClient queueClient;
+    private final ICruxAPI node;
 
-    MetricsHandler(RabbitMQClient queueClient) {
+    MetricsHandler(RabbitMQClient queueClient, ICruxAPI node) {
         this.queueClient = queueClient;
+        this.node = node;
+    }
+
+    private void countRunningJobs() {
+        final var query = DB.datafy(
+            """
+            {:find  [run]
+             :where [[run :type :pipeline-run]
+                     [run :status :running]]}
+            """
+        );
+        Metrics.runningJobs.set(node.db().query(query).size());
     }
 
     @Override
@@ -94,6 +107,8 @@ class MetricsHandler implements Handler<RoutingContext> {
                 Metrics.errors.set(errors.getMessageCount());
 
                 try {
+                    countRunningJobs();
+
                     TextFormat.write004(writer, registry.filteredMetricFamilySamples(parse(routingContext.request())));
                 } catch (IOException e) {
                     Handlers.toJsonResponse(routingContext, e.getMessage(), 500);
