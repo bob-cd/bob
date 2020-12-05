@@ -38,4 +38,24 @@ public class Metrics {
         .name("bob_running_jobs")
         .help("Number of jobs currently running")
         .register();
+    static final Gauge failedJobs = Gauge
+        .build()
+        .name("bob_failed_jobs")
+        .help("Number of failed jobs")
+        .register();
+    static final Gauge passedJobs = Gauge
+        .build()
+        .name("bob_passed_jobs")
+        .help("Number of passed jobs")
+        .register();
+    static final Gauge pausedJobs = Gauge
+        .build()
+        .name("bob_paused_jobs")
+        .help("Number of paused jobs")
+        .register();
+    static final Gauge stoppedJobs = Gauge
+        .build()
+        .name("bob_stopped_jobs")
+        .help("Number of stopped jobs")
+        .register();
 }

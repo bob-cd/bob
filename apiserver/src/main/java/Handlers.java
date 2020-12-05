@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class MetricsHandler implements Handler<RoutingContext> {
 
@@ -78,15 +79,31 @@ class MetricsHandler implements Handler<RoutingContext> {
         this.node = node;
     }
 
-    private void countRunningJobs() {
-        final var query = DB.datafy(
-            """
-            {:find  [run]
-             :where [[run :type :pipeline-run]
-                     [run :status :running]]}
-            """
-        );
-        Metrics.runningJobs.set(node.db().query(query).size());
+    private void countJobs() {
+        Stream.of("running", "passed", "failed", "paused", "stopped")
+            .parallel()
+            .map(status -> {
+                final var query = DB.datafy(
+                    """
+                    {:find  [run]
+                     :where [[run :type :pipeline-run]
+                             [run :status :%s]]}
+                    """.formatted(status)
+                );
+                return Map.of(status, node.db().query(query).size());
+            })
+            .forEach(metric -> {
+                final var status = metric.keySet().stream().findFirst().get();
+                final var count = metric.get(status);
+
+                switch (status) {
+                    case "running" -> Metrics.runningJobs.set(count);
+                    case "passed" -> Metrics.passedJobs.set(count);
+                    case "failed" -> Metrics.failedJobs.set(count);
+                    case "paused" -> Metrics.pausedJobs.set(count);
+                    case "stopped" -> Metrics.stoppedJobs.set(count);
+                }
+            });
     }
 
     @Override
@@ -107,7 +124,7 @@ class MetricsHandler implements Handler<RoutingContext> {
                 Metrics.errors.set(errors.getMessageCount());
 
                 try {
-                    countRunningJobs();
+                    countJobs();
 
                     TextFormat.write004(writer, registry.filteredMetricFamilySamples(parse(routingContext.request())));
                 } catch (IOException e) {
