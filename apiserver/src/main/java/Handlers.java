@@ -20,7 +20,12 @@ import clojure.lang.PersistentArrayMap;
 import clojure.lang.Symbol;
 import com.rabbitmq.client.AMQP;
 import crux.api.ICruxAPI;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exporter.common.TextFormat;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -29,21 +34,91 @@ import io.vertx.rabbitmq.RabbitMQClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+class MetricsHandler implements Handler<RoutingContext> {
+
+    private static class BufferWriter extends Writer {
+
+        private final Buffer buffer = Buffer.buffer();
+
+        @Override
+        public void write(char[] buff, int off, int len) {
+            buffer.appendString(new String(buff, off, len));
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() {
+        }
+
+        Buffer getBuffer() {
+            return buffer;
+        }
+    }
+
+    private final CollectorRegistry registry = CollectorRegistry.defaultRegistry;
+    private final RabbitMQClient queueClient;
+
+    MetricsHandler(RabbitMQClient queueClient) {
+        this.queueClient = queueClient;
+    }
+
+    @Override
+    public void handle(RoutingContext routingContext) {
+        final var writer = new BufferWriter();
+
+        queueClient
+            .queueDeclare("bob.jobs", true, false, false)
+            .compose(jobs -> {
+                Metrics.queuedJobs.set(jobs.getMessageCount());
+                return queueClient.queueDeclare("bob.entities", true, false, false);
+            })
+            .compose(entities -> {
+                Metrics.queuedEntities.set(entities.getMessageCount());
+                return queueClient.queueDeclare("bob.errors", true, false, false);
+            })
+            .onSuccess(errors -> {
+                Metrics.errors.set(errors.getMessageCount());
+
+                try {
+                    TextFormat.write004(writer, registry.filteredMetricFamilySamples(parse(routingContext.request())));
+                } catch (IOException e) {
+                    Handlers.toJsonResponse(routingContext, e.getMessage(), 500);
+                }
+                routingContext.response()
+                    .setStatusCode(200)
+                    .putHeader("Content-Type", TextFormat.CONTENT_TYPE_004)
+                    .end(writer.getBuffer());
+            })
+            .onFailure(err -> Handlers.toJsonResponse(routingContext, err.getMessage(), 500));
+    }
+
+    private Set<String> parse(HttpServerRequest request) {
+        return new HashSet<>(request.params().getAll("name[]"));
+    }
+}
 
 public class Handlers {
     private final static Logger logger = LoggerFactory.getLogger(Handlers.class.getName());
 
-    private static void toJsonResponse(RoutingContext routingContext, Object content) {
+    public static void toJsonResponse(RoutingContext routingContext, Object content) {
         toJsonResponse(routingContext, content, 202);
     }
 
-    private static void toJsonResponse(RoutingContext routingContext, Object content, int statusCode) {
+    public static void toJsonResponse(RoutingContext routingContext, Object content, int statusCode) {
         routingContext.response()
             .putHeader("Content-Type", "application/json")
             .setStatusCode(statusCode)

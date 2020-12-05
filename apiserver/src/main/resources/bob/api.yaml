@@ -176,7 +176,7 @@ paths:
               examples:
                 success:
                   value:
-                    message: "Ok"
+                    message: "Run ID of the pipeline"
 
   /pipelines/stop/groups/{group}/names/{name}/runs/{id}:
     post:
@@ -744,6 +744,33 @@ paths:
                 sucess:
                   value:
                     message: "errors"
+
+        default:
+          description: Failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "<Some Error>"
+
+  /metrics:
+    get:
+      operationId: GetMetrics
+      summary: Generates Prometheus compatible cluster metrics
+
+      responses:
+        "200":
+          description: Successful fetch
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                sucess:
+                  value: "... Prometheus compatible metrics ..."
 
         default:
           description: Failed
