@@ -20,11 +20,7 @@ import clojure.lang.PersistentArrayMap;
 import clojure.lang.Symbol;
 import com.rabbitmq.client.AMQP;
 import crux.api.ICruxAPI;
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.exporter.common.TextFormat;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -33,21 +29,15 @@ import io.vertx.rabbitmq.RabbitMQClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Handlers {
     private final static Logger logger = LoggerFactory.getLogger(Handlers.class.getName());
-    private final static CollectorRegistry registry = CollectorRegistry.defaultRegistry;
 
     public static void toJsonResponse(RoutingContext routingContext, Object content) {
         toJsonResponse(routingContext, content, 202);
@@ -415,86 +405,7 @@ public class Handlers {
             .onFailure(err -> toJsonResponse(routingContext, err.getMessage(), 500));
     }
 
-    private static class VertxBufferedWriter extends Writer {
-        private final Buffer buffer = Buffer.buffer();
-
-        @Override
-        public void write(char[] buff, int off, int len) {
-            buffer.appendString(new String(buff, off, len));
-        }
-
-        @Override
-        public void flush() {
-        }
-
-        @Override
-        public void close() {
-        }
-
-        Buffer getBuffer() {
-            return buffer;
-        }
-    }
-
-    private static Set<String> parse(HttpServerRequest request) {
-        return new HashSet<>(request.params().getAll("name[]"));
-    }
-
-    private static void countJobs(ICruxAPI node) {
-        Stream.of("running", "passed", "failed", "paused", "stopped")
-            .parallel()
-            .map(status -> {
-                final var query = DB.datafy(
-                    """
-                    {:find  [run]
-                     :where [[run :type :pipeline-run]
-                             [run :status :%s]]}
-                    """.formatted(status)
-                );
-                return Map.of(status, node.db().query(query).size());
-            })
-            .forEach(metric -> {
-                final var status = metric.keySet().stream().findFirst().get();
-                final var count = metric.get(status);
-
-                switch (status) {
-                    case "running" -> Metrics.runningJobs.set(count);
-                    case "passed" -> Metrics.passedJobs.set(count);
-                    case "failed" -> Metrics.failedJobs.set(count);
-                    case "paused" -> Metrics.pausedJobs.set(count);
-                    case "stopped" -> Metrics.stoppedJobs.set(count);
-                }
-            });
-    }
-
     public static void metricsHandler(RoutingContext routingContext, RabbitMQClient queueClient, ICruxAPI node) {
-        final var writer = new VertxBufferedWriter();
-
-        queueClient
-            .queueDeclare("bob.jobs", true, false, false)
-            .compose(jobs -> {
-                Metrics.queuedJobs.set(jobs.getMessageCount());
-                return queueClient.queueDeclare("bob.entities", true, false, false);
-            })
-            .compose(entities -> {
-                Metrics.queuedEntities.set(entities.getMessageCount());
-                return queueClient.queueDeclare("bob.errors", true, false, false);
-            })
-            .onSuccess(errors -> {
-                Metrics.errors.set(errors.getMessageCount());
-
-                try {
-                    countJobs(node);
-
-                    TextFormat.write004(writer, registry.filteredMetricFamilySamples(parse(routingContext.request())));
-                } catch (IOException e) {
-                    Handlers.toJsonResponse(routingContext, e.getMessage(), 500);
-                }
-                routingContext.response()
-                    .setStatusCode(200)
-                    .putHeader("Content-Type", TextFormat.CONTENT_TYPE_004)
-                    .end(writer.getBuffer());
-            })
-            .onFailure(err -> Handlers.toJsonResponse(routingContext, err.getMessage(), 500));
+        Metrics.writeMetrics(routingContext, queueClient, node);
     }
 }
