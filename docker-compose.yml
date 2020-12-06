@@ -57,6 +57,8 @@ services:
     image: rabbitmq:3-alpine
     networks:
       - bob-net
+    volumes:
+      - queuedata:/var/lib/rabbitmq/mnesia
 
   storage:
     image: postgres:alpine
@@ -87,3 +89,4 @@ networks:
 volumes:
   pgdata:
   artifactdata:
+  queuedata:
