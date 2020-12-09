@@ -27,9 +27,9 @@ All of these services live, breathe and deploy from their own section of this mo
 
 ## Join the conversation
 
-For a more Clojure specific discussion we also have a Clojurians Slack [channel](https://clojurians.slack.com/messages/CPBAYJJF6).
+Please start a [discussion](https://github.com/bob-cd/bob/discussions) on literally any topic and we are happy to help and learn from each other!
 
-You can come with us with any questions that seem too lengthy for github issues.
+For a more Clojure specific discussion we also have a Clojurians Slack [channel](https://clojurians.slack.com/messages/CPBAYJJF6).
 
 Happy Building!
 
