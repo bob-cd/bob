@@ -523,10 +523,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                attrs:
-                  $ref: "#/components/schemas/ResourceProviderAttributes"
+              $ref: "#/components/schemas/ResourceProviderAttributes"
             examples:
               attrs:
                 value:
@@ -615,10 +612,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                attrs:
-                  $ref: "#/components/schemas/ArtifactStoreAttributes"
+              $ref: "#/components/schemas/ArtifactStoreAttributes"
             examples:
               attributes:
                 value:
