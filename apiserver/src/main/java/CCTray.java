@@ -62,7 +62,7 @@ public class CCTray {
                      [pipeline :name name]
                      [run :type :pipeline-run]
                      [run :group group]
-                     [run :name name]]})
+                     [run :name name]]}
             """
         );
 

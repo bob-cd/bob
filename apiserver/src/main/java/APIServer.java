@@ -88,7 +88,7 @@ public class APIServer extends AbstractVerticle {
         routerBuilder.operation("ArtifactStoreList").handler(ctx -> Handlers.artifactStoreListHandler(ctx, this.node));
         routerBuilder.operation("Query").handler(ctx -> Handlers.queryHandler(ctx, this.node));
         routerBuilder.operation("GetError").handler(ctx -> Handlers.errorsHandler(ctx, this.queue));
-        routerBuilder.operation("GetMetrics").handler(ctx -> Handlers.metricsHandler(ctx, this.queue, this.node));
+        routerBuilder.operation("GetMetrics").handler(ctx -> Metrics.writeMetrics(ctx, this.queue, this.node));
         routerBuilder.operation("CCTray").handler(ctx -> CCTray.generateInfo(ctx, this.node));
 
         this.vertx.setPeriodic(this.healthCheckFreq, _it ->

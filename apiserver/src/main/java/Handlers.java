@@ -404,8 +404,4 @@ public class Handlers {
             )
             .onFailure(err -> toJsonResponse(routingContext, err.getMessage(), 500));
     }
-
-    public static void metricsHandler(RoutingContext routingContext, RabbitMQClient queueClient, ICruxAPI node) {
-        Metrics.writeMetrics(routingContext, queueClient, node);
-    }
 }

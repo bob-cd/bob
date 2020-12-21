@@ -21,20 +21,22 @@
             [taoensso.timbre :as log]))
 
 (defonce conn
-         {:uri         "unix:///var/run/docker.sock"
-          :api-version "v1.40"})
+         {:uri "unix:///var/run/docker.sock"})
 
 (defonce images
-         (docker/client {:category :images
-                         :conn     conn}))
+         (docker/client {:category    :images
+                         :conn        conn
+                         :api-version "v1.40"}))
 
 (defonce containers
-         (docker/client {:category :containers
-                         :conn     conn}))
+         (docker/client {:category    :containers
+                         :conn        conn
+                         :api-version "v1.40"}))
 
 (defonce commit
-         (docker/client {:category :commit
-                         :conn     conn}))
+         (docker/client {:category    :commit
+                         :conn        conn
+                         :api-version "v1.40"}))
 
 (defn sh-tokenize!
   "Tokenizes a shell command given as a string into the command and its args.
