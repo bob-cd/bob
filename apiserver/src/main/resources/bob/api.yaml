@@ -6,7 +6,7 @@ info:
   description: The modular, extensible CI/CD platform
 
 paths:
-  /api.yaml:
+  "/api.yaml":
     get:
       operationId: GetApiSpec
       summary: Returns the OpenAPI spec
@@ -19,7 +19,7 @@ paths:
               schema:
                 type: string
 
-  /can-we-build-it:
+  "/can-we-build-it":
     get:
       operationId: HealthCheck
       summary: Runs health checks for Bob
@@ -47,7 +47,7 @@ paths:
                   value:
                     message: "Health check failed: Postgres not healthy"
 
-  /pipelines/groups/{group}/names/{name}:
+  "/pipelines/groups/{group}/names/{name}":
     post:
       operationId: PipelineCreate
       summary: Creates a new pipeline
@@ -147,7 +147,7 @@ paths:
                   value:
                     message: "Ok"
 
-  /pipelines/start/groups/{group}/names/{name}:
+  "/pipelines/start/groups/{group}/names/{name}":
     post:
       operationId: PipelineStart
       summary: Starts a pipeline
@@ -178,7 +178,7 @@ paths:
                   value:
                     message: "Run ID of the pipeline"
 
-  /pipelines/stop/groups/{group}/names/{name}/runs/{id}:
+  "/pipelines/stop/groups/{group}/names/{name}/runs/{id}":
     post:
       operationId: PipelineStop
       summary: Stops a pipeline
@@ -215,7 +215,7 @@ paths:
                   value:
                     message: "Ok"
 
-  /pipelines/pause/groups/{group}/names/{name}/runs/{id}:
+  "/pipelines/pause/groups/{group}/names/{name}/runs/{id}":
     post:
       operationId: PipelinePause
       summary: Pauses a pipeline
@@ -252,7 +252,7 @@ paths:
                   value:
                     message: "Ok"
 
-  /pipelines/unpause/groups/{group}/names/{name}/runs/{id}:
+  "/pipelines/unpause/groups/{group}/names/{name}/runs/{id}":
     post:
       operationId: PipelineUnpause
       summary: Unpauses a pipeline
@@ -289,7 +289,7 @@ paths:
                   value:
                     message: "Ok"
 
-  /pipelines/logs/runs/{id}/offset/{offset}/lines/{lines}:
+  "/pipelines/logs/runs/{id}/offset/{offset}/lines/{lines}":
     get:
       operationId: PipelineLogs
       summary: Fetches the logs of a pipeline
@@ -342,7 +342,7 @@ paths:
                   value:
                     message: "<some error message>"
 
-  /pipelines/status/runs/{id}:
+  "/pipelines/status/runs/{id}":
     get:
       operationId: PipelineStatus
       summary: Fetches the status of the pipeline
@@ -396,7 +396,7 @@ paths:
                   value:
                     message: "<some error message>"
 
-  /pipelines/groups/{group}/names/{name}/runs/{id}/artifact-stores/{store-name}/artifact/{artifact-name}:
+  "/pipelines/groups/{group}/names/{name}/runs/{id}/artifact-stores/{store-name}/artifact/{artifact-name}":
     get:
       operationId: PipelineArtifactFetch
       summary: Fetches the artifact from pipeline of an artifact store
@@ -452,7 +452,7 @@ paths:
                   value:
                     message: "<some error message>"
 
-  /pipelines:
+  "/pipelines":
     get:
       operationId: PipelineList
       summary: List all pipelines filtered by group, name and status. Case sensitive.
@@ -504,7 +504,7 @@ paths:
                   value:
                     message: "Failed to fetch pipelines <some error message>"
 
-  /resource-providers/{name}:
+  "/resource-providers/{name}":
     post:
       operationId: ResourceProviderCreate
       summary: Creates a resource provider with its name and attributes
@@ -574,7 +574,7 @@ paths:
                   value:
                     message: "Ok"
 
-  /resource-providers:
+  "/resource-providers":
     get:
       operationId: ResourceProviderList
       summary: Lists all registered external resources by name
@@ -593,7 +593,7 @@ paths:
                       - "github-provider"
                       - "salsa-provider"
 
-  /artifact-stores/{name}:
+  "/artifact-stores/{name}":
     post:
       operationId: ArtifactStoreCreate
       summary: Creates an artifact store with its name and attributes
@@ -663,7 +663,7 @@ paths:
                   value:
                     message: "Ok"
 
-  /artifact-stores:
+  "/artifact-stores":
     get:
       operationId: ArtifactStoreList
       summary: Lists all registered artifact stores by name
@@ -682,7 +682,7 @@ paths:
                       - "s3-store"
                       - "file-store"
 
-  /query:
+  "/query":
     get:
       operationId: Query
       summary: Runs a query on Crux, intended for point in time analytics
@@ -722,7 +722,7 @@ paths:
                 unhealthy:
                   value:
                     message: "Query failed: <Error>"
-  /error:
+  "/error":
     get:
       operationId: GetError
       summary: Fetches the next available system error
@@ -750,7 +750,7 @@ paths:
                   value:
                     message: "<Some Error>"
 
-  /metrics:
+  "/metrics":
     get:
       operationId: GetMetrics
       summary: Generates Prometheus compatible cluster metrics
@@ -777,8 +777,76 @@ paths:
                   value:
                     message: "<Some Error>"
 
+  "/cctray.xml":
+    get:
+      operationId: CCTray
+      summary: Emits a CCTray compatible XML status report
+
+      responses:
+        "200":
+          description: Successful fetch
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Projects"
+              examples:
+                sucess:
+                  value:
+                    - name: "dev:pipeline1"
+                      activity: Sleeping
+                      lastBuildStatus: Success
+                      lastBuildLabel: "r-0ef66ba9-e397-461b-a6d9-f52f91889264"
+                      lastBuildTime: "2020-12-21T14:35:21.577028Z"
+                      webUrl: null
+                    - name: "dev:pipeline2"
+                      activity: Running
+                      lastBuildStatus: Success
+                      lastBuildLabel: "r-0ef55ba9-e397-461c-a6d9-f52f95544882"
+                      lastBuildTime: "2020-12-21T14:35:21.577028Z"
+                      webUrl: null
+
+        default:
+          description: Failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "<Some Error>"
+
 components:
   schemas:
+    Projects:
+      xml:
+        wrapped: true
+      type: array
+      items:
+        type: object
+        required:
+          - name
+          - activity
+          - lastBuildStatus
+          - lastBuildLabel
+          - lastBuildTime
+          - webUrl
+        properties:
+          name:
+            type: string
+          activity:
+            type: string
+          lastBuildStatus:
+            type: string
+          lastBuildLabel:
+            type: string
+          lastBuildTime:
+            type: string
+          webUrl:
+            type: string
+        xml:
+          name: Project
+
     SimpleResponse:
       type: object
       required:
