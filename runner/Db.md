@@ -5,8 +5,8 @@
 ```clojure
 {:crux.db/id :bob.pipeline.log/l-<UUID>
  :type       :log-line
- :time       <java.util.Date instant>
- :run-id     "<UUID of associated run>"
+ :time       #inst "UTC Date instant"
+ :run-id     "r-UUID of associated run"
  :line       "this is a log line from a run"}
 ```
 
@@ -17,5 +17,7 @@
  :type       :pipeline-run
  :group      "<group-name>"
  :name       "<pipeline-name>"
- :status     :<running|passed|failed>}
+ :started    #inst "UTC Date instant"
+ :completed  #inst "UTC Date instant"
+ :status     :<running|passed|failed|stopped|paused>}
 ```

@@ -282,11 +282,14 @@
                                                          (keyword (str "bob.pipeline.run/" result))
                                                          :desc
                                                          {:with-docs? true})
+                           run-info (crux/entity (crux/db db) (keyword (str "bob.pipeline.run/" result)))
                            statuses (->> history
                                          (map :crux.db/doc)
                                          (map :status)
                                          (into #{}))]
                        (is (not (f/failed? result)))
+                       (is (inst? (:started run-info)))
+                       (is (inst? (:completed run-info)))
                        (is (contains? statuses :running))
                        (is (contains? statuses :passed))))))
 
@@ -307,6 +310,7 @@
                                         :name   "test"
                                         :run_id "a-run-id"})
                            id       (f/message result)
+                           run-info (crux/entity (crux/db db) (keyword (str "bob.pipeline.run/" id)))
                            history  (crux/entity-history (crux/db db)
                                                          (keyword (str "bob.pipeline.run/" id))
                                                          :desc
@@ -316,6 +320,8 @@
                                          (map :status)
                                          (into #{}))]
                        (is (f/failed? result))
+                       (is (inst? (:started run-info)))
+                       (is (inst? (:completed run-info)))
                        (is (contains? statuses :running))
                        (is (contains? statuses :failed)))))))
 
@@ -340,8 +346,9 @@
                          {:group  "test"
                           :name   "stop-test"
                           :run_id "a-stop-id"})
+              run-info (crux/entity (crux/db db) :bob.pipeline.run/a-stop-id)
               history  (crux/entity-history (crux/db db)
-                                            (keyword "bob.pipeline.run/a-stop-id")
+                                            :bob.pipeline.run/a-stop-id
                                             :desc
                                             {:with-docs? true})
               statuses (->> history
@@ -349,6 +356,7 @@
                             (map :status)
                             (into #{}))]
           (is (not (contains? statuses :failed)))
+          (is (inst? (:completed run-info)))
           (is (contains? statuses :running))
           (is (contains? statuses :stopped)))))))
 
@@ -384,7 +392,7 @@
                           :name   "pause-test"
                           :run_id "a-pause-id"})
               history  (crux/entity-history (crux/db db)
-                                            (keyword "bob.pipeline.run/a-pause-id")
+                                            :bob.pipeline.run/a-pause-id
                                             :desc
                                             {:with-docs? true})
               statuses (->> history

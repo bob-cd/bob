@@ -29,13 +29,17 @@
          (atom {:images-for-gc      {}
                 :current-containers {}}))
 
+(defn utc-inst
+  []
+  (ins/read-instant-date (str (Instant/now))))
+
 (defn log->db
   [db-client run-id line]
   (crux/submit-tx db-client
                   [[:crux.tx/put
                     {:crux.db/id (keyword (str "bob.pipeline.log/l-" (UUID/randomUUID)))
                      :type       :log-line
-                     :time       (ins/read-instant-date (str (Instant/now))) ;; TODO: Maybe a better way to do this?
+                     :time       (utc-inst) ;; TODO: Use (Instant/now) directly with the next Crux release
                      :run-id     run-id
                      :line       line}]]))
 
@@ -175,6 +179,10 @@
                     (f/message err))
         err))))
 
+(defn run-info-of
+  [db-client run-id]
+  (crux/entity (crux/db db-client) (keyword (str "bob.pipeline.run/" run-id))))
+
 (defn start
   "Attempts to asynchronously start a pipeline by group and name."
   [db-client queue-chan {:keys [group name run_id]}]
@@ -195,7 +203,8 @@
                   {:keys [image steps vars]} pipeline
                   _                          (log/infof "Starting new run: %s" run_id)
                   txn                        (crux/submit-tx db-client
-                                                             [[:crux.tx/put (assoc run-info :status :running)]])
+                                                             [[:crux.tx/put
+                                                               (assoc run-info :status :running :started (utc-inst))]])
                   _                          (crux/await-tx db-client txn)
                   _                          (log-event db-client run_id (str "Pulling image " image))
                   _                          (docker/pull-image image)
@@ -210,7 +219,10 @@
                   _                          (reduce exec-step build-state steps) ;; This is WHOLE of Bob!
                   _                          (gc-images run_id)
                   txn                        (crux/submit-tx db-client
-                                                             [[:crux.tx/put (assoc run-info :status :passed)]])
+                                                             [[:crux.tx/put
+                                                               (assoc (run-info-of db-client run_id)
+                                                                      :status    :passed
+                                                                      :completed (utc-inst))]])
                   _                          (crux/await-tx db-client txn)
                   _                          (log/infof "Run successful %s" run_id)
                   _                          (log-event db-client run_id "Run successful")]
@@ -224,7 +236,8 @@
                          error)
               (log-event db-client run_id (str "Run failed: %s" error))
               (crux/submit-tx db-client
-                              [[:crux.tx/put (assoc run-info :status :failed)]])))
+                              [[:crux.tx/put
+                                (assoc (run-info-of db-client run_id) :status :failed :completed (utc-inst))]])))
           (gc-images run_id)
           (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
           (f/fail run_id))))))
@@ -243,11 +256,7 @@
     (crux/await-tx db-client
                    (crux/submit-tx db-client
                                    [[:crux.tx/put
-                                     {:crux.db/id (keyword (str "bob.pipeline.run/" run_id))
-                                      :type       :pipeline-run
-                                      :group      group
-                                      :name       name
-                                      :status     :stopped}]]))
+                                     (assoc (run-info-of db-client run_id) :status :stopped :completed (utc-inst))]]))
     (docker/kill-container container)))
 
 (defn- pause-unpause-impl
@@ -263,13 +272,11 @@
     (crux/await-tx db-client
                    (crux/submit-tx db-client
                                    [[:crux.tx/put
-                                     {:crux.db/id (keyword (str "bob.pipeline.run/" run_id))
-                                      :type       :pipeline-run
-                                      :group      group
-                                      :name       name
-                                      :status     (if pause?
-                                                    :paused
-                                                    :running)}]]))
+                                     (assoc (run-info-of db-client run_id)
+                                            :status
+                                            (if pause?
+                                              :paused
+                                              :running))]]))
     (if pause?
       (docker/pause-container container)
       (docker/unpause-container container))))
