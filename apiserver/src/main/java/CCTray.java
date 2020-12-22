@@ -26,7 +26,7 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,17 +51,10 @@ public class CCTray {
     final static XmlMapper mapper = new XmlMapper();
 
     private static List<Project> gatherLatest(Stream<Project> projects) {
-        final var seen = new HashMap<String, Project>();
+        final var seen = new HashSet<String>();
 
         return projects
-            .filter(project -> {
-                if (!seen.containsKey(project.name())) {
-                    seen.put(project.name(), project);
-                    return true;
-                }
-
-                return false;
-            })
+            .filter(project -> seen.add(project.name()))
             .collect(Collectors.toList());
     }
 
