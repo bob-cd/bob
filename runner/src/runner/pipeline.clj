@@ -14,8 +14,7 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns runner.pipeline
-  (:require [clojure.instant :as ins]
-            [failjure.core :as f]
+  (:require [failjure.core :as f]
             [taoensso.timbre :as log]
             [crux.api :as crux]
             [runner.errors :as errors]
@@ -29,17 +28,13 @@
          (atom {:images-for-gc      {}
                 :current-containers {}}))
 
-(defn utc-inst
-  []
-  (ins/read-instant-date (str (Instant/now))))
-
 (defn log->db
   [db-client run-id line]
   (crux/submit-tx db-client
                   [[:crux.tx/put
                     {:crux.db/id (keyword (str "bob.pipeline.log/l-" (UUID/randomUUID)))
                      :type       :log-line
-                     :time       (utc-inst) ;; TODO: Use (Instant/now) directly with the next Crux release
+                     :time       (Instant/now)
                      :run-id     run-id
                      :line       line}]]))
 
@@ -204,7 +199,7 @@
                   _                          (log/infof "Starting new run: %s" run_id)
                   txn                        (crux/submit-tx db-client
                                                              [[:crux.tx/put
-                                                               (assoc run-info :status :running :started (utc-inst))]])
+                                                               (assoc run-info :status :running :started (Instant/now))]])
                   _                          (crux/await-tx db-client txn)
                   _                          (log-event db-client run_id (str "Pulling image " image))
                   _                          (docker/pull-image image)
@@ -222,7 +217,7 @@
                                                              [[:crux.tx/put
                                                                (assoc (run-info-of db-client run_id)
                                                                       :status    :passed
-                                                                      :completed (utc-inst))]])
+                                                                      :completed (Instant/now))]])
                   _                          (crux/await-tx db-client txn)
                   _                          (log/infof "Run successful %s" run_id)
                   _                          (log-event db-client run_id "Run successful")]
@@ -237,7 +232,7 @@
               (log-event db-client run_id (str "Run failed: %s" error))
               (crux/submit-tx db-client
                               [[:crux.tx/put
-                                (assoc (run-info-of db-client run_id) :status :failed :completed (utc-inst))]])))
+                                (assoc (run-info-of db-client run_id) :status :failed :completed (Instant/now))]])))
           (gc-images run_id)
           (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
           (f/fail run_id))))))
@@ -256,7 +251,7 @@
     (crux/await-tx db-client
                    (crux/submit-tx db-client
                                    [[:crux.tx/put
-                                     (assoc (run-info-of db-client run_id) :status :stopped :completed (utc-inst))]]))
+                                     (assoc (run-info-of db-client run_id) :status :stopped :completed (Instant/now))]]))
     (docker/kill-container container)))
 
 (defn- pause-unpause-impl

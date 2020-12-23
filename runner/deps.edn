@@ -22,8 +22,8 @@
            environ/environ               {:mvn/version "1.2.0"}
            failjure/failjure             {:mvn/version "2.0.0"}
            java-http-clj/java-http-clj   {:mvn/version "0.4.1"}
-           juxt/crux-core                {:mvn/version "20.09-1.12.1-beta"}
-           juxt/crux-jdbc                {:mvn/version "20.09-1.12.1-beta"}
+           juxt/crux-core                {:mvn/version "20.12-1.13.0-beta"}
+           juxt/crux-jdbc                {:mvn/version "20.12-1.13.0-beta"}
            org.postgresql/postgresql     {:mvn/version "42.2.18"}
            lispyclouds/clj-docker-client {:mvn/version "1.0.2"}
            metosin/jsonista              {:mvn/version "0.2.7"}
