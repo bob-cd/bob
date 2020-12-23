@@ -55,7 +55,7 @@ test:
 	docker network rm bob-net
 
 compile:
-	clojure -Spom && clojure -M:uberjar
+	clojure -Spom && clojure -X:depstar uberjar :jar runner.jar :aot true :main-class runner.main
 
 docker-image:
 	docker build -t ghcr.io/bob-cd/runner .
