@@ -8,8 +8,17 @@ The majority of Bob is written in Clojure and follows the [community style guide
 There is a fair amount of Clojure forms in the project which are not a part of the style guide but are to be styled as follows:
 
 1. `failjure.core/try-all`: Shall be styled as [`let`](https://clojuredocs.org/clojure.core/let) with the bindings aligned.
-2. `failjure.core/when-failed`: Shall be styled as [`fn`](https://clojuredocs.org/clojure.core/fn).
-3. `mount.core/defstate`: Shall be styled as [`def`](https://clojuredocs.org/clojure.core/def).
+1. `failjure.core/when-failed`: Shall be styled as [`fn`](https://clojuredocs.org/clojure.core/fn).
+
+The recommended linter is [zprint](https://github.com/kkinnear/zprint) and the code formatting rules can be found in [.zprintrc](https://github.com/bob-cd/bob/blob/main/.zprintrc)
+For ease of use, its recommended to invoke zprint with the command line opt: `{:search-config? true}` so that it recursively searches upwards for a `.zprintrc`. This should work with any clojure file in the subdirectories.
+
+Example:
+
+To format `runner/src/runner/docker.clj` in place:
+```bash
+zprint '{:search-config? true}' -w runner/src/runner/docker.clj
+```
 
 ## Use of Git
 * Avoid plain `git merge`, and use rebasing instead, to avoid merge commits. This keeps the history much more readable for others to understand, review bisect and rollback.
