@@ -1,3 +1,18 @@
+#   This file is part of Bob.
+#
+#   Bob is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU Affero General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Bob is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
 openapi: "3.0.0"
 
 info:
@@ -10,6 +25,8 @@ paths:
     get:
       operationId: GetApiSpec
       summary: Returns the OpenAPI spec
+      tags:
+        - '{"cli": {"disabled": true}}'
 
       responses:
         "200":
@@ -51,6 +68,8 @@ paths:
     post:
       operationId: PipelineCreate
       summary: Creates a new pipeline
+      tags:
+        - '{"cli": {"name": "p-create"}}'
 
       parameters:
         - name: group
@@ -120,6 +139,8 @@ paths:
     delete:
       operationId: PipelineDelete
       summary: Deletes a pipeline
+      tags:
+        - '{"cli": {"name": "p-delete"}}'
 
       parameters:
         - name: group
@@ -151,6 +172,8 @@ paths:
     post:
       operationId: PipelineStart
       summary: Starts a pipeline
+      tags:
+        - '{"cli": {"name": "p-start"}}'
 
       parameters:
         - name: group
@@ -182,6 +205,8 @@ paths:
     post:
       operationId: PipelineStop
       summary: Stops a pipeline
+      tags:
+        - '{"cli": {"name": "p-stop"}}'
 
       parameters:
         - name: group
@@ -219,6 +244,8 @@ paths:
     post:
       operationId: PipelinePause
       summary: Pauses a pipeline
+      tags:
+        - '{"cli": {"name": "p-pause"}}'
 
       parameters:
         - name: group
@@ -256,6 +283,8 @@ paths:
     post:
       operationId: PipelineUnpause
       summary: Unpauses a pipeline
+      tags:
+        - '{"cli": {"name": "p-unpause"}}'
 
       parameters:
         - name: group
@@ -293,6 +322,8 @@ paths:
     get:
       operationId: PipelineLogs
       summary: Fetches the logs of a pipeline
+      tags:
+        - '{"cli": {"name": "p-logs"}}'
 
       parameters:
         - name: id
@@ -346,6 +377,8 @@ paths:
     get:
       operationId: PipelineStatus
       summary: Fetches the status of the pipeline
+      tags:
+        - '{"cli": {"name": "p-status"}}'
 
       parameters:
         - name: id
@@ -400,6 +433,8 @@ paths:
     get:
       operationId: PipelineArtifactFetch
       summary: Fetches the artifact from pipeline of an artifact store
+      tags:
+        - '{"cli": {"name": "pa-fetch"}}'
 
       parameters:
         - name: group
@@ -456,6 +491,8 @@ paths:
     get:
       operationId: PipelineList
       summary: List all pipelines filtered by group, name and status. Case sensitive.
+      tags:
+        - '{"cli": {"name": "p-list"}}'
 
       parameters:
         - name: group
@@ -508,6 +545,8 @@ paths:
     post:
       operationId: ResourceProviderCreate
       summary: Creates a resource provider with its name and attributes
+      tags:
+        - '{"cli": {"name": "rp-create"}}'
 
       parameters:
         - name: name
@@ -553,6 +592,8 @@ paths:
     delete:
       operationId: ResourceProviderDelete
       summary: Deletes a resource provider by name
+      tags:
+        - '{"cli": {"name": "rp-delete"}}'
 
       parameters:
         - name: name
@@ -578,6 +619,8 @@ paths:
     get:
       operationId: ResourceProviderList
       summary: Lists all registered external resources by name
+      tags:
+        - '{"cli": {"name": "rp-list"}}'
 
       responses:
         "200":
@@ -597,6 +640,8 @@ paths:
     post:
       operationId: ArtifactStoreCreate
       summary: Creates an artifact store with its name and attributes
+      tags:
+        - '{"cli": {"name": "as-create"}}'
 
       parameters:
         - name: name
@@ -642,6 +687,8 @@ paths:
     delete:
       operationId: ArtifactStoreDelete
       summary: Deletes an artifact store by name
+      tags:
+        - '{"cli": {"name": "as-delete"}}'
 
       parameters:
         - name: name
@@ -667,6 +714,8 @@ paths:
     get:
       operationId: ArtifactStoreList
       summary: Lists all registered artifact stores by name
+      tags:
+        - '{"cli": {"name": "as-list"}}'
 
       responses:
         "200":
@@ -710,7 +759,7 @@ paths:
                 type: object
               examples:
                 sucess:
-                  value: [ ]
+                  value: []
 
         default:
           description: Failed query
