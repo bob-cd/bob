@@ -26,7 +26,9 @@ paths:
       operationId: GetApiSpec
       summary: Returns the OpenAPI spec
       tags:
-        - '{"cli": {"disabled": true}}'
+        - api
+      x-cli:
+        disabled: true
 
       responses:
         "200":
@@ -40,6 +42,8 @@ paths:
     get:
       operationId: HealthCheck
       summary: Runs health checks for Bob
+      tags:
+        - cluster
 
       responses:
         "200":
@@ -69,7 +73,9 @@ paths:
       operationId: PipelineCreate
       summary: Creates a new pipeline
       tags:
-        - '{"cli": {"name": "p-create"}}'
+        - pipeline
+      x-cli:
+        name: p-create
 
       parameters:
         - name: group
@@ -140,7 +146,9 @@ paths:
       operationId: PipelineDelete
       summary: Deletes a pipeline
       tags:
-        - '{"cli": {"name": "p-delete"}}'
+        - pipeline
+      x-cli:
+        name: p-delete
 
       parameters:
         - name: group
@@ -173,7 +181,9 @@ paths:
       operationId: PipelineStart
       summary: Starts a pipeline
       tags:
-        - '{"cli": {"name": "p-start"}}'
+        - pipeline
+      x-cli:
+        name: p-start
 
       parameters:
         - name: group
@@ -206,7 +216,9 @@ paths:
       operationId: PipelineStop
       summary: Stops a pipeline
       tags:
-        - '{"cli": {"name": "p-stop"}}'
+        - pipeline
+      x-cli:
+        name: p-stop
 
       parameters:
         - name: group
@@ -245,7 +257,9 @@ paths:
       operationId: PipelinePause
       summary: Pauses a pipeline
       tags:
-        - '{"cli": {"name": "p-pause"}}'
+        - pipeline
+      x-cli:
+        name: p-pause
 
       parameters:
         - name: group
@@ -284,7 +298,9 @@ paths:
       operationId: PipelineUnpause
       summary: Unpauses a pipeline
       tags:
-        - '{"cli": {"name": "p-unpause"}}'
+        - pipeline
+      x-cli:
+        name: p-unpause
 
       parameters:
         - name: group
@@ -323,7 +339,9 @@ paths:
       operationId: PipelineLogs
       summary: Fetches the logs of a pipeline
       tags:
-        - '{"cli": {"name": "p-logs"}}'
+        - pipeline
+      x-cli:
+        name: p-logs
 
       parameters:
         - name: id
@@ -378,7 +396,9 @@ paths:
       operationId: PipelineStatus
       summary: Fetches the status of the pipeline
       tags:
-        - '{"cli": {"name": "p-status"}}'
+        - pipeline
+      x-cli:
+        name: p-status
 
       parameters:
         - name: id
@@ -434,7 +454,10 @@ paths:
       operationId: PipelineArtifactFetch
       summary: Fetches the artifact from pipeline of an artifact store
       tags:
-        - '{"cli": {"name": "pa-fetch"}}'
+        - pipeline
+        - artifact
+      x-cli:
+        name: pa-fetch
 
       parameters:
         - name: group
@@ -492,7 +515,9 @@ paths:
       operationId: PipelineList
       summary: List all pipelines filtered by group, name and status. Case sensitive.
       tags:
-        - '{"cli": {"name": "p-list"}}'
+        - pipeline
+      x-cli:
+        name: p-list
 
       parameters:
         - name: group
@@ -546,7 +571,9 @@ paths:
       operationId: ResourceProviderCreate
       summary: Creates a resource provider with its name and attributes
       tags:
-        - '{"cli": {"name": "rp-create"}}'
+        - resource
+      x-cli:
+        name: rp-create
 
       parameters:
         - name: name
@@ -593,7 +620,9 @@ paths:
       operationId: ResourceProviderDelete
       summary: Deletes a resource provider by name
       tags:
-        - '{"cli": {"name": "rp-delete"}}'
+        - resource
+      x-cli:
+        name: rp-create
 
       parameters:
         - name: name
@@ -620,7 +649,9 @@ paths:
       operationId: ResourceProviderList
       summary: Lists all registered external resources by name
       tags:
-        - '{"cli": {"name": "rp-list"}}'
+        - resource
+      x-cli:
+        name: rp-list
 
       responses:
         "200":
@@ -641,7 +672,9 @@ paths:
       operationId: ArtifactStoreCreate
       summary: Creates an artifact store with its name and attributes
       tags:
-        - '{"cli": {"name": "as-create"}}'
+        - artifact
+      x-cli:
+        name: as-create
 
       parameters:
         - name: name
@@ -688,7 +721,9 @@ paths:
       operationId: ArtifactStoreDelete
       summary: Deletes an artifact store by name
       tags:
-        - '{"cli": {"name": "as-delete"}}'
+        - artifact
+      x-cli:
+        name: as-delete
 
       parameters:
         - name: name
@@ -715,7 +750,9 @@ paths:
       operationId: ArtifactStoreList
       summary: Lists all registered artifact stores by name
       tags:
-        - '{"cli": {"name": "as-list"}}'
+        - artifact
+      x-cli:
+        name: as-list
 
       responses:
         "200":
@@ -735,6 +772,8 @@ paths:
     get:
       operationId: Query
       summary: Runs a query on Crux, intended for point in time analytics
+      tags:
+        - analytics
 
       parameters:
         - name: q
@@ -775,6 +814,8 @@ paths:
     get:
       operationId: GetError
       summary: Fetches the next available system error
+      tags:
+        - observability
 
       responses:
         "200":
@@ -803,6 +844,8 @@ paths:
     get:
       operationId: GetMetrics
       summary: Generates Prometheus compatible cluster metrics
+      tags:
+        - observability
 
       responses:
         "200":
@@ -830,6 +873,8 @@ paths:
     get:
       operationId: CCTray
       summary: Emits a CCTray compatible XML status report
+      tags:
+        - observability
 
       responses:
         "200":
