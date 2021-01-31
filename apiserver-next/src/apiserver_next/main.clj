@@ -14,8 +14,20 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns apiserver_next.main
+  (:require [clojure.repl :as repl]
+            [taoensso.timbre :as log]
+            [apiserver_next.system :as system])
   (:gen-class))
+
+(defn shutdown!
+  [& _]
+  (log/info "Received SIGINT, Shutting down ...")
+  (system/stop)
+  (shutdown-agents)
+  (log/info "Shutdown complete.")
+  (System/exit 0))
 
 (defn -main
   [& _]
-  (println "yes"))
+  (repl/set-break-handler! shutdown!)
+  (system/start))

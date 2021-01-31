@@ -19,9 +19,16 @@
             [taoensso.timbre :as log]
             [failjure.core :as f]
             [ring.adapter.jetty :as jetty]
+            [crux.api :as crux]
+            [crux.jdbc :as jdbc]
+            [langohr.core :as rmq]
+            [langohr.channel :as lch]
+            [langohr.queue :as lq]
+            [langohr.exchange :as le]
             [apiserver_next.server :as s])
   (:import [java.net ConnectException]
-           [org.eclipse.jetty.server Server]))
+           [org.eclipse.jetty.server Server]
+           [crux.api ICruxAPI]))
 
 (defn int-from-env
   [key default]
@@ -77,10 +84,77 @@
     (.stop ^Server (:api-server this))
     (assoc this :server nil)))
 
+(defrecord Database
+  [db-url db-user db-password]
+  component/Lifecycle
+  (start [this]
+    (log/info "Connecting to DB")
+    (assoc this
+           :client
+           (try-connect
+             #(crux/start-node {::jdbc/connection-pool {:dialect 'crux.jdbc.psql/->dialect
+                                                        :db-spec {:jdbcUrl  db-url
+                                                                  :user     db-user
+                                                                  :password db-password}}
+                                :crux/tx-log           {:crux/module     `crux.jdbc/->tx-log
+                                                        :connection-pool ::jdbc/connection-pool}
+                                :crux/document-store   {:crux/module     `crux.jdbc/->document-store
+                                                        :connection-pool ::jdbc/connection-pool}}))))
+  (stop [this]
+    (log/info "Disconnecting DB")
+    (.close ^ICruxAPI (:client this))
+    (assoc this :client nil)))
+
+(defrecord Queue
+  [database queue-url queue-user queue-password]
+  component/Lifecycle
+  (start [this]
+    (let [conn            (try-connect #(rmq/connect {:uri      queue-url
+                                                      :username queue-user
+                                                      :password queue-password}))
+          chan            (lch/open conn)
+          job-queue       "bob.jobs"
+          direct-exchange "bob.direct"
+          error-queue     "bob.errors"
+          entities-queue  "bob.entities"
+          fanout-exchange "bob.fanout"]
+      (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
+      (le/declare chan direct-exchange "direct" {:durable true})
+      (le/declare chan fanout-exchange "fanout" {:durable true})
+      (lq/declare chan
+                  job-queue
+                  {:exclusive   false
+                   :auto-delete false
+                   :durable     true})
+      (lq/declare chan
+                  entities-queue
+                  {:exclusive   false
+                   :auto-delete false
+                   :durable     true})
+      (lq/declare chan
+                  error-queue
+                  {:exclusive   false
+                   :auto-delete false
+                   :durable     true})
+      (lq/bind chan job-queue direct-exchange {:routing-key job-queue})
+      (lq/bind chan entities-queue direct-exchange)
+      (assoc this :conn conn :chan chan)))
+  (stop [this]
+    (log/info "Disconnecting queue")
+    (rmq/close (:conn this))
+    (assoc this :conn nil :chan nil)))
+
 (def system-map
   (component/system-map
     :api-server (map->APIServer {:host api-host
-                                 :port api-port})))
+                                 :port api-port})
+    :database   (map->Database {:db-url      storage-url
+                                :db-user     storage-user
+                                :db-password storage-password})
+    :queue      (component/using (map->Queue {:queue-url      queue-url
+                                              :queue-user     queue-user
+                                              :queue-password queue-password})
+                                 [:database])))
 
 (defonce system nil)
 
