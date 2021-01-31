@@ -44,6 +44,7 @@
            "with-db"               :flow}
  :list    {:indent-arg  2
            :respect-nl? true}
+ :vector  {:respect-nl? true}
  :map     {:comma?    false
            :force-nl? true
            :sort?     false
