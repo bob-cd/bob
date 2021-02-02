@@ -40,8 +40,7 @@
   (if (contains? m k)
     (update-in m
                [k]
-               #(vector :map
-                        %))
+               #(into [:map] %))
     m))
 
 ;; TODO: 🤮 -> 🤢
@@ -94,11 +93,8 @@
         schemas  (->> schema
                       .getProperties
                       (map #(->prop-schema required %))
-                      (apply concat)
                       (into []))]
-    (if (seq schemas)
-      [:map schemas]
-      [:map])))
+    (into [:map {:closed false}] schemas)))
 
 (defmethod spec
   ArraySchema
@@ -112,15 +108,16 @@
 
 (defmulti param->data class)
 
+;; TODO: 🤮🤮 -> 🤢 The extra [] is there to help with merge-with into
 (defmethod param->data
   PathParameter
   [param]
-  {:path (->param-schema param)})
+  {:path [(->param-schema param)]})
 
 (defmethod param->data
   QueryParameter
   [param]
-  {:query (->param-schema param)})
+  {:query [(->param-schema param)]})
 
 (defmethod param->data
   RequestBody
