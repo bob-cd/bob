@@ -64,13 +64,13 @@
          res)))))
 
 (defrecord APIServer
-  [host port]
+  [database queue host port]
   component/Lifecycle
   (start [this]
     (log/info "Starting APIServer")
     (let [server (assoc this
                         :api-server
-                        (jetty/run-jetty (var s/server)
+                        (jetty/run-jetty (s/server (:client database) (:chan queue))
                                          {:host                 host
                                           :port                 port
                                           :join?                false
@@ -106,7 +106,7 @@
     (assoc this :client nil)))
 
 (defrecord Queue
-  [database queue-url queue-user queue-password]
+  [queue-url queue-user queue-password]
   component/Lifecycle
   (start [this]
     (let [conn            (try-connect #(rmq/connect {:uri      queue-url
@@ -146,15 +146,15 @@
 
 (def system-map
   (component/system-map
-    :api-server (map->APIServer {:host api-host
-                                 :port api-port})
     :database   (map->Database {:db-url      storage-url
                                 :db-user     storage-user
                                 :db-password storage-password})
-    :queue      (component/using (map->Queue {:queue-url      queue-url
-                                              :queue-user     queue-user
-                                              :queue-password queue-password})
-                                 [:database])))
+    :queue      (map->Queue {:queue-url      queue-url
+                             :queue-user     queue-user
+                             :queue-password queue-password})
+    :api-server (component/using (map->APIServer {:host api-host
+                                                  :port api-port})
+                                 [:database :queue])))
 
 (defonce system nil)
 

@@ -14,15 +14,16 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 (ns apiserver_next.handlers
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io]
+            [failjure.core :as f]
+            [apiserver_next.healthcheck :as hc]))
 
 (defn respond
   ([content]
    (respond content 200))
   ([content status]
-   {:status  status
-    :headers {"Content-Type" "application/json"}
-    :body    content}))
+   {:status status
+    :body   {:message content}}))
 
 (defn api-spec
   [_]
@@ -32,5 +33,13 @@
                 io/resource
                 io/input-stream)})
 
+(defn health-check
+  [{:keys [db queue]}]
+  (let [check (hc/check {:db db :queue queue})]
+    (if (f/failed? check)
+      (respond (f/message check) 500)
+      (respond "Yes we can! 🔨 🔨"))))
+
 (def handlers
-  {"GetApiSpec" api-spec})
+  {"GetApiSpec"  api-spec
+   "HealthCheck" health-check})

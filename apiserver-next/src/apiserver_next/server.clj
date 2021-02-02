@@ -178,7 +178,14 @@
                             .getValue
                             path-item->data))))))
 
-(def server
+(defn system-interceptor
+  [db queue]
+  {:enter #(-> %
+               (update-in [:request :db] (constantly db))
+               (update-in [:request :queue] (constantly queue)))})
+
+(defn server
+  [database queue]
   (http/ring-handler
     (http/router (-> "bob/api.yaml"
                      io/resource
@@ -191,9 +198,13 @@
                                         (muuntaja/format-response-interceptor)
                                         (muuntaja/format-request-interceptor)
                                         (coercion/coerce-response-interceptor)
-                                        (coercion/coerce-request-interceptor)]}})
+                                        (coercion/coerce-request-interceptor)
+                                        (system-interceptor database queue)]}})
     (ring/routes
-      (ring/create-default-handler))
+      (ring/create-default-handler
+        {:not-found (constantly {:status  404
+                                 :headers {"Content-Type" "application/json"}
+                                 :body    "{\"message\": \"Took a wrong turn?\"}"})}))
     {:executor sieppari/executor}))
 
 (comment
