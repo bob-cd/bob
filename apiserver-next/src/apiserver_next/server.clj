@@ -54,7 +54,9 @@
         key-schema (if (contains? required k)
                      key-schema
                      (conj key-schema {:optional true}))]
-    (conj key-schema (spec (.getValue property)))))
+    (conj key-schema (-> property
+                         .getValue
+                         spec))))
 
 (defn ->param-schema
   "Given a param applies the similar logic as prop to schema

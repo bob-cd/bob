@@ -16,6 +16,8 @@
 (ns apiserver_next.handlers
   (:require [clojure.java.io :as io]
             [failjure.core :as f]
+            [jsonista.core :as json]
+            [langohr.basic :as lb]
             [apiserver_next.healthcheck :as hc]))
 
 (defn respond
@@ -24,6 +26,16 @@
   ([content status]
    {:status status
     :body   {:message content}}))
+
+(defn ->queue
+  [chan msg-type exchange routing-key message]
+  (f/try*
+    (lb/publish chan
+                exchange
+                routing-key
+                message
+                {:content-type "application/json"
+                 :type         msg-type})))
 
 (defn api-spec
   [_]
@@ -35,11 +47,32 @@
 
 (defn health-check
   [{:keys [db queue]}]
-  (let [check (hc/check {:db db :queue queue})]
+  (let [check (hc/check {:db    db
+                         :queue queue})]
     (if (f/failed? check)
       (respond (f/message check) 500)
       (respond "Yes we can! 🔨 🔨"))))
 
+(defn pipeline-create
+  [{{{group :group
+      name  :name}
+     :path
+     pipeline :body}
+    :parameters
+    queue :queue}]
+  (f/try-all [_ (->queue queue
+                         "pipeline/create"
+                         "bob.direct"
+                         "bob.entities"
+                         (-> pipeline
+                             (assoc :group group)
+                             (assoc :name name)
+                             (json/write-value-as-string)))]
+    (respond "Ok")
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
 (def handlers
-  {"GetApiSpec"  api-spec
-   "HealthCheck" health-check})
+  {"GetApiSpec"     api-spec
+   "HealthCheck"    health-check
+   "PipelineCreate" pipeline-create})

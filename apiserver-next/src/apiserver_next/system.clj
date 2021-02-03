@@ -137,7 +137,7 @@
                    :auto-delete false
                    :durable     true})
       (lq/bind chan job-queue direct-exchange {:routing-key job-queue})
-      (lq/bind chan entities-queue direct-exchange)
+      (lq/bind chan entities-queue direct-exchange {:routing-key entities-queue})
       (assoc this :conn conn :chan chan)))
   (stop [this]
     (log/info "Disconnecting queue")
