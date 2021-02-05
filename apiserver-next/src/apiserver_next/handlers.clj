@@ -16,6 +16,7 @@
 (ns apiserver_next.handlers
   (:require [clojure.java.io :as io]
             [clojure.set :as s]
+            [clojure.instant :as ins]
             [clojure.string :as cs]
             [failjure.core :as f]
             [jsonista.core :as json]
@@ -259,6 +260,29 @@
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
+(defn query
+  [{{{:keys [q t]} :query} :parameters
+    db                     :db}]
+  (f/try-all [query      (read-string q)
+              db-in-time (if (nil? t)
+                           (crux/db db)
+                           (crux/db db (ins/read-instant-date t)))]
+    {:status  200
+     :headers {"Content-Type" "application/json"}
+     :body    (json/write-value-as-string (crux/q db-in-time query))}
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
+(defn errors
+  [{queue :queue}]
+  (f/try-all [result   (lb/get queue "bob.errors" true)
+              response (if (nil? result)
+                         "No more errors"
+                         result)]
+    (respond response)
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
 (def handlers
   {"GetApiSpec"             api-spec
    "HealthCheck"            health-check
@@ -277,7 +301,9 @@
    "ResourceProviderList"   resource-provider-list
    "ArtifactStoreCreate"    artifact-store-create
    "ArtifactStoreDelete"    artifact-store-delete
-   "ArtifactStoreList"      artifact-store-list})
+   "ArtifactStoreList"      artifact-store-list
+   "Query"                  query
+   "GetError"               errors})
 
 (comment
   (-> "http://localhost:8001/bob_artifact/dev/test/r-1/test.tar"
