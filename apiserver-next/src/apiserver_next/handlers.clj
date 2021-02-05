@@ -19,6 +19,7 @@
             [failjure.core :as f]
             [jsonista.core :as json]
             [langohr.basic :as lb]
+            [crux.api :as crux]
             [apiserver_next.healthcheck :as hc])
   (:import [java.util UUID]))
 
@@ -65,10 +66,8 @@
       (respond "Yes we can! 🔨 🔨"))))
 
 (defn pipeline-create
-  [{{{group :group
-      name  :name}
-     :path
-     pipeline :body}
+  [{{{:keys [group name]} :path
+     pipeline             :body}
     :parameters
     queue :queue}]
   (exec #(publish queue
@@ -120,6 +119,40 @@
                   ""
                   (s/rename-keys pipeline-info {:id :run_id}))))
 
+(defn pipeline-logs
+  [{{{:keys [id offset lines]} :path} :parameters
+    db                                :db}]
+  (f/try-all [result (crux/q (crux/db db)
+                             `{:find     [(eql/project log [:line]) time]
+                               :where    [[log :type :log-line]
+                                          [log :time time]
+                                          [log :run-id ~id]]
+                               :order-by [[time :asc]]
+                               :limit    ~lines
+                               :offset   ~offset})]
+    (respond (->> result
+                  (map first)
+                  (map :line)))
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
+(defn pipeline-status
+  [{{{:keys [id]} :path} :parameters
+    db                   :db}]
+  (f/try-all [result (crux/q (crux/db db)
+                             `{:find  [(eql/project run [:status])]
+                               :where [[run :type :pipeline-run]
+                                       [run :crux.db/id ~(keyword "bob.pipeline.run" id)]]})
+              status (->> result
+                          (map first)
+                          (map :status)
+                          first)]
+    (if (some? status)
+      (respond status)
+      (respond "Cannot find status" 404))
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
 (def handlers
   {"GetApiSpec"      api-spec
    "HealthCheck"     health-check
@@ -128,4 +161,6 @@
    "PipelineStart"   pipeline-start
    "PipelineStop"    pipeline-stop
    "PipelinePause"   #(pipeline-pause-unpause true %)
-   "PipelineUnpause" #(pipeline-pause-unpause false %)})
+   "PipelineUnpause" #(pipeline-pause-unpause false %)
+   "PipelineLogs"    pipeline-logs
+   "PipelineStatus"  pipeline-status})
