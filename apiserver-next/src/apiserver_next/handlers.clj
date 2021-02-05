@@ -181,6 +181,26 @@
                       (respond 400))
         (respond (f/message err) 500)))))
 
+;; TODO: Better way hopefully?
+(defn pipeline-list
+  [{{{:keys [group name status]
+      :as   query}
+     :query}
+    :parameters
+    db :db}]
+  (f/try-all [base-query '{:find  [(eql/project pipeline [:steps :vars :resources :image :group :name])]
+                           :where [[pipeline :type :pipeline]]}
+              clauses    {:group  [['pipeline :group group]]
+                          :name   [['pipeline :name name]]
+                          :status [['run :type :pipeline-run]
+                                   ['run :status status]]}
+              filters    (mapcat #(get clauses (key %)) query)
+              result     (crux/q (crux/db db)
+                                 (update-in base-query [:where] into filters))]
+    (respond (map first result))
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
 (def handlers
   {"GetApiSpec"            api-spec
    "HealthCheck"           health-check
@@ -192,7 +212,8 @@
    "PipelineUnpause"       #(pipeline-pause-unpause false %)
    "PipelineLogs"          pipeline-logs
    "PipelineStatus"        pipeline-status
-   "PipelineArtifactFetch" pipeline-artifact})
+   "PipelineArtifactFetch" pipeline-artifact
+   "PipelineList"          pipeline-list})
 
 (comment
   (-> "http://localhost:8001/bob_artifact/dev/test/r-1/test.tar"
