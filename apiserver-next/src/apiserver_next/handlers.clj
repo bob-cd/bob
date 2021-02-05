@@ -15,10 +15,12 @@
 
 (ns apiserver_next.handlers
   (:require [clojure.java.io :as io]
+            [clojure.set :as s]
             [failjure.core :as f]
             [jsonista.core :as json]
             [langohr.basic :as lb]
-            [apiserver_next.healthcheck :as hc]))
+            [apiserver_next.healthcheck :as hc])
+  (:import [java.util UUID]))
 
 (defn respond
   ([content]
@@ -27,15 +29,24 @@
    {:status status
     :body   {:message content}}))
 
-(defn ->queue
+(defn publish
   [chan msg-type exchange routing-key message]
-  (f/try*
-    (lb/publish chan
-                exchange
-                routing-key
-                message
-                {:content-type "application/json"
-                 :type         msg-type})))
+  (lb/publish chan
+              exchange
+              routing-key
+              (json/write-value-as-string message)
+              {:content-type "application/json"
+               :type         msg-type}))
+
+(defn- exec
+  ([task]
+   (exec task "Ok"))
+  ([task response]
+   (let [result (f/try*
+                  (task))]
+     (if (f/failed? result)
+       (respond (f/message result) 500)
+       (respond response)))))
 
 (defn api-spec
   [_]
@@ -60,19 +71,61 @@
      pipeline :body}
     :parameters
     queue :queue}]
-  (f/try-all [_ (->queue queue
-                         "pipeline/create"
-                         "bob.direct"
-                         "bob.entities"
-                         (-> pipeline
-                             (assoc :group group)
-                             (assoc :name name)
-                             (json/write-value-as-string)))]
-    (respond "Ok")
-    (f/when-failed [err]
-      (respond (f/message err) 500))))
+  (exec #(publish queue
+                  "pipeline/create"
+                  "bob.direct"
+                  "bob.entities"
+                  (-> pipeline
+                      (assoc :group group)
+                      (assoc :name name)))))
+
+(defn pipeline-delete
+  [{{pipeline-info :path} :parameters
+    queue                 :queue}]
+  (exec #(publish queue
+                  "pipeline/delete"
+                  "bob.direct"
+                  "bob.entities"
+                  pipeline-info)))
+
+(defn pipeline-start
+  [{{pipeline-info :path} :parameters
+    queue                 :queue}]
+  (let [id (str "r-" (UUID/randomUUID))]
+    (exec #(publish queue
+                    "pipeline/start"
+                    "bob.direct"
+                    "bob.jobs"
+                    (assoc pipeline-info :run_id id))
+          id)))
+
+(defn pipeline-stop
+  [{{pipeline-info :path} :parameters
+    queue                 :queue}]
+  (exec #(publish queue
+                  "pipeline/stop"
+                  "bob.direct"
+                  "bob.jobs"
+                  (s/rename-keys pipeline-info {:id :run_id}))))
+
+(defn pipeline-pause-unpause
+  [pause?
+   {{pipeline-info :path} :parameters
+    queue                 :queue}]
+  (exec #(publish queue
+                  (if pause?
+                    "pipeline/pause"
+                    "pipeline/unpause")
+                  "bob.fanout"
+                  ""
+                  (s/rename-keys pipeline-info {:id :run_id}))))
 
 (def handlers
-  {"GetApiSpec"     api-spec
-   "HealthCheck"    health-check
-   "PipelineCreate" pipeline-create})
+  {"GetApiSpec"      api-spec
+   "HealthCheck"     health-check
+   "PipelineCreate"  pipeline-create
+   "PipelineDelete"  pipeline-delete
+   "PipelineStart"   pipeline-start
+   "PipelineStop"    pipeline-stop
+   "PipelinePause"   #(pipeline-pause-unpause true %)
+   "PipelineUnpause" #(pipeline-pause-unpause false %)})
