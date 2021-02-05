@@ -201,19 +201,83 @@
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
+(defn resource-provider-create
+  [{{{:keys [name]}    :path
+     resource-provider :body}
+    :parameters
+    queue :queue}]
+  (exec #(publish queue
+                  "resource-provider/create"
+                  "bob.direct"
+                  "bob.entities"
+                  (assoc resource-provider :name name))))
+
+(defn resource-provider-delete
+  [{{{:keys [name]} :path} :parameters
+    queue                  :queue}]
+  (exec #(publish queue
+                  "resource-provider/delete"
+                  "bob.direct"
+                  "bob.entities"
+                  {:name name})))
+
+(defn resource-provider-list
+  [{db :db}]
+  (f/try-all [result (crux/q (crux/db db)
+                             '{:find  [(eql/project resource-provider [:name :url])]
+                               :where [[resource-provider :type :resource-provider]]})]
+    (respond (map first result))
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
+(defn artifact-store-create
+  [{{{:keys [name]}    :path
+     resource-provider :body}
+    :parameters
+    queue :queue}]
+  (exec #(publish queue
+                  "artifact-store/create"
+                  "bob.direct"
+                  "bob.entities"
+                  (assoc resource-provider :name name))))
+
+(defn artifact-store-delete
+  [{{{:keys [name]} :path} :parameters
+    queue                  :queue}]
+  (exec #(publish queue
+                  "artifact-store/delete"
+                  "bob.direct"
+                  "bob.entities"
+                  {:name name})))
+
+(defn artifact-store-list
+  [{db :db}]
+  (f/try-all [result (crux/q (crux/db db)
+                             '{:find  [(eql/project artifact-store [:name :url])]
+                               :where [[artifact-store :type :artifact-store]]})]
+    (respond (map first result))
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
 (def handlers
-  {"GetApiSpec"            api-spec
-   "HealthCheck"           health-check
-   "PipelineCreate"        pipeline-create
-   "PipelineDelete"        pipeline-delete
-   "PipelineStart"         pipeline-start
-   "PipelineStop"          pipeline-stop
-   "PipelinePause"         #(pipeline-pause-unpause true %)
-   "PipelineUnpause"       #(pipeline-pause-unpause false %)
-   "PipelineLogs"          pipeline-logs
-   "PipelineStatus"        pipeline-status
-   "PipelineArtifactFetch" pipeline-artifact
-   "PipelineList"          pipeline-list})
+  {"GetApiSpec"             api-spec
+   "HealthCheck"            health-check
+   "PipelineCreate"         pipeline-create
+   "PipelineDelete"         pipeline-delete
+   "PipelineStart"          pipeline-start
+   "PipelineStop"           pipeline-stop
+   "PipelinePause"          #(pipeline-pause-unpause true %)
+   "PipelineUnpause"        #(pipeline-pause-unpause false %)
+   "PipelineLogs"           pipeline-logs
+   "PipelineStatus"         pipeline-status
+   "PipelineArtifactFetch"  pipeline-artifact
+   "PipelineList"           pipeline-list
+   "ResourceProviderCreate" resource-provider-create
+   "ResourceProviderDelete" resource-provider-delete
+   "ResourceProviderList"   resource-provider-list
+   "ArtifactStoreCreate"    artifact-store-create
+   "ArtifactStoreDelete"    artifact-store-delete
+   "ArtifactStoreList"      artifact-store-list})
 
 (comment
   (-> "http://localhost:8001/bob_artifact/dev/test/r-1/test.tar"
