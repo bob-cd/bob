@@ -16,10 +16,12 @@
 (ns apiserver_next.handlers
   (:require [clojure.java.io :as io]
             [clojure.set :as s]
+            [clojure.string :as cs]
             [failjure.core :as f]
             [jsonista.core :as json]
             [langohr.basic :as lb]
             [crux.api :as crux]
+            [java-http-clj.core :as http]
             [apiserver_next.healthcheck :as hc])
   (:import [java.util UUID]))
 
@@ -153,14 +155,47 @@
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
+(defn pipeline-artifact
+  [{{{:keys [group name id store-name artifact-name]} :path} :parameters
+    db                                                       :db}]
+  (f/try-all [base-url (-> (crux/entity (crux/db db) (keyword "bob.artifact-store" store-name))
+                           (get :url))
+              _        (when (nil? base-url)
+                         (f/fail {:type :external
+                                  :msg  (str "Cannot locate artifact store " store-name)}))
+              url      (cs/join "/" [base-url "bob_artifact" group name id artifact-name])
+              resp     (http/get url {:follow-redirects true} {:as :input-stream})
+              _        (when (>= (:status resp) 400)
+                         (f/fail {:type :external
+                                  :msg  (-> resp
+                                            :body
+                                            slurp)}))]
+    {:status  200
+     :headers {"Content-Type" "application/tar"}
+     :body    (:body resp)}
+    (f/when-failed [err]
+      (case (get (f/message err) :type)
+        :external (-> err
+                      f/message
+                      :msg
+                      (respond 400))
+        (respond (f/message err) 500)))))
+
 (def handlers
-  {"GetApiSpec"      api-spec
-   "HealthCheck"     health-check
-   "PipelineCreate"  pipeline-create
-   "PipelineDelete"  pipeline-delete
-   "PipelineStart"   pipeline-start
-   "PipelineStop"    pipeline-stop
-   "PipelinePause"   #(pipeline-pause-unpause true %)
-   "PipelineUnpause" #(pipeline-pause-unpause false %)
-   "PipelineLogs"    pipeline-logs
-   "PipelineStatus"  pipeline-status})
+  {"GetApiSpec"            api-spec
+   "HealthCheck"           health-check
+   "PipelineCreate"        pipeline-create
+   "PipelineDelete"        pipeline-delete
+   "PipelineStart"         pipeline-start
+   "PipelineStop"          pipeline-stop
+   "PipelinePause"         #(pipeline-pause-unpause true %)
+   "PipelineUnpause"       #(pipeline-pause-unpause false %)
+   "PipelineLogs"          pipeline-logs
+   "PipelineStatus"        pipeline-status
+   "PipelineArtifactFetch" pipeline-artifact})
+
+(comment
+  (-> "http://localhost:8001/bob_artifact/dev/test/r-1/test.tar"
+      (http/get {:follow-redirects true} {:as :input-stream})
+      :body
+      slurp))
