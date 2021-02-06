@@ -23,7 +23,8 @@
             [langohr.basic :as lb]
             [crux.api :as crux]
             [java-http-clj.core :as http]
-            [apiserver_next.healthcheck :as hc])
+            [apiserver_next.healthcheck :as hc]
+            [apiserver_next.metrics :as metrics])
   (:import [java.util UUID]))
 
 (defn respond
@@ -283,6 +284,16 @@
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
+(defn metrics
+  [{queue :queue
+    db    :db}]
+  (f/try-all [metrics (metrics/collect-metrics queue db)]
+    {:status  200
+     :headers {"Content-Type" "text/plain"}
+     :body    metrics}
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
 (def handlers
   {"GetApiSpec"             api-spec
    "HealthCheck"            health-check
@@ -303,7 +314,8 @@
    "ArtifactStoreDelete"    artifact-store-delete
    "ArtifactStoreList"      artifact-store-list
    "Query"                  query
-   "GetError"               errors})
+   "GetError"               errors
+   "GetMetrics"             metrics})
 
 (comment
   (-> "http://localhost:8001/bob_artifact/dev/test/r-1/test.tar"
