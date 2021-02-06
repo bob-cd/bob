@@ -15,7 +15,8 @@
 
 (ns apiserver_next.healthcheck
   (:require [failjure.core :as f]
-            [crux.api :as crux]))
+            [crux.api :as crux]
+            [taoensso.timbre :as log]))
 
 (defn queue
   [{:keys [queue]}]
@@ -34,4 +35,5 @@
                      (pmap #(% opts))
                      (filter #(f/failed? %)))]
     (when (seq results)
-      (f/fail (map f/message results)))))
+      (run! #(log/errorf "Health checks failing: %s" (f/message %)) results)
+      (f/fail results))))

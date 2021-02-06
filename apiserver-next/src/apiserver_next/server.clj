@@ -23,8 +23,10 @@
             [reitit.http.interceptors.parameters :as parameters]
             [reitit.http.interceptors.muuntaja :as muuntaja]
             [reitit.interceptor.sieppari :as sieppari]
-            [apiserver_next.handlers :as h])
+            [apiserver_next.handlers :as h]
+            [apiserver_next.healthcheck :as hc])
   (:import [java.util Map$Entry]
+           [java.util.concurrent Executors TimeUnit]
            [io.swagger.v3.oas.models.media StringSchema IntegerSchema ObjectSchema ArraySchema MediaType]
            [io.swagger.v3.oas.models.parameters PathParameter QueryParameter RequestBody Parameter]
            [io.swagger.v3.oas.models Operation PathItem]
@@ -54,9 +56,10 @@
         key-schema (if (contains? required k)
                      key-schema
                      (conj key-schema {:optional true}))]
-    (conj key-schema (-> property
-                         .getValue
-                         spec))))
+    (conj key-schema
+          (-> property
+              .getValue
+              spec))))
 
 (defn ->param-schema
   "Given a param applies the similar logic as prop to schema
@@ -185,6 +188,10 @@
 
 (defn server
   [database queue]
+  (let [health-check-cron #(hc/check {:queue queue
+                                      :db    database})
+        scheduler         (Executors/newScheduledThreadPool 1)]
+    (.scheduleAtFixedRate scheduler health-check-cron 0 1 TimeUnit/MINUTES))
   (http/ring-handler
     (http/router (-> "bob/api.yaml"
                      io/resource
