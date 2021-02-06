@@ -46,7 +46,7 @@
 (defonce api-port (int-from-env :bob-api-port 7777))
 (defonce connection-retry-attempts (int-from-env :bob-connection-retry-attempts 10))
 (defonce connection-retry-delay (int-from-env :bob-connection-retry-delay 2000))
-(defonce health-check-freq (int-from-env :bob-health-check-freq 5000))
+(defonce health-check-freq (int-from-env :bob-health-check-freq 60000))
 
 (defn try-connect
   ([conn-fn]
@@ -70,7 +70,7 @@
     (log/info "Starting APIServer")
     (let [server (assoc this
                         :api-server
-                        (jetty/run-jetty (s/server (:client database) (:chan queue))
+                        (jetty/run-jetty (s/server (:client database) (:chan queue) health-check-freq)
                                          {:host                 host
                                           :port                 port
                                           :join?                false

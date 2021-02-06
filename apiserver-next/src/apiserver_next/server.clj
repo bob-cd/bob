@@ -13,6 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
+;; TODO: Throw all of this away when https://github.com/juxt/apex can be used.
 (ns apiserver_next.server
   (:require [clojure.java.io :as io]
             [muuntaja.core :as m]
@@ -104,12 +105,11 @@
 (defmethod spec
   ArraySchema
   [^ArraySchema schema]
-  (let [items-schema (-> schema
-                         .getItems
-                         spec)]
-    (if (seq items-schema)
-      [:sequential items-schema]
-      [:sequential any?])))
+  (let [items (.getItems schema)]
+    [:sequential
+     (if (nil? items)
+       any?
+       (spec items))]))
 
 (defmulti param->data class)
 
@@ -124,6 +124,7 @@
   [param]
   {:query [(->param-schema param)]})
 
+;; TODO: Handle more kinds of request-bodies
 (defmethod param->data
   RequestBody
   [^RequestBody param]
@@ -138,7 +139,7 @@
                spec)}))
 
 (defn operation->data
-  [^Operation op]
+  [^Operation op handlers]
   (let [params       (into [] (.getParameters op))
         request-body (.getRequestBody op)
         params       (if (nil? request-body)
@@ -149,13 +150,13 @@
                           (apply merge-with into)
                           (wrap-map :path)
                           (wrap-map :query))
-        handler      {:handler (get h/handlers (.getOperationId op))}]
+        handler      {:handler (get handlers (.getOperationId op))}]
     (if (seq schemas)
       (assoc handler :parameters schemas)
       handler)))
 
 (defn path-item->data
-  [^PathItem path-item]
+  [^PathItem path-item handlers]
   (->> path-item
        .readOperationsMap
        (map #(vector (-> ^Map$Entry %
@@ -165,11 +166,11 @@
                          keyword)
                      (-> ^Map$Entry %
                          .getValue
-                         operation->data)))
+                         (operation->data handlers))))
        (into {})))
 
 (defn ->routes
-  [^String api-spec]
+  [^String api-spec handlers]
   (let [parse-options (doto (ParseOptions.)
                         (.setResolveFully true))]
     (->> (.readContents (OpenAPIV3Parser.) api-spec nil parse-options)
@@ -178,7 +179,7 @@
          (mapv #(vector (.getKey ^Map$Entry %)
                         (-> ^Map$Entry %
                             .getValue
-                            path-item->data))))))
+                            (path-item->data handlers)))))))
 
 (defn system-interceptor
   [db queue]
@@ -187,16 +188,16 @@
                (update-in [:request :queue] (constantly queue)))})
 
 (defn server
-  [database queue]
+  [database queue health-check-freq]
   (let [health-check-cron #(hc/check {:queue queue
                                       :db    database})
         scheduler         (Executors/newScheduledThreadPool 1)]
-    (.scheduleAtFixedRate scheduler health-check-cron 0 1 TimeUnit/MINUTES))
+    (.scheduleAtFixedRate scheduler health-check-cron 0 health-check-freq TimeUnit/MILLISECONDS))
   (http/ring-handler
     (http/router (-> "bob/api.yaml"
                      io/resource
                      slurp
-                     ->routes)
+                     (->routes h/handlers))
                  {:data {:coercion     malli/coercion
                          :muuntaja     m/instance
                          :interceptors [(parameters/parameters-interceptor)
@@ -220,4 +221,4 @@
   (pp/pprint (-> "bob/api.yaml"
                  io/resource
                  slurp
-                 ->routes)))
+                 (->routes h/handlers))))
