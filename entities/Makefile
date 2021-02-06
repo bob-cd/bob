@@ -43,7 +43,7 @@ test:
 	docker network rm bob-net
 
 compile:
-	clojure -Spom && clojure -X:depstar uberjar :jar entities.jar :aot true :main-class entities.main
+	clojure -X:depstar uberjar :jar entities.jar :aot true :main-class entities.main
 
 docker-image:
 	docker build -t ghcr.io/bob-cd/entities .
