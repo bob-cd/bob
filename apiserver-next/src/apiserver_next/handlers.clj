@@ -24,7 +24,8 @@
             [crux.api :as crux]
             [java-http-clj.core :as http]
             [apiserver_next.healthcheck :as hc]
-            [apiserver_next.metrics :as metrics])
+            [apiserver_next.metrics :as metrics]
+            [apiserver_next.cctray :as cctray])
   (:import [java.util UUID]))
 
 (defn respond
@@ -294,6 +295,15 @@
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
+(defn cctray
+  [{db :db}]
+  (f/try-all [report (cctray/generate-report db)]
+    {:status  200
+     :headers {"Content-Type" "application/xml"}
+     :body    report}
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
 (def handlers
   {"GetApiSpec"             api-spec
    "HealthCheck"            health-check
@@ -315,7 +325,8 @@
    "ArtifactStoreList"      artifact-store-list
    "Query"                  query
    "GetError"               errors
-   "GetMetrics"             metrics})
+   "GetMetrics"             metrics
+   "CCTray"                 cctray})
 
 (comment
   (-> "http://localhost:8001/bob_artifact/dev/test/r-1/test.tar"
