@@ -13,11 +13,11 @@ To build and run your pipelines, you just need to do a `docker-compose up` and m
 ## Internals
 
 Bob's API (accessible entirely through HTTP) enables a core set of CI/CD features. These concepts are the only things Bob is opinionated about:
-  - Steps (direct commands like shell)
-  - Pipeline (Collection of steps which can consume artifacts from other pipelines)
-  - Environment (Key value store associated with either steps and/or Pipelines)
-  - Resources (Things like source code or artifacts produced by pipelines)
-  - Artifacts (Something built by a Pipeline)
+  - Steps: Direct commands (like a shell command, `pytest`, etc)
+  - Pipeline: Ordered series of steps
+  - Environment: Key-Value store associated with either Steps and/or Pipelines
+  - Resources: Things (like source code or artifacts) consumed by Pipelines
+  - Artifacts: Something produced by a Pipeline
 
 
 The core of Bob is composed of 3 main services:
