@@ -4,10 +4,18 @@
 
 ### 🚧 This is a proof of concept and isn't fully functional yet. 🚧
 
-Most CI/CD tools are too opinionated and do too much. Instead, Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility. For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
+Most CI/CD tools are too opinionated and do too much. Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility. For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
 
 ## Getting Started 
-Check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
+
+Bob's (REST) API enables a core set of CI/CD features. These concepts are the only things Bob is opinionated about:
+  - Steps (direct commands like shell)
+  - Pipeline (Collection of steps which can consume artifacts from other pipelines)
+  - Environment (Key value store associated with either steps and/or Pipelines)
+  - Resources (Things like source code or artifacts produced by pipelines)
+  - Artifacts (Something built by a Pipeline)
+
+To lay you first pipelines and take your first steps, check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
 
 ## Components
 
