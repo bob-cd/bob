@@ -4,27 +4,26 @@
 
 ### 🚧 This is a proof of concept and isn't fully functional yet. 🚧
 
-Most CI/CD tools are too opinionated and do too much. Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility. For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
+Most CI/CD tools are too opinionated and do too much. Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility, and strives for [simpler, decomposed and hence more composable and unbundled design](https://www.youtube.com/watch?v=MCZ3YgeEUPg). For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
 
 ## Getting Started 
+To build your pipelines, you just need to do a `docker-compose up` and make a few cURL requests. To lay you first pipelines and take your first steps, check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
 
-Bob's (REST) API enables a core set of CI/CD features. These concepts are the only things Bob is opinionated about:
+
+## Internals
+
+Bob's API (accessible entirely through HTTP) enables a core set of CI/CD features. These concepts are the only things Bob is opinionated about:
   - Steps (direct commands like shell)
   - Pipeline (Collection of steps which can consume artifacts from other pipelines)
   - Environment (Key value store associated with either steps and/or Pipelines)
   - Resources (Things like source code or artifacts produced by pipelines)
   - Artifacts (Something built by a Pipeline)
 
-To lay you first pipelines and take your first steps, check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
-
-## Components
 
 The core of Bob is composed of 3 main services:
 - [API server](/apiserver)
 - [Entities](/entities)
 - [Runner](/runner)
-
-Bob follows the idea of [simpler, decomposed and hence more composable and unbundled design](https://www.youtube.com/watch?v=MCZ3YgeEUPg).
 
 All of these services live, breathe and deploy from their own section of this mono-repo and post-deployment, they are coordinated via a central persistent queue. Read more about Bob's [architecture](https://bob-cd.github.io/pages/architecture.html).
 
