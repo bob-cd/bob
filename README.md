@@ -2,13 +2,14 @@
 
 > What [CI/CD](https://en.wikipedia.org/wiki/CI/CD) should've been.
 
-#### 🚧 This is a proof of concept and isn't fully functional yet. 🚧
+### 🚧 This is a proof of concept and isn't fully functional yet. 🚧
 
 Most CI/CD tools are too opinionated and do too much. Instead, Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility. For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
 
-#### Check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
+## Getting Started 
+Check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
 
-### Components
+## Components
 
 The core of Bob is composed of 3 main services:
 - [API server](/apiserver)
