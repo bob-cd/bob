@@ -4,13 +4,13 @@
 
 #### 🚧 This is a proof of concept and isn't fully functional yet. 🚧
 
-Most CI/CD tool is too opinionated and does too much. Instead, Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility. For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
+Most CI/CD tools are too opinionated and do too much. Instead, Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility. For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
 
 #### Check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
 
 ### Components
 
-The core of Bob is an amalgamation of 3 main services:
+The core of Bob is composed of 3 main services:
 - [API server](/apiserver)
 - [Entities](/entities)
 - [Runner](/runner)
@@ -21,12 +21,11 @@ All of these services live, breathe and deploy from their own section of this mo
 
 
 
-See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the roadmap and planned work.
+
 ## Join the conversation
+Please start a [discussion](https://github.com/bob-cd/bob/discussions) on literally any topic and we are happy to help and learn from each other! You can check out the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the roadmap and planned work.
 
-Please start a [discussion](https://github.com/bob-cd/bob/discussions) on literally any topic and we are happy to help and learn from each other!
-
-For a more Clojure specific discussion we also have a Clojurians Slack [channel](https://clojurians.slack.com/messages/CPBAYJJF6).
+For a more Clojure specific discussion there we also have a Clojurians Slack [channel](https://clojurians.slack.com/messages/CPBAYJJF6).
 
 Happy Building!
 
