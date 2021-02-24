@@ -28,9 +28,11 @@
 (defn fetch-resource
   "Downloads a resource(tar file) and returns the stream."
   [url]
-  (f/try-all [_        (log/infof "Fetching resource from %s" url)
-              resource (:body (http/get url {} {:as :input-stream}))]
-    resource
+  (f/try-all [_                     (log/infof "Fetching resource from %s" url)
+              {:keys [status body]} (http/get url {} {:as :input-stream})
+              _                     (when (>= status 400)
+                                      (f/fail body))]
+    body
     (f/when-failed [err]
       (log/errorf "Failed to fetch resource: %s" (f/message err))
       err)))

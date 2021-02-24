@@ -4,3 +4,4 @@
 .terraform
 *tfplan*
 .DS_Store
+.lsp
