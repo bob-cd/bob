@@ -7,7 +7,7 @@
 Most CI/CD tools are too opinionated and do too much. Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility, and strives for [simpler, decomposed and hence more composable and unbundled design](https://www.youtube.com/watch?v=MCZ3YgeEUPg). For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
 
 ## Getting Started 
-To build and run your pipelines, you just need to do a `docker-compose up` and make a few cURL requests. Check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
+To build and run your pipelines, you just need to do a `docker-compose up` and make a few HTTP requests. Check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
 
 
 ## Internals
