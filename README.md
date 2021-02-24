@@ -2,18 +2,13 @@
 
 > What [CI/CD](https://en.wikipedia.org/wiki/CI/CD) should've been.
 
-
-
-![](https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Bob_the_builder.jpg/220px-Bob_the_builder.jpg)
 #### 🚧 This is a proof of concept and isn't fully functional yet. 🚧
 
-### [Why](https://bob-cd.github.io/pages/why-bob.html) Bob
+Most CI/CD tool is too opinionated and does too much. Instead, Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility. For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
 
-See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the roadmap and planned work.
+#### Check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
 
-### Check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
-
-## Components
+### Components
 
 The core of Bob is an amalgamation of 3 main services:
 - [API server](/apiserver)
@@ -24,6 +19,9 @@ Bob follows the idea of [simpler, decomposed and hence more composable and unbun
 
 All of these services live, breathe and deploy from their own section of this mono-repo and post-deployment, they are coordinated via a central persistent queue. Read more about Bob's [architecture](https://bob-cd.github.io/pages/architecture.html).
 
+
+
+See the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the roadmap and planned work.
 ## Join the conversation
 
 Please start a [discussion](https://github.com/bob-cd/bob/discussions) on literally any topic and we are happy to help and learn from each other!
