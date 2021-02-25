@@ -31,7 +31,7 @@
   (f/try-all [_                     (log/infof "Fetching resource from %s" url)
               {:keys [status body]} (http/get url {} {:as :input-stream})
               _                     (when (>= status 400)
-                                      (f/fail body))]
+                                      (f/fail (slurp body)))]
     body
     (f/when-failed [err]
       (log/errorf "Failed to fetch resource: %s" (f/message err))

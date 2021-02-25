@@ -234,7 +234,7 @@ public class Handlers {
 
             final var url = String.join(
                 "/",
-                (String) baseUrl.get(Keyword.intern(Symbol.create("url"))),
+                (String) baseUrl.get("url"),
                 "bob_artifact",
                 group,
                 name,
