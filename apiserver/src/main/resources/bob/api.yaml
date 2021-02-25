@@ -566,6 +566,55 @@ paths:
                   value:
                     message: "Failed to fetch pipelines <some error message>"
 
+  "/pipelines/groups/{group}/names/{name}/runs":
+    get:
+      operationId: PipelineRuns
+      summary: List all pipelines runs by group and name.
+      tags:
+        - pipeline
+      x-cli:
+        name: p-runs
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: List of pipeline runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineRunsResponse"
+              examples:
+                success:
+                  value:
+                    message:
+                      - run_id: r-a-passed-id
+                        status: passed
+                      - run_id: r-a-failed-id
+                        status: failed
+        default:
+          description: Failed listing of pipeline runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Failed to fetch pipelines <some error message>"
+
   "/resource-providers/{name}":
     post:
       operationId: ResourceProviderCreate
@@ -1055,6 +1104,24 @@ components:
                 type: string
               data:
                 $ref: "#/components/schemas/Pipeline"
+
+    PipelineRunsResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: array
+          items:
+            type: object
+            required:
+              - run_id
+              - status
+            properties:
+              run_id:
+                type: string
+              status:
+                type: string
 
     StatusResponse:
       type: string

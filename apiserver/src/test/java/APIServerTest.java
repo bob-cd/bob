@@ -438,6 +438,46 @@ public class APIServerTest {
     }
 
     @Test
+    @DisplayName("Test Runs Fetch")
+    void testRunsFetch(VertxTestContext testContext) {
+        final var queue = RabbitMQClient.create(vertx, queueConfig);
+        final var client = WebClient.create(vertx, clientConfig);
+        final var expectedRuns = new JsonArray()
+            .add(new JsonObject().put("run_id", "a-passed-id").put("status", "passed"))
+            .add(new JsonObject().put("run_id", "a-failed-id").put("status", "failed"));
+        final var query =
+            """
+            [[:crux.tx/put
+              {:crux.db/id :bob.pipeline.run/%s
+               :type       :pipeline-run
+               :group      "dev"
+               :name       "test"
+               :status     :%s}]]
+            """;
+
+        expectedRuns.forEach(run ->
+            node.awaitTx(
+                node.submitTx((List<List<?>>) DB.datafy(query.formatted(((JsonObject) run).getString("run_id"), ((JsonObject) run).getString("status")))),
+                Duration.ofSeconds(5)
+            )
+        );
+
+        vertx.deployVerticle(new APIServer(apiSpec, httpHost, httpPort, queue, node, healthCheckFreq), testContext.succeeding(id ->
+            client
+                .get("/pipelines/groups/dev/names/test/runs")
+                .send()
+                .onSuccess(res ->
+                    testContext.verify(() -> {
+                        assertThat(res.statusCode()).isEqualTo(200);
+                        assertThat(res.getHeader("Content-Type")).isEqualTo("application/json");
+                        assertThat(res.bodyAsJsonObject().getJsonArray("message")).isEqualTo(expectedRuns);
+
+                        testContext.completeNow();
+                    }))
+                .onFailure(testContext::failNow)));
+    }
+
+    @Test
     @DisplayName("Test Pipeline Artifact Fetch")
     void testPipelineArtifactFetch(VertxTestContext testContext) {
         final var queue = RabbitMQClient.create(vertx, queueConfig);

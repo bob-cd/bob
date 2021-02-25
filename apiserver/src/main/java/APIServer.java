@@ -80,6 +80,7 @@ public class APIServer extends AbstractVerticle {
         routerBuilder.operation("PipelineStatus").handler(ctx -> Handlers.pipelineStatusHandler(ctx, this.node));
         routerBuilder.operation("PipelineArtifactFetch").handler(ctx -> Handlers.pipelineArtifactHandler(ctx, this.node, this.vertx));
         routerBuilder.operation("PipelineList").handler(ctx -> Handlers.pipelineListHandler(ctx, this.node));
+        routerBuilder.operation("PipelineRuns").handler(ctx -> Handlers.pipelineRunsHandler(ctx, this.node));
         routerBuilder.operation("ResourceProviderCreate").handler(ctx -> Handlers.resourceProviderCreateHandler(ctx, this.queue));
         routerBuilder.operation("ResourceProviderDelete").handler(ctx -> Handlers.resourceProviderDeleteHandler(ctx, this.queue));
         routerBuilder.operation("ResourceProviderList").handler(ctx -> Handlers.resourceProviderListHandler(ctx, this.node));

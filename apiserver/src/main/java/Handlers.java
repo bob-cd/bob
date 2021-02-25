@@ -290,6 +290,36 @@ public class Handlers {
         }
     }
 
+    public static void pipelineRunsHandler(RoutingContext routingContext, ICruxAPI node) {
+        final var params = routingContext.request().params();
+        final var group = params.get("group");
+        final var name = params.get("name");
+        final var query = DB.datafy(
+            """
+            {:find  [(eql/project run [:status :crux.db/id])]
+             :where [[run :type :pipeline-run]
+                     [run :group "%s"]
+                     [run :name "%s"]]}
+            """.formatted(group, name)
+        );
+
+        try {
+            final var runs = node
+                .db()
+                .query(query)
+                .stream()
+                .map(it -> it.get(0))
+                .map(DB::toJson)
+                .map(it -> it.put("run_id", it.getString("crux.db/id").split("/")[1]))
+                .peek(it -> it.remove("crux.db/id"))
+                .collect(Collectors.toList());
+
+            toJsonResponse(routingContext, runs, 200);
+        } catch (Exception e) {
+            toJsonResponse(routingContext, e.getMessage(), 500);
+        }
+    }
+
     public static void resourceProviderCreateHandler(RoutingContext routingContext, RabbitMQClient queue) {
         final var params = routingContext.request().params();
         final var name = params.get("name");
