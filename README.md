@@ -12,7 +12,7 @@ To build and run your pipelines, you just need to do a `docker-compose up` and m
 
 ## Internals
 
-Bob's API (accessible entirely through HTTP) enables a core set of CI/CD features. These concepts are the only things Bob is opinionated about:
+Bob's API (accessible entirely through HTTP) enables a core set of CI/CD features. The following are the only concepts that Bob is opinionated about:
   - Steps: Direct commands (like a shell command, `pytest`, etc)
   - Pipeline: Ordered series of steps
   - Environment: Key-Value store associated with either Steps and/or Pipelines
@@ -25,8 +25,7 @@ The core of Bob is composed of 3 main services:
 - [Entities](/entities)
 - [Runner](/runner)
 
-All of these services live, breathe and deploy from their own section of this mono-repo and post-deployment, they are coordinated via a central persistent queue. Read more about Bob's [architecture](https://bob-cd.github.io/pages/architecture.html).
-
+All of these services live, breathe, and deploy from their own section of this mono-repo. Post-deployment, they are coordinated via a central persistent queue. Read more about Bob's [Architecture](https://bob-cd.github.io/pages/architecture.html).
 
 
 
