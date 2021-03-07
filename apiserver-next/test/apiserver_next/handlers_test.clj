@@ -15,12 +15,14 @@
 
 (ns apiserver_next.handlers-test
   (:require [clojure.test :as t]
+            [clojure.java.io :as io]
             [failjure.core :as f]
             [langohr.channel :as lch]
             [langohr.basic :as lb]
             [langohr.queue :as lq]
             [jsonista.core :as json]
             [crux.api :as crux]
+            [java-http-clj.core :as http]
             [apiserver_next.handlers :as h]
             [apiserver_next.util :as u])
   (:import [java.time Instant]))
@@ -207,3 +209,46 @@
                        (t/is (= 404 status))
                        (t/is (= "Cannot find status"
                                 (:message body))))))))
+
+(t/deftest pipeline-artifact-fetch
+  (u/with-system (fn [db _]
+                   (t/testing "fetching a valid artifact"
+                     (crux/await-tx
+                       db
+                       (crux/submit-tx
+                         db
+                         [[:crux.tx/put
+                           {:crux.db/id :bob.artifact-store/local
+                            :type       :artifact-store
+                            :url        "http://localhost:8001"}]]))
+                     (http/post "http://localhost:8001/bob_artifact/dev/test/a-run-id/file"
+                                {:as   :input-stream
+                                 :body (io/input-stream "test/test.tar")})
+                     (let [{:keys [status headers]}
+                           (h/pipeline-artifact {:db         db
+                                                 :parameters {:path {:group         "dev"
+                                                                     :name          "test"
+                                                                     :id            "a-run-id"
+                                                                     :store-name    "local"
+                                                                     :artifact-name "file"}}})]
+                       (t/is (= 200 status))
+                       (t/is (= "application/tar" (get headers "Content-Type")))))
+                   (t/testing "unregistered artifact store"
+                     (let [{:keys [status body]}
+                           (h/pipeline-artifact {:db         db
+                                                 :parameters {:path {:group         "dev"
+                                                                     :name          "test"
+                                                                     :id            "a-run-id"
+                                                                     :store-name    "nope"
+                                                                     :artifact-name "file"}}})]
+                       (t/is (= 400 status))
+                       (t/is (= "Cannot locate artifact store nope" (:message body)))))
+                   (t/testing "non-existing artifact"
+                     (let [{:keys [status]}
+                           (h/pipeline-artifact {:db         db
+                                                 :parameters {:path {:group         "dev"
+                                                                     :name          "test"
+                                                                     :id            "a-run-id"
+                                                                     :store-name    "local"
+                                                                     :artifact-name "yes"}}})]
+                       (t/is (= 400 status)))))))
