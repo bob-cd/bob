@@ -334,3 +334,41 @@
                                   :body
                                   :message)))))))
 
+(t/deftest artifact-store-test
+  (u/with-system (fn [db queue]
+                   (t/testing "artifact-store registration"
+                     (h/artifact-store-create {:parameters {:path {:name "s3"}
+                                                            :body {:url "http://localhost:8000"}}
+                                               :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
+                       (t/is (= {:name "s3"
+                                 :url  "http://localhost:8000"}
+                                data))
+                       (t/is (= "artifact-store/create" type))))
+                   (t/testing "artifact-store de-registration"
+                     (h/artifact-store-delete {:parameters {:path {:name "s3"}}
+                                               :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
+                       (t/is (= {:name "s3"} data))
+                       (t/is (= "artifact-store/delete" type))))
+                   (t/testing "artifact-store listing"
+                     (crux/await-tx
+                       db
+                       (crux/submit-tx db
+                                       [[:crux.tx/put
+                                         {:crux.db/id :bob.resource-provider.dev/test1
+                                          :type       :artifact-store
+                                          :name       "test1"
+                                          :url        "http://localhost:8000"}]
+                                        [:crux.tx/put
+                                         {:crux.db/id :bob.resource-provider.dev/test2
+                                          :type       :artifact-store
+                                          :name       "test2"
+                                          :url        "http://localhost:8001"}]]))
+                     (t/is (= [{:name "test1"
+                                :url  "http://localhost:8000"}
+                               {:name "test2"
+                                :url  "http://localhost:8001"}]
+                              (-> (h/artifact-store-list {:db db})
+                                  :body
+                                  :message)))))))
