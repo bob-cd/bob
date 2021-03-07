@@ -20,8 +20,10 @@
             [langohr.basic :as lb]
             [langohr.queue :as lq]
             [jsonista.core :as json]
+            [crux.api :as crux]
             [apiserver_next.handlers :as h]
-            [apiserver_next.util :as u]))
+            [apiserver_next.util :as u])
+  (:import [java.time Instant]))
 
 (t/deftest helpers-test
   (t/testing "default response"
@@ -148,3 +150,60 @@
                                  :run_id "a-run-id"}
                                 data))
                        (t/is (= "pipeline/unpause" type)))))))
+
+(t/deftest pipeline-logs-test
+  (u/with-system (fn [db _]
+                   (t/testing "pipeline logs"
+                     (crux/await-tx
+                       db
+                       (crux/submit-tx db
+                                       [[:crux.tx/put
+                                         {:crux.db/id :bob.pipeline.log/l-1
+                                          :type       :log-line
+                                          :time       (Instant/now)
+                                          :run-id     "r-1"
+                                          :line       "l1"}]
+                                        [:crux.tx/put
+                                         {:crux.db/id :bob.pipeline.log/l-2
+                                          :type       :log-line
+                                          :time       (Instant/now)
+                                          :run-id     "r-1"
+                                          :line       "l2"}]
+                                        [:crux.tx/put
+                                         {:crux.db/id :bob.pipeline.log/l-3
+                                          :type       :log-line
+                                          :time       (Instant/now)
+                                          :run-id     "r-1"
+                                          :line       "l3"}]]))
+                     (t/is (= ["l1" "l2"]
+                              (-> (h/pipeline-logs {:db         db
+                                                    :parameters {:path {:id     "r-1"
+                                                                        :offset 0
+                                                                        :lines  2}}})
+                                  :body
+                                  :message)))))))
+
+(t/deftest pipeline-status-test
+  (u/with-system (fn [db _]
+                   (t/testing "existing pipeline status"
+                     (crux/await-tx
+                       db
+                       (crux/submit-tx db
+                                       [[:crux.tx/put
+                                         {:crux.db/id :bob.pipeline.run/r-1
+                                          :type       :pipeline-run
+                                          :group      "dev"
+                                          :name       "test"
+                                          :status     :running}]]))
+                     (t/is (= :running
+                              (-> (h/pipeline-status {:db         db
+                                                      :parameters {:path {:id "r-1"}}})
+                                  :body
+                                  :message))))
+                   (t/testing "non-existing pipeline status"
+                     (let [{:keys [status body]}
+                           (h/pipeline-status {:db         db
+                                               :parameters {:path {:id "r-2"}}})]
+                       (t/is (= 404 status))
+                       (t/is (= "Cannot find status"
+                                (:message body))))))))
