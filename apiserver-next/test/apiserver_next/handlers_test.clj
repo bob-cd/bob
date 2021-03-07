@@ -294,3 +294,43 @@
                                 (-> resp
                                     :body
                                     :message))))))))
+
+(t/deftest resource-provider-test
+  (u/with-system (fn [db queue]
+                   (t/testing "resource-provider registration"
+                     (h/resource-provider-create {:parameters {:path {:name "git"}
+                                                               :body {:url "http://localhost:8000"}}
+                                                  :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
+                       (t/is (= {:name "git"
+                                 :url  "http://localhost:8000"}
+                                data))
+                       (t/is (= "resource-provider/create" type))))
+                   (t/testing "resource-provider de-registration"
+                     (h/resource-provider-delete {:parameters {:path {:name "git"}}
+                                                  :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
+                       (t/is (= {:name "git"} data))
+                       (t/is (= "resource-provider/delete" type))))
+                   (t/testing "resource-provider listing"
+                     (crux/await-tx
+                       db
+                       (crux/submit-tx db
+                                       [[:crux.tx/put
+                                         {:crux.db/id :bob.resource-provider.dev/test1
+                                          :type       :resource-provider
+                                          :name       "test1"
+                                          :url        "http://localhost:8000"}]
+                                        [:crux.tx/put
+                                         {:crux.db/id :bob.resource-provider.dev/test2
+                                          :type       :resource-provider
+                                          :name       "test2"
+                                          :url        "http://localhost:8001"}]]))
+                     (t/is (= [{:name "test1"
+                                :url  "http://localhost:8000"}
+                               {:name "test2"
+                                :url  "http://localhost:8001"}]
+                              (-> (h/resource-provider-list {:db db})
+                                  :body
+                                  :message)))))))
+
