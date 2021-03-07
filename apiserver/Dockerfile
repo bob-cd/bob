@@ -15,6 +15,6 @@
 
 FROM azul/zulu-openjdk-alpine:15-jre
 
-COPY build/libs/apiserver.jar .
+COPY apiserver.jar .
 
-ENTRYPOINT ["java", "--enable-preview", "-jar", "apiserver.jar"]
+ENTRYPOINT ["java", "-jar", "apiserver.jar"]

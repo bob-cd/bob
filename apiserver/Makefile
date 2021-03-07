@@ -43,13 +43,13 @@ test:
 		--network bob-net \
 		ghcr.io/bob-cd/artifact-local
 	sleep 7 # TODO: Find a better way to wait till things come up.
-	gradle test --fail-fast
+	clojure -M:test --fail-fast
 	docker kill bob-test-storage bob-test-queue artifact-local && \
 		docker rm bob-test-storage bob-test-queue artifact-local
 	docker network rm bob-net
 
 compile:
-	gradle shadowJar
+	clojure -X:depstar uberjar :jar apiserver.jar :aot true :main-class apiserver.main
 
 docker-image:
 	docker build -t ghcr.io/bob-cd/apiserver .
@@ -58,5 +58,5 @@ docker-push: docker-image
 	docker push ghcr.io/bob-cd/apiserver
 
 clean:
-	gradle clean
+	rm -rf .cpcache apiserver.jar
 	docker rmi ghcr.io/bob-cd/apiserver || true

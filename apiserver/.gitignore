@@ -1,10 +1,4 @@
-build/
-.gradle/
-test.tar.gz
-.idea/
-*.iml
-.classpath
-.project
-.settings/
-bin/
-.metals/
+.cpcache/
+*.jar
+pom.xml
+.nrepl-port
