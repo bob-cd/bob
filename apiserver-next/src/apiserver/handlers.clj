@@ -135,9 +135,10 @@
                                :order-by [[time :asc]]
                                :limit    ~lines
                                :offset   ~offset})]
-    (respond (->> result
-                  (map first)
-                  (map :line)))
+    (->> result
+          (map first)
+          (map :line)
+          respond)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -155,6 +156,22 @@
     (if (some? status)
       (respond status)
       (respond "Cannot find status" 404))
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
+(defn pipeline-runs-list
+  [{{{:keys [group name]} :path} :parameters
+    db                           :db}]
+  (f/try-all [result (crux/q (crux/db db)
+                             `{:find  [(eql/project run [:status :crux.db/id])]
+                               :where [[run :type :pipeline-run]
+                                       [run :group ~group]
+                                       [run :name ~name]]})]
+    (->> result
+         (map first)
+         (map #(s/rename-keys % {:crux.db/id :run_id}))
+         (map #(update % :run_id clojure.core/name))
+         respond)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -315,6 +332,7 @@
    "PipelineUnpause"        #(pipeline-pause-unpause false %)
    "PipelineLogs"           pipeline-logs
    "PipelineStatus"         pipeline-status
+   "PipelineRuns"           pipeline-runs-list
    "PipelineArtifactFetch"  pipeline-artifact
    "PipelineList"           pipeline-list
    "ResourceProviderCreate" resource-provider-create

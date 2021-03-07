@@ -295,6 +295,36 @@
                                     :body
                                     :message))))))))
 
+(t/deftest pipeline-runs-list-test
+  (u/with-system (fn [db _]
+                   (t/testing "listing pipeline runs"
+                     (crux/await-tx
+                       db
+                       (crux/submit-tx
+                         db
+                         [[:crux.tx/put
+                           {:crux.db/id :bob.pipeline.run/r-1
+                            :type       :pipeline-run
+                            :group      "dev"
+                            :name       "test"
+                            :status     :passed}]
+                          [:crux.tx/put
+                           {:crux.db/id :bob.pipeline.run/r-2
+                            :type       :pipeline-run
+                            :group      "dev"
+                            :name       "test"
+                            :status     :failed}]]))
+                     (let [resp (h/pipeline-runs-list {:db         db
+                                                       :parameters {:path {:group "dev"
+                                                                           :name  "test"}}})]
+                       (t/is (= [{:run_id "r-1"
+                                  :status :passed}
+                                 {:run_id "r-2"
+                                  :status :failed}]
+                                (-> resp
+                                    :body
+                                    :message))))))))
+
 (t/deftest resource-provider-test
   (u/with-system (fn [db queue]
                    (t/testing "resource-provider registration"
