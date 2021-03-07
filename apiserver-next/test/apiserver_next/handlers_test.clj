@@ -17,6 +17,9 @@
   (:require [clojure.test :as t]
             [failjure.core :as f]
             [langohr.channel :as lch]
+            [langohr.basic :as lb]
+            [langohr.queue :as lq]
+            [jsonista.core :as json]
             [apiserver_next.handlers :as h]
             [apiserver_next.util :as u]))
 
@@ -62,3 +65,86 @@
                                     :message
                                     first
                                     f/message))))))))
+
+(defn queue-get
+  [chan queue]
+  (let [[metadata payload] (lb/get chan queue true)]
+    {:type (:type metadata)
+     :data (json/read-value payload json/keyword-keys-object-mapper)}))
+
+(t/deftest pipeline-direct-tests
+  (u/with-system (fn [_ queue]
+                   (t/testing "pipeline creation"
+                     (h/pipeline-create {:parameters {:path {:group "dev"
+                                                             :name  "test"}
+                                                      :body {:image "test image"}}
+                                         :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
+                       (t/is (= {:image "test image"
+                                 :group "dev"
+                                 :name  "test"}
+                                data))
+                       (t/is (= "pipeline/create" type))))
+                   (t/testing "pipeline deletion"
+                     (h/pipeline-delete {:parameters {:path {:group "dev"
+                                                             :name  "test"}}
+                                         :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
+                       (t/is (= {:group "dev"
+                                 :name  "test"}
+                                data))
+                       (t/is (= "pipeline/delete" type))))
+                   (t/testing "pipeline start"
+                     (h/pipeline-start {:parameters {:path {:group "dev"
+                                                            :name  "test"}}
+                                        :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.jobs")]
+                       (t/is (contains? data :run_id))
+                       (t/is (= {:group "dev"
+                                 :name  "test"}
+                                (dissoc data :run_id)))
+                       (t/is (= "pipeline/start" type)))))))
+
+(t/deftest pipeline-fanout-tests
+  (u/with-system (fn [_ queue]
+                   (lq/declare queue
+                               "bob.tests"
+                               {:exclusive   true
+                                :auto-delete true
+                                :durable     false})
+                   (lq/bind queue "bob.tests" "bob.fanout")
+                   (t/testing "pipeline stop"
+                     (h/pipeline-stop {:parameters {:path {:group "dev"
+                                                           :name  "test"
+                                                           :id    "a-run-id"}}
+                                       :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.tests")]
+                       (t/is (= {:group  "dev"
+                                 :name   "test"
+                                 :run_id "a-run-id"}
+                                data))
+                       (t/is (= "pipeline/stop" type))))
+                   (t/testing "pipeline pause"
+                     (h/pipeline-pause-unpause true
+                                               {:parameters {:path {:group "dev"
+                                                                    :name  "test"
+                                                                    :id    "a-run-id"}}
+                                                :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.tests")]
+                       (t/is (= {:group  "dev"
+                                 :name   "test"
+                                 :run_id "a-run-id"}
+                                data))
+                       (t/is (= "pipeline/pause" type))))
+                   (t/testing "pipeline unpause"
+                     (h/pipeline-pause-unpause false
+                                               {:parameters {:path {:group "dev"
+                                                                    :name  "test"
+                                                                    :id    "a-run-id"}}
+                                                :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.tests")]
+                       (t/is (= {:group  "dev"
+                                 :name   "test"
+                                 :run_id "a-run-id"}
+                                data))
+                       (t/is (= "pipeline/unpause" type)))))))

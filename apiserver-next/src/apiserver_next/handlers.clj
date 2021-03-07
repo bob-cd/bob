@@ -108,8 +108,8 @@
     queue                 :queue}]
   (exec #(publish queue
                   "pipeline/stop"
-                  "bob.direct"
-                  "bob.jobs"
+                  "bob.fanout"
+                  ""
                   (s/rename-keys pipeline-info {:id :run_id}))))
 
 (defn pipeline-pause-unpause
@@ -277,10 +277,10 @@
 
 (defn errors
   [{queue :queue}]
-  (f/try-all [result   (lb/get queue "bob.errors" true)
-              response (if (nil? result)
-                         "No more errors"
-                         result)]
+  (f/try-all [[_ result] (lb/get queue "bob.errors" true)
+              response   (if (nil? result)
+                           "No more errors"
+                           result)]
     (respond response)
     (f/when-failed [err]
       (respond (f/message err) 500))))
