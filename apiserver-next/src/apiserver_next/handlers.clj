@@ -35,7 +35,7 @@
    {:status status
     :body   {:message content}}))
 
-(defn publish
+(defn- publish
   [chan msg-type exchange routing-key message]
   (lb/publish chan
               exchange
@@ -44,7 +44,7 @@
               {:content-type "application/json"
                :type         msg-type}))
 
-(defn- exec
+(defn exec
   ([task]
    (exec task "Ok"))
   ([task response]

@@ -84,6 +84,9 @@
     (.stop ^Server (:api-server this))
     (assoc this :server nil)))
 
+(defprotocol IDatabase
+  (db-client [this]))
+
 (defrecord Database
   [db-url db-user db-password]
   component/Lifecycle
@@ -103,7 +106,13 @@
   (stop [this]
     (log/info "Disconnecting DB")
     (.close ^ICruxAPI (:client this))
-    (assoc this :client nil)))
+    (assoc this :client nil))
+  IDatabase
+  (db-client [this]
+             (:client this)))
+
+(defprotocol IQueue
+  (queue-chan [this]))
 
 (defrecord Queue
   [queue-url queue-user queue-password]
@@ -142,7 +151,10 @@
   (stop [this]
     (log/info "Disconnecting queue")
     (rmq/close (:conn this))
-    (assoc this :conn nil :chan nil)))
+    (assoc this :conn nil :chan nil))
+  IQueue
+  (queue-chan [this]
+              (:chan this)))
 
 (def system-map
   (component/system-map
