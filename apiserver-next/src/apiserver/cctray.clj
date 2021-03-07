@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns apiserver_next.cctray
+(ns apiserver.cctray
   (:require [clojure.data.xml :as xml]
             [crux.api :as crux]
             [failjure.core :as f]))

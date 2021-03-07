@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns apiserver_next.metrics
+(ns apiserver.metrics
   (:require [iapetos.core :as prometheus]
             [iapetos.export :as export]
             [failjure.core :as f]

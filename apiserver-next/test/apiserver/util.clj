@@ -13,10 +13,10 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns apiserver_next.util
+(ns apiserver.util
   (:require [com.stuartsierra.component :as component]
             [next.jdbc :as jdbc]
-            [apiserver_next.system :as sys]))
+            [apiserver.system :as sys]))
 
 (defn with-system
   [test-fn]

@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns apiserver_next.system
+(ns apiserver.system
   (:require [com.stuartsierra.component :as component]
             [environ.core :as env]
             [taoensso.timbre :as log]
@@ -25,7 +25,7 @@
             [langohr.channel :as lch]
             [langohr.queue :as lq]
             [langohr.exchange :as le]
-            [apiserver_next.server :as s])
+            [apiserver.server :as s])
   (:import [java.net ConnectException]
            [org.eclipse.jetty.server Server]
            [crux.api ICruxAPI]))

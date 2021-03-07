@@ -14,7 +14,7 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 ;; TODO: Throw all of this away when https://github.com/juxt/apex can be used.
-(ns apiserver_next.server
+(ns apiserver.server
   (:require [clojure.java.io :as io]
             [muuntaja.core :as m]
             [reitit.ring :as ring]
@@ -24,8 +24,8 @@
             [reitit.http.interceptors.parameters :as parameters]
             [reitit.http.interceptors.muuntaja :as muuntaja]
             [reitit.interceptor.sieppari :as sieppari]
-            [apiserver_next.handlers :as h]
-            [apiserver_next.healthcheck :as hc])
+            [apiserver.handlers :as h]
+            [apiserver.healthcheck :as hc])
   (:import [java.util Map$Entry]
            [java.util.concurrent Executors TimeUnit]
            [io.swagger.v3.oas.models.media StringSchema IntegerSchema ObjectSchema ArraySchema MediaType]

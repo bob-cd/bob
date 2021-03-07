@@ -13,21 +13,27 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns apiserver_next.main
-  (:require [clojure.repl :as repl]
-            [taoensso.timbre :as log]
-            [apiserver_next.system :as system])
-  (:gen-class))
+(ns apiserver.healthcheck
+  (:require [failjure.core :as f]
+            [crux.api :as crux]
+            [taoensso.timbre :as log]))
 
-(defn shutdown!
-  [& _]
-  (log/info "Received SIGINT, Shutting down ...")
-  (system/stop)
-  (shutdown-agents)
-  (log/info "Shutdown complete.")
-  (System/exit 0))
+(defn queue
+  [{:keys [queue]}]
+  (when (not (.isOpen queue))
+    (f/fail "Queue is unreachable")))
 
-(defn -main
-  [& _]
-  (repl/set-break-handler! shutdown!)
-  (system/start))
+;; TODO: Better health check
+(defn db
+  [{:keys [db]}]
+  (when (not (crux/status db))
+    (f/fail "DB is unhealthy")))
+
+(defn check
+  [opts]
+  (let [results (->> [queue db]
+                     (pmap #(% opts))
+                     (filter #(f/failed? %)))]
+    (when (seq results)
+      (run! #(log/errorf "Health checks failing: %s" (f/message %)) results)
+      (f/fail results))))

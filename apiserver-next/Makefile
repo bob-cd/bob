@@ -49,7 +49,7 @@ test:
 	docker network rm bob-net
 
 compile:
-	clojure -X:depstar uberjar :jar apiserver.jar :aot true :main-class apiserver_next.main
+	clojure -X:depstar uberjar :jar apiserver.jar :aot true :main-class apiserver.main
 
 docker-image:
 	true

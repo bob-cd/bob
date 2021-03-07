@@ -13,9 +13,9 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns apiserver_next.server-test
+(ns apiserver.server-test
   (:require [clojure.test :refer [deftest testing is]]
-            [apiserver_next.server :as server])
+            [apiserver.server :as server])
   (:import [java.util Map LinkedHashMap]
            [io.swagger.v3.oas.models Operation PathItem]
            [io.swagger.v3.oas.models.media Content StringSchema IntegerSchema ObjectSchema ArraySchema MediaType]

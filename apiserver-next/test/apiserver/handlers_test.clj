@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns apiserver_next.handlers-test
+(ns apiserver.handlers-test
   (:require [clojure.test :as t]
             [clojure.java.io :as io]
             [failjure.core :as f]
@@ -23,8 +23,8 @@
             [jsonista.core :as json]
             [crux.api :as crux]
             [java-http-clj.core :as http]
-            [apiserver_next.handlers :as h]
-            [apiserver_next.util :as u])
+            [apiserver.handlers :as h]
+            [apiserver.util :as u])
   (:import [java.time Instant]))
 
 (t/deftest helpers-test

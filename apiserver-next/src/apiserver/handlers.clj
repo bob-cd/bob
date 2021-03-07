@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns apiserver_next.handlers
+(ns apiserver.handlers
   (:require [clojure.java.io :as io]
             [clojure.set :as s]
             [clojure.instant :as ins]
@@ -23,9 +23,9 @@
             [langohr.basic :as lb]
             [crux.api :as crux]
             [java-http-clj.core :as http]
-            [apiserver_next.healthcheck :as hc]
-            [apiserver_next.metrics :as metrics]
-            [apiserver_next.cctray :as cctray])
+            [apiserver.healthcheck :as hc]
+            [apiserver.metrics :as metrics]
+            [apiserver.cctray :as cctray])
   (:import [java.util UUID]))
 
 (defn respond
