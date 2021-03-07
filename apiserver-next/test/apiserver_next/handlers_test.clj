@@ -210,7 +210,7 @@
                        (t/is (= "Cannot find status"
                                 (:message body))))))))
 
-(t/deftest pipeline-artifact-fetch
+(t/deftest pipeline-artifact-fetch-test
   (u/with-system (fn [db _]
                    (t/testing "fetching a valid artifact"
                      (crux/await-tx
@@ -252,3 +252,45 @@
                                                                      :store-name    "local"
                                                                      :artifact-name "yes"}}})]
                        (t/is (= 400 status)))))))
+
+(t/deftest pipeline-list-test
+  (u/with-system (fn [db _]
+                   (t/testing "listing pipelines"
+                     (crux/await-tx
+                       db
+                       (crux/submit-tx
+                         db
+                         [[:crux.tx/put
+                           {:crux.db/id :bob.pipeline.dev/test1
+                            :type       :pipeline
+                            :group      "dev"
+                            :name       "test1"
+                            :image      "busybox:musl"
+                            :steps      [{:cmd "echo yes"}]}]
+                          [:crux.tx/put
+                           {:crux.db/id :bob.pipeline.dev/test2
+                            :type       :pipeline
+                            :group      "dev"
+                            :name       "test2"
+                            :image      "alpine:latest"
+                            :steps      [{:cmd "echo yesnt"}]}]
+                          [:crux.tx/put
+                           {:crux.db/id :bob.pipeline.prod/test1
+                            :type       :pipeline
+                            :group      "prod"
+                            :name       "test1"
+                            :image      "alpine:latest"
+                            :steps      [{:cmd "echo boo"}]}]]))
+                     (let [resp (h/pipeline-list {:db         db
+                                                  :parameters {:query {:group "dev"}}})]
+                       (t/is (= [{:group "dev"
+                                  :image "alpine:latest"
+                                  :name  "test2"
+                                  :steps [{:cmd "echo yesnt"}]}
+                                 {:group "dev"
+                                  :image "busybox:musl"
+                                  :name  "test1"
+                                  :steps [{:cmd "echo yes"}]}]
+                                (-> resp
+                                    :body
+                                    :message))))))))
