@@ -372,3 +372,43 @@
                               (-> (h/artifact-store-list {:db db})
                                   :body
                                   :message)))))))
+
+(t/deftest raw-query-test
+  (u/with-system
+    (fn [db _]
+      (t/testing "direct query"
+        (crux/await-tx
+          db
+          (crux/submit-tx
+            db
+            [[:crux.tx/put
+              {:crux.db/id :food/biryani
+               :type       :indian}]]))
+        (t/is
+          (=
+            "[[{\"type\":\"indian\"}]]"
+            (:body
+              (h/query
+                {:db db
+                 :parameters
+                 {:query
+                  {:q "{:find  [(eql/project f [:type])]
+                        :where [[f :type :indian]]})"}}})))))
+      (t/testing "timed query"
+        (let [point-in-time (str (Instant/now))]
+          (crux/await-tx
+            db
+            (crux/submit-tx
+              db
+              [[:crux.tx/delete :food/biryani]]))
+          (t/is
+            (=
+              "[[{\"type\":\"indian\"}]]"
+              (:body
+                (h/query
+                  {:db db
+                   :parameters
+                   {:query {:q
+                            "{:find  [(eql/project f [:type])]
+                              :where [[f :type :indian]]})"
+                            :t point-in-time}}})))))))))
