@@ -14,7 +14,7 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 {:paths   ["src" "resources"]
- :deps    {org.clojure/clojure                 {:mvn/version "1.10.2"}
+ :deps    {org.clojure/clojure                 {:mvn/version "1.10.3"}
            com.fzakaria/slf4j-timbre           {:mvn/version "0.3.20"}
            com.novemberain/langohr             {:mvn/version "5.2.0"}
            com.stuartsierra/component          {:mvn/version "1.0.0"}
@@ -39,6 +39,6 @@
  :aliases {:test    {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.0.732"}
                                   org.clojure/test.check {:mvn/version "1.1.0"}}
                      :main-opts  ["-m" "kaocha.runner" "--reporter" "kaocha.report.progress/report"]}
-           :depstar {:replace-deps {seancorfield/depstar {:mvn/version "2.0.171"}}
+           :depstar {:replace-deps {seancorfield/depstar {:mvn/version "2.0.193"}}
                      :ns-default   hf.depstar
                      :exec-args    {}}}}

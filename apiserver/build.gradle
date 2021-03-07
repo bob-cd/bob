@@ -47,7 +47,7 @@ dependencies {
     implementation "metosin:jsonista:0.3.1"
     implementation "io.prometheus:simpleclient:$prometheusClientVersion"
     implementation "io.prometheus:simpleclient_vertx:$prometheusClientVersion"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.1"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.12.2"
 
     testImplementation "io.vertx:vertx-junit5:$vertxVersion"
     testImplementation "org.junit.jupiter:junit-jupiter:5.7.0"
