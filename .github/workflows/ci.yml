@@ -57,7 +57,7 @@ jobs:
           path: |
             entities/entities.jar
             runner/runner.jar
-            apiserver/build/libs/apiserver.jar
+            apiserver/apiserver.jar
 
   build-and-push:
     needs: "test"
@@ -77,7 +77,7 @@ jobs:
         run: |
           mv artifacts/entities/entities.jar entities/ && \
           mv artifacts/runner/runner.jar runner/ && \
-          mv artifacts/apiserver/build apiserver/
+          mv artifacts/apiserver/apiserver.jar apiserver/
 
       - name: "Build Docker images"
         run: "make -j3 docker-image"
