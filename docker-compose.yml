@@ -57,6 +57,8 @@ services:
     image: rabbitmq:3-alpine
     networks:
       - bob-net
+    ports:
+      - 5672:5672
     volumes:
       - queuedata:/var/lib/rabbitmq/mnesia
 
@@ -64,6 +66,8 @@ services:
     image: postgres:alpine
     networks:
       - bob-net
+    ports:
+      - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
@@ -75,6 +79,8 @@ services:
     image: ghcr.io/bob-cd/artifact-local
     networks:
       - bob-net
+    ports:
+      - 8001:8001
     volumes:
       - artifactdata:/opt/artifacts
 
@@ -82,6 +88,8 @@ services:
     image: ghcr.io/bob-cd/resource-git
     networks:
       - bob-net
+    ports:
+      - 8000:8000
 
 networks:
   bob-net:

@@ -24,162 +24,10 @@
             [reitit.http.interceptors.parameters :as parameters]
             [reitit.http.interceptors.muuntaja :as muuntaja]
             [reitit.interceptor.sieppari :as sieppari]
+            [navi.core :as navi]
             [apiserver.handlers :as h]
             [apiserver.healthcheck :as hc])
-  (:import [java.util Map$Entry]
-           [java.util.concurrent Executors TimeUnit]
-           [io.swagger.v3.oas.models.media StringSchema IntegerSchema ObjectSchema ArraySchema MediaType]
-           [io.swagger.v3.oas.models.parameters PathParameter QueryParameter RequestBody Parameter]
-           [io.swagger.v3.oas.models Operation PathItem]
-           [io.swagger.v3.parser OpenAPIV3Parser]
-           [io.swagger.v3.parser.core.models ParseOptions]))
-
-(declare spec)
-
-;; TODO: 🤮 -> 🤢
-(defn wrap-map
-  "Surrounds the key in a map for malli conformance"
-  [k m]
-  (if (contains? m k)
-    (update-in m
-               [k]
-               #(into [:map] %))
-    m))
-
-;; TODO: 🤮 -> 🤢
-(defn ->prop-schema
-  "Given a property and a required keys set, returns a malli spec.
-
-  Intended for RequestBody"
-  [required ^Map$Entry property]
-  (let [k          (.getKey property)
-        key-schema [(keyword k)]
-        key-schema (if (contains? required k)
-                     key-schema
-                     (conj key-schema {:optional true}))]
-    (conj key-schema
-          (-> property
-              .getValue
-              spec))))
-
-(defn ->param-schema
-  "Given a param applies the similar logic as prop to schema
-
-  Intended for Parameter"
-  [^Parameter param]
-  (let [key-spec [(-> param
-                      .getName
-                      keyword)]
-        key-spec (if (.getRequired param)
-                   key-spec
-                   (conj key-spec {:optional true}))]
-    (conj key-spec
-          (-> param
-              .getSchema
-              spec))))
-
-(defmulti spec class)
-
-(defmethod spec
-  StringSchema
-  [_]
-  string?)
-
-(defmethod spec
-  IntegerSchema
-  [_]
-  int?)
-
-(defmethod spec
-  ObjectSchema
-  [^ObjectSchema schema]
-  (let [required (->> schema
-                      .getRequired
-                      (into #{}))
-        schemas  (->> schema
-                      .getProperties
-                      (map #(->prop-schema required %))
-                      (into []))]
-    (into [:map {:closed false}] schemas)))
-
-(defmethod spec
-  ArraySchema
-  [^ArraySchema schema]
-  (let [items (.getItems schema)]
-    [:sequential
-     (if (nil? items)
-       any?
-       (spec items))]))
-
-(defmulti param->data class)
-
-;; TODO: 🤮🤮 -> 🤢 The extra [] is there to help with merge-with into
-(defmethod param->data
-  PathParameter
-  [param]
-  {:path [(->param-schema param)]})
-
-(defmethod param->data
-  QueryParameter
-  [param]
-  {:query [(->param-schema param)]})
-
-;; TODO: Handle more kinds of request-bodies
-(defmethod param->data
-  RequestBody
-  [^RequestBody param]
-  (let [^MediaType content (-> param
-                               .getContent
-                               .values
-                               .stream
-                               .findFirst
-                               .get)]
-    {:body (-> content
-               .getSchema
-               spec)}))
-
-(defn operation->data
-  [^Operation op handlers]
-  (let [params       (into [] (.getParameters op))
-        request-body (.getRequestBody op)
-        params       (if (nil? request-body)
-                       params
-                       (conj params request-body))
-        schemas      (->> params
-                          (map param->data)
-                          (apply merge-with into)
-                          (wrap-map :path)
-                          (wrap-map :query))
-        handler      {:handler (get handlers (.getOperationId op))}]
-    (if (seq schemas)
-      (assoc handler :parameters schemas)
-      handler)))
-
-(defn path-item->data
-  [^PathItem path-item handlers]
-  (->> path-item
-       .readOperationsMap
-       (map #(vector (-> ^Map$Entry %
-                         .getKey
-                         .toString
-                         .toLowerCase
-                         keyword)
-                     (-> ^Map$Entry %
-                         .getValue
-                         (operation->data handlers))))
-       (into {})))
-
-(defn ->routes
-  [^String api-spec handlers]
-  (let [parse-options (doto (ParseOptions.)
-                        (.setResolveFully true))]
-    (->> (.readContents (OpenAPIV3Parser.) api-spec nil parse-options)
-         .getOpenAPI
-         .getPaths
-         (mapv #(vector (.getKey ^Map$Entry %)
-                        (-> ^Map$Entry %
-                            .getValue
-                            (path-item->data handlers)))))))
+  (:import [java.util.concurrent Executors TimeUnit]))
 
 (defn system-interceptor
   [db queue]
@@ -197,7 +45,7 @@
     (http/router (-> "bob/api.yaml"
                      io/resource
                      slurp
-                     (->routes h/handlers))
+                     (navi/routes-from h/handlers))
                  {:data {:coercion     malli/coercion
                          :muuntaja     m/instance
                          :interceptors [(parameters/parameters-interceptor)
@@ -213,12 +61,3 @@
                                  :headers {"Content-Type" "application/json"}
                                  :body    "{\"message\": \"Took a wrong turn?\"}"})}))
     {:executor sieppari/executor}))
-
-(comment
-  (set! *warn-on-reflection* true)
-
-  (require '[clojure.pprint :as pp])
-  (pp/pprint (-> "bob/api.yaml"
-                 io/resource
-                 slurp
-                 (->routes h/handlers))))
