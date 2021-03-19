@@ -45,11 +45,11 @@
  :list    {:indent-arg  2
            :respect-nl? true}
  :vector  {:respect-nl? true}
- :map     {:comma?    false
-           :force-nl? true
-           :sort?     false
-           :justify?  true
-           :lift-ns?  false}
+ :map     {:comma?      false
+           :sort?       false
+           :justify?    true
+           :respect-nl? true
+           :lift-ns?    false}
  :pair    {:justify? true}
  :pair-fn {:hang? false}
  :style   :community
