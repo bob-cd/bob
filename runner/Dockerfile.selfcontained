@@ -15,7 +15,8 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-FROM azul/zulu-openjdk-alpine:15 AS jdk
+# TODO: Use native openjdk alpine images
+FROM azul/zulu-openjdk-alpine:16 AS jdk
 
 # TODO: See if these modules are enough?
 RUN /usr/lib/jvm/default-jvm/bin/jlink \

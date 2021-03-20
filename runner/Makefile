@@ -49,7 +49,7 @@ test:
 		--network bob-net \
 		ghcr.io/bob-cd/artifact-local
 	sleep 7 # TODO: Find a better way to wait till things come up.
-	clojure -M:test --fail-fast
+	clojure -J--add-opens -Jjava.base/java.util.concurrent=ALL-UNNAMED -M:test --fail-fast # TODO: Remove with https://github.com/bob-cd/bob/issues/96
 	docker kill bob-test-storage bob-test-queue resource-git artifact-local && \
 		docker rm bob-test-storage bob-test-queue resource-git artifact-local
 	docker network rm bob-net

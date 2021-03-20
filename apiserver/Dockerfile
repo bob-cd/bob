@@ -13,8 +13,9 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-FROM azul/zulu-openjdk-alpine:15-jre
+FROM adoptopenjdk/openjdk16:alpine-jre
 
 COPY apiserver.jar .
 
-ENTRYPOINT ["java", "-jar", "apiserver.jar"]
+# TODO: Remove with https://github.com/bob-cd/bob/issues/96
+ENTRYPOINT ["java", "--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED", "-jar", "apiserver.jar"]

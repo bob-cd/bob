@@ -19,4 +19,5 @@ set -e
 
 /usr/local/bin/dockerd-entrypoint.sh &
 
-/opt/jdk/bin/java -jar /opt/runner.jar
+# TODO: Remove with https://github.com/bob-cd/bob/issues/96
+/opt/jdk/bin/java --add-opens java.base/java.util.concurrent=ALL-UNNAMED -jar /opt/runner.jar

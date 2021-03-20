@@ -15,3 +15,4 @@
 
 Dockerfile* linguist-language=Dockerfile
 *.joker     linguist-language=Clojure
+.zprintrc   linguist-language=Clojure

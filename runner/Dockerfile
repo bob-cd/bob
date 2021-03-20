@@ -13,22 +13,9 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-FROM azul/zulu-openjdk-alpine:15 AS jdk
+FROM adoptopenjdk/openjdk16:alpine-jre
 
-# TODO: See if these modules are enough?
-RUN /usr/lib/jvm/default-jvm/bin/jlink \
-    --compress=2 \
-    --module-path jmods \
-    --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http \
-    --output jlinked
-
-
-# IMPORTANT: This container needs docker to run. Mount the host's docker.sock to /var/run/docker.sock
-FROM alpine:3
-
-WORKDIR /opt
-
-COPY --from=jdk /jlinked jdk
 COPY runner.jar .
 
-ENTRYPOINT ["jdk/bin/java", "-jar", "runner.jar"]
+# TODO: Remove with https://github.com/bob-cd/bob/issues/96
+ENTRYPOINT ["java", "--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED", "-jar", "runner.jar"]
