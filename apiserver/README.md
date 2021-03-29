@@ -52,7 +52,7 @@ Same as [Runner](/runner) and [Entities](/entities)
 
 ## Setting up the dev environment with the REPL
 - This uses [Component](https://github.com/stuartsierra/component) to manage state across the app.
-- When loaded into the editor/REPL, find the `reset` fn in this [namespace](/apiserver/src/apiserver_next/system.clj). Eval this when there is change to reload the state cleanly.
+- When loaded into the editor/REPL, find the `reset` fn in this [namespace](/apiserver/src/apiserver/system.clj). Eval this when there is change to reload the state cleanly.
 
 ### Running integration tests
 Run `make clean test` from this dir. (needs docker)
