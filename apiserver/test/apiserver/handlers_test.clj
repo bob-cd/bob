@@ -98,7 +98,7 @@
                                  :name  "test"}
                                 data))
                        (t/is (= "pipeline/delete" type))))
-                   (t/testing "pipeline start"
+                   (t/testing "pipeline start default"
                      (h/pipeline-start {:parameters {:path {:group "dev"
                                                             :name  "test"}}
                                         :queue      queue})
@@ -106,6 +106,19 @@
                        (t/is (contains? data :run_id))
                        (t/is (= {:group "dev"
                                  :name  "test"}
+                                (dissoc data :run_id)))
+                       (t/is (= "pipeline/start" type))))
+                   (t/testing "pipeline start with metadata"
+                     (h/pipeline-start {:parameters {:path {:group "dev"
+                                                            :name  "test"}
+                                                     :body "some metadata"}
+                                        :queue      queue})
+                     (let [{:keys [type data]} (queue-get queue "bob.jobs")]
+                       (println data)
+                       (t/is (contains? data :run_id))
+                       (t/is (= {:group    "dev"
+                                 :name     "test"
+                                 :metadata "some metadata"}
                                 (dissoc data :run_id)))
                        (t/is (= "pipeline/start" type)))))))
 
@@ -419,7 +432,7 @@
             "[[{\"type\":\"indian\"}]]"
             (:body
               (h/query
-                {:db db
+                {:db         db
                  :parameters
                  {:query
                   {:q "{:find  [(eql/project f [:type])]
@@ -436,9 +449,10 @@
               "[[{\"type\":\"indian\"}]]"
               (:body
                 (h/query
-                  {:db db
+                  {:db         db
                    :parameters
-                   {:query {:q
-                            "{:find  [(eql/project f [:type])]
+                   {:query
+                    {:q
+                     "{:find  [(eql/project f [:type])]
                               :where [[f :type :indian]]})"
-                            :t point-in-time}}})))))))))
+                     :t point-in-time}}})))))))))

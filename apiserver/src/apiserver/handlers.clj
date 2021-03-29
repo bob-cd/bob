@@ -93,14 +93,19 @@
                   pipeline-info)))
 
 (defn pipeline-start
-  [{{pipeline-info :path} :parameters
-    queue                 :queue}]
-  (let [id (str "r-" (UUID/randomUUID))]
+  [{{pipeline-info :path
+     metadata      :body}
+    :parameters
+    queue :queue}]
+  (let [id      (str "r-" (UUID/randomUUID))
+        message (if metadata
+                  (assoc pipeline-info :metadata metadata)
+                  pipeline-info)]
     (exec #(publish queue
                     "pipeline/start"
                     "bob.direct"
                     "bob.jobs"
-                    (assoc pipeline-info :run_id id))
+                    (assoc message :run_id id))
           id)))
 
 (defn pipeline-stop
@@ -136,9 +141,9 @@
                                :limit    ~lines
                                :offset   ~offset})]
     (->> result
-          (map first)
-          (map :line)
-          respond)
+         (map first)
+         (map :line)
+         respond)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 

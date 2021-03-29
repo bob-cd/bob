@@ -199,6 +199,13 @@ paths:
           schema:
             type: string
 
+      requestBody:
+        description: Special information to be passed to runners if necessary
+        content:
+          application/json:
+            schema:
+              type: object
+
       responses:
         "202":
           description: Successfully start the pipeline
