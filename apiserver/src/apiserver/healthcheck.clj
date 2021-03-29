@@ -16,7 +16,8 @@
 (ns apiserver.healthcheck
   (:require [failjure.core :as f]
             [crux.api :as crux]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log])
+  (:import [java.util.concurrent Executors TimeUnit]))
 
 (defn queue
   [{:keys [queue]}]
@@ -37,3 +38,10 @@
     (when (seq results)
       (run! #(log/errorf "Health checks failing: %s" (f/message %)) results)
       (f/fail results))))
+
+(defn schedule
+  [queue database health-check-freq]
+  (let [health-check-cron #(check {:queue queue
+                                      :db    database})
+        scheduler         (Executors/newScheduledThreadPool 1)]
+    (.scheduleAtFixedRate scheduler health-check-cron 0 health-check-freq TimeUnit/MILLISECONDS)))

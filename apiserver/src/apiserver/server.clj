@@ -26,8 +26,7 @@
             [reitit.interceptor.sieppari :as sieppari]
             [navi.core :as navi]
             [apiserver.handlers :as h]
-            [apiserver.healthcheck :as hc])
-  (:import [java.util.concurrent Executors TimeUnit]))
+            [apiserver.healthcheck :as hc]))
 
 (defn system-interceptor
   [db queue]
@@ -35,12 +34,10 @@
                (update-in [:request :db] (constantly db))
                (update-in [:request :queue] (constantly queue)))})
 
+
 (defn server
   [database queue health-check-freq]
-  (let [health-check-cron #(hc/check {:queue queue
-                                      :db    database})
-        scheduler         (Executors/newScheduledThreadPool 1)]
-    (.scheduleAtFixedRate scheduler health-check-cron 0 health-check-freq TimeUnit/MILLISECONDS))
+  (hc/schedule queue database health-check-freq)
   (http/ring-handler
     (http/router (-> "bob/api.yaml"
                      io/resource
@@ -61,3 +58,9 @@
                                  :headers {"Content-Type" "application/json"}
                                  :body    "{\"message\": \"Took a wrong turn?\"}"})}))
     {:executor sieppari/executor}))
+
+(comment
+  (clojure.pprint/pprint (-> "bob/api.yaml"
+                             io/resource
+                             slurp
+                             (navi/routes-from h/handlers))))
