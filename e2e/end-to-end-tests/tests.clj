@@ -18,14 +18,52 @@
             [org.httpkit.client :as http]
             [cheshire.core :as json]))
 
+(defn sleep-off-side-effects
+  [f]
+  (f)
+  (Thread/sleep 100))
+
+(t/use-fixtures :each sleep-off-side-effects)
+
 (defn get-resp-message
   [body]
   (:message (json/parse-string body true)))
 
 
-(t/deftest health-check
+(def bob-url "http://localhost:7777")
+
+(t/deftest health-check-test
   (t/testing "testing the health check endpoing"
     (let [{:keys [body status]} @(http/get "http://localhost:7777/can-we-build-it")]
       (t/is (= 200 status))
       (t/is (= "Yes we can! 🔨 🔨" (get-resp-message body))))))
 
+(t/deftest resource-providers-test
+  (let [provider-name "resource-git"
+        provider-url  "http://localhost:8000"]
+    (t/testing "can add resources"
+      (let [options               {:headers {"content-type" "application/json"}
+                                   :body
+                                   (json/generate-string {:url provider-url})}
+            {:keys [body status]}
+            @(http/post (format "%s/resource-providers/%s"
+                                bob-url
+                                provider-name)
+                        options)]
+        (Thread/sleep 500)
+        (t/is (= 200 status))
+        (t/is (= "Ok" (get-resp-message body)))))
+
+    (t/testing "can list resource providers"
+      (let [{:keys [body status]} @(http/get (format "%s/resource-providers" bob-url))]
+        (t/is (= 200 status))
+        (t/is (= [{:name provider-name :url provider-url}] (get-resp-message body)))))
+
+    (t/testing "can remove resource providers"
+      (let [options               {:headers {"content-type" "application/json"}}
+            {:keys [body status]} @(http/delete (format "%s/resource-providers/%s"
+                                                        bob-url
+                                                        provider-name)
+                                                options)]
+        (t/is (= 200 status))
+        (t/is (= "Ok" (get-resp-message body)))))))
