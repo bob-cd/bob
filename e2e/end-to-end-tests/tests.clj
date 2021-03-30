@@ -23,8 +23,8 @@
   (:message (json/parse-string body true)))
 
 
-(t/deftest hello-world
-  (t/testing "testing an http requrest"
+(t/deftest health-check
+  (t/testing "testing the health check endpoing"
     (let [{:keys [body status]} @(http/get "http://localhost:7777/can-we-build-it")]
       (t/is (= 200 status))
       (t/is (= "Yes we can! 🔨 🔨" (get-resp-message body))))))

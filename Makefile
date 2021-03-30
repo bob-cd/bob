@@ -17,7 +17,7 @@ entities-dir := "entities"
 runner-dir := "runner"
 apiserver-dir := "apiserver"
 
-.PHONY: test $(entities-dir) $(runner-dir) $(apiserver-dir)
+.PHONY: test e2e $(entities-dir) $(runner-dir) $(apiserver-dir)
 
 all: entities runner apiserver
 
@@ -64,6 +64,9 @@ docker-push-runner: $(runner-dir)
 
 docker-push-apiserver: $(apiserver-dir)
 	$(MAKE) --directory=$(apiserver-dir) docker-push
+
+e2e:
+	docker-compose up -d && cd e2e && bb run.clj
 
 clean:
 	$(MAKE) --directory=$(runner-dir) clean

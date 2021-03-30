@@ -17,16 +17,30 @@
 
 (require '[clojure.test :as t]
          '[babashka.classpath :as cp]
-         '[babashka.wait :as wait])
+         '[org.httpkit.client :as http])
+
+(defn wait-for-healthy
+  ([] (wait-for-healthy 1000))
+  ([wait]
+   (try
+     (let [status
+           (:status @(http/get "http://localhost:7777/can-we-build-it"))]
+       (when-not (= status 200)
+         (println "Server found but not ready, retrying")
+         (Thread/sleep wait)
+         (wait-for-healthy (+ 200 wait))))
+     (catch Exception _
+       (println "No server found, retrying")
+       (wait-for-healthy (+ 200 wait))))))
+
 
 (println "Waiting for bob to start up on localhost:7777")
-(wait/wait-for-port "localhost" 7777)
+(wait-for-healthy)
 (println "Found bob")
 
 (cp/add-classpath "end-to-end-tests")
 
 (require 'tests)
-(println "Running tests")
 (def test-results
   (t/run-tests 'tests))
 

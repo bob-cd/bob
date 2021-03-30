@@ -33,7 +33,7 @@ jobs:
       - name: "Prepare tools-deps"
         uses: "DeLaGuardo/setup-clojure@master"
         with:
-          cli: '1.10.3.814'
+          cli: "1.10.3.814"
 
       - name: "Apply Cache"
         uses: "actions/cache@v2"
@@ -45,6 +45,14 @@ jobs:
 
       - name: "Run all tests"
         run: "make test" # TODO: Run in parallel with namespaced resources
+
+      - name: Setup Babashka
+        uses: turtlequeue/setup-babashka@v1.2.1
+        with:
+          babashka-version: 0.3.0
+
+      - name: "Run end to end tests"
+        run: "make e2e"
 
       - name: "Build JARs"
         run: "make -j3 compile"
