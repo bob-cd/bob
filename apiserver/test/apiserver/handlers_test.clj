@@ -104,21 +104,22 @@
                                         :queue      queue})
                      (let [{:keys [type data]} (queue-get queue "bob.jobs")]
                        (t/is (contains? data :run_id))
-                       (t/is (= {:group "dev"
-                                 :name  "test"}
+                       (t/is (= {:group    "dev"
+                                 :name     "test"
+                                 :metadata {:runner/type "docker"}}
                                 (dissoc data :run_id)))
                        (t/is (= "pipeline/start" type))))
                    (t/testing "pipeline start with metadata"
                      (h/pipeline-start {:parameters {:path {:group "dev"
                                                             :name  "test"}
-                                                     :body "some metadata"}
+                                                     :body {:runner/type "something else"}}
                                         :queue      queue})
                      (let [{:keys [type data]} (queue-get queue "bob.jobs")]
                        (println data)
                        (t/is (contains? data :run_id))
                        (t/is (= {:group    "dev"
                                  :name     "test"
-                                 :metadata "some metadata"}
+                                 :metadata {:runner/type "something else"}}
                                 (dissoc data :run_id)))
                        (t/is (= "pipeline/start" type)))))))
 

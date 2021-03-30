@@ -205,6 +205,12 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - runner/type
+              properties:
+                runner/type:
+                  description: Describes which runner type a job is intended for, defaults to docker
+                  type: string
 
       responses:
         "202":

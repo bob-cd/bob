@@ -98,9 +98,11 @@
     :parameters
     queue :queue}]
   (let [id      (str "r-" (UUID/randomUUID))
-        message (if metadata
-                  (assoc pipeline-info :metadata metadata)
-                  pipeline-info)]
+        message (assoc pipeline-info
+                       :metadata
+                       (if metadata
+                         metadata
+                         {:runner/type "docker"}))]
     (exec #(publish queue
                     "pipeline/start"
                     "bob.direct"
