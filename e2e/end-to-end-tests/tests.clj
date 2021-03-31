@@ -32,10 +32,16 @@
 (def bob-url "http://localhost:7777")
 
 (t/deftest health-check-test
-  (t/testing "testing the health check endpoing"
+  (t/testing "testing the health check endpoint"
     (let [{:keys [body status]} @(http/get "http://localhost:7777/can-we-build-it")]
       (t/is (= 200 status))
       (t/is (= "Yes we can! 🔨 🔨" (get-resp-message body))))))
+
+(t/deftest api-test
+  (t/testing "gets api spec as yaml"
+    (let [{:keys [headers status]} @(http/get (format "%s/api.yaml" bob-url))]
+      (t/is (= 200 status))
+      (t/is (= "application/yaml" (:content-type headers))))))
 
 (t/deftest resource-providers-test
   (let [provider-name "resource-git"
@@ -67,8 +73,31 @@
         (t/is (= 200 status))
         (t/is (= "Ok" (get-resp-message body)))))))
 
-(t/deftest api-test
-  (t/testing "gets api spec as yaml"
-    (let [{:keys [headers status]} @(http/get (format "%s/api.yaml" bob-url))]
-      (t/is (= 200 status))
-      (t/is (= "application/yaml" (:content-type headers))))))
+
+(t/deftest pipeline-test
+  (let [pipeline       {:steps [{:cmd "echo 123"}]
+                        :image "some docker image"}
+        pipeline-group "some-group"
+        pipeline-name  "some-name"]
+    (t/testing "creates a pipeline"
+      (let [options          {:headers {"content-type" "application/json"}
+                              :body
+                              (json/generate-string pipeline)}
+
+            {:keys [status]} @(http/post (format "%s/pipelines/groups/%s/names/%s"
+                                                 bob-url
+                                                 pipeline-group
+                                                 pipeline-name)
+                                         options)]
+        (t/is (= 200 status))))
+    (t/testing "lists pipelines"
+      (Thread/sleep 500)
+      (let [{:keys [body status]} @(http/get (format "%s/pipelines" bob-url))]
+
+        (t/is (= 200 status))
+        (t/is (= {:group pipeline-group
+                  :name  pipeline-name
+                  :image "some docker image"
+                  :steps [{:cmd "echo 123"}]}
+                 (first (get-resp-message body))))))))
+

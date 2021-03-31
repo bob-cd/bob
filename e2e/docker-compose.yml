@@ -1,0 +1,89 @@
+#   This file is part of Bob.
+#
+#   Bob is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU Affero General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Bob is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+version: "3"
+
+services:
+  runner:
+    image: ghcr.io/bob-cd/runner
+    networks:
+      - bob-net
+    depends_on:
+      - storage
+      - queue
+    environment:
+      BOB_STORAGE_URL: jdbc:postgresql://storage:5432/bob
+      BOB_QUEUE_URL: amqp://queue:5672
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  entities:
+    image: ghcr.io/bob-cd/entities
+    networks:
+      - bob-net
+    depends_on:
+      - storage
+      - queue
+    environment:
+      BOB_STORAGE_URL: jdbc:postgresql://storage:5432/bob
+      BOB_QUEUE_URL: amqp://queue:5672
+
+  apiserver:
+    image: ghcr.io/bob-cd/apiserver
+    ports:
+      - 7777:7777
+    networks:
+      - bob-net
+    depends_on:
+      - queue
+      - storage
+    environment:
+      BOB_STORAGE_URL: jdbc:postgresql://storage:5432/bob
+      BOB_QUEUE_URL: amqp://queue:5672
+
+  queue:
+    image: rabbitmq:3-alpine
+    networks:
+      - bob-net
+    ports:
+      - 5672:5672
+
+  storage:
+    image: postgres:alpine
+    networks:
+      - bob-net
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: bob
+      POSTGRES_USER: bob
+      POSTGRES_PASSWORD: bob
+
+  artifact:
+    image: ghcr.io/bob-cd/artifact-local
+    networks:
+      - bob-net
+    ports:
+      - 8001:8001
+
+  resource:
+    image: ghcr.io/bob-cd/resource-git
+    networks:
+      - bob-net
+    ports:
+      - 8000:8000
+
+networks:
+  bob-net:

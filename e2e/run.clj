@@ -17,7 +17,10 @@
 
 (require '[clojure.test :as t]
          '[babashka.classpath :as cp]
+         '[babashka.process :as p]
          '[org.httpkit.client :as http])
+
+@(p/process '[docker-compose up -d])
 
 (defn wait-for-healthy
   ([]
@@ -44,8 +47,13 @@
 (def test-results
   (t/run-tests 'tests))
 
+
 (def failures-and-errors
   (let [{:keys [:fail :error]} test-results]
     (+ fail error)))
 
+@(p/process '[docker-compose kill])
+@(p/process '[docker-compose rm -f])
+
 (System/exit failures-and-errors)
+

@@ -66,7 +66,7 @@ docker-push-apiserver: $(apiserver-dir)
 	$(MAKE) --directory=$(apiserver-dir) docker-push
 
 e2e:
-	docker-compose up -d && cd e2e && bb run.clj
+	cd e2e && bb run.clj
 
 clean:
 	$(MAKE) --directory=$(runner-dir) clean
