@@ -465,7 +465,7 @@ paths:
   "/pipelines/groups/{group}/names/{name}/runs/{id}/artifact-stores/{store-name}/artifact/{artifact-name}":
     get:
       operationId: PipelineArtifactFetch
-      summary: Fetches the artifact from pipeline of an artifact store
+      summary: Fetches artifact produced by a pipeline run
       tags:
         - pipeline
         - artifact
@@ -1077,7 +1077,7 @@ components:
           description: The list of steps to be executed sequentially
         image:
           type: string
-          description: The container image to use
+          description: The image to use, e.g. a docker or os image
         vars:
           type: object
           description: The key-value pairs of environment variables
