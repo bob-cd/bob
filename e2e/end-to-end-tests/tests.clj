@@ -16,6 +16,7 @@
 (ns tests
   (:require [clojure.test :as t]
             [org.httpkit.client :as http]
+            [clojure.set :as s]
             [cheshire.core :as json]))
 
 (defn sleep-off-side-effects
@@ -29,7 +30,34 @@
   [body]
   (:message (json/parse-string body true)))
 
+(defn run-id?
+  [s]
+  (-> s
+      (.substring 2)
+      (java.util.UUID/fromString)
+      (uuid?)))
+
 (def bob-url "http://localhost:7777")
+
+(defn running?
+  [id]
+  (let [{:keys [body]} @(http/get (format "%s/pipelines/status/runs/%s"
+                                          bob-url
+                                          id))
+        message        (get-resp-message body)]
+    (= "running" message)))
+
+(defn wait-until-complete
+  ([id]
+   (wait-until-complete id 1000))
+  ([id wait]
+   (Thread/sleep wait)
+   (when (running? id)
+     (recur id wait))))
+
+
+
+
 
 (t/deftest health-check-test
   (t/testing "testing the health check endpoint"
@@ -73,22 +101,23 @@
         (t/is (= 200 status))
         (t/is (= "Ok" (get-resp-message body)))))))
 
-
 (t/deftest pipeline-test
-  (let [pipeline       {:steps [{:cmd "echo 123"}]
-                        :image "some docker image"}
+  (let [image-name     "busybox:latest"
+        message        "123"
+        pipeline       {:steps [{:cmd (str "echo " message)}]
+                        :image image-name}
         pipeline-group "some-group"
         pipeline-name  "some-name"]
     (t/testing "creates a pipeline"
-      (let [options          {:headers {"content-type" "application/json"}
-                              :body
-                              (json/generate-string pipeline)}
+      (let [options               {:headers {"content-type" "application/json"}
+                                   :body
+                                   (json/generate-string pipeline)}
 
-            {:keys [status]} @(http/post (format "%s/pipelines/groups/%s/names/%s"
-                                                 bob-url
-                                                 pipeline-group
-                                                 pipeline-name)
-                                         options)]
+            {:keys [body status]} @(http/post (format "%s/pipelines/groups/%s/names/%s"
+                                                      bob-url
+                                                      pipeline-group
+                                                      pipeline-name)
+                                              options)]
         (t/is (= 200 status))))
     (t/testing "lists pipelines"
       (Thread/sleep 500)
@@ -97,7 +126,29 @@
         (t/is (= 200 status))
         (t/is (= {:group pipeline-group
                   :name  pipeline-name
-                  :image "some docker image"
+                  :image image-name
                   :steps [{:cmd "echo 123"}]}
-                 (first (get-resp-message body))))))))
+                 (first (get-resp-message body))))))
 
+    (t/testing "starts a pipeline"
+      (let [{:keys [body status]} @(http/post (format "%s/pipelines/start/groups/%s/names/%s"
+                                                      bob-url
+                                                      pipeline-group
+                                                      pipeline-name))]
+        (t/is (= 200 status))
+        (t/is (run-id? (get-resp-message body)))))
+
+    (t/testing "gets the logs of a pipeline"
+      (let [{:keys [body]}        @(http/post (format "%s/pipelines/start/groups/%s/names/%s"
+                                                      bob-url
+                                                      pipeline-group
+                                                      pipeline-name))
+            run-id                (get-resp-message body)
+            _                     (wait-until-complete run-id)
+            {:keys [body status]} @(http/get (format "%s/pipelines/logs/runs/%s/offset/%s/lines/%s"
+                                                     bob-url
+                                                     run-id
+                                                     0
+                                                     100))]
+        (t/is (s/subset? (set [message]) (set (get-resp-message body))))
+        (t/is (= 200 status))))))
