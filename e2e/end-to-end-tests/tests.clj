@@ -66,3 +66,9 @@
                                                 options)]
         (t/is (= 200 status))
         (t/is (= "Ok" (get-resp-message body)))))))
+
+(t/deftest api-test
+  (t/testing "gets api spec as yaml"
+    (let [{:keys [headers status]} @(http/get (format "%s/api.yaml" bob-url))]
+      (t/is (= 200 status))
+      (t/is (= "application/yaml" (:content-type headers))))))
