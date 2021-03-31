@@ -29,7 +29,6 @@
   [body]
   (:message (json/parse-string body true)))
 
-
 (def bob-url "http://localhost:7777")
 
 (t/deftest health-check-test

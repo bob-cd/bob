@@ -20,19 +20,19 @@
          '[org.httpkit.client :as http])
 
 (defn wait-for-healthy
-  ([] (wait-for-healthy 1000))
+  ([]
+   (wait-for-healthy 1000))
   ([wait]
+   (println (format "Waiting for %d seconds" wait))
+   (Thread/sleep wait)
    (try
-     (let [status
-           (:status @(http/get "http://localhost:7777/can-we-build-it"))]
+     (let [status (:status @(http/get "http://localhost:7777/can-we-build-it"))]
        (when-not (= status 200)
-         (println "Server found but not ready, retrying")
-         (Thread/sleep wait)
+         (println "Server found but not ready, retrying.")
          (wait-for-healthy (+ 200 wait))))
-     (catch Exception _
-       (println "No server found, retrying")
+     (catch Exception e
+       (println (format "Connection error: %s, retrying." (.getMessage e)))
        (wait-for-healthy (+ 200 wait))))))
-
 
 (println "Waiting for bob to start up on localhost:7777")
 (wait-for-healthy)

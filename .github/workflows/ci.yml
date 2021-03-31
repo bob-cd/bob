@@ -46,10 +46,10 @@ jobs:
       - name: "Run all tests"
         run: "make test" # TODO: Run in parallel with namespaced resources
 
-      - name: Setup Babashka
-        uses: turtlequeue/setup-babashka@v1.2.1
+      - name: "Setup Babashka"
+        uses: "turtlequeue/setup-babashka@v1.2.1"
         with:
-          babashka-version: 0.3.0
+          babashka-version: 0.3.1
 
       - name: "Run end to end tests"
         run: "make e2e"
