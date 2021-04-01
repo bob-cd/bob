@@ -200,7 +200,7 @@ paths:
             type: string
 
       requestBody:
-        description: Special information to be passed to runners if necessary
+        description: Optional metadata map for runners. If provided must include runner/type
         content:
           application/json:
             schema:

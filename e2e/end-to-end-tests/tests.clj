@@ -145,6 +145,7 @@
                                                       pipeline-name))
             run-id                (get-resp-message body)
             _                     (wait-until-complete run-id)
+            _                     (Thread/sleep 100) ;I'm experiencing flakiness without this
             {:keys [body status]} @(http/get (format "%s/pipelines/logs/runs/%s/offset/%s/lines/%s"
                                                      bob-url
                                                      run-id
