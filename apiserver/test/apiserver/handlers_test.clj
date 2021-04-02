@@ -436,7 +436,7 @@
                 {:db         db
                  :parameters
                  {:query
-                  {:q "{:find  [(eql/project f [:type])]
+                  {:q "{:find  [(pull f [:type])]
                         :where [[f :type :indian]]})"}}})))))
       (t/testing "timed query"
         (let [point-in-time (str (Instant/now))]
@@ -454,6 +454,6 @@
                    :parameters
                    {:query
                     {:q
-                     "{:find  [(eql/project f [:type])]
+                     "{:find  [(pull f [:type])]
                               :where [[f :type :indian]]})"
                      :t point-in-time}}})))))))))

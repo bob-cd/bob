@@ -60,7 +60,7 @@
   (crux/q (-> db
               sys/db-client
               crux/db)
-          '{:find [(eql/project resource-provider [:name :url])]
+          '{:find [(pull resource-provider [:name :url])]
             :where [[resource-provider :type :resource-provider]]})
 
   (crux/entity (-> db

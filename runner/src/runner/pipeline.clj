@@ -370,11 +370,11 @@
      :name  "test"})
 
   (crux/q (crux/db db-client)
-          '{:find  [(eql/project log [:line])]
+          '{:find  [(pull log [:line])]
             :where [[log :type :log-line] [log :run-id "r-60a0d2e8-ec6e-4004-8136-978f4e042f25"]]})
 
   (->> (crux/q (crux/db db-client)
-               '{:find  [(eql/project run [:crux.db/id])]
+               '{:find  [(pull run [:crux.db/id])]
                  :where [[run :type :pipeline-run]]})
        first
        (map :crux.db/id)

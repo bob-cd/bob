@@ -135,13 +135,13 @@
   [{{{:keys [id offset lines]} :path} :parameters
     db                                :db}]
   (f/try-all [result (crux/q (crux/db db)
-                             `{:find     [(eql/project log [:line]) time]
-                               :where    [[log :type :log-line]
-                                          [log :time time]
-                                          [log :run-id ~id]]
-                               :order-by [[time :asc]]
-                               :limit    ~lines
-                               :offset   ~offset})]
+                             {:find     '[(pull log [:line]) time]
+                              :where    [['log :type :log-line]
+                                         ['log :time 'time]
+                                         ['log :run-id id]]
+                              :order-by [['time :asc]]
+                              :limit    lines
+                              :offset   offset})]
     (->> result
          (map first)
          (map :line)
@@ -153,9 +153,9 @@
   [{{{:keys [id]} :path} :parameters
     db                   :db}]
   (f/try-all [result (crux/q (crux/db db)
-                             `{:find  [(eql/project run [:status])]
-                               :where [[run :type :pipeline-run]
-                                       [run :crux.db/id ~(keyword "bob.pipeline.run" id)]]})
+                             {:find  ['(pull run [:status])]
+                              :where [['run :type :pipeline-run]
+                                      ['run :crux.db/id (keyword "bob.pipeline.run" id)]]})
               status (->> result
                           (map first)
                           (map :status)
@@ -170,10 +170,10 @@
   [{{{:keys [group name]} :path} :parameters
     db                           :db}]
   (f/try-all [result (crux/q (crux/db db)
-                             `{:find  [(eql/project run [:status :crux.db/id])]
-                               :where [[run :type :pipeline-run]
-                                       [run :group ~group]
-                                       [run :name ~name]]})]
+                             {:find  ['(pull run [:status :crux.db/id])]
+                              :where [['run :type :pipeline-run]
+                                      ['run :group group]
+                                      ['run :name name]]})]
     (->> result
          (map first)
          (map #(s/rename-keys % {:crux.db/id :run_id}))
@@ -215,7 +215,7 @@
      :query}
     :parameters
     db :db}]
-  (f/try-all [base-query '{:find  [(eql/project pipeline [:steps :vars :resources :image :group :name])]
+  (f/try-all [base-query '{:find  [(pull pipeline [:steps :vars :resources :image :group :name])]
                            :where [[pipeline :type :pipeline]]}
               clauses    {:group  [['pipeline :group group]]
                           :name   [['pipeline :name name]]
@@ -251,7 +251,7 @@
 (defn resource-provider-list
   [{db :db}]
   (f/try-all [result (crux/q (crux/db db)
-                             '{:find  [(eql/project resource-provider [:name :url])]
+                             '{:find  [(pull resource-provider [:name :url])]
                                :where [[resource-provider :type :resource-provider]]})]
     (respond (map first result))
     (f/when-failed [err]
@@ -280,7 +280,7 @@
 (defn artifact-store-list
   [{db :db}]
   (f/try-all [result (crux/q (crux/db db)
-                             '{:find  [(eql/project artifact-store [:name :url])]
+                             '{:find  [(pull artifact-store [:name :url])]
                                :where [[artifact-store :type :artifact-store]]})]
     (respond (map first result))
     (f/when-failed [err]

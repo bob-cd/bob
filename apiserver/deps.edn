@@ -22,8 +22,8 @@
            environ/environ              {:mvn/version "1.2.0"}
            failjure/failjure            {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj  {:mvn/version "0.4.2"}
-           juxt/crux-core               {:mvn/version "21.02-1.15.0-beta"}
-           juxt/crux-jdbc               {:mvn/version "21.02-1.15.0-beta"}
+           juxt/crux-core               {:mvn/version "21.04-1.16.0-beta"}
+           juxt/crux-jdbc               {:mvn/version "21.04-1.16.0-beta"}
            org.postgresql/postgresql    {:mvn/version "42.2.19"}
            metosin/reitit-core          {:mvn/version "0.5.12"}
            metosin/reitit-http          {:mvn/version "0.5.12"}
@@ -32,13 +32,13 @@
            metosin/reitit-ring          {:mvn/version "0.5.12"}
            metosin/reitit-sieppari      {:mvn/version "0.5.12"}
            metosin/muuntaja             {:mvn/version "0.6.8"}
-           ring/ring-jetty-adapter      {:mvn/version "1.9.1"}
+           ring/ring-jetty-adapter      {:mvn/version "1.9.2"}
            clj-commons/iapetos          {:mvn/version "0.1.11"}
            org.clojars.lispyclouds/navi {:mvn/version "0.0.2"}
            org.clojure/data.xml         {:mvn/version "0.2.0-alpha6"}}
  :aliases {:test    {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.0.829"}
                                   org.clojure/test.check {:mvn/version "1.1.0"}}
                      :main-opts  ["-m" "kaocha.runner" "--reporter" "kaocha.report.progress/report"]}
-           :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
+           :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.211"}}
                      :ns-default   hf.depstar
                      :exec-args    {}}}}

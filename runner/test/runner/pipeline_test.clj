@@ -33,7 +33,7 @@
                              :line   "a log line"}
                             (-> (crux/db db)
                                 (crux/q
-                                  '{:find  [(eql/project log [:type :run-id :line])]
+                                  '{:find  [(pull log [:type :run-id :line])]
                                     :where [[log :run-id "a-run-id"]]})
                                 first
                                 first))))
@@ -46,7 +46,7 @@
                              :line   "[bob] another log line"}
                             (-> (crux/db db)
                                 (crux/q
-                                  '{:find  [(eql/project log [:type :run-id :line])]
+                                  '{:find  [(pull log [:type :run-id :line])]
                                     :where [[log :run-id "another-run-id"]]})
                                 first
                                 first)))))))

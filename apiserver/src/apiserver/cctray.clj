@@ -45,7 +45,7 @@
 (defn generate-report
   [db]
   (f/try-all [statuses (crux/q (crux/db db)
-                               '{:find  [(eql/project run [:group :name :status :completed :crux.db/id])]
+                               '{:find  [(pull run [:group :name :status :completed :crux.db/id])]
                                  :where [[pipeline :type :pipeline]
                                          [pipeline :group group]
                                          [pipeline :name name]
