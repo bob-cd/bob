@@ -25,8 +25,8 @@
            [java.time Instant]))
 
 (defonce ^:private node-state
-         (atom {:images-for-gc      {}
-                :current-containers {}}))
+         (atom {:images-for-gc {}
+                :runs          {}}))
 
 (defn log->db
   [db-client run-id line]
@@ -122,7 +122,7 @@
                 ;; Globally note the current container id, useful for stopping/pausing
                 _     (swap! node-state
                         update
-                        :current-containers
+                        :runs
                         assoc
                         run-id
                         id)
@@ -133,7 +133,7 @@
                           (docker/delete-container id)
                           (swap! node-state
                             update
-                            :current-containers
+                            :runs
                             dissoc
                             run-id))
                         result)
@@ -160,7 +160,7 @@
                 _     (docker/delete-container id)
                 _     (swap! node-state
                         update
-                        :current-containers
+                        :runs
                         dissoc
                         run-id)]
       (merge build-state
@@ -199,7 +199,9 @@
                   _                          (log/infof "Starting new run: %s" run_id)
                   txn                        (crux/submit-tx db-client
                                                              [[:crux.tx/put
-                                                               (assoc run-info :status :running :started (Instant/now))]])
+                                                               (assoc run-info
+                                                                      :status  :running
+                                                                      :started (Instant/now))]])
                   _                          (crux/await-tx db-client txn)
                   _                          (log-event db-client run_id (str "Pulling image " image))
                   _                          (docker/pull-image image)
@@ -243,20 +245,21 @@
   Sets the :status in Db to :stopped and kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
   [db-client _queue-chan {:keys [group name run_id]}]
-  (when-let [container (get-in @node-state [:current-containers run_id])]
+  (when-let [container (get-in @node-state [:runs run_id])]
     (log/infof "Stopping run %s for pipeline %s %s"
                run_id
                group
                name)
     (crux/await-tx db-client
-                   (crux/submit-tx db-client
-                                   [[:crux.tx/put
-                                     (assoc (run-info-of db-client run_id) :status :stopped :completed (Instant/now))]]))
+                   (crux/submit-tx
+                     db-client
+                     [[:crux.tx/put
+                       (assoc (run-info-of db-client run_id) :status :stopped :completed (Instant/now))]]))
     (docker/kill-container container)))
 
 (defn- pause-unpause-impl
   [db-client pause? {:keys [group name run_id]}]
-  (when-let [container (get-in @node-state [:current-containers run_id])]
+  (when-let [container (get-in @node-state [:runs run_id])]
     (log/infof "%s run %s for pipeline %s %s"
                (if pause?
                  "Pausing"
@@ -292,16 +295,16 @@
 
 (comment
   (reset! node-state
-          {:images-for-gc      {:run-id-1 (list "rabbitmq:3-alpine" "postgres:alpine")}
-           :current-containers {}})
+          {:images-for-gc {:run-id-1 (list "rabbitmq:3-alpine" "postgres:alpine")}
+           :runs          {}})
 
   (mark-image-for-gc "apline:latest" "r-1")
 
   (gc-images :run-id-1)
 
   (reset! node-state
-          {:images-for-gc      {}
-           :current-containers {}})
+          {:images-for-gc {}
+           :runs          {}})
 
   @node-state
 
