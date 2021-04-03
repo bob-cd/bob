@@ -91,6 +91,15 @@
   [{:keys [mounted]} {:keys [:needs_resource]}]
   (and needs_resource (not (contains? mounted needs_resource))))
 
+(defn clean-up-container
+  [id run-id]
+  (docker/delete-container id)
+  (swap! node-state
+    update-in
+    [:runs run-id]
+    dissoc
+    :container-id))
+
 (defn exec-step
   "Reducer function to excute a step from the previous build state.
 
@@ -121,21 +130,16 @@
                 id    (docker/create-container image step env)
                 ;; Globally note the current container id, useful for stopping/pausing
                 _     (swap! node-state
-                        update
-                        :runs
+                        update-in
+                        [:runs run-id]
                         assoc
-                        run-id
+                        :container-id
                         id)
                 _     (let [result (docker/start-container id
                                                            #(log->db db-client run-id %))]
                         (when (f/failed? result)
                           (log/debugf "Removing failed container %s" id)
-                          (docker/delete-container id)
-                          (swap! node-state
-                            update
-                            :runs
-                            dissoc
-                            run-id))
+                          (clean-up-container id run-id))
                         result)
                 _     (when-let [artifact (:produces_artifact step)]
                         (log-event db-client
@@ -157,12 +161,7 @@
                 image (docker/commit-image id "")
                 _     (mark-image-for-gc image run-id)
                 _     (log/debugf "Removing successful container %s" id)
-                _     (docker/delete-container id)
-                _     (swap! node-state
-                        update
-                        :runs
-                        dissoc
-                        run-id)]
+                _     (clean-up-container id run-id)]
       (merge build-state
              {:image   image
               :mounted (if-let [resource (:needs_resource step)]
@@ -178,6 +177,70 @@
   [db-client run-id]
   (crux/entity (crux/db db-client) (keyword (str "bob.pipeline.run/" run-id))))
 
+(defn clean-up-run
+  [run-id]
+  (swap! node-state
+    update
+    :runs
+    dissoc
+    run-id))
+
+(defn- start*
+  [db-client queue-chan group name run-id run-info run-db-id]
+  (f/try-all [pipeline                   (crux/entity (crux/db db-client)
+                                                      (keyword (format "bob.pipeline.%s/%s"
+                                                                       group
+                                                                       name)))
+              _                          (when-not pipeline
+                                           (f/fail (format "Unable to find pipeline %s/%s"
+                                                           group
+                                                           name)))
+              {:keys [image steps vars]} pipeline
+              _                          (log/infof "Starting new run: %s" run-id)
+              txn                        (crux/submit-tx db-client
+                                                         [[:crux.tx/put
+                                                           (assoc run-info
+                                                                  :status  :running
+                                                                  :started (Instant/now))]])
+              _                          (crux/await-tx db-client txn)
+              _                          (log-event db-client run-id (str "Pulling image " image))
+              _                          (docker/pull-image image)
+              _                          (mark-image-for-gc image run-id)
+              build-state                {:image     image
+                                          :mounted   #{}
+                                          :run-id    run-id
+                                          :db-client db-client
+                                          :env       vars
+                                          :group     group
+                                          :name      name}
+              _                          (reduce exec-step build-state steps) ;; This is WHOLE of Bob!
+              _                          (gc-images run-id)
+              _                          (clean-up-run run-id)
+              txn                        (crux/submit-tx db-client
+                                                         [[:crux.tx/put
+                                                           (assoc (run-info-of db-client run-id)
+                                                                  :status    :passed
+                                                                  :completed (Instant/now))]])
+              _                          (crux/await-tx db-client txn)
+              _                          (log/infof "Run successful %s" run-id)
+              _                          (log-event db-client run-id "Run successful")]
+    run-id
+    (f/when-failed [err]
+      (let [status (:status (crux/entity (crux/db db-client) run-db-id))
+            error  (f/message err)]
+        (when-not (= status :stopped)
+          (log/infof "Marking run %s as failed with reason: %s"
+                     run-id
+                     error)
+          (log-event db-client run-id (str "Run failed: %s" error))
+          (crux/submit-tx db-client
+                          [[:crux.tx/put
+                            (assoc (run-info-of db-client run-id) :status :failed :completed (Instant/now))]])))
+      (gc-images run-id)
+      (clean-up-run run-id)
+      (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
+      (f/fail run-id))))
+
 (defn start
   "Attempts to asynchronously start a pipeline by group and name."
   [db-client queue-chan {:keys [group name run_id]}]
@@ -185,59 +248,15 @@
         run-info  {:crux.db/id run-db-id
                    :type       :pipeline-run
                    :group      group
-                   :name       name}]
-    (future
-      (f/try-all [pipeline                   (crux/entity (crux/db db-client)
-                                                          (keyword (format "bob.pipeline.%s/%s"
-                                                                           group
-                                                                           name)))
-                  _                          (when-not pipeline
-                                               (f/fail (format "Unable to find pipeline %s/%s"
-                                                               group
-                                                               name)))
-                  {:keys [image steps vars]} pipeline
-                  _                          (log/infof "Starting new run: %s" run_id)
-                  txn                        (crux/submit-tx db-client
-                                                             [[:crux.tx/put
-                                                               (assoc run-info
-                                                                      :status  :running
-                                                                      :started (Instant/now))]])
-                  _                          (crux/await-tx db-client txn)
-                  _                          (log-event db-client run_id (str "Pulling image " image))
-                  _                          (docker/pull-image image)
-                  _                          (mark-image-for-gc image run_id)
-                  build-state                {:image     image
-                                              :mounted   #{}
-                                              :run-id    run_id
-                                              :db-client db-client
-                                              :env       vars
-                                              :group     group
-                                              :name      name}
-                  _                          (reduce exec-step build-state steps) ;; This is WHOLE of Bob!
-                  _                          (gc-images run_id)
-                  txn                        (crux/submit-tx db-client
-                                                             [[:crux.tx/put
-                                                               (assoc (run-info-of db-client run_id)
-                                                                      :status    :passed
-                                                                      :completed (Instant/now))]])
-                  _                          (crux/await-tx db-client txn)
-                  _                          (log/infof "Run successful %s" run_id)
-                  _                          (log-event db-client run_id "Run successful")]
-        run_id
-        (f/when-failed [err]
-          (let [status (:status (crux/entity (crux/db db-client) run-db-id))
-                error  (f/message err)]
-            (when-not (= status :stopped)
-              (log/infof "Marking run %s as failed with reason: %s"
-                         run_id
-                         error)
-              (log-event db-client run_id (str "Run failed: %s" error))
-              (crux/submit-tx db-client
-                              [[:crux.tx/put
-                                (assoc (run-info-of db-client run_id) :status :failed :completed (Instant/now))]])))
-          (gc-images run_id)
-          (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
-          (f/fail run_id))))))
+                   :name       name}
+        run-ref   (future (start* db-client queue-chan group name run_id run-info run-db-id))]
+    (swap! node-state
+      update-in
+      [:runs run_id]
+      assoc
+      :ref
+      run-ref)
+    run-ref))
 
 (defn stop
   "Idempotently stops a pipeline by group, name and run_id
@@ -245,7 +264,7 @@
   Sets the :status in Db to :stopped and kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
   [db-client _queue-chan {:keys [group name run_id]}]
-  (when-let [container (get-in @node-state [:runs run_id])]
+  (when-let [run (get-in @node-state [:runs run_id])]
     (log/infof "Stopping run %s for pipeline %s %s"
                run_id
                group
@@ -255,11 +274,17 @@
                      db-client
                      [[:crux.tx/put
                        (assoc (run-info-of db-client run_id) :status :stopped :completed (Instant/now))]]))
-    (docker/kill-container container)))
+    (when-let [container (:container-id run)]
+      (docker/kill-container container)
+      (docker/delete-container container)
+      (gc-images run_id))
+    (when-let [run (get-in @node-state [:runs run_id :ref])]
+      (when-not (future-done? run)
+        (future-cancel run)))))
 
 (defn- pause-unpause-impl
   [db-client pause? {:keys [group name run_id]}]
-  (when-let [container (get-in @node-state [:runs run_id])]
+  (when-let [container (get-in @node-state [:runs run_id :container-id])]
     (log/infof "%s run %s for pipeline %s %s"
                (if pause?
                  "Pausing"

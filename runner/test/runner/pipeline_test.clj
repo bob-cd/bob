@@ -375,22 +375,19 @@
                          {:group  "test"
                           :name   "pause-test"
                           :run_id "a-pause-id"})
-              _        (Thread/sleep 5000) ;; Longer, possibly flaky wait
+              _        (Thread/sleep 10000) ;; Longer, possibly flaky wait
               _        (p/pause db
                                 queue
                                 {:group  "test"
                                  :name   "pause-test"
                                  :run_id "a-pause-id"})
+              _        (Thread/sleep 2000) ;; Longer, possibly flaky wait
               _        (p/unpause db
                                   queue
                                   {:group  "test"
                                    :name   "pause-test"
                                    :run_id "a-pause-id"})
-              _        (p/stop db
-                         queue
-                         {:group  "test"
-                          :name   "pause-test"
-                          :run_id "a-pause-id"})
+              _        (Thread/sleep 2000) ;; Longer, possibly flaky wait
               history  (crux/entity-history (crux/db db)
                                             :bob.pipeline.run/a-pause-id
                                             :desc
@@ -401,4 +398,9 @@
                             (into #{}))]
           (is (not (contains? statuses :failed)))
           (is (contains? statuses :running))
-          (is (contains? statuses :paused)))))))
+          (is (contains? statuses :paused)))
+        (p/stop db
+          queue
+          {:group  "test"
+           :name   "pause-test"
+           :run_id "a-pause-id"})))))
