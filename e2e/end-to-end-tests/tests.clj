@@ -26,9 +26,15 @@
 (def default-pipeline
   {:steps [{:cmd (str "echo " default-message)}]
    :image default-image-name})
+(def infinite-pipeline
+  {:steps [{:cmd (str "while :; do echo " default-message "; sleep 1; done")}]
+   :image default-image-name})
 (def default-options
   {:headers {"content-type" "application/json"}
    :body    (json/generate-string default-pipeline)})
+(def infinite-options
+  {:headers {"content-type" "application/json"}
+   :body    (json/generate-string infinite-pipeline)})
 (def default-provider-name "resource-git")
 (def default-provider-url "http://localhost:8000")
 
@@ -115,6 +121,9 @@
 (defn create-pipeline
   "Returns true if pipeline matching group and name exists"
   [pgroup pname options]
+  (println (format "Creating pipeline with name %s and group %s"
+                   pname
+                   pgroup))
   (let [{:keys [body status]} @(http/post (format "%s/pipelines/groups/%s/names/%s"
                                                   bob-url
                                                   pgroup
@@ -136,6 +145,27 @@
                      run-id
                      0
                      100)))
+
+(defn stop-pipeline-run
+  "Stops pipeline, waits until side effect is done, and returns nil"
+  [pgroup pname run-id]
+  (println (format "stopping pipeline with run id %s and group %s and name %s"
+                   run-id
+                   pgroup
+                   pname))
+  (println "pipeline currently has status" (pipeline-status run-id))
+  @(http/post (str bob-url
+                   "/pipelines/stop/groups/"
+                   pgroup
+                   "/names/"
+                   pname
+                   "/runs/"
+                   run-id))
+
+  (wait-until-true #(or (pipeline-has-status? run-id "stopped")
+                        (pipeline-has-status? run-id "failed")))
+  (println "after stopping, it has status" (pipeline-status run-id)))
+
 
 (t/deftest health-check-test
   (t/testing "testing the health check endpoint"
@@ -195,12 +225,29 @@
       (t/is (pipeline-started? run-id))))
 
   (t/testing "gets the logs of a pipeline"
-    (let [pname                          (random-uuid)
-          pgroup                         (random-uuid)
-          _                              (create-pipeline pgroup pname default-options)
-          run-id                         (start-pipeline pgroup pname)
-          _                              (wait-until-true #(pipeline-has-status? run-id "passed"))
-          {:keys [body status] :as logs} (get-pipeline-logs run-id)
-          message                        (get-resp-message body)]
+    (let [pname                 (random-uuid)
+          pgroup                (random-uuid)
+          _                     (create-pipeline pgroup pname default-options)
+          run-id                (start-pipeline pgroup pname)
+          _                     (wait-until-true #(pipeline-has-status? run-id "passed"))
+          {:keys [body status]} (get-pipeline-logs run-id)
+          message               (get-resp-message body)]
       (t/is (s/subset? (set [default-message]) (set message)))
-      (t/is (= 200 status)))))
+      (t/is (= 200 status))))
+
+  (t/testing "stops a pipeline"
+    (let [pgroup (random-uuid)
+          pname  (random-uuid)
+          _      (println "creating pipeline")
+          _      (create-pipeline pgroup pname infinite-options)
+          _      (println "starting pipeline")
+          run-id (start-pipeline pgroup pname)
+          _      (println "pipeline has status " (pipeline-status run-id))
+          _      (wait-until-true #(pipeline-has-status? run-id "running"))
+          _      (println "ok now it's running...")
+          _      (stop-pipeline-run pgroup pname run-id)]
+      (println "done stopping")
+      (t/is (= "stopped" (pipeline-status run-id))))))
+
+(comment
+  (println "hello"))
