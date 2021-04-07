@@ -121,9 +121,6 @@
 (defn create-pipeline
   "Returns true if pipeline matching group and name exists"
   [pgroup pname options]
-  (println (format "Creating pipeline with name %s and group %s"
-                   pname
-                   pgroup))
   (let [{:keys [body status]} @(http/post (format "%s/pipelines/groups/%s/names/%s"
                                                   bob-url
                                                   pgroup
@@ -149,11 +146,7 @@
 (defn stop-pipeline-run
   "Stops pipeline, waits until side effect is done, and returns nil"
   [pgroup pname run-id]
-  (println (format "stopping pipeline with run id %s and group %s and name %s"
-                   run-id
-                   pgroup
-                   pname))
-  (println "pipeline currently has status" (pipeline-status run-id))
+
   @(http/post (str bob-url
                    "/pipelines/stop/groups/"
                    pgroup
@@ -162,9 +155,7 @@
                    "/runs/"
                    run-id))
 
-  (wait-until-true #(or (pipeline-has-status? run-id "stopped")
-                        (pipeline-has-status? run-id "failed")))
-  (println "after stopping, it has status" (pipeline-status run-id)))
+  (wait-until-true #(pipeline-has-status? run-id "stopped")))
 
 
 (t/deftest health-check-test
@@ -238,16 +229,7 @@
   (t/testing "stops a pipeline"
     (let [pgroup (random-uuid)
           pname  (random-uuid)
-          _      (println "creating pipeline")
           _      (create-pipeline pgroup pname infinite-options)
-          _      (println "starting pipeline")
           run-id (start-pipeline pgroup pname)
-          _      (println "pipeline has status " (pipeline-status run-id))
-          _      (wait-until-true #(pipeline-has-status? run-id "running"))
-          _      (println "ok now it's running...")
           _      (stop-pipeline-run pgroup pname run-id)]
-      (println "done stopping")
       (t/is (= "stopped" (pipeline-status run-id))))))
-
-(comment
-  (println "hello"))
