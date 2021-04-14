@@ -27,8 +27,10 @@
 (def default-pipeline
   {:steps [initial-step]
    :image default-image-name})
-(def infinite-pipeline
-  {:steps [initial-step {:cmd "sleep 10"} {:cmd (str "echo done")}]
+(def slow-pipeline
+  ; sleep 0.5 is required because pipeline is still unpause-able for the first half second
+  ; after the image is pulled
+  {:steps [{:cmd "sleep 1"} initial-step {:cmd "sleep 20"} {:cmd (str "echo done")}]
    :image default-image-name})
 
 (defn generate-options
@@ -38,8 +40,8 @@
 
 (def default-options
   (generate-options default-pipeline))
-(def infinite-options
-  (generate-options infinite-pipeline))
+(def slow-options
+  (generate-options slow-pipeline))
 
 (def default-provider-name "resource-git")
 (def default-provider-url "http://localhost:8000")
@@ -66,7 +68,7 @@
   (:message (json/parse-string body true)))
 
 
-(defn pipeline-status
+(defn get-pipeline-status
   [{:keys [run-id]}]
   (let [{:keys [body]} @(http/get (format "%s/pipelines/status/runs/%s"
                                           bob-url
@@ -76,17 +78,17 @@
 
 (defn pipeline-running?
   [pipeline-context]
-  (let [status (pipeline-status pipeline-context)]
-    (= "running" (pipeline-status pipeline-context))))
+  (let [status (get-pipeline-status pipeline-context)]
+    (= "running" (get-pipeline-status pipeline-context))))
 
 (defn pipeline-has-status?
   [pipeline-context status]
-  (let [actual-status (pipeline-status pipeline-context)]
+  (let [actual-status (get-pipeline-status pipeline-context)]
     (= status actual-status)))
 
 (defn pipeline-passed?
   [pipeline-context]
-  (= "passed" (pipeline-status pipeline-context)))
+  (= "passed" (get-pipeline-status pipeline-context)))
 
 (defn wait-until-true-timed
   [f]
@@ -96,9 +98,9 @@
       (recur f))))
 
 (defn wait-until-true
-  "Tries for 10 seconds to call f until it is true"
+  "Tries for 20 seconds to call f until it is true"
   [f]
-  (timeout 10000 #(wait-until-true-timed f)))
+  (timeout 20000 #(wait-until-true-timed f)))
 
 
 (defn start-pipeline
@@ -186,7 +188,7 @@
   (wait-until-true #(or (pipeline-has-status? pipeline-context "stopped")
                         (pipeline-has-status? pipeline-context "failed"))))
 
-(defn pause-pipeline-run
+(defn pause-pipeline-run!
   "Pauses pipeline, waits until side effect is done, and returns nil"
   [{:keys [group name run-id] :as pipeline-context}]
   @(http/post (str bob-url
@@ -196,17 +198,16 @@
                    name
                    "/runs/"
                    run-id))
-  (wait-until-true #(or (pipeline-has-status? pipeline-context "paused")
-                        (pipeline-has-status? pipeline-context "passed")))
+  (wait-until-true #(pipeline-has-status? pipeline-context "paused"))
   pipeline-context)
 
-(defn new-running-pipeline
+(defn new-running-pipeline!
   "Creates a pipeline and starts it, waiting for the status to be 'running' before returning the pipeline
   context"
   []
   (let [name             (random-uuid)
         group            (random-uuid)
-        _                (create-pipeline {:name name :group group} infinite-options)
+        _                (create-pipeline {:name name :group group} slow-options)
         pipeline-context (start-pipeline {:name name :group group})]
     pipeline-context))
 
@@ -262,17 +263,30 @@
 
 
   (t/testing "starts a pipeline"
-    (let [pipeline-context (new-running-pipeline)]
+    (let [pipeline-context (new-running-pipeline!)]
       (t/is (pipeline-started? pipeline-context))))
 
   (t/testing "gets the logs of a pipeline"
-    (let [pipeline-context (new-running-pipeline)
+    (let [pipeline-context (new-running-pipeline!)
           _                (wait-until-true #(pipeline-initialized? pipeline-context))
           pipeline-context (get-pipeline-logs pipeline-context)
           logs             (parse-logs pipeline-context)]
       (t/is (s/subset? (set [default-message]) (set logs)))))
 
   (t/testing "stops a pipeline"
-    (let [pipeline-context (new-running-pipeline)
+    (let [pipeline-context (new-running-pipeline!)
           _                (stop-pipeline-run pipeline-context)]
-      (t/is (= "stopped" (pipeline-status pipeline-context))))))
+      (t/is (= "stopped" (get-pipeline-status pipeline-context)))))
+  (t/testing "pauses a pipeline"
+    (let [pipeline-context (new-running-pipeline!)
+          _                (wait-until-true #(pipeline-initialized? pipeline-context))
+          _                (pause-pipeline-run! pipeline-context)]
+      (t/is (= "paused" (get-pipeline-status pipeline-context))))))
+
+(comment
+  (do
+    (def pipeline-context (new-running-pipeline!))
+    (wait-until-true #(pipeline-initialized? pipeline-context))
+    (pause-pipeline-run! pipeline-context)
+    (println (get-pipeline-status pipeline-context)))
+  (get-pipeline-logs pipeline-context))
