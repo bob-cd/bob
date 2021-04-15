@@ -32,9 +32,9 @@
    :image default-image-name})
 
 (defn generate-options
-  [pipeline]
+  [body]
   {:headers {"content-type" "application/json"}
-   :body    (json/generate-string pipeline)})
+   :body    (json/generate-string body)})
 
 (def default-options
   (generate-options default-pipeline))
@@ -64,7 +64,6 @@
 (defn get-resp-message
   [body]
   (:message (json/parse-string body true)))
-
 
 (defn get-pipeline-status
   [{:keys [run-id]}]
@@ -111,6 +110,35 @@
         _                (wait-until-true #(pipeline-running? pipeline-context))]
     pipeline-context))
 
+(def default-artifact-store-url "http://artifact:8001")
+(defn make-artifact-options
+  [{:keys [url]}]
+  {:url url})
+
+(defn list-artifact-stores
+  "Returns a list of artifact stores like [{:url some-url :name some-name}]"
+  []
+  (-> @(http/get (format "%s/artifact-stores" bob-url))
+      :body
+      get-resp-message))
+
+(defn artifact-store-exists?
+  [store-context]
+  (s/subset? (set [store-context])
+             (set (list-artifact-stores))))
+
+(defn create-artifact-store!
+  "Creates an artifact store"
+  []
+  (let [store-context {:url  default-artifact-store-url
+                       :name (random-uuid)}]
+    @(http/post (format "%s/artifact-stores/%s"
+                        bob-url
+                        (:name store-context))
+                (generate-options (make-artifact-options store-context)))
+    (wait-until-true #(artifact-store-exists? store-context))
+    store-context))
+
 (defn run-id?
   [s]
   (-> s
@@ -127,10 +155,8 @@
                                           name))]
     (get-resp-message body)))
 
-
-
 (defn run-id-exists?
-  [{:keys [group name run-id] :as pipeline-context}]
+  [{:keys [run-id] :as pipeline-context}]
   (let [runs (get-pipeline-runs pipeline-context)]
     (some?
       (:run_id
@@ -236,8 +262,6 @@
   (wait-until-true #(not (pipeline-exists? pipeline-context)))
   pipeline-context)
 
-
-
 (defn new-running-pipeline!
   "Creates a pipeline and starts it, waiting for the status to be 'running' before returning the pipeline
   context"
@@ -249,6 +273,12 @@
          pipeline-context (start-pipeline! {:name name :group group})]
      pipeline-context)))
 
+(defn delete-artifact-store!
+  [{:keys [name] :as store-context}]
+  @(http/delete (format "%s/artifact-stores/%s"
+                        bob-url
+                        name))
+  (wait-until-true #(not (artifact-store-exists? store-context))))
 
 (t/deftest health-check-test
   (t/testing "testing the health check endpoint"
@@ -302,23 +332,25 @@
   (t/testing "starts a pipeline"
     (let [pipeline-context (new-running-pipeline!)]
       (println (get-pipeline-status pipeline-context))
-      (t/is (pipeline-started? pipeline-context)))))
+      (t/is (pipeline-started? pipeline-context))))
 
-(t/testing "gets the logs of a pipeline"
-  (let [pipeline-context (new-running-pipeline!)
-        _                (wait-until-true #(pipeline-initialized? pipeline-context))
-        pipeline-context (get-pipeline-logs pipeline-context)
-        logs             (parse-logs pipeline-context)]
-    (t/is (s/subset? (set [default-message]) (set logs))))
+  (t/testing "gets the logs of a pipeline"
+    (let [pipeline-context (new-running-pipeline!)
+          _                (wait-until-true #(pipeline-initialized? pipeline-context))
+          pipeline-context (get-pipeline-logs pipeline-context)
+          logs             (parse-logs pipeline-context)]
+      (t/is (s/subset? (set [default-message]) (set logs)))))
 
   (t/testing "fetches a pipeline status"
     (let [pipeline-context (new-running-pipeline! slow-options)]
       (wait-until-true #(pipeline-initialized? pipeline-context))
       (t/is (= "running" (get-pipeline-status pipeline-context)))))
+
   (t/testing "fetches a list of pipelines runs"
     (let [pipeline-context (new-running-pipeline! slow-options)
           runs             (get-pipeline-runs pipeline-context)]
       (t/is (seq runs))))
+
   (t/testing "fetches a list of pipelines"
     (new-running-pipeline! slow-options)
     (t/is (get-pipelines)))
@@ -327,6 +359,7 @@
     (let [pipeline-context (new-running-pipeline! slow-options)
           _                (stop-pipeline-run pipeline-context)]
       (t/is (= "stopped" (get-pipeline-status pipeline-context)))))
+
   (t/testing "pauses a pipeline and can unpause it"
     (let [pipeline-context (new-running-pipeline! slow-options)]
       (wait-until-true #(pipeline-initialized? pipeline-context))
@@ -334,6 +367,7 @@
       (t/is (= "paused" (get-pipeline-status pipeline-context)))
       (unpause-pipeline-run! pipeline-context)
       (t/is (= "running" (get-pipeline-status pipeline-context)))))
+
   (t/testing "deletes a pipeline"
     (let [pipeline-context (new-running-pipeline! slow-options)]
       (wait-until-true #(pipeline-initialized? pipeline-context))
@@ -342,15 +376,14 @@
       (t/is (not (pipeline-exists? pipeline-context)))
       #_(t/is (= "Cannot find status" (get-pipeline-status pipeline-context))))))
 
-(comment
-  (do
-    (def pipeline-context (new-running-pipeline!))
-    (wait-until-true #(pipeline-initialized? pipeline-context))
-    (pause-pipeline-run! pipeline-context)
-    (println "status: " (get-pipeline-status pipeline-context)))
-  (println pipeline-context)
-  (println "logs: " (get-pipeline-logs pipeline-context))
-  (println "pipeline-exists: " (pipeline-exists? pipeline-context))
-  (pipeline-exists? pipeline-context)
-  (delete-pipeline! pipeline-context)
-  (get-pipeline-logs pipeline-context))
+(t/deftest artifact-test
+  (t/testing "creates an artifact and lists them"
+    (let [store-context (create-artifact-store!)]
+      (t/is (artifact-store-exists? store-context))))
+
+  (t/testing "deletes an artifact store"
+    (let [store-context (create-artifact-store!)]
+      (t/is (artifact-store-exists? store-context))
+      (delete-artifact-store! store-context)
+      (t/is (not (artifact-store-exists? store-context))))))
+
