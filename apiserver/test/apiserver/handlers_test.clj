@@ -29,7 +29,7 @@
 
 (t/deftest helpers-test
   (t/testing "default response"
-    (t/is (= {:status 200
+    (t/is (= {:status 202
               :body   {:message "response"}}
              (h/respond "response"))))
   (t/testing "response with status"
@@ -37,11 +37,11 @@
               :body   {:message "not found"}}
              (h/respond "not found" 404))))
   (t/testing "successful exec with default message"
-    (t/is (= {:status 200
+    (t/is (= {:status 202
               :body   {:message "Ok"}}
              (h/exec #(+ 1 2)))))
   (t/testing "successful exec with supplied message"
-    (t/is (= {:status 200
+    (t/is (= {:status 202
               :body   {:message "Yes"}}
              (h/exec #(+ 1 2) "Yes"))))
   (t/testing "failed exec"

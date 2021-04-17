@@ -19,14 +19,18 @@
             [clojure.set :as s]
             [cheshire.core :as json]))
 
-
 (def bob-url "http://localhost:7777")
+
 (def default-message "Initialized")
+
 (def default-image-name "alpine:latest")
+
 (def initial-step {:cmd (format "sh -c \"echo %s && sleep 1\"" default-message)})
+
 (def default-pipeline
   {:steps [initial-step]
    :image default-image-name})
+
 (def slow-pipeline
   {:steps [initial-step {:cmd "sleep 20"} {:cmd (str "echo done")}]
    :image default-image-name})
@@ -38,10 +42,12 @@
 
 (def default-options
   (generate-options default-pipeline))
+
 (def slow-options
   (generate-options slow-pipeline))
 
 (def default-provider-name "resource-git")
+
 (def default-provider-url "http://localhost:8000")
 
 (defn timeout
@@ -303,7 +309,7 @@
                               default-provider-name)
                       options)]
       (Thread/sleep 500)
-      (t/is (= 200 status))
+      (t/is (= 202 status))
       (t/is (= "Ok" (get-resp-message body)))))
 
   (t/testing "can list resource providers"
@@ -317,7 +323,7 @@
                                                       bob-url
                                                       default-provider-name)
                                               options)]
-      (t/is (= 200 status))
+      (t/is (= 202 status))
       (t/is (= "Ok" (get-resp-message body))))))
 
 
@@ -326,7 +332,7 @@
     (let [name             (random-uuid)
           group            (random-uuid)
           {:keys [status]} (create-pipeline! {:group group :name name} default-options)]
-      (t/is (= 200 status))
+      (t/is (= 202 status))
       (t/is (pipeline-exists? {:group group :name name}))))
 
   (t/testing "starts a pipeline"
@@ -386,4 +392,3 @@
       (t/is (artifact-store-exists? store-context))
       (delete-artifact-store! store-context)
       (t/is (not (artifact-store-exists? store-context))))))
-

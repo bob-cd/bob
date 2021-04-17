@@ -30,7 +30,7 @@
 
 (defn respond
   ([content]
-   (respond content 200))
+   (respond content 202))
   ([content status]
    {:status status
     :body   {:message content}}))
@@ -68,7 +68,7 @@
                          :queue queue})]
     (if (f/failed? check)
       (respond (f/message check) 500)
-      (respond "Yes we can! 🔨 🔨"))))
+      (respond "Yes we can! 🔨 🔨" 200))))
 
 (defn pipeline-create
   [{{{:keys [group name]} :path
@@ -134,18 +134,18 @@
 (defn pipeline-logs
   [{{{:keys [id offset lines]} :path} :parameters
     db                                :db}]
-  (f/try-all [result (crux/q (crux/db db)
-                             {:find     '[(pull log [:line]) time]
-                              :where    [['log :type :log-line]
-                                         ['log :time 'time]
-                                         ['log :run-id id]]
-                              :order-by [['time :asc]]
-                              :limit    lines
-                              :offset   offset})]
-    (->> result
-         (map first)
-         (map :line)
-         respond)
+  (f/try-all [result   (crux/q (crux/db db)
+                               {:find     '[(pull log [:line]) time]
+                                :where    [['log :type :log-line]
+                                           ['log :time 'time]
+                                           ['log :run-id id]]
+                                :order-by [['time :asc]]
+                                :limit    lines
+                                :offset   offset})
+              response (->> result
+                            (map first)
+                            (map :line))]
+    (respond response 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -161,7 +161,7 @@
                           (map :status)
                           first)]
     (if (some? status)
-      (respond status)
+      (respond status 200)
       (respond "Cannot find status" 404))
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -169,16 +169,16 @@
 (defn pipeline-runs-list
   [{{{:keys [group name]} :path} :parameters
     db                           :db}]
-  (f/try-all [result (crux/q (crux/db db)
-                             {:find  ['(pull run [:status :crux.db/id])]
-                              :where [['run :type :pipeline-run]
-                                      ['run :group group]
-                                      ['run :name name]]})]
-    (->> result
-         (map first)
-         (map #(s/rename-keys % {:crux.db/id :run_id}))
-         (map #(update % :run_id clojure.core/name))
-         respond)
+  (f/try-all [result   (crux/q (crux/db db)
+                               {:find  ['(pull run [:status :crux.db/id])]
+                                :where [['run :type :pipeline-run]
+                                        ['run :group group]
+                                        ['run :name name]]})
+              response (->> result
+                            (map first)
+                            (map #(s/rename-keys % {:crux.db/id :run_id}))
+                            (map #(update % :run_id clojure.core/name)))]
+    (respond response 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -224,7 +224,7 @@
               filters    (mapcat #(get clauses (key %)) query)
               result     (crux/q (crux/db db)
                                  (update-in base-query [:where] into filters))]
-    (respond (map first result))
+    (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -253,7 +253,7 @@
   (f/try-all [result (crux/q (crux/db db)
                              '{:find  [(pull resource-provider [:name :url])]
                                :where [[resource-provider :type :resource-provider]]})]
-    (respond (map first result))
+    (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -282,7 +282,7 @@
   (f/try-all [result (crux/q (crux/db db)
                              '{:find  [(pull artifact-store [:name :url])]
                                :where [[artifact-store :type :artifact-store]]})]
-    (respond (map first result))
+    (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -305,7 +305,7 @@
               response   (if (nil? result)
                            "No more errors"
                            result)]
-    (respond response)
+    (respond response 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
