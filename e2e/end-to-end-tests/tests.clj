@@ -17,7 +17,9 @@
   (:require [clojure.test :as t]
             [org.httpkit.client :as http]
             [clojure.set :as s]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [babashka.process :as p]
+            [babashka.fs :as fs]))
 
 (def bob-url "http://localhost:7777")
 
@@ -33,6 +35,18 @@
 
 (def slow-pipeline
   {:steps [initial-step {:cmd "sleep 20"} {:cmd (str "echo done")}]
+   :image default-image-name})
+(def default-artifact-name "artifact-file")
+
+
+(defn artifact-pipeline
+  [store-context]
+  {:steps [initial-step
+           {:cmd               (format "sh -c \"echo 123 > /tmp/%s\"" default-artifact-name)
+            :produces_artifact {:name  (:artifact-name store-context)
+                                :path  (str "/tmp/" default-artifact-name)
+                                :store (:store-name store-context)}}]
+
    :image default-image-name})
 
 (defn generate-options
@@ -129,18 +143,20 @@
       get-resp-message))
 
 (defn artifact-store-exists?
-  [store-context]
-  (s/subset? (set [store-context])
-             (set (list-artifact-stores))))
+  [{:keys [store-name]}]
+  (contains? (set (map :name (list-artifact-stores)))
+             store-name))
 
 (defn create-artifact-store!
   "Creates an artifact store"
   []
-  (let [store-context {:url  default-artifact-store-url
-                       :name (random-uuid)}]
+  (let [store-context {:url           default-artifact-store-url
+                       :store-name    (random-uuid)
+                       :artifact-name default-artifact-name}]
+
     @(http/post (format "%s/artifact-stores/%s"
                         bob-url
-                        (:name store-context))
+                        (:store-name store-context))
                 (generate-options (make-artifact-options store-context)))
     (wait-until-true #(artifact-store-exists? store-context))
     store-context))
@@ -280,11 +296,21 @@
      pipeline-context)))
 
 (defn delete-artifact-store!
-  [{:keys [name] :as store-context}]
+  [{:keys [store-name] :as store-context}]
   @(http/delete (format "%s/artifact-stores/%s"
                         bob-url
-                        name))
+                        store-name))
   (wait-until-true #(not (artifact-store-exists? store-context))))
+
+(defn get-pipeline-artifacts
+  [{:keys [group name run-id]} {:keys [store-name artifact-name]}]
+  @(http/get (format "%s/pipelines/groups/%s/names/%s/runs/%s/artifact-stores/%s/artifact/%s"
+                     bob-url
+                     group
+                     name
+                     run-id
+                     store-name
+                     artifact-name)))
 
 (t/deftest health-check-test
   (t/testing "testing the health check endpoint"
@@ -337,7 +363,6 @@
 
   (t/testing "starts a pipeline"
     (let [pipeline-context (new-running-pipeline!)]
-      (println (get-pipeline-status pipeline-context))
       (t/is (pipeline-started? pipeline-context))))
 
   (t/testing "gets the logs of a pipeline"
@@ -380,7 +405,20 @@
       (pause-pipeline-run! pipeline-context)
       (delete-pipeline! pipeline-context)
       (t/is (not (pipeline-exists? pipeline-context)))
-      #_(t/is (= "Cannot find status" (get-pipeline-status pipeline-context))))))
+      #_(t/is (= "Cannot find status" (get-pipeline-status pipeline-context)))))
+
+  (t/testing "fetches an artifact produced by a pipeline run"
+    (let [store-context    (create-artifact-store!)
+          pipeline-context (new-running-pipeline! (generate-options (artifact-pipeline store-context)))
+          _                (wait-until-true #(pipeline-has-status? pipeline-context "passed"))
+          artifacts        (get-pipeline-artifacts pipeline-context store-context)]
+      (->> artifacts
+           :body
+           slurp
+           (spit "output.tar"))
+      (p/sh '[tar -xf output.tar])
+      (t/is (= "123" (.trim (slurp default-artifact-name))))
+      (fs/delete "output.tar"))))
 
 (t/deftest artifact-test
   (t/testing "creates an artifact and lists them"
