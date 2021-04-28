@@ -119,17 +119,25 @@
                   ""
                   (s/rename-keys pipeline-info {:id :run_id}))))
 
+(defn- pausable?
+  [db run-id]
+  (let [{:keys [status]} (crux/entity (crux/db db) (keyword "bob.pipeline.run" run-id))]
+    (= :running status)))
+
 (defn pipeline-pause-unpause
   [pause?
    {{pipeline-info :path} :parameters
+    db                    :db
     queue                 :queue}]
-  (exec #(publish queue
-                  (if pause?
-                    "pipeline/pause"
-                    "pipeline/unpause")
-                  "bob.fanout"
-                  ""
-                  (s/rename-keys pipeline-info {:id :run_id}))))
+  (if (not (pausable? db (:id pipeline-info)))
+    (respond "Pipeline cannot be paused/is already paused now. Try again when running or stop it." 422)
+    (exec #(publish queue
+                    (if pause?
+                      "pipeline/pause"
+                      "pipeline/unpause")
+                    "bob.fanout"
+                    ""
+                    (s/rename-keys pipeline-info {:id :run_id})))))
 
 (defn pipeline-logs
   [{{{:keys [id offset lines]} :path} :parameters
@@ -152,14 +160,7 @@
 (defn pipeline-status
   [{{{:keys [id]} :path} :parameters
     db                   :db}]
-  (f/try-all [result (crux/q (crux/db db)
-                             {:find  ['(pull run [:status])]
-                              :where [['run :type :pipeline-run]
-                                      ['run :crux.db/id (keyword "bob.pipeline.run" id)]]})
-              status (->> result
-                          (map first)
-                          (map :status)
-                          first)]
+  (f/try-all [{:keys [status]} (crux/entity (crux/db db) (keyword "bob.pipeline.run" id))]
     (if (some? status)
       (respond status 200)
       (respond "Cannot find status" 404))

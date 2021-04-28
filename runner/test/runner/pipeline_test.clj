@@ -285,13 +285,12 @@
                            run-info (crux/entity (crux/db db) (keyword (str "bob.pipeline.run/" result)))
                            statuses (->> history
                                          (map :crux.db/doc)
-                                         (map :status)
-                                         (into #{}))]
+                                         (map :status))]
+                       (is (= [:passed :running :initializing]
+                              statuses))
                        (is (not (f/failed? result)))
                        (is (inst? (:started run-info)))
-                       (is (inst? (:completed run-info)))
-                       (is (contains? statuses :running))
-                       (is (contains? statuses :passed))))))
+                       (is (inst? (:completed run-info)))))))
 
   (testing "failed pipeline run"
     (u/with-system (fn [db queue]

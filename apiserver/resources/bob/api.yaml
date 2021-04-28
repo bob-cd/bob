@@ -334,6 +334,16 @@ paths:
                 success:
                   value:
                     message: "Ok"
+        "422":
+          description: Pipeline cannot be paused
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Pipeline cannot be paused now. Try again when running or stop it."
 
   "/pipelines/unpause/groups/{group}/names/{name}/runs/{id}":
     post:
@@ -1184,6 +1194,7 @@ components:
     StatusResponse:
       type: string
       enum:
+        - initializing
         - running
         - passed
         - failed

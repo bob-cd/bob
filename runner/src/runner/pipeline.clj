@@ -197,12 +197,12 @@
                                                            name)))
               {:keys [image steps vars]} pipeline
               _                          (log/infof "Starting new run: %s" run-id)
-              txn                        (crux/submit-tx db-client
-                                                         [[:crux.tx/put
-                                                           (assoc run-info
-                                                                  :status  :running
-                                                                  :started (Instant/now))]])
-              _                          (crux/await-tx db-client txn)
+              _                          (crux/await-tx db-client
+                                                        (crux/submit-tx db-client
+                                                                        [[:crux.tx/put
+                                                                          (assoc run-info
+                                                                                 :status  :initializing
+                                                                                 :started (Instant/now))]]))
               _                          (log-event db-client run-id (str "Pulling image " image))
               _                          (docker/pull-image image)
               _                          (mark-image-for-gc image run-id)
@@ -213,15 +213,21 @@
                                           :env       vars
                                           :group     group
                                           :name      name}
+              _                          (crux/await-tx db-client
+                                                        (crux/submit-tx db-client
+                                                                        [[:crux.tx/put
+                                                                          (assoc (run-info-of db-client run-id)
+                                                                                 :status
+                                                                                 :running)]]))
               _                          (reduce exec-step build-state steps) ;; This is WHOLE of Bob!
               _                          (gc-images run-id)
               _                          (clean-up-run run-id)
-              txn                        (crux/submit-tx db-client
-                                                         [[:crux.tx/put
-                                                           (assoc (run-info-of db-client run-id)
-                                                                  :status    :passed
-                                                                  :completed (Instant/now))]])
-              _                          (crux/await-tx db-client txn)
+              _                          (crux/await-tx db-client
+                                                        (crux/submit-tx db-client
+                                                                        [[:crux.tx/put
+                                                                          (assoc (run-info-of db-client run-id)
+                                                                                 :status    :passed
+                                                                                 :completed (Instant/now))]]))
               _                          (log/infof "Run successful %s" run-id)
               _                          (log-event db-client run-id "Run successful")]
     run-id

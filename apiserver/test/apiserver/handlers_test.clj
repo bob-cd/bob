@@ -124,13 +124,21 @@
                        (t/is (= "pipeline/start" type)))))))
 
 (t/deftest pipeline-fanout-tests
-  (u/with-system (fn [_ queue]
+  (u/with-system (fn [db queue]
                    (lq/declare queue
                                "bob.tests"
                                {:exclusive   true
                                 :auto-delete true
                                 :durable     false})
                    (lq/bind queue "bob.tests" "bob.fanout")
+                   (crux/await-tx db
+                                  (crux/submit-tx db
+                                                  [[:crux.tx/put
+                                                    {:crux.db/id :bob.pipeline.run/a-run-id
+                                                     :type       :pipeline-run
+                                                     :group      "dev"
+                                                     :name       "test"
+                                                     :status     :running}]]))
                    (t/testing "pipeline stop"
                      (h/pipeline-stop {:parameters {:path {:group "dev"
                                                            :name  "test"
@@ -147,6 +155,7 @@
                                                {:parameters {:path {:group "dev"
                                                                     :name  "test"
                                                                     :id    "a-run-id"}}
+                                                :db         db
                                                 :queue      queue})
                      (let [{:keys [type data]} (queue-get queue "bob.tests")]
                        (t/is (= {:group  "dev"
@@ -159,6 +168,7 @@
                                                {:parameters {:path {:group "dev"
                                                                     :name  "test"
                                                                     :id    "a-run-id"}}
+                                                :db         db
                                                 :queue      queue})
                      (let [{:keys [type data]} (queue-get queue "bob.tests")]
                        (t/is (= {:group  "dev"
@@ -457,3 +467,26 @@
                      "{:find  [(pull f [:type])]
                               :where [[f :type :indian]]})"
                      :t point-in-time}}})))))))))
+
+(t/deftest unprocessable-requests
+  (u/with-system
+    (fn [db queue]
+      (t/testing "pipeline cannot be paused when initializing"
+        (crux/await-tx
+          db
+          (crux/submit-tx db
+                          [[:crux.tx/put
+                            {:crux.db/id :bob.pipeline.run/pause-me-if-you-can
+                             :type       :pipeline-run
+                             :group      "dev"
+                             :name       "test"
+                             :status     :initializing}]]))
+        (let [{:keys [body status]} (h/pipeline-pause-unpause true
+                                                              {:parameters {:path {:group "dev"
+                                                                                   :name  "test"
+                                                                                   :id    "pause-me-if-you-can"}}
+                                                               :db         db
+                                                               :queue      queue})]
+          (t/is (= 422 status))
+          (t/is (= "Pipeline cannot be paused/is already paused now. Try again when running or stop it."
+                   (:message body))))))))
