@@ -24,15 +24,15 @@
            java-http-clj/java-http-clj  {:mvn/version "0.4.2"}
            juxt/crux-core               {:mvn/version "21.04-1.16.0-beta"}
            juxt/crux-jdbc               {:mvn/version "21.04-1.16.0-beta"}
-           org.postgresql/postgresql    {:mvn/version "42.2.19"}
-           metosin/reitit-core          {:mvn/version "0.5.12"}
-           metosin/reitit-http          {:mvn/version "0.5.12"}
-           metosin/reitit-interceptors  {:mvn/version "0.5.12"}
-           metosin/reitit-malli         {:mvn/version "0.5.12"}
-           metosin/reitit-ring          {:mvn/version "0.5.12"}
-           metosin/reitit-sieppari      {:mvn/version "0.5.12"}
+           org.postgresql/postgresql    {:mvn/version "42.2.20"}
+           metosin/reitit-core          {:mvn/version "0.5.13"}
+           metosin/reitit-http          {:mvn/version "0.5.13"}
+           metosin/reitit-interceptors  {:mvn/version "0.5.13"}
+           metosin/reitit-malli         {:mvn/version "0.5.13"}
+           metosin/reitit-ring          {:mvn/version "0.5.13"}
+           metosin/reitit-sieppari      {:mvn/version "0.5.13"}
            metosin/muuntaja             {:mvn/version "0.6.8"}
-           ring/ring-jetty-adapter      {:mvn/version "1.9.2"}
+           ring/ring-jetty-adapter      {:mvn/version "1.9.3"}
            clj-commons/iapetos          {:mvn/version "0.1.11"}
            org.clojars.lispyclouds/navi {:mvn/version "0.0.2"}
            org.clojure/data.xml         {:mvn/version "0.2.0-alpha6"}}
