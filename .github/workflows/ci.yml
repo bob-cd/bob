@@ -43,25 +43,25 @@ jobs:
           key: "${{ runner.os }}-bob-${{ hashFiles('{entities,runner}/deps.edn') }}"
           restore-keys: "${{ runner.os }}-bob-"
 
-      - name: "Run all tests"
-        run: "make test" # TODO: Run in parallel with namespaced resources
-
       - name: "Setup Babashka"
         uses: "turtlequeue/setup-babashka@v1.2.1"
         with:
-          babashka-version: 0.4.0
+          babashka-version: 0.4.1
+
+      - name: "Run all tests"
+        run: "bb test"
 
       - name: "Build JARs"
-        run: "make -j3 compile"
+        run: "bb compile"
 
       - name: "Build Docker images"
-        run: "make -j3 docker-image"
+        run: "bb image"
 
       - name: "Run end to end tests"
-        run: "make e2e"
+        run: "bb e2e"
 
       - name: "Publish Docker images"
         if: github.ref == 'refs/heads/main'
         run: |
           echo "${{ secrets.GCR_PAT }}" | docker login ghcr.io --username lispyclouds --password-stdin && \
-          make -j3 docker-push
+          bb push

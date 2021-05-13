@@ -1,0 +1,74 @@
+;   This file is part of Bob.
+;
+;   Bob is free software: you can redistribute it and/or modify
+;   it under the terms of the GNU Affero General Public License as published by
+;   the Free Software Foundation, either version 3 of the License, or
+;   (at your option) any later version.
+;
+;   Bob is distributed in the hope that it will be useful,
+;   but WITHOUT ANY WARRANTY; without even the implied warranty of
+;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;   GNU Affero General Public License for more details.
+;
+;   You should have received a copy of the GNU Affero General Public License
+;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+{:min-bb-version "0.4.0"
+
+ :tasks {docker-clean {:doc  "Cleans up cluster containers"
+                       :task (do
+                               (shell {:continue true} "docker kill bob-test-storage bob-test-queue artifact-local")
+                               (shell {:continue true} "docker rm bob-test-storage bob-test-queue artifact-local")
+                               (shell {:continue true} "docker network rm bob-net"))}
+         test         {:doc  "Sets up the cluster and runs tests"
+                       :task (do
+                               (run 'docker-clean)
+                               (shell {:continue true} "docker network create bob-net")
+                               (shell "docker run
+                                  -d
+                                  --name bob-test-storage
+                                  -p 5433:5432
+                                  -e POSTGRES_DB=bob-test
+                                  -e POSTGRES_USER=bob
+                                  -e POSTGRES_PASSWORD=bob
+                                  --network bob-net
+                                  postgres:alpine")
+                               (shell "docker run
+                                  -d
+                                  --name bob-test-queue
+                                  -p 5673:5672
+                                  --network bob-net
+                                  rabbitmq:3-alpine")
+                               (shell "docker run
+                                 -d
+                                 --name artifact-local
+                                 -p 8001:8001
+                                 --network bob-net
+                                 ghcr.io/bob-cd/artifact-local")
+                               ; TODO: Find a better way to wait till things come up
+                               (println "Waiting for the cluster to be ready")
+                               (Thread/sleep 7000)
+                               (shell "clojure
+                                 -J--add-opens
+                                 -Jjava.base/java.util.concurrent=ALL-UNNAMED
+                                 -M:test
+                                 --fail-fast")
+                               (run 'docker-clean))}
+         compile      {:doc  "Builds the compiled artifact"
+                       :task (shell "clojure
+                                -X:depstar
+                                uberjar
+                                :jar
+                                apiserver.jar
+                                :aot
+                                true
+                                :main-class
+                                apiserver.main")}
+         image        {:doc  "Builds the docker image"
+                       :task (shell "docker build -t ghcr.io/bob-cd/apiserver .")}
+         push         {:doc  "Pushes the docker image"
+                       :task (shell "docker push ghcr.io/bob-cd/apiserver")}
+         clean        {:doc  "Cleans up"
+                       :task (do
+                               (shell "rm -rf .cpcache apiserver.jar")
+                               (shell {:continue true} "docker rmi ghcr.io/bob-cd/apiserver"))}}}

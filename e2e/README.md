@@ -5,7 +5,7 @@ Running end to end tests gives us confidence in the work we do elsewhere on bob 
 ## Running
 From the project root, run:
 ```bash
-make e2e
+bb e2e
 ```
 
 ## Development

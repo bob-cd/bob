@@ -1,0 +1,82 @@
+;   This file is part of Bob.
+;
+;   Bob is free software: you can redistribute it and/or modify
+;   it under the terms of the GNU Affero General Public License as published by
+;   the Free Software Foundation, either version 3 of the License, or
+;   (at your option) any later version.
+;
+;   Bob is distributed in the hope that it will be useful,
+;   but WITHOUT ANY WARRANTY; without even the implied warranty of
+;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;   GNU Affero General Public License for more details.
+;
+;   You should have received a copy of the GNU Affero General Public License
+;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+{:min-bb-version "0.4.0"
+
+ :tasks {:init           (do
+                           (def apiserver-dir "apiserver")
+                           (def entities-dir "entities")
+                           (def runner-dir "runner")
+
+                           (def compile-task "bb compile")
+                           (def test-task "bb test")
+                           (def image-task "bb image")
+                           (def push-task "bb push")
+                           (def clean-task "bb clean"))
+
+         apiserver       {:doc  "Builds the apiserver"
+                          :task (shell {:dir apiserver-dir} compile-task)}
+         test-apiserver  {:doc  "Runs tests for the apiserver"
+                          :task (shell {:dir apiserver-dir} test-task)}
+         image-apiserver {:doc  "Make a docker image of the apiserver"
+                          :task (shell {:dir apiserver-dir} image-task)}
+         push-apiserver  {:doc  "Push the docker image of the apiserver"
+                          :task (shell {:dir apiserver-dir} push-task)}
+
+         entities        {:doc  "Builds the entities service"
+                          :task (shell {:dir entities-dir} compile-task)}
+         test-entities   {:doc  "Runs tests for the entities service"
+                          :task (shell {:dir entities-dir} test-task)}
+         image-entities  {:doc  "Make a docker image of the entities service"
+                          :task (shell {:dir entities-dir} image-task)}
+         push-entities   {:doc  "Push the docker image of the entities service"
+                          :task (shell {:dir entities-dir} push-task)}
+
+         runner          {:doc  "Builds the runner"
+                          :task (shell {:dir runner-dir} compile-task)}
+         test-runner     {:doc  "Runs tests for runner"
+                          :task (shell {:dir runner-dir} test-task)}
+         image-runner    {:doc  "Make a docker image of runner"
+                          :task (shell {:dir runner-dir} image-task)}
+         push-runner     {:doc  "Push the docker image of runner"
+                          :task (shell {:dir runner-dir} push-task)}
+
+         compile         {:doc  "Compile all services"
+                          :task (run '-compile {:parallel true})}
+         -compile        {:depends [apiserver entities runner]}
+
+         ; TODO: Run in parallel with namespaces resources
+         test            {:doc  "Run tests for all services"
+                          :task (do
+                                  (run 'test-apiserver)
+                                  (run 'test-entities)
+                                  (run 'test-runner))}
+
+         image           {:doc  "Build docker images for all services"
+                          :task (run '-image)}
+         -image          {:depends [image-apiserver image-entities image-runner]}
+
+         push            {:doc  "Push images for all the services"
+                          :task (run '-push)}
+         -push           {:depends [push-apiserver push-entities push-runner]}
+
+         e2e             {:doc  "Runs e2e tests"
+                          :task (shell {:dir "e2e"} "bb run.clj")}
+
+         clean           {:doc  "Clean up"
+                          :task (do
+                                  (shell {:dir apiserver-dir} clean-task)
+                                  (shell {:dir entities-dir} clean-task)
+                                  (shell {:dir runner-dir} clean-task))}}}
