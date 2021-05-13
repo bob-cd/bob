@@ -18,7 +18,7 @@ name: "Test-and-Publish"
 on: [push, pull_request]
 
 jobs:
-  test:
+  test_and_deploy:
     runs-on: "ubuntu-latest"
 
     steps:
@@ -33,7 +33,7 @@ jobs:
       - name: "Prepare tools-deps"
         uses: "DeLaGuardo/setup-clojure@master"
         with:
-          cli: "1.10.3.814"
+          cli: "1.10.3.833"
 
       - name: "Apply Cache"
         uses: "actions/cache@v2"
@@ -49,45 +49,16 @@ jobs:
       - name: "Setup Babashka"
         uses: "turtlequeue/setup-babashka@v1.2.1"
         with:
-          babashka-version: 0.3.5
-
-      - name: "Run end to end tests"
-        run: "make e2e"
+          babashka-version: 0.4.0
 
       - name: "Build JARs"
         run: "make -j3 compile"
 
-      - name: "Collect Artifacts"
-        uses: "actions/upload-artifact@v2"
-        with:
-          name: "bob-jars"
-          path: |
-            entities/entities.jar
-            runner/runner.jar
-            apiserver/apiserver.jar
-
-  build-and-push:
-    needs: "test"
-    runs-on: "ubuntu-latest"
-
-    steps:
-      - name: "Checkout code"
-        uses: "actions/checkout@v2"
-
-      - name: "Download Artifacts"
-        uses: "actions/download-artifact@v2"
-        with:
-          name: "bob-jars"
-          path: "artifacts"
-
-      - name: "Move Docker images"
-        run: |
-          mv artifacts/entities/entities.jar entities/ && \
-          mv artifacts/runner/runner.jar runner/ && \
-          mv artifacts/apiserver/apiserver.jar apiserver/
-
       - name: "Build Docker images"
         run: "make -j3 docker-image"
+
+      - name: "Run end to end tests"
+        run: "make e2e"
 
       - name: "Publish Docker images"
         if: github.ref == 'refs/heads/main'

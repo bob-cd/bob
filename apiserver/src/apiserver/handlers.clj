@@ -129,7 +129,7 @@
    {{pipeline-info :path} :parameters
     db                    :db
     queue                 :queue}]
-  (if (not (pausable? db (:id pipeline-info)))
+  (if (and pause? (not (pausable? db (:id pipeline-info))))
     (respond "Pipeline cannot be paused/is already paused now. Try again when running or stop it." 422)
     (exec #(publish queue
                     (if pause?

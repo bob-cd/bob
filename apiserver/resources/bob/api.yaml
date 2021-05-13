@@ -343,7 +343,7 @@ paths:
               examples:
                 success:
                   value:
-                    message: "Pipeline cannot be paused now. Try again when running or stop it."
+                    message: "Pipeline cannot be paused/is already paused now. Try again when running or stop it."
 
   "/pipelines/unpause/groups/{group}/names/{name}/runs/{id}":
     post:
