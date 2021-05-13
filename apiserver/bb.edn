@@ -23,8 +23,9 @@
          test         {:doc  "Sets up the cluster and runs tests"
                        :task (do
                                (run 'docker-clean)
-                               (shell {:continue true} "docker network create bob-net")
-                               (shell "docker run
+                               (try
+                                 (shell {:continue true} "docker network create bob-net")
+                                 (shell "docker run
                                   -d
                                   --name bob-test-storage
                                   -p 5433:5432
@@ -33,27 +34,28 @@
                                   -e POSTGRES_PASSWORD=bob
                                   --network bob-net
                                   postgres:alpine")
-                               (shell "docker run
+                                 (shell "docker run
                                   -d
                                   --name bob-test-queue
                                   -p 5673:5672
                                   --network bob-net
                                   rabbitmq:3-alpine")
-                               (shell "docker run
-                                 -d
-                                 --name artifact-local
-                                 -p 8001:8001
-                                 --network bob-net
-                                 ghcr.io/bob-cd/artifact-local")
-                               ; TODO: Find a better way to wait till things come up
-                               (println "Waiting for the cluster to be ready")
-                               (Thread/sleep 7000)
-                               (shell "clojure
-                                 -J--add-opens
-                                 -Jjava.base/java.util.concurrent=ALL-UNNAMED
-                                 -M:test
-                                 --fail-fast")
-                               (run 'docker-clean))}
+                                 (shell "docker run
+                                  -d
+                                  --name artifact-local
+                                  -p 8001:8001
+                                  --network bob-net
+                                  ghcr.io/bob-cd/artifact-local")
+                                 ; TODO: Find a better way to wait till things come up
+                                 (println "Waiting for the cluster to be ready")
+                                 (Thread/sleep 7000)
+                                 (shell "clojure
+                                  -J--add-opens
+                                  -Jjava.base/java.util.concurrent=ALL-UNNAMED
+                                  -M:test
+                                  --fail-fast")
+                                 (finally
+                                   (run 'docker-clean))))}
          compile      {:doc  "Builds the compiled artifact"
                        :task (shell "clojure
                                 -X:depstar
