@@ -20,13 +20,13 @@
          '[babashka.process :as p]
          '[org.httpkit.client :as http])
 
-@(p/process '[docker-compose up -d])
+(p/sh "docker-compose up -d")
 
 (defn wait-for-healthy
   ([]
    (wait-for-healthy 1000))
   ([wait]
-   (println (format "Waiting for %d seconds" wait))
+   (println (format "Waiting for %dms" wait))
    (Thread/sleep wait)
    (try
      (let [status (:status @(http/get "http://localhost:7777/can-we-build-it"))]
@@ -52,8 +52,7 @@
   (let [{:keys [:fail :error]} test-results]
     (+ fail error)))
 
-@(p/process '[docker-compose kill])
-@(p/process '[docker-compose rm -f])
+(p/sh "docker-compose kill")
+(p/sh "docker-compose rm -f")
 
 (System/exit failures-and-errors)
-

@@ -57,7 +57,7 @@
                           :task (run '-compile {:parallel true})}
          -compile        {:depends [apiserver entities runner]}
 
-         ; TODO: Run in parallel with namespaces resources
+         ; TODO: Run in parallel with namespaced resources
          test            {:doc  "Run tests for all services"
                           :task (run '-test)}
          -test           {:depends [test-apiserver test-entities test-runner]}
