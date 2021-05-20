@@ -15,7 +15,9 @@
 
 name: "Test-and-Publish"
 
-on: [push, pull_request]
+on:
+  - push
+  - pull_request
 
 jobs:
   test_and_deploy:
@@ -40,13 +42,13 @@ jobs:
         with:
           path: |
             ~/.m2/repository
-          key: "${{ runner.os }}-bob-${{ hashFiles('{entities,runner}/deps.edn') }}"
-          restore-keys: "${{ runner.os }}-bob-"
+          key: "bob-${{ hashFiles('{apiserver,entities,runner}/deps.edn') }}"
+          restore-keys: "bob-"
 
       - name: "Setup Babashka"
-        uses: "turtlequeue/setup-babashka@v1.2.1"
-        with:
-          babashka-version: 0.4.1
+        run: |
+          curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
+          sudo bash install
 
       - name: "Run all tests"
         run: "bb test"
