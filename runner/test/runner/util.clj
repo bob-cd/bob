@@ -16,29 +16,20 @@
 (ns runner.util
   (:require [com.stuartsierra.component :as component]
             [next.jdbc :as jdbc]
-            [runner.system :as sys]))
+            [system :as sys]
+            [runner.system :as rsys]))
 
 (defn with-system
   [test-fn]
-  (let [system (component/system-map
-                 :database (sys/map->Database {:db-url      "jdbc:postgresql://localhost:5433/bob-test"
-                                               :db-user     "bob"
-                                               :db-password "bob"})
-                 :queue    (component/using (sys/map->Queue {:queue-url      "amqp://localhost:5673"
-                                                             :queue-user     "guest"
-                                                             :queue-password "guest"})
-                                            [:database]))
-        {:keys [database queue]
-         :as   com}
-        (component/start system)
-        ds (jdbc/get-datasource {:dbtype   "postgresql"
-                                 :dbname   "bob-test"
-                                 :user     "bob"
-                                 :password "bob"
-                                 :host     "localhost"
-                                 :port     5433})]
-    (test-fn (sys/db-client database)
-             (sys/queue-chan queue))
-    (component/stop com)
-    ;; Reset DB fully for Crux
+  (let [db    (component/start (system/db "jdbc:postgresql://localhost:5433/bob-test" "bob" "bob"))
+        queue (component/start (system/queue "amqp://localhost:5673" "guest" "guest" (rsys/queue-conf db)))
+        ds    (jdbc/get-datasource {:dbtype   "postgresql"
+                                    :dbname   "bob-test"
+                                    :user     "bob"
+                                    :password "bob"
+                                    :host     "localhost"
+                                    :port     5433})]
+    (test-fn (sys/db-client db) (sys/queue-chan queue))
+    (component/stop queue)
+    (component/stop db)
     (jdbc/execute! ds ["DELETE FROM tx_events;"])))
