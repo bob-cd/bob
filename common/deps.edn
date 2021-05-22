@@ -1,0 +1,26 @@
+;   This file is part of Bob.
+;
+;   Bob is free software: you can redistribute it and/or modify
+;   it under the terms of the GNU Affero General Public License as published by
+;   the Free Software Foundation, either version 3 of the License, or
+;   (at your option) any later version.
+;
+;   Bob is distributed in the hope that it will be useful,
+;   but WITHOUT ANY WARRANTY; without even the implied warranty of
+;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;   GNU Affero General Public License for more details.
+;
+;   You should have received a copy of the GNU Affero General Public License
+;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+{:paths ["src"]
+ :deps  {org.clojure/clojure        {:mvn/version "1.10.3"}
+         failjure/failjure          {:mvn/version "2.2.0"}
+         com.fzakaria/slf4j-timbre  {:mvn/version "0.3.21"}
+         com.novemberain/langohr    {:mvn/version "5.2.0"}
+         com.stuartsierra/component {:mvn/version "1.0.0"}
+         com.taoensso/timbre        {:mvn/version "5.1.2"}
+         environ/environ            {:mvn/version "1.2.0"}
+         juxt/crux-core             {:mvn/version "21.04-1.16.0-beta"}
+         juxt/crux-jdbc             {:mvn/version "21.04-1.16.0-beta"}
+         org.postgresql/postgresql  {:mvn/version "42.2.20"}}}
