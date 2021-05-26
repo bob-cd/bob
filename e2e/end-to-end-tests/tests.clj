@@ -25,7 +25,7 @@
 
 (def default-message "Initialized")
 
-(def default-image-name "alpine:latest")
+(def default-image-name "busybox:musl")
 
 (def initial-step {:cmd (format "sh -c \"echo %s && sleep 1\"" default-message)})
 
@@ -37,7 +37,6 @@
   {:steps [initial-step {:cmd "sleep 20"} {:cmd (str "echo done")}]
    :image default-image-name})
 (def default-artifact-name "artifact-file")
-
 
 (defn artifact-pipeline
   [store-context]
@@ -117,7 +116,6 @@
   "Tries for 10 seconds to call f until it is true"
   [f]
   (timeout 10000 #(wait-until-true-timed f)))
-
 
 (defn start-pipeline!
   "Starts a pipeline, waits until the pipeline has status 'running', then returns the run id"
