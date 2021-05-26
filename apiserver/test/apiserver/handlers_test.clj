@@ -20,7 +20,7 @@
             [langohr.channel :as lch]
             [langohr.basic :as lb]
             [langohr.queue :as lq]
-            [jsonista.core :as json]
+            [clojure.data.json :as json]
             [crux.api :as crux]
             [java-http-clj.core :as http]
             [apiserver.handlers :as h]
@@ -74,7 +74,7 @@
   [chan queue]
   (let [[metadata payload] (lb/get chan queue true)]
     {:type (:type metadata)
-     :data (json/read-value payload json/keyword-keys-object-mapper)}))
+     :data (json/read-str payload :key-fn keyword)}))
 
 (t/deftest pipeline-direct-tests
   (u/with-system (fn [_ queue]

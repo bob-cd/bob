@@ -32,6 +32,7 @@
            clj-commons/iapetos          {:mvn/version "0.1.11"}
            org.clojars.lispyclouds/navi {:mvn/version "0.0.2"}
            org.clojure/data.xml         {:mvn/version "0.2.0-alpha6"}
+           org.clojure/data.json        {:mvn/version "2.3.1"}
            common/common                {:local/root "../common"}}
  :aliases {:test    {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.0.861"}
                                   org.clojure/test.check {:mvn/version "1.1.0"}}

@@ -15,7 +15,7 @@
 
 (ns common.errors
   (:require [langohr.basic :as lb]
-            [jsonista.core :as json]
+            [clojure.data.json :as json]
             [taoensso.timbre :as log]))
 
 (defn publish-error
@@ -24,6 +24,6 @@
   (lb/publish chan
               "" ; Default exchange
               "bob.errors"
-              (json/write-value-as-string {:message message})
+              (json/write-str {:message message})
               {:content-type "application/json"
                :type         "message/error"}))

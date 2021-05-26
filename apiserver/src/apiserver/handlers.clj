@@ -19,7 +19,7 @@
             [clojure.instant :as ins]
             [clojure.string :as cs]
             [failjure.core :as f]
-            [jsonista.core :as json]
+            [clojure.data.json :as json]
             [langohr.basic :as lb]
             [crux.api :as crux]
             [java-http-clj.core :as http]
@@ -40,7 +40,7 @@
   (lb/publish chan
               exchange
               routing-key
-              (json/write-value-as-string message)
+              (json/write-str message)
               {:content-type "application/json"
                :type         msg-type}))
 
@@ -296,7 +296,7 @@
                            (crux/db db (ins/read-instant-date t)))]
     {:status  200
      :headers {"Content-Type" "application/json"}
-     :body    (json/write-value-as-string (crux/q db-in-time query))}
+     :body    (json/write-str (crux/q db-in-time query))}
     (f/when-failed [err]
       (respond (f/message err) 500))))
 

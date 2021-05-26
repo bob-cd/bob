@@ -15,13 +15,13 @@
 
 (ns common.dispatch
   (:require [taoensso.timbre :as log]
-            [jsonista.core :as json]
+            [clojure.data.json :as json]
             [failjure.core :as f]
             [common.errors :as err]))
 
 (defn queue-msg-subscriber
   [db-client routes chan meta-data payload]
-  (let [msg (f/try* (json/read-value payload json/keyword-keys-object-mapper))]
+  (let [msg (f/try* (json/read-str payload :key-fn keyword))]
     (if (f/failed? msg)
       (err/publish-error chan (format "Could not parse '%s' as json" (String. payload "UTF-8")))
       (do
