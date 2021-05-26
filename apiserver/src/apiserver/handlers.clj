@@ -40,7 +40,7 @@
   (lb/publish chan
               exchange
               routing-key
-              (json/write-str message)
+              (json/write-str message :key-fn #(subs (str %) 1))
               {:content-type "application/json"
                :type         msg-type}))
 

@@ -74,7 +74,7 @@
   [chan queue]
   (let [[metadata payload] (lb/get chan queue true)]
     {:type (:type metadata)
-     :data (json/read-str payload :key-fn keyword)}))
+     :data (json/read-str (String. payload "UTF-8") :key-fn keyword)}))
 
 (t/deftest pipeline-direct-tests
   (u/with-system (fn [_ queue]
