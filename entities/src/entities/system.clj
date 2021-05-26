@@ -15,7 +15,7 @@
 
 (ns entities.system
   (:require [com.stuartsierra.component :as component]
-            [system :as sys]
+            [common.system :as sys]
             [entities.dispatch :as d]))
 
 (defn queue-conf

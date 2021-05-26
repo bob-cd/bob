@@ -16,13 +16,13 @@
 (ns runner.util
   (:require [com.stuartsierra.component :as component]
             [next.jdbc :as jdbc]
-            [system :as sys]
+            [common.system :as sys]
             [runner.system :as rsys]))
 
 (defn with-system
   [test-fn]
-  (let [db    (component/start (system/db "jdbc:postgresql://localhost:5433/bob-test" "bob" "bob"))
-        queue (component/start (system/queue "amqp://localhost:5673" "guest" "guest" (rsys/queue-conf db)))
+  (let [db    (component/start (sys/db "jdbc:postgresql://localhost:5433/bob-test" "bob" "bob"))
+        queue (component/start (sys/queue "amqp://localhost:5673" "guest" "guest" (rsys/queue-conf db)))
         ds    (jdbc/get-datasource {:dbtype   "postgresql"
                                     :dbname   "bob-test"
                                     :user     "bob"
