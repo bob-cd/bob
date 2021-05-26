@@ -23,4 +23,5 @@
          environ/environ            {:mvn/version "1.2.0"}
          juxt/crux-core             {:mvn/version "21.04-1.16.0-beta"}
          juxt/crux-jdbc             {:mvn/version "21.04-1.16.0-beta"}
-         org.postgresql/postgresql  {:mvn/version "42.2.20"}}}
+         org.postgresql/postgresql  {:mvn/version "42.2.20"}
+         metosin/jsonista           {:mvn/version "0.3.3"}}}

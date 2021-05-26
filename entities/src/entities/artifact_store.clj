@@ -17,7 +17,7 @@
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
             [crux.api :as crux]
-            [entities.errors :as err]))
+            [common.errors :as err]))
 
 (defn register-artifact-store
   "Registers an artifact store with an unique name and an url supplied in a map."
@@ -42,28 +42,3 @@
     (crux/submit-tx db-client [[:crux.tx/delete (keyword (str "bob.artifact-store/" (:name data)))]]))
   (log/infof "Un-registered artifact store %s" (:name data))
   "Ok")
-
-(comment
-  (keyword (str "bob.artifact-store/" "test"))
-
-  (require '[entities.system :as sys]
-           '[com.stuartsierra.component :as c])
-
-  (def db
-    (c/start (sys/->Database "jdbc:postgresql://localhost:5432/bob" "bob" "bob")))
-
-  (c/stop db)
-
-  (register-artifact-store (sys/db-client db)
-                           nil
-                           {:name "local"
-                            :url  "http://localhost:8002"})
-
-  (crux/entity (-> db
-                   sys/db-client
-                   crux/db)
-               :bob.artifact-store/local)
-
-  (un-register-artifact-store (sys/db-client db)
-                              nil
-                              {:name "local"}))

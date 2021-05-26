@@ -13,7 +13,7 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns entities.errors
+(ns common.errors
   (:require [langohr.basic :as lb]
             [jsonista.core :as json]
             [taoensso.timbre :as log]))

@@ -16,7 +16,18 @@
 (ns entities.system
   (:require [com.stuartsierra.component :as component]
             [common.system :as sys]
-            [entities.dispatch :as d]))
+            [common.dispatch :as d]
+            [entities.pipeline :as pipeline]
+            [entities.artifact-store :as artifact-store]
+            [entities.resource-provider :as resource-provider]))
+
+(def ^:private routes
+  {"pipeline/create"          pipeline/create
+   "pipeline/delete"          pipeline/delete
+   "artifact-store/create"    artifact-store/register-artifact-store
+   "artifact-store/delete"    artifact-store/un-register-artifact-store
+   "resource-provider/create" resource-provider/register-resource-provider
+   "resource-provider/delete" resource-provider/un-register-resource-provider})
 
 (defn queue-conf
   [db]
@@ -29,7 +40,7 @@
                                    :auto-delete false
                                    :durable     true}}
    :bindings      {"bob.entities" "bob.direct"}
-   :subscriptions {"bob.entities" (partial d/queue-msg-subscriber (sys/db-client db))}})
+   :subscriptions {"bob.entities" (partial d/queue-msg-subscriber (sys/db-client db) routes)}})
 
 (def system (atom nil))
 

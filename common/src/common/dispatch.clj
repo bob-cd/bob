@@ -13,28 +13,15 @@
 ;   You should have received a copy of the GNU Affero General Public License
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-(ns entities.dispatch
+(ns common.dispatch
   (:require [taoensso.timbre :as log]
             [jsonista.core :as json]
             [failjure.core :as f]
-            [entities.pipeline :as pipeline]
-            [entities.artifact-store :as artifact-store]
-            [entities.resource-provider :as resource-provider]
-            [entities.errors :as err]))
-
-(def ^:private routes
-  {"pipeline/create"          pipeline/create
-   "pipeline/delete"          pipeline/delete
-   "artifact-store/create"    artifact-store/register-artifact-store
-   "artifact-store/delete"    artifact-store/un-register-artifact-store
-   "resource-provider/create" resource-provider/register-resource-provider
-   "resource-provider/delete" resource-provider/un-register-resource-provider})
-
-(def mapper (json/object-mapper {:decode-key-fn true}))
+            [common.errors :as err]))
 
 (defn queue-msg-subscriber
-  [db-client chan meta-data payload]
-  (let [msg (f/try* (json/read-value payload mapper))]
+  [db-client routes chan meta-data payload]
+  (let [msg (f/try* (json/read-value payload json/keyword-keys-object-mapper))]
     (if (f/failed? msg)
       (err/publish-error chan (format "Could not parse '%s' as json" (String. payload "UTF-8")))
       (do

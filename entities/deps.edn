@@ -20,7 +20,6 @@
            com.taoensso/timbre        {:mvn/version "5.1.2"}
            failjure/failjure          {:mvn/version "2.2.0"}
            juxt/crux-core             {:mvn/version "21.04-1.16.0-beta"}
-           metosin/jsonista           {:mvn/version "0.3.3"}
            common/common              {:local/root "../common"}}
  :aliases {:test    {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.0.861"}
                                   org.clojure/test.check {:mvn/version "1.1.0"}}

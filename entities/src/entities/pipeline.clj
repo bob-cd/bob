@@ -17,7 +17,7 @@
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
             [crux.api :as crux]
-            [entities.errors :as err]))
+            [common.errors :as err]))
 
 (defn create
   "Creates a new pipeline.
@@ -57,43 +57,3 @@
     (f/try*
       (crux/submit-tx db-client [[:crux.tx/delete id]]))
     "Ok"))
-
-(comment
-  (require '[entities.system :as sys]
-           '[com.stuartsierra.component :as c])
-
-  (def db
-    (c/start (sys/->Database "jdbc:postgresql://localhost:5432/bob" "bob" "bob")))
-
-  (c/stop db)
-
-  (create (sys/db-client db)
-          nil
-          {:group     "test"
-           :name      "test"
-           :steps     [{:cmd "echo hello"}
-                       {:needs_resource "source"
-                        :cmd            "ls"}]
-           :vars      {:k1 "v1"
-                       :k2 "v2"}
-           :resources [{:name     "source"
-                        :type     "external"
-                        :provider "git"
-                        :params   {:repo   "https://github.com/bob-cd/bob"
-                                   :branch "main"}}
-                       {:name     "source2"
-                        :type     "external"
-                        :provider "git"
-                        :params   {:repo   "https://github.com/lispyclouds/clj-docker-client"
-                                   :branch "main"}}]
-           :image     "busybox:musl"})
-
-  (crux/entity (-> db
-                   sys/db-client
-                   crux/db)
-               :bob.pipeline.test/test)
-
-  (delete (sys/db-client db)
-          nil
-          {:group "test"
-           :name  "test"}))

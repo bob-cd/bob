@@ -17,7 +17,7 @@
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
             [crux.api :as crux]
-            [entities.errors :as err]))
+            [common.errors :as err]))
 
 (defn register-resource-provider
   "Registers a rersource provider with an unique name and an url supplied in a map."
@@ -42,32 +42,3 @@
     (crux/submit-tx db-client [[:crux.tx/delete (keyword (str "bob.resource-provider/" (:name data)))]]))
   (log/infof "Un-registered resource provider %s" (:name data))
   "Ok")
-
-(comment
-  (require '[entities.system :as sys]
-           '[com.stuartsierra.component :as c])
-
-  (def db
-    (c/start (sys/->Database "jdbc:postgresql://localhost:5432/bob" "bob" "bob")))
-
-  (c/stop db)
-
-  (register-resource-provider (sys/db-client db)
-                              nil
-                              {:name "local"
-                               :url  "http://localhost:8002"})
-
-  (crux/q (-> db
-              sys/db-client
-              crux/db)
-          '{:find [(pull resource-provider [:name :url])]
-            :where [[resource-provider :type :resource-provider]]})
-
-  (crux/entity (-> db
-                   sys/db-client
-                   crux/db)
-               :bob.resource-provider/local)
-
-  (un-register-resource-provider (sys/db-client db)
-                                 nil
-                                 {:name "local"}))
