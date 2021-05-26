@@ -17,7 +17,7 @@
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
             [crux.api :as crux]
-            [runner.errors :as errors]
+            [common.errors :as errors]
             [runner.docker :as docker]
             [runner.resource :as r]
             [runner.artifact :as a])
@@ -339,12 +339,9 @@
 
   @node-state
 
-  (require '[runner.system :as sys])
+  (require '[common.system :as sys])
 
-  (def db-client
-    (-> sys/system
-        :database
-        sys/db-client))
+  (def db-client (sys/db))
 
   (crux/submit-tx db-client
                   [[:crux.tx/put

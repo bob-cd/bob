@@ -16,13 +16,20 @@
 (ns runner.system
   (:require [com.stuartsierra.component :as component]
             [common.system :as sys]
-            [runner.dispatch :as d])
+            [common.dispatch :as d]
+            [runner.pipeline :as p])
   (:import [java.util UUID]))
+
+(def ^:private routes
+  {"pipeline/start"   p/start
+   "pipeline/stop"    p/stop
+   "pipeline/pause"   p/pause
+   "pipeline/unpause" p/unpause})
 
 (defn queue-conf
   [db]
   (let [broadcast-queue (str "bob.broadcasts." (UUID/randomUUID))
-        subscriber      (partial d/queue-msg-subscriber (sys/db-client db))]
+        subscriber      (partial d/queue-msg-subscriber (sys/db-client db) routes)]
     {:exchanges     {"bob.direct" {:type    "direct"
                                    :durable true}
                      "bob.fanout" {:type    "fanout"
