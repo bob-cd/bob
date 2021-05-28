@@ -56,7 +56,7 @@
                                :jar
                                entities.jar
                                :aot
-                               true
+                               entities.main
                                :main-class
                                entities.main")}
          image        {:doc  "Builds the docker image"
