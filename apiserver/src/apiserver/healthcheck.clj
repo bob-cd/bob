@@ -41,7 +41,8 @@
 
 (defn schedule
   [queue database health-check-freq]
-  (let [health-check-cron #(check {:queue queue
-                                      :db    database})
-        scheduler         (Executors/newScheduledThreadPool 1)]
-    (.scheduleAtFixedRate scheduler health-check-cron 0 health-check-freq TimeUnit/MILLISECONDS)))
+  (.scheduleAtFixedRate (Executors/newScheduledThreadPool 1)
+                        #(check {:queue queue :db database})
+                        0
+                        health-check-freq
+                        TimeUnit/MILLISECONDS))

@@ -20,7 +20,7 @@
            com.taoensso/timbre           {:mvn/version "5.1.2"}
            failjure/failjure             {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj   {:mvn/version "0.4.2"}
-           juxt/crux-core                {:mvn/version "21.04-1.16.0-beta"}
+           juxt/crux-core                {:mvn/version "21.05-1.17.0-beta"}
            lispyclouds/clj-docker-client {:mvn/version "1.0.3"}
            org.kamranzafar/jtar          {:mvn/version "2.3"}
            common/common                 {:local/root "../common"}}
