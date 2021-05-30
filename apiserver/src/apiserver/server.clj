@@ -23,6 +23,7 @@
             [reitit.http.coercion :as coercion]
             [reitit.http.interceptors.parameters :as parameters]
             [reitit.http.interceptors.muuntaja :as muuntaja]
+            [reitit.http.interceptors.exception :as exception]
             [reitit.interceptor.sieppari :as sieppari]
             [navi.core :as navi]
             [apiserver.handlers :as h]
@@ -34,7 +35,6 @@
                (update-in [:request :db] (constantly db))
                (update-in [:request :queue] (constantly queue)))})
 
-
 (defn server
   [database queue health-check-freq]
   (hc/schedule queue database health-check-freq)
@@ -45,10 +45,12 @@
                      (navi/routes-from h/handlers))
                  {:data {:coercion     malli/coercion
                          :muuntaja     m/instance
-                         :interceptors [(parameters/parameters-interceptor)
+                         :interceptors [(exception/exception-interceptor)
+                                        (parameters/parameters-interceptor)
                                         (muuntaja/format-negotiate-interceptor)
                                         (muuntaja/format-response-interceptor)
                                         (muuntaja/format-request-interceptor)
+                                        (coercion/coerce-exceptions-interceptor)
                                         (coercion/coerce-response-interceptor)
                                         (coercion/coerce-request-interceptor)
                                         (system-interceptor database queue)]}})
