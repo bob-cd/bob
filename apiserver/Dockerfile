@@ -17,5 +17,4 @@ FROM adoptopenjdk/openjdk16:alpine-jre
 
 COPY apiserver.jar .
 
-# TODO: Remove with https://github.com/bob-cd/bob/issues/96
-ENTRYPOINT ["java", "--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED", "-jar", "apiserver.jar"]
+ENTRYPOINT ["java", "-jar", "apiserver.jar"]

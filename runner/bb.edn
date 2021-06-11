@@ -55,10 +55,7 @@
                                  ; TODO: Find a better way to wait till things come up
                                  (println "Waiting for the cluster to be ready")
                                  (Thread/sleep 7000)
-                                 (shell "clojure
-                                   -J--add-opens
-                                   -Jjava.base/java.util.concurrent=ALL-UNNAMED
-                                   -M:test")
+                                 (shell "clojure -M:test")
                                  (finally
                                    (run 'docker-clean))))}
          compile      {:doc  "Builds the compiled aritfact"

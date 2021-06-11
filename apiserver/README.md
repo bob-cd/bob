@@ -47,8 +47,8 @@ Same as [Runner](/runner) and [Entities](/entities)
 - Run `docker run --rm -it --name bob-storage -p 5432:5432 -e POSTGRES_DB=bob -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob postgres:alpine` to run the latest PostgreSQL instance on port `5432`.
 
 ### Ways of connecting APIServer to the cluster
-- To build an uberjar run `clojure -X:depstar uberjar :jar apiserver.jar :aot true :main-class apiserver.main` to obtain an `apiserver.jar.jar`. Running `java --add-opens java.base/java.util.concurrent=ALL-UNNAMED -jar apiserver.jar` should connect to it all nicely.
-- To run directly without building a JAR, run `clj -J--add-opens -Jjava.base/java.util.concurrent=ALL-UNNAMED -M -m apiserver_next.main` from this dir.
+- To build an uberjar run `clojure -X:depstar uberjar :jar apiserver.jar :aot true :main-class apiserver.main` to obtain an `apiserver.jar.jar`. Running `java -jar apiserver.jar` should connect to it all nicely.
+- To run directly without building a JAR, run `clj -M -m apiserver_next.main` from this dir.
 
 ## Setting up the dev environment with the REPL
 - This uses [Component](https://github.com/stuartsierra/component) to manage state across the app.

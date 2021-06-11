@@ -21,7 +21,7 @@
          com.stuartsierra/component {:mvn/version "1.0.0"}
          com.taoensso/timbre        {:mvn/version "5.1.2"}
          environ/environ            {:mvn/version "1.2.0"}
-         juxt/crux-core             {:mvn/version "21.05-1.17.0-beta"}
-         juxt/crux-jdbc             {:mvn/version "21.05-1.17.0-beta"}
-         org.postgresql/postgresql  {:mvn/version "42.2.20"}
+         juxt/crux-core             {:mvn/version "21.06-1.17.1-beta"}
+         juxt/crux-jdbc             {:mvn/version "21.06-1.17.1-beta"}
+         org.postgresql/postgresql  {:mvn/version "42.2.21"}
          org.clojure/data.json      {:mvn/version "2.3.1"}}}

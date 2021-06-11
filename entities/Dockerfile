@@ -17,5 +17,4 @@ FROM adoptopenjdk/openjdk16:alpine-jre
 
 COPY entities.jar .
 
-# TODO: Remove warn https://github.com/bob-cd/bob/issues/96
-ENTRYPOINT ["java", "--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED", "-jar", "entities.jar"]
+ENTRYPOINT ["java", "-jar", "entities.jar"]
