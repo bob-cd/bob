@@ -59,7 +59,7 @@
                                :jar
                                apiserver.jar
                                :aot
-                               apiserver.main
+                               true
                                :main-class
                                apiserver.main")}
          image        {:doc  "Builds the docker image"

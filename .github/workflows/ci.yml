@@ -36,7 +36,7 @@ jobs:
       - name: "Prepare tools-deps"
         uses: "DeLaGuardo/setup-clojure@master"
         with:
-          cli: "1.10.3.855"
+          cli: "1.10.3.882"
 
       - name: "Apply Cache"
         uses: "actions/cache@v2"

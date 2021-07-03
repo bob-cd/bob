@@ -65,7 +65,7 @@
                                :jar
                                runner.jar
                                :aot
-                               runner.main
+                               true
                                :main-class
                                runner.main")}
          image        {:doc  "Builds the docker images"
