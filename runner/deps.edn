@@ -24,8 +24,9 @@
            lispyclouds/clj-docker-client {:mvn/version "1.0.3"}
            org.kamranzafar/jtar          {:mvn/version "2.3"}
            common/common                 {:local/root "../common"}}
- :aliases {:test    {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.0.861"}
-                                  org.clojure/test.check {:mvn/version "1.1.0"}}
+ :aliases {:test    {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.0.861"}
+                                  org.clojure/test.check            {:mvn/version "1.1.0"}
+                                  com.github.seancorfield/next.jdbc {:mvn/version "1.2.674"}}
                      :main-opts  ["-m" "kaocha.runner"]}
            :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.245"}}
                      :ns-default   hf.depstar
