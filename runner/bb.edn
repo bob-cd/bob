@@ -59,15 +59,7 @@
                                  (finally
                                    (run 'docker-clean))))}
          compile      {:doc  "Builds the compiled aritfact"
-                       :task (shell "clojure
-                               -X:depstar
-                               uberjar
-                               :jar
-                               runner.jar
-                               :aot
-                               true
-                               :main-class
-                               runner.main")}
+                       :task (shell "clojure -X:uberjar")}
          image        {:doc  "Builds the docker images"
                        :task (do
                                (shell "docker build -t ghcr.io/bob-cd/runner .")
