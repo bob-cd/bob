@@ -20,25 +20,25 @@
            com.taoensso/timbre          {:mvn/version "5.1.2"}
            failjure/failjure            {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj  {:mvn/version "0.4.2"}
-           pro.juxt.crux/crux-core      {:mvn/version "1.17.1"}
-           metosin/reitit-core          {:mvn/version "0.5.13"}
-           metosin/reitit-http          {:mvn/version "0.5.13"}
-           metosin/reitit-interceptors  {:mvn/version "0.5.13"}
-           metosin/reitit-malli         {:mvn/version "0.5.13"}
-           metosin/reitit-ring          {:mvn/version "0.5.13"}
-           metosin/reitit-sieppari      {:mvn/version "0.5.13"}
+           pro.juxt.crux/crux-core      {:mvn/version "1.18.0"}
+           metosin/reitit-core          {:mvn/version "0.5.15"}
+           metosin/reitit-http          {:mvn/version "0.5.15"}
+           metosin/reitit-interceptors  {:mvn/version "0.5.15"}
+           metosin/reitit-malli         {:mvn/version "0.5.15"}
+           metosin/reitit-ring          {:mvn/version "0.5.15"}
+           metosin/reitit-sieppari      {:mvn/version "0.5.15"}
            metosin/muuntaja             {:mvn/version "0.6.8"}
-           ring/ring-jetty-adapter      {:mvn/version "1.9.3"}
+           ring/ring-jetty-adapter      {:mvn/version "1.9.4"}
            clj-commons/iapetos          {:mvn/version "0.1.11"}
            org.clojars.lispyclouds/navi {:mvn/version "0.0.2"}
            org.clojure/data.xml         {:mvn/version "0.2.0-alpha6"}
-           org.clojure/data.json        {:mvn/version "2.3.1"}
+           org.clojure/data.json        {:mvn/version "2.4.0"}
            common/common                {:local/root "../common"}}
  :aliases {:test    {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.0.861"}
                                   org.clojure/test.check            {:mvn/version "1.1.0"}
-                                  com.github.seancorfield/next.jdbc {:mvn/version "1.2.674"}}
+                                  com.github.seancorfield/next.jdbc {:mvn/version "1.2.689"}}
                      :main-opts  ["-m" "kaocha.runner"]}
-           :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.250"}}
+           :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.278"}}
                      :exec-fn      hf.depstar/uberjar
                      :exec-args    {:aot        true
                                     :main-class apiserver.main
