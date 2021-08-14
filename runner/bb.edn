@@ -30,6 +30,7 @@
                                    --name podman
                                    --device /dev/fuse
                                    --security-opt seccomp=unconfined
+                                   --security-opt apparmor=unconfined
                                    --security-opt label=disable
                                    --cap-add sys_admin
                                    --cap-add mknod
@@ -65,9 +66,7 @@
                                    -p 8001:8001
                                    --network bob-net
                                    ghcr.io/bob-cd/artifact-local")
-                                 ; TODO: Find a better way to wait till things come up
-                                 (println "Waiting for the cluster to be ready")
-                                 (Thread/sleep 7000)
+                                 (load-file "tasks/wait.clj")
                                  (shell "clojure -M:test")
                                  (finally
                                    (run 'docker-clean))))}

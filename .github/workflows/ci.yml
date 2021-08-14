@@ -51,6 +51,12 @@ jobs:
           curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
           sudo bash install
 
+      - name: "Setup wait-for"
+        run: |
+          curl -sLO https://raw.githubusercontent.com/eficode/wait-for/master/wait-for
+          chmod +x wait-for
+          sudo mv wait-for /usr/bin
+
       - name: "Run all tests"
         run: "bb test"
 
