@@ -114,6 +114,7 @@
   (testing "success"
     (let [id     (e/create-container image {:cmd "ls"})
           _ (start id)
+          _ (Thread/sleep 2000)
           status (e/status-of id)]
       (is (= {:running?  false
               :exit-code 0}
@@ -128,6 +129,7 @@
   (testing "success"
     (let [id    (e/create-container image {:cmd "sh -c 'for i in `seq 1 5`; do echo $i; done'"})
           _ (start id)
+          _ (Thread/sleep 2000)
           lines (atom [])
           _ (e/react-to-log-line id #(swap! lines conj %))]
       (is (= ["1" "2" "3" "4" "5"] @lines))

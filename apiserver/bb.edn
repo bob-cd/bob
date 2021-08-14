@@ -46,8 +46,7 @@
                                    -p 8001:8001
                                    --network bob-net
                                    ghcr.io/bob-cd/artifact-local")
-                                 ; TODO: Find a better way to wait till things come up
-                                 (println "Waiting for the cluster to be ready")
+                                 (load-file "tasks/wait.clj")
                                  (Thread/sleep 7000)
                                  (shell "clojure -M:test")
                                  (finally

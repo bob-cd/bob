@@ -40,8 +40,7 @@
                                    -p 5673:5672
                                    --network bob-net
                                    rabbitmq:3-alpine")
-                                 ; TODO: Find a better way to wait till things come up
-                                 (println "Waiting for the cluster to be ready")
+                                 (load-file "tasks/wait.clj")
                                  (Thread/sleep 7000)
                                  (shell "clojure -M:test")
                                  (finally
