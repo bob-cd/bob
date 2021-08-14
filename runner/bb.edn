@@ -17,14 +17,27 @@
 
  :tasks {docker-clean {:doc  "Cleans up cluster containers"
                        :task (do
-                               (shell {:continue true} "docker kill bob-test-storage bob-test-queue resource-git artifact-local")
-                               (shell {:continue true} "docker rm bob-test-storage bob-test-queue resource-git artifact-local")
+                               (shell {:continue true} "docker kill bob-test-storage bob-test-queue resource-git artifact-local podman")
+                               (shell {:continue true} "docker rm bob-test-storage bob-test-queue resource-git artifact-local podman")
                                (shell {:continue true} "docker network rm bob-net"))}
          test         {:doc  "Sets up the cluster and runs tests"
                        :task (do
                                (try
                                  (run 'docker-clean)
                                  (shell {:continue true} "docker network create bob-net")
+                                 (shell "docker run
+                                   -d
+                                   --name podman
+                                   --device /dev/fuse
+                                   --security-opt seccomp=unconfined
+                                   --security-opt label=disable
+                                   --cap-add sys_admin
+                                   --cap-add mknod
+                                   -p 8080:8080
+                                   quay.io/podman/stable
+                                   bash -c 'dnf install -y socat && \\
+                                     (podman system service -t 0 unix:///tmp/pod.sock &) && \\
+                                     socat TCP-LISTEN:8080,fork UNIX-CONNECT:/tmp/pod.sock'")
                                  (shell "docker run
                                    -d
                                    --name bob-test-storage

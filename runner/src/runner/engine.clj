@@ -121,7 +121,7 @@
 
   Returns the id of the built container or a failure."
   ([image]
-   (f/try-all [_      (log/debugf "Creating a container from %s" image)
+   (f/try-all [_ (log/debugf "Creating a container from %s" image)
                result (c/invoke containers
                                 {:op               :ContainerCreateLibpod
                                  :data             {:image image}
@@ -136,11 +136,11 @@
    (f/try-all [working-dir (some->> needs_resource
                                     (str "/root/"))
                command     (sh-tokenize cmd)
-               _           (log/debugf "Creating new container with: image: %s cmd: %s evars: %s working-dir: %s"
-                                       image
-                                       command
-                                       evars
-                                       working-dir)
+               _ (log/debugf "Creating new container with: image: %s cmd: %s evars: %s working-dir: %s"
+                             image
+                             command
+                             evars
+                             working-dir)
                result      (c/invoke
                              containers
                              {:op               :ContainerCreateLibpod
@@ -148,7 +148,7 @@
                                                  :command      command
                                                  :env          evars
                                                  :work_dir     working-dir
-                                                 :cgroups_mode "disabled"} ; for unprivileged
+                                                 :cgroups_mode "disabled"} ; unprivileged
                               :throw-exceptions true})]
      (:Id result)
      (f/when-failed [err]
@@ -176,6 +176,16 @@
       (log/errorf "Error fetching container info: %s" err)
       err)))
 
+(defn status-of
+  "Returns the status of a container"
+  [id]
+  (f/try-all [{{running? :Running exit-code :ExitCode} :State} (inspect-container id)]
+    {:running?  running?
+     :exit-code exit-code}
+    (f/when-failed [err]
+      (log/errorf "Could not fetch container status: %s" (f/message err))
+      err)))
+
 (defn react-to-log-line
   "Tails the stdout, stderr of a container
    and calls the reaction-fn with log lines
@@ -188,7 +198,9 @@
               log-stream (c/invoke client
                                    {:op               :ContainerLogs ; TODO: Use ContainerLogsLibpod
                                     :params           {:name   id
-                                                       :follow true
+                                                       :follow (-> id
+                                                                   status-of
+                                                                   :running?)
                                                        :stdout true
                                                        :stderr true}
                                     :as               :stream
@@ -221,7 +233,7 @@
               _ (log/debugf "Attaching to container %s for logs" id)
               _ (react-to-log-line id logging-fn)
               status (c/invoke containers
-                               {:op               :ContainerWaitLibpod
+                               {:op               :ContainerWaitLibpod ; TODO: Check why it blocks when container isn't running
                                 :params           {:name id}
                                 :throw-exceptions true})]
     (if (zero? status)
@@ -258,16 +270,6 @@
       (log/errorf "Could not commit image: %s" (f/message err))
       err)))
 
-(defn status-of
-  "Returns the status of a container"
-  [id]
-  (f/try-all [{{running? :Running exit-code :ExitCode} :State} (inspect-container id)]
-    {:running?  running?
-     :exit-code exit-code}
-    (f/when-failed [err]
-      (log/errorf "Could not fetch container status: %s" (f/message err))
-      err)))
-
 (defn put-container-archive
   "Copies an tar input stream of either of the compressions:
    none, gzip, bzip2 or xz
@@ -292,7 +294,7 @@
   [id path]
   (f/try-all [result (c/invoke containers
                                {:op               :ContainerArchiveLibpod
-                                :params           {:name   id
+                                :params           {:name id
                                                    :path path}
                                 :as               :stream
                                 :throw-exceptions true})]
@@ -307,20 +309,6 @@
   (f/try*
     (c/invoke containers
               {:op :ContainerListLibpod})))
-
-(defn pause-container
-  "Idempotently pause a container"
-  [id]
-  (c/invoke containers
-            {:op     :ContainerPauseLibpod
-             :params {:name id}}))
-
-(defn unpause-container
-  "Idempotently unpause a container"
-  [id]
-  (c/invoke containers
-            {:op     :ContainerUnpauseLibpod
-             :params {:name id}}))
 
 (comment
   (sh-tokenize "sh -c 'echo ${k1}'")
@@ -343,12 +331,14 @@
 
   (pull-image "ubuntu")
 
-  (create-container "ubuntu"
-                    {:cmd "bash -c 'for value in {1..10}; do echo $value; sleep 1; done'"})
+  (create-container "busybox:musl"
+                    {:cmd "sh -c 'for i in `seq 1 10`; do echo \"output: $i\"; sleep 1; done'"})
 
   (delete-container "f1d7045")
 
-  (inspect-container "fb674e")
+  (inspect-container "f00cbe2e06de")
+
+  (status-of "f00cbe2e06de")
 
   (start-container "fb674e" println)
 
@@ -358,16 +348,14 @@
 
   (commit-container "fb674e" "ls")
 
-  (status-of "fb674e")
-
-  (put-container-archive "fb674e"
+  (put-container-archive "8104b71ebe76"
                          (io/input-stream "test/test.tar")
-                         "/root/test")
+                         "/roor")
 
   (get-container-archive "fb674e" "/root/test")
 
   (container-ls)
 
-  (pause-container "fb674e")
-
-  (unpause-container "fb674e"))
+  (-> (pull-image "docker.io/library/busybox:musl")
+      (create-container {:cmd "sh -c 'sleep 5; ls'"})
+      (start-container println)))

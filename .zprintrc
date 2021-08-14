@@ -1,3 +1,5 @@
+; vi: set ft=clojure :
+
 ;   This file is part of Bob.
 ;
 ;   Bob is free software: you can redistribute it and/or modify
@@ -14,7 +16,8 @@
 ;   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
 {:binding {:force-nl? true
-           :justify?  true}
+           :justify?  true
+           :justify   {:max-variance 1000}}
  :fn-map  {"comment"               :flow
            "component/system-map"  :pair-fn
            "db-connection"         :arg1-force-nl
@@ -48,9 +51,11 @@
  :map     {:comma?      false
            :sort?       false
            :justify?    true
+           :justify     {:max-variance 1000}
            :respect-nl? true
            :lift-ns?    false}
- :pair    {:justify? true}
+ :pair    {:justify? true
+           :justify  {:max-variance 1000}}
  :pair-fn {:hang? false}
  :style   :community
  :width   120}
