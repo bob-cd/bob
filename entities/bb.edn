@@ -41,7 +41,6 @@
                                    --network bob-net
                                    rabbitmq:3-alpine")
                                  (load-file "tasks/wait.clj")
-                                 (Thread/sleep 7000)
                                  (shell "clojure -M:test")
                                  (finally
                                    (run 'docker-clean))))}

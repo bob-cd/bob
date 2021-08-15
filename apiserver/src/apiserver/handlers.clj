@@ -222,7 +222,7 @@
      :query}
     :parameters
     db :db}]
-  (f/try-all [base-query '{:find  [(pull pipeline [:steps :vars :resources :image :group :name])]
+  (f/try-all [base-query '{:find  [(pull pipeline [:steps :vars :resources :image :group :name :paused])]
                            :where [[pipeline :type :pipeline]]}
               clauses    {:group  [['pipeline :group group]]
                           :name   [['pipeline :name name]]

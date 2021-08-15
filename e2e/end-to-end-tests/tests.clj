@@ -335,12 +335,12 @@
     (let [name                  (random-uuid)
           group                 (random-uuid)
           _ (create-pipeline! {:group group :name name} default-options)
-          {:keys [body status]} @(http/post (format "%s/pipeline/pause/groups/%s/names/%s"
+          {:keys [body status]} @(http/post (format "%s/pipelines/pause/groups/%s/names/%s"
                                                     bob-url
                                                     group
                                                     name))]
       (t/is (= "Ok" (get-resp-message body)))
-      (t/is (= 200 status))
+      (t/is (= 202 status))
       (t/is (seq (filter #(and (= group (:group %))
                                (= name (:name %))
                                (:paused %))
@@ -350,12 +350,13 @@
     (let [name                  (random-uuid)
           group                 (random-uuid)
           _ (create-pipeline! {:group group :name name} default-options)
-          {:keys [body status]} @(http/delete (format "%s/pipeline/groups/%s/names/%s"
+          {:keys [body status]} @(http/delete (format "%s/pipelines/groups/%s/names/%s"
                                                       bob-url
                                                       group
                                                       name))]
       (t/is (= "Ok" (get-resp-message body)))
       (t/is (= 202 status))
+      (Thread/sleep 2000)
       (t/is (not (pipeline-exists? {:group group :name name})))))
 
   (t/testing "fetches an artifact produced by a pipeline run"
