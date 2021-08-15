@@ -232,24 +232,3 @@
       (d/kill-container id)
       (d/delete-container id)))
   (d/delete-image image))
-
-(deftest ^:integration pause-unpause-containers
-  (d/pull-image image)
-  (testing "pause/unpause"
-    (let [id      (d/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
-          _       (future (d/start-container id #(println %)))
-          _       (Thread/sleep 1000)
-          _       (d/pause-container id)
-          paused? (-> id
-                      d/inspect-container
-                      :State
-                      :Paused)
-          _       (d/unpause-container id)]
-      (is paused?)
-      (is (not (-> id
-                   d/inspect-container
-                   :State
-                   :Paused)))
-      (d/kill-container id)
-      (d/delete-container id)))
-  (d/delete-image image))

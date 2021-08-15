@@ -19,5 +19,5 @@
  :name       "<pipeline-name>"
  :started    #inst "UTC Date instant"
  :completed  #inst "UTC Date instant"
- :status     :<running|passed|failed|stopped|paused>}
+ :status     :<running|passed|failed|stopped>}
 ```

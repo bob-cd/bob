@@ -288,42 +288,6 @@
       (when-not (future-done? run)
         (future-cancel run)))))
 
-(defn- pause-unpause-impl
-  [db-client pause? {:keys [group name run_id]}]
-  (when-let [container (get-in @node-state [:runs run_id :container-id])]
-    (log/infof "%s run %s for pipeline %s %s"
-               (if pause?
-                 "Pausing"
-                 "Unpausing")
-               run_id
-               group
-               name)
-    (crux/await-tx db-client
-                   (crux/submit-tx db-client
-                                   [[:crux.tx/put
-                                     (assoc (run-info-of db-client run_id)
-                                            :status
-                                            (if pause?
-                                              :paused
-                                              :running))]]))
-    (if pause?
-      (docker/pause-container container)
-      (docker/unpause-container container))))
-
-(defn pause
-  "Idempotently pauses a pipeline by group, name and run_id
-
-  Sets the :status in Db to :paused and pauses the container if present."
-  [db-client _queue-chan run-info]
-  (pause-unpause-impl db-client true run-info))
-
-(defn unpause
-  "Idempotently unpauses a pipeline by group, name and run_id
-
-  Sets the :status in Db to :running and unpauses the container if present."
-  [db-client _queue-chan run-info]
-  (pause-unpause-impl db-client false run-info))
-
 (comment
   (reset! node-state
           {:images-for-gc {:run-id-1 (list "rabbitmq:3-alpine" "postgres:alpine")}

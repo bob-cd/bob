@@ -21,10 +21,8 @@
   (:import [java.util UUID]))
 
 (def ^:private routes
-  {"pipeline/start"   p/start
-   "pipeline/stop"    p/stop
-   "pipeline/pause"   p/pause
-   "pipeline/unpause" p/unpause})
+  {"pipeline/start" p/start
+   "pipeline/stop"  p/stop})
 
 (defn queue-conf
   [db]
