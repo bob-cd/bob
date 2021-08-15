@@ -35,7 +35,7 @@
    {:status status
     :body   {:message content}}))
 
-(defn- publish
+(defn publish
   [chan msg-type exchange routing-key message]
   (lb/publish chan
               exchange
@@ -43,6 +43,13 @@
               (json/write-str message :key-fn #(subs (str %) 1))
               {:content-type "application/json"
                :type         msg-type}))
+
+(defn pipeline-data
+  [db group name]
+  (crux/entity
+    (crux/db db)
+    (keyword (str "bob.pipeline." group)
+             name)))
 
 (defn exec
   ([task]
@@ -96,19 +103,25 @@
   [{{pipeline-info :path
      metadata      :body}
     :parameters
+    db :db
     queue :queue}]
-  (let [id      (str "r-" (UUID/randomUUID))
-        message (assoc pipeline-info
-                       :metadata
-                       (if metadata
-                         metadata
-                         {:runner/type "docker"}))]
-    (exec #(publish queue
-                    "pipeline/start"
-                    "bob.direct"
-                    "bob.jobs"
-                    (assoc message :run_id id))
-          id)))
+  (f/try-all [id      (str "r-" (UUID/randomUUID))
+              message (assoc pipeline-info
+                             :metadata
+                             (if metadata
+                               metadata
+                               {:runner/type "container"}))
+              paused  (:paused (pipeline-data db (:group pipeline-info) (:name pipeline-info)))]
+    (if paused
+      (respond "Pipeline is paused. Unpause it first." 422)
+      (exec #(publish queue
+                      "pipeline/start"
+                      "bob.direct"
+                      "bob.jobs"
+                      (assoc message :run_id id))
+            id))
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
 
 (defn pipeline-stop
   [{{pipeline-info :path} :parameters
@@ -119,25 +132,18 @@
                   ""
                   (s/rename-keys pipeline-info {:id :run_id}))))
 
-(defn- pausable?
-  [db run-id]
-  (let [{:keys [status]} (crux/entity (crux/db db) (keyword "bob.pipeline.run" run-id))]
-    (= :running status)))
-
 (defn pipeline-pause-unpause
   [pause?
-   {{pipeline-info :path} :parameters
-    db                    :db
-    queue                 :queue}]
-  (if (and pause? (not (pausable? db (:id pipeline-info))))
-    (respond "Pipeline cannot be paused/is already paused now. Try again when running or stop it." 422)
-    (exec #(publish queue
-                    (if pause?
-                      "pipeline/pause"
-                      "pipeline/unpause")
-                    "bob.fanout"
-                    ""
-                    (s/rename-keys pipeline-info {:id :run_id})))))
+   {{{:keys [group name]} :path} :parameters
+    db                           :db}]
+  (f/try-all [data    (pipeline-data db group name)
+              changed (if pause?
+                        (assoc data :paused true)
+                        (dissoc data :paused))
+              _ (crux/await-tx db (crux/submit-tx db [[:crux.tx/put changed]]))]
+    (respond "Ok")
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
 
 (defn pipeline-logs
   [{{{:keys [id offset lines]} :path} :parameters

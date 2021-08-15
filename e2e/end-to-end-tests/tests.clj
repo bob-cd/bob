@@ -101,10 +101,6 @@
   (let [actual-status (get-pipeline-status pipeline-context)]
     (= status actual-status)))
 
-(defn pipeline-passed?
-  [pipeline-context]
-  (= "passed" (get-pipeline-status pipeline-context)))
-
 (defn wait-until-true-timed
   [f]
   (let [response (f)]
@@ -125,7 +121,7 @@
                                              group
                                              name))
         pipeline-context (assoc pipeline-context :run-id (get-resp-message body))
-        _                (wait-until-true #(pipeline-running? pipeline-context))]
+        _ (wait-until-true #(pipeline-running? pipeline-context))]
     pipeline-context))
 
 (def default-artifact-store-url "http://artifact:8001")
@@ -159,13 +155,6 @@
     (wait-until-true #(artifact-store-exists? store-context))
     store-context))
 
-(defn run-id?
-  [s]
-  (-> s
-      (.substring 2)
-      (java.util.UUID/fromString)
-      (uuid?)))
-
 (defn get-pipeline-runs
   "Lists pipeline runs by group and name"
   [{:keys [group name]}]
@@ -175,21 +164,11 @@
                                           name))]
     (get-resp-message body)))
 
-(defn run-id-exists?
-  [{:keys [run-id] :as pipeline-context}]
-  (let [runs (get-pipeline-runs pipeline-context)]
-    (some?
-      (:run_id
-        (first (filter
-                 #(= run-id (:run_id %))
-                 runs))))))
-
 (defn get-pipelines
   "Lists existing pipelines"
   []
   (let [{:keys [body]} @(http/get (format "%s/pipelines" bob-url))]
     (get-resp-message body)))
-
 
 (defn pipeline-exists?
   [{:keys [group name]}]
@@ -208,7 +187,7 @@
                                                   group
                                                   name)
                                           options)
-        _                     (wait-until-true #(pipeline-exists? pipeline-context))]
+        _ (wait-until-true #(pipeline-exists? pipeline-context))]
     {:body body :status status}))
 
 (defn pipeline-started?
@@ -245,43 +224,6 @@
   (wait-until-true #(or (pipeline-has-status? pipeline-context "stopped")
                         (pipeline-has-status? pipeline-context "failed"))))
 
-(defn pause-pipeline-run!
-  "Pauses pipeline, waits until side effect is done, and returns nil"
-  [{:keys [group name run-id] :as pipeline-context}]
-  @(http/post (str bob-url
-                   "/pipelines/pause/groups/"
-                   group
-                   "/names/"
-                   name
-                   "/runs/"
-                   run-id))
-  (wait-until-true #(pipeline-has-status? pipeline-context "paused"))
-  pipeline-context)
-
-(defn unpause-pipeline-run!
-  "Unpauses pipeline, waits for side effect, returns nil"
-  [{:keys [group name run-id] :as pipeline-context}]
-  @(http/post (str bob-url
-                   "/pipelines/unpause/groups/"
-                   group
-                   "/names/"
-                   name
-                   "/runs/"
-                   run-id))
-  (wait-until-true #(pipeline-has-status? pipeline-context "running"))
-  pipeline-context)
-
-(defn delete-pipeline!
-  "Deletes pipeline, waits for side effect, returns nil"
-  [{:keys [group name] :as pipeline-context}]
-  @(http/delete (str bob-url
-                     "/pipelines/groups/"
-                     group
-                     "/names/"
-                     name))
-  (wait-until-true #(not (pipeline-exists? pipeline-context)))
-  pipeline-context)
-
 (defn new-running-pipeline!
   "Creates a pipeline and starts it, waiting for the status to be 'running' before returning the pipeline
   context"
@@ -289,7 +231,7 @@
   ([options]
    (let [name             (random-uuid)
          group            (random-uuid)
-         _                (create-pipeline! {:name name :group group} options)
+         _ (create-pipeline! {:name name :group group} options)
          pipeline-context (start-pipeline! {:name name :group group})]
      pipeline-context)))
 
@@ -365,7 +307,7 @@
 
   (t/testing "gets the logs of a pipeline"
     (let [pipeline-context (new-running-pipeline!)
-          _                (wait-until-true #(pipeline-initialized? pipeline-context))
+          _ (wait-until-true #(pipeline-initialized? pipeline-context))
           pipeline-context (get-pipeline-logs pipeline-context)
           logs             (parse-logs pipeline-context)]
       (t/is (s/subset? (set [default-message]) (set logs)))))
@@ -386,29 +328,40 @@
 
   (t/testing "stops a pipeline"
     (let [pipeline-context (new-running-pipeline! slow-options)
-          _                (stop-pipeline-run pipeline-context)]
+          _ (stop-pipeline-run pipeline-context)]
       (t/is (= "stopped" (get-pipeline-status pipeline-context)))))
 
-  (t/testing "pauses a pipeline and can unpause it"
-    (let [pipeline-context (new-running-pipeline! slow-options)]
-      (wait-until-true #(pipeline-initialized? pipeline-context))
-      (pause-pipeline-run! pipeline-context)
-      (t/is (= "paused" (get-pipeline-status pipeline-context)))
-      (unpause-pipeline-run! pipeline-context)
-      (t/is (= "running" (get-pipeline-status pipeline-context)))))
+  (t/testing "pauses a pipeline"
+    (let [name                  (random-uuid)
+          group                 (random-uuid)
+          _ (create-pipeline! {:group group :name name} default-options)
+          {:keys [body status]} @(http/post (format "%s/pipeline/pause/groups/%s/names/%s"
+                                                    bob-url
+                                                    group
+                                                    name))]
+      (t/is (= "Ok" (get-resp-message body)))
+      (t/is (= 200 status))
+      (t/is (seq (filter #(and (= group (:group %))
+                               (= name (:name %))
+                               (:paused %))
+                         (get-pipelines))))))
 
   (t/testing "deletes a pipeline"
-    (let [pipeline-context (new-running-pipeline! slow-options)]
-      (wait-until-true #(pipeline-initialized? pipeline-context))
-      (pause-pipeline-run! pipeline-context)
-      (delete-pipeline! pipeline-context)
-      (t/is (not (pipeline-exists? pipeline-context)))
-      #_(t/is (= "Cannot find status" (get-pipeline-status pipeline-context)))))
+    (let [name                  (random-uuid)
+          group                 (random-uuid)
+          _ (create-pipeline! {:group group :name name} default-options)
+          {:keys [body status]} @(http/delete (format "%s/pipeline/groups/%s/names/%s"
+                                                      bob-url
+                                                      group
+                                                      name))]
+      (t/is (= "Ok" (get-resp-message body)))
+      (t/is (= 202 status))
+      (t/is (not (pipeline-exists? {:group group :name name})))))
 
   (t/testing "fetches an artifact produced by a pipeline run"
     (let [store-context    (create-artifact-store!)
           pipeline-context (new-running-pipeline! (generate-options (artifact-pipeline store-context)))
-          _                (wait-until-true #(pipeline-has-status? pipeline-context "passed"))
+          _ (wait-until-true #(pipeline-has-status? pipeline-context "passed"))
           artifacts        (get-pipeline-artifacts pipeline-context store-context)]
       (->> artifacts
            :body

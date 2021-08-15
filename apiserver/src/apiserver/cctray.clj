@@ -22,9 +22,9 @@
   [{:keys [group name status completed]
     :as   data}]
   (let [last-build-status (case status
-                            (:passed :running :paused) "Success"
-                            :failed                    "Failure"
-                            :stopped                   "Exception"
+                            (:passed :running) "Success"
+                            :failed            "Failure"
+                            :stopped           "Exception"
                             "Unknown")
         last-build-label  (-> data
                               :crux.db/id

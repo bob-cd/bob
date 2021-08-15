@@ -47,7 +47,6 @@
                                    --network bob-net
                                    ghcr.io/bob-cd/artifact-local")
                                  (load-file "tasks/wait.clj")
-                                 (Thread/sleep 7000)
                                  (shell "clojure -M:test")
                                  (finally
                                    (run 'docker-clean))))}

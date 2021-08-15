@@ -29,12 +29,11 @@
                (prometheus/gauge :bob/running-jobs {:description "Number of jobs currently running"})
                (prometheus/gauge :bob/failed-jobs {:description "Number of failed jobs"})
                (prometheus/gauge :bob/passed-jobs {:description "Number of passed jobs"})
-               (prometheus/gauge :bob/paused-jobs {:description "Number of paused jobs"})
                (prometheus/gauge :bob/stopped-jobs {:description "Number of stopped jobs"}))))
 
 (defn count-statuses
   [db]
-  (f/try-all [statuses [:running :passed :failed :paused :stopped]
+  (f/try-all [statuses [:running :passed :failed :stopped]
               counts   (pmap (fn [status]
                                {:status status
                                 :count  (count (crux/q (crux/db db)
@@ -47,7 +46,6 @@
         :running (prometheus/set (registry :bob/running-jobs) count)
         :passed  (prometheus/set (registry :bob/passed-jobs) count)
         :failed  (prometheus/set (registry :bob/failed-jobs) count)
-        :paused  (prometheus/set (registry :bob/paused-jobs) count)
         :stopped (prometheus/set (registry :bob/stopped-jobs) count)))
     (f/when-failed [err]
       err)))

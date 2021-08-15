@@ -250,6 +250,16 @@ paths:
                 success:
                   value:
                     message: "Run ID of the pipeline"
+        "422":
+          description: Pipeline cannot be started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Pipeline is paused. Unpause it first."
 
   "/pipelines/stop/groups/{group}/names/{name}/runs/{id}":
     post:
@@ -293,11 +303,11 @@ paths:
                   value:
                     message: "Ok"
 
-  "/pipelines/pause/groups/{group}/names/{name}/runs/{id}":
+  "/pipelines/pause/groups/{group}/names/{name}":
     post:
       operationId: PipelinePause
-      summary: Pauses a pipeline
-      description: Submits a pipeline pause request given the pipeline group, name and run id
+      summary: Pauses a pipeline from being scheduled on a runner
+      description: Submits a pipeline pause request given the pipeline group and name. It wont be scheduled to run unless unpaused. Pipelines in-flight will complete. NOP if paused already.
       tags:
         - pipeline
       x-cli:
@@ -316,12 +326,6 @@ paths:
           description: The name of the pipeline
           schema:
             type: string
-        - name: id
-          required: true
-          in: path
-          description: The id of the pipeline run
-          schema:
-            type: string
 
       responses:
         "202":
@@ -334,22 +338,12 @@ paths:
                 success:
                   value:
                     message: "Ok"
-        "422":
-          description: Pipeline cannot be paused
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimpleResponse"
-              examples:
-                success:
-                  value:
-                    message: "Pipeline cannot be paused/is already paused now. Try again when running or stop it."
 
-  "/pipelines/unpause/groups/{group}/names/{name}/runs/{id}":
+  "/pipelines/unpause/groups/{group}/names/{name}":
     post:
       operationId: PipelineUnpause
-      summary: Unpauses a pipeline
-      description: Submits a pipeline unpause request given the pipeline group, name and run id
+      summary: Unpauses a pipeline for scheduling on a runner
+      description: Submits a pipeline unpause request given the pipeline group and name. Subsequent start requests will be honoured. NOP if unpaused already.
       tags:
         - pipeline
       x-cli:
@@ -366,12 +360,6 @@ paths:
           required: true
           in: path
           description: The name of the pipeline
-          schema:
-            type: string
-        - name: id
-          required: true
-          in: path
-          description: The id of the pipeline run
           schema:
             type: string
 
@@ -1199,7 +1187,6 @@ components:
         - passed
         - failed
         - stopped
-        - paused
 
     ResourceProvidersResponse:
       type: object

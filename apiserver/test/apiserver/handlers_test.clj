@@ -77,7 +77,7 @@
      :data (json/read-str (String. payload "UTF-8") :key-fn keyword)}))
 
 (t/deftest pipeline-direct-tests
-  (u/with-system (fn [_ queue]
+  (u/with-system (fn [db queue]
                    (t/testing "pipeline creation"
                      (h/pipeline-create {:parameters {:path {:group "dev"
                                                              :name  "test"}
@@ -101,27 +101,47 @@
                    (t/testing "pipeline start default"
                      (h/pipeline-start {:parameters {:path {:group "dev"
                                                             :name  "test"}}
-                                        :queue      queue})
+                                        :queue      queue
+                                        :db         db})
                      (let [{:keys [type data]} (queue-get queue "bob.jobs")]
                        (t/is (contains? data :run_id))
                        (t/is (= {:group    "dev"
                                  :name     "test"
-                                 :metadata {:runner/type "docker"}}
+                                 :metadata {:runner/type "container"}}
                                 (dissoc data :run_id)))
                        (t/is (= "pipeline/start" type))))
                    (t/testing "pipeline start with metadata"
                      (h/pipeline-start {:parameters {:path {:group "dev"
                                                             :name  "test"}
                                                      :body {:runner/type "something else"}}
-                                        :queue      queue})
+                                        :queue      queue
+                                        :db         db})
                      (let [{:keys [type data]} (queue-get queue "bob.jobs")]
-                       (println data)
                        (t/is (contains? data :run_id))
                        (t/is (= {:group    "dev"
                                  :name     "test"
                                  :metadata {:runner/type "something else"}}
                                 (dissoc data :run_id)))
-                       (t/is (= "pipeline/start" type)))))))
+                       (t/is (= "pipeline/start" type))))
+                   (t/testing "starting paused pipeline"
+                     (crux/await-tx
+                       db
+                       (crux/submit-tx
+                         db
+                         [[:crux.tx/put
+                           {:crux.db/id :bob.pipeline.dev-paused/test-paused
+                            :type       :pipeline
+                            :group      "dev-paused"
+                            :name       "test-paused"
+                            :image      "busybox:musl"
+                            :paused     true
+                            :steps      [{:cmd "echo yes"}]}]]))
+                     (let [{:keys [status body]} (h/pipeline-start {:parameters {:path {:group "dev-paused"
+                                                                                        :name  "test-paused"}}
+                                                                    :queue      queue
+                                                                    :db         db})]
+                       (t/is (= 422 status))
+                       (t/is (= "Pipeline is paused. Unpause it first." (:message body))))))))
 
 (t/deftest pipeline-fanout-tests
   (u/with-system (fn [db queue]
@@ -149,33 +169,33 @@
                                  :name   "test"
                                  :run_id "a-run-id"}
                                 data))
-                       (t/is (= "pipeline/stop" type))))
+                       (t/is (= "pipeline/stop" type)))))))
+
+(t/deftest pipeline-pause-unpause
+  (u/with-system (fn [db _]
+                   (crux/await-tx
+                     db
+                     (crux/submit-tx
+                       db
+                       [[:crux.tx/put
+                         {:crux.db/id :bob.pipeline.dev/test
+                          :type       :pipeline
+                          :group      "dev"
+                          :name       "test"
+                          :image      "busybox:musl"
+                          :steps      [{:cmd "echo yes"}]}]]))
                    (t/testing "pipeline pause"
                      (h/pipeline-pause-unpause true
                                                {:parameters {:path {:group "dev"
-                                                                    :name  "test"
-                                                                    :id    "a-run-id"}}
-                                                :db         db
-                                                :queue      queue})
-                     (let [{:keys [type data]} (queue-get queue "bob.tests")]
-                       (t/is (= {:group  "dev"
-                                 :name   "test"
-                                 :run_id "a-run-id"}
-                                data))
-                       (t/is (= "pipeline/pause" type))))
+                                                                    :name  "test"}}
+                                                :db         db})
+                     (t/is (:paused (h/pipeline-data db "dev" "test"))))
                    (t/testing "pipeline unpause"
                      (h/pipeline-pause-unpause false
                                                {:parameters {:path {:group "dev"
-                                                                    :name  "test"
-                                                                    :id    "a-run-id"}}
-                                                :db         db
-                                                :queue      queue})
-                     (let [{:keys [type data]} (queue-get queue "bob.tests")]
-                       (t/is (= {:group  "dev"
-                                 :name   "test"
-                                 :run_id "a-run-id"}
-                                data))
-                       (t/is (= "pipeline/unpause" type)))))))
+                                                                    :name  "test"}}
+                                                :db         db})
+                     (t/is (not (:paused (h/pipeline-data db "dev" "test"))))))))
 
 (t/deftest pipeline-logs-test
   (u/with-system (fn [db _]
@@ -467,26 +487,3 @@
                      "{:find  [(pull f [:type])]
                               :where [[f :type :indian]]})"
                      :t point-in-time}}})))))))))
-
-(t/deftest unprocessable-requests
-  (u/with-system
-    (fn [db queue]
-      (t/testing "pipeline cannot be paused when initializing"
-        (crux/await-tx
-          db
-          (crux/submit-tx db
-                          [[:crux.tx/put
-                            {:crux.db/id :bob.pipeline.run/pause-me-if-you-can
-                             :type       :pipeline-run
-                             :group      "dev"
-                             :name       "test"
-                             :status     :initializing}]]))
-        (let [{:keys [body status]} (h/pipeline-pause-unpause true
-                                                              {:parameters {:path {:group "dev"
-                                                                                   :name  "test"
-                                                                                   :id    "pause-me-if-you-can"}}
-                                                               :db         db
-                                                               :queue      queue})]
-          (t/is (= 422 status))
-          (t/is (= "Pipeline cannot be paused/is already paused now. Try again when running or stop it."
-                   (:message body))))))))
