@@ -73,13 +73,9 @@
          compile      {:doc  "Builds the compiled aritfact"
                        :task (shell "clojure -X:uberjar")}
          image        {:doc  "Builds the docker images"
-                       :task (do
-                               (shell "docker build -t ghcr.io/bob-cd/runner .")
-                               (shell "docker build -t ghcr.io/bob-cd/runner:self-contained -f Dockerfile.selfcontained ."))}
+                       :task (shell "docker build -t ghcr.io/bob-cd/runner .")}
          push         {:doc  "Pushes the docker image"
-                       :task (do
-                               (shell "docker push ghcr.io/bob-cd/runner")
-                               (shell "docker push ghcr.io/bob-cd/runner:self-contained"))}
+                       :task (shell "docker push ghcr.io/bob-cd/runner")}
          clean        {:doc  "Cleans up"
                        :task (do
                                (shell "rm -rf .cpcache runner.jar")

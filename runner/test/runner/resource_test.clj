@@ -18,10 +18,10 @@
             [clojure.string :as s]
             [clojure.java.io :as io]
             [crux.api :as crux]
-            [clj-docker-client.core :as docker]
             [failjure.core :as f]
+            [contajners.core :as c]
             [runner.util :as u]
-            [runner.docker :as d]
+            [runner.engine :as eng]
             [runner.resource :as r])
   (:import [org.kamranzafar.jtar TarInputStream]))
 
@@ -94,18 +94,18 @@
                                                   [[:crux.tx/delete :bob.resource-provider/git]])))))
 
 (deftest ^:integration initial-image-test
-  (d/pull-image "busybox:musl")
+  (eng/pull-image "busybox:musl")
   (testing "successful image creation"
     (let [url    "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"
           stream (r/fetch-resource url)
           image  (r/initial-image-of stream "busybox:musl" nil "source")
-          images (->> (docker/invoke d/images {:op :ImageList})
+          images (->> (c/invoke eng/images {:op :ImageListLibpod})
                       (map :Id))]
       (is (some #{image} images))
-      (d/delete-image image)))
+      (eng/delete-image image)))
   (testing "unsuccessful image creation"
     (is (f/failed? (r/initial-image-of (io/input-stream "test/test.tar") "invalid-image" nil "src"))))
-  (d/delete-image "busybox:musl"))
+  (eng/delete-image "busybox:musl"))
 
 (deftest ^:integration mounted-image-test
   (u/with-system (fn [db _]
@@ -114,7 +114,7 @@
                                                   [[:crux.tx/put
                                                     {:crux.db/id :bob.resource-provider/git
                                                      :url        "http://localhost:8000"}]]))
-                   (d/pull-image "busybox:musl")
+                   (eng/pull-image "busybox:musl")
                    (testing "successful mount"
                      (let [image  (r/mounted-image-from db
                                                         {:name     "source"
@@ -123,10 +123,10 @@
                                                          :params   {:repo   "https://github.com/lispyclouds/bob-example"
                                                                     :branch "main"}}
                                                         "busybox:musl")
-                           images (->> (docker/invoke d/images {:op :ImageList})
+                           images (->> (c/invoke eng/images {:op :ImageListLibpod})
                                        (map :Id))]
                        (is (some #{image} images))
-                       (d/delete-image "busybox:musl")
+                       (eng/delete-image "busybox:musl")
                        (crux/await-tx db
                                       (crux/submit-tx db
                                                       [[:crux.tx/delete :bob.resource-provider/git]]))))
@@ -135,4 +135,4 @@
                                                           {:name     "source"
                                                            :provider "invalid"}
                                                           "invalid"))))
-                   (d/delete-image "busybox:musl"))))
+                   (eng/delete-image "busybox:musl"))))

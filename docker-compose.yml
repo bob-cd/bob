@@ -26,8 +26,15 @@ services:
     environment:
       BOB_STORAGE_URL: jdbc:postgresql://storage:5432/bob
       BOB_QUEUE_URL: amqp://queue:5672
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    devices:
+      - /dev/fuse
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+      - label=disable
+    cap_add: # TODO: Remove these if possible
+      - sys_admin
+      - mknod
 
   entities:
     image: ghcr.io/bob-cd/entities

@@ -19,8 +19,8 @@
             [failjure.core :as f]
             [java-http-clj.core :as http]
             [runner.util :as u]
-            [runner.docker :as d]
-            [runner.docker-test :as dt]
+            [runner.engine :as eng]
+            [runner.engine-test :as et]
             [runner.pipeline :as p]))
 
 (deftest ^:integration logging-to-db
@@ -57,17 +57,17 @@
       (is (= (list "a-image") (get-in state [:images-for-gc "a-run-id"])))))
 
   (testing "mark and sweep"
-    (d/pull-image "busybox:musl")
+    (eng/pull-image "busybox:musl")
     (p/mark-image-for-gc "busybox:musl" "another-run-id")
     (let [state (p/gc-images "another-run-id")]
       (is (not (contains? state "another-run-id")))
-      (is (empty? (->> (dt/image-ls)
+      (is (empty? (->> (et/image-ls)
                        (filter #(= % "busybox:musl"))))))))
 
 (deftest ^:integration resource-mounts
   (u/with-system (fn [db _]
                    (testing "successful resource provisioning of a step"
-                     (d/pull-image "busybox:musl")
+                     (eng/pull-image "busybox:musl")
                      (crux/await-tx db
                                     (crux/submit-tx db
                                                     [[:crux.tx/put
@@ -93,8 +93,8 @@
                                                      "test"         "test"
                                                      "busybox:musl" "a-run-id")]
                        (is (not (f/failed? image)))
-                       (d/delete-image image))
-                     (d/delete-image "busybox:musl"))))
+                       (eng/delete-image image))
+                     (eng/delete-image "busybox:musl"))))
 
   (u/with-system (fn [db _]
                    (testing "unsuccessful resource provisioning of a step"
@@ -114,7 +114,7 @@
 
 (deftest ^:integration successful-step-executions
   (testing "successful simple step execution"
-    (d/pull-image "busybox:musl")
+    (eng/pull-image "busybox:musl")
     (u/with-system (fn [db _]
                      (let [initial-state {:image     "busybox:musl"
                                           :mounted   #{}
@@ -131,7 +131,7 @@
                      (p/gc-images "a-simple-run-id"))))
 
   (testing "successful step with resource execution"
-    (d/pull-image "busybox:musl")
+    (eng/pull-image "busybox:musl")
     (u/with-system (fn [db _]
                      (crux/await-tx db
                                     (crux/submit-tx db
@@ -167,7 +167,7 @@
                      (p/gc-images "a-resource-run-id"))))
 
   (testing "successful step with artifact execution"
-    (d/pull-image "busybox:musl")
+    (eng/pull-image "busybox:musl")
     (u/with-system
       (fn [db _]
         (crux/await-tx db
@@ -195,7 +195,7 @@
         (http/delete "http://localhost:8001/bob_artifact/test/test/a-artifact-run-id/text"))))
 
   (testing "successful step with resource and artifact execution"
-    (d/pull-image "busybox:musl")
+    (eng/pull-image "busybox:musl")
     (u/with-system
       (fn [db _]
         (crux/await-tx db

@@ -10,7 +10,7 @@ The logs are streamed live directly to the Database.
 - This is implemented in Clojure/JVM
 - Uses [RabbitMQ](https://www.rabbitmq.com/) to receive messages and perform the necessary effects
 - Uses [Crux](https://www.opencrux.com/) backed by [PostgreSQL](https://www.postgresql.org/) for temporal persistence
-- Uses [clj-docker-client](https://github.com/into-docker/clj-docker-client) to talk to the docker daemon to implement step executions.
+- Uses [contajners](https://github.com/lispyclouds/contajners) to talk to [podman](https://podman.io/) to implement step executions.
 
 ## Configuration
 The [environ library](https://github.com/weavejester/environ) is used and therefore several variables can be

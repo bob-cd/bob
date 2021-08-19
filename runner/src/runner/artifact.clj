@@ -19,7 +19,7 @@
             [java-http-clj.core :as http]
             [crux.api :as crux]
             [failjure.core :as f]
-            [runner.docker :as docker]))
+            [runner.engine :as eng]))
 
 (defn store-url
   [db-client store]
@@ -32,7 +32,7 @@
     (f/try-all [_          (log/debugf "Streaming from container %s on path %s"
                                        container-id
                                        path)
-                stream     (docker/get-container-archive container-id path)
+                stream     (eng/get-container-archive container-id path)
                 upload-url (s/join "/" [url "bob_artifact" group name run-id artifact-name])
                 _          (log/infof "Uploading artifact %s for pipeline %s run %s to %s"
                                       artifact-name
@@ -46,12 +46,12 @@
       (f/when-failed [err]
         (log/errorf "Error in uploading artifact: %s" (f/message err))
         (f/try*
-          (docker/delete-container container-id))
+          (eng/delete-container container-id))
         err))
     (do
       (log/error "Error locating Artifact Store")
       (f/try*
-        (docker/delete-container container-id))
+        (eng/delete-container container-id))
       (f/fail "No such artifact store registered"))))
 
 (comment

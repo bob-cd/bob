@@ -259,16 +259,21 @@
   "Creates a new image from a container
 
   Returns image identifier or a failure."
-  [container-id cmd]
-  (f/try-all [result (c/invoke commit
-                               {:op               :ImageCommitLibpod
-                                :params           {:container container-id
-                                                   :changes   (str "CMD=" cmd)}
-                                :throw-exceptions true})]
-    (:Id result)
-    (f/when-failed [err]
-      (log/errorf "Could not commit image: %s" (f/message err))
-      err)))
+  ([container-id]
+   (commit-container container-id nil))
+  ([container-id cmd]
+   (f/try-all [params {:container container-id}
+               params (if cmd
+                        (assoc params :changes (str "CMD=" cmd))
+                        params)
+               result (c/invoke commit
+                                {:op               :ImageCommitLibpod
+                                 :params           params
+                                 :throw-exceptions true})]
+     (:Id result)
+     (f/when-failed [err]
+       (log/errorf "Could not commit image: %s" (f/message err))
+       err))))
 
 (defn put-container-archive
   "Copies an tar input stream of either of the compressions:

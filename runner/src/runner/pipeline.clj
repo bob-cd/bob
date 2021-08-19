@@ -18,7 +18,7 @@
             [taoensso.timbre :as log]
             [crux.api :as crux]
             [common.errors :as errors]
-            [runner.docker :as docker]
+            [runner.engine :as eng]
             [runner.resource :as r]
             [runner.artifact :as a])
   (:import [java.util UUID]
@@ -61,7 +61,7 @@
   "garbage-collect images by run-id."
   [run-id]
   (log/debugf "Deleting all images for run %s" run-id)
-  (run! docker/delete-image (get-in @node-state [:images-for-gc run-id]))
+  (run! eng/delete-image (get-in @node-state [:images-for-gc run-id]))
   (swap! node-state update :images-for-gc dissoc run-id))
 
 (defn resourceful-step
@@ -93,7 +93,7 @@
 
 (defn clean-up-container
   [id run-id]
-  (docker/delete-container id)
+  (eng/delete-container id)
   (swap! node-state
     update-in
     [:runs run-id]
@@ -127,7 +127,7 @@
                                           run-id)
                         image)
                 _     (mark-image-for-gc image run-id)
-                id    (docker/create-container image step env)
+                id    (eng/create-container image step env)
                 ;; Globally note the current container id, useful for stopping/pausing
                 _     (swap! node-state
                         update-in
@@ -135,8 +135,7 @@
                         assoc
                         :container-id
                         id)
-                _     (let [result (docker/start-container id
-                                                           #(log->db db-client run-id %))]
+                _     (let [result (eng/start-container id #(log->db db-client run-id %))]
                         (when (f/failed? result)
                           (log/debugf "Removing failed container %s" id)
                           (clean-up-container id run-id))
@@ -152,13 +151,12 @@
                                            (:name artifact)
                                            id
                                            (str (get-in
-                                                  (docker/inspect-container
-                                                    id)
+                                                  (eng/inspect-container id)
                                                   [:Config :WorkingDir])
                                                 "/"
                                                 (:path artifact))
                                            (:store artifact)))
-                image (docker/commit-image id "")
+                image (eng/commit-container id)
                 _     (mark-image-for-gc image run-id)
                 _     (log/debugf "Removing successful container %s" id)
                 _     (clean-up-container id run-id)]
@@ -204,7 +202,7 @@
                                                                                  :status  :initializing
                                                                                  :started (Instant/now))]]))
               _                          (log-event db-client run-id (str "Pulling image " image))
-              _                          (docker/pull-image image)
+              _                          (eng/pull-image image)
               _                          (mark-image-for-gc image run-id)
               build-state                {:image     image
                                           :mounted   #{}
@@ -239,9 +237,12 @@
                      run-id
                      error)
           (log-event db-client run-id (str "Run failed: %s" error))
-          (crux/submit-tx db-client
-                          [[:crux.tx/put
-                            (assoc (run-info-of db-client run-id) :status :failed :completed (Instant/now))]])))
+          (crux/await-tx
+            db-client
+            (crux/submit-tx
+              db-client
+              [[:crux.tx/put
+                (assoc (run-info-of db-client run-id) :status :failed :completed (Instant/now))]]))))
       (gc-images run-id)
       (clean-up-run run-id)
       (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
@@ -281,8 +282,8 @@
                      [[:crux.tx/put
                        (assoc (run-info-of db-client run_id) :status :stopped :completed (Instant/now))]]))
     (when-let [container (:container-id run)]
-      (docker/kill-container container)
-      (docker/delete-container container)
+      (eng/kill-container container)
+      (eng/delete-container container)
       (gc-images run_id))
     (when-let [run (get-in @node-state [:runs run_id :ref])]
       (when-not (future-done? run)

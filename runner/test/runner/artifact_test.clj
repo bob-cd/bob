@@ -19,13 +19,13 @@
             [failjure.core :as f]
             [java-http-clj.core :as http]
             [runner.util :as u]
-            [runner.docker :as docker]
+            [runner.engine :as eng]
             [runner.artifact :as a]))
 
 (deftest upload-artifact-test
-  (docker/pull-image "busybox:musl")
+  (eng/pull-image "busybox:musl")
   (u/with-system (fn [db _]
-                   (let [id (docker/create-container "busybox:musl")]
+                   (let [id (eng/create-container "busybox:musl")]
                      (crux/await-tx db
                                     (crux/submit-tx db
                                                     [[:crux.tx/put
@@ -37,7 +37,7 @@
                               (a/upload-artifact db "dev" "test" "r-1" "file" id "/root" "local")))
                        (is (= 200
                               (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file")))))
-                     (docker/delete-container id)
+                     (eng/delete-container id)
 
                      (testing "unsuccessful artifact upload"
                        (is (f/failed? (a/upload-artifact db "dev" "test" "r-1" "file1" id "/invalid-path" "local")))
@@ -46,4 +46,4 @@
                      (crux/await-tx db
                                     (crux/submit-tx db
                                                     [[:crux.tx/delete :bob.artifact-store/local]])))))
-  (docker/delete-image "busybox:musl"))
+  (eng/delete-image "busybox:musl"))

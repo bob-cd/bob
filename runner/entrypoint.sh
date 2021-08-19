@@ -17,6 +17,6 @@
 
 set -e
 
-/usr/local/bin/dockerd-entrypoint.sh &
+podman system service -t 0 unix:///tmp/pod.sock &
 
 /opt/jdk/bin/java -jar /opt/runner.jar

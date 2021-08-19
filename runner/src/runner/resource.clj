@@ -20,7 +20,7 @@
             [taoensso.timbre :as log]
             [java-http-clj.core :as http]
             [crux.api :as crux]
-            [runner.docker :as docker]
+            [runner.engine :as eng]
             [runner.artifact :as a])
   (:import [java.io BufferedOutputStream File FileOutputStream]
            [org.kamranzafar.jtar TarInputStream TarOutputStream]))
@@ -110,16 +110,16 @@
                                     TarInputStream.
                                     (prefix-dir-on-tar! resource-name))
               _                 (log/debug "Creating temp container for resource mount")
-              container-id      (docker/create-container image)
+              container-id      (eng/create-container image)
               _                 (log/debug "Copying resources to container")
-              _                 (docker/put-container-archive container-id (io/input-stream archive-path) "/root")
+              _                 (eng/put-container-archive container-id (io/input-stream archive-path) "/root")
               _                 (-> archive-path
                                     File.
                                     .delete)
               _                 (log/debug "Committing resourceful container")
-              provisioned-image (docker/commit-image container-id cmd)
+              provisioned-image (eng/commit-container container-id cmd)
               _                 (log/debug "Removing temp container")
-              _                 (docker/delete-container container-id)]
+              _                 (eng/delete-container container-id)]
     provisioned-image
     (f/when-failed [err]
       (log/errorf "Failed to create initial image: %s" (f/message err))
