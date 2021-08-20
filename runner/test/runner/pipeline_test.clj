@@ -23,6 +23,8 @@
             [runner.engine-test :as et]
             [runner.pipeline :as p]))
 
+(def test-image "quay.io/libpod/alpine")
+
 (deftest ^:integration logging-to-db
   (u/with-system (fn [db _]
                    (testing "log raw line"
@@ -57,17 +59,17 @@
       (is (= (list "a-image") (get-in state [:images-for-gc "a-run-id"])))))
 
   (testing "mark and sweep"
-    (eng/pull-image "busybox:musl")
-    (p/mark-image-for-gc "busybox:musl" "another-run-id")
+    (eng/pull-image test-image)
+    (p/mark-image-for-gc test-image "another-run-id")
     (let [state (p/gc-images "another-run-id")]
       (is (not (contains? state "another-run-id")))
       (is (empty? (->> (et/image-ls)
-                       (filter #(= % "busybox:musl"))))))))
+                       (filter #(= % test-image))))))))
 
 (deftest ^:integration resource-mounts
   (u/with-system (fn [db _]
                    (testing "successful resource provisioning of a step"
-                     (eng/pull-image "busybox:musl")
+                     (eng/pull-image test-image)
                      (crux/await-tx db
                                     (crux/submit-tx db
                                                     [[:crux.tx/put
@@ -86,15 +88,15 @@
                                                                      :provider "git"
                                                                      :params   {:repo   "https://github.com/bob-cd/bob"
                                                                                 :branch "main"}}]
-                                                       :image      "busybox:musl"}]]))
+                                                       :image      test-image}]]))
                      (let [image (p/resourceful-step db
                                                      {:needs_resource "source"
                                                       :cmd            "ls"}
                                                      "test"         "test"
-                                                     "busybox:musl" "a-run-id")]
+                                                     test-image "a-run-id")]
                        (is (not (f/failed? image)))
                        (eng/delete-image image))
-                     (eng/delete-image "busybox:musl"))))
+                     (eng/delete-image test-image))))
 
   (u/with-system (fn [db _]
                    (testing "unsuccessful resource provisioning of a step"
@@ -102,7 +104,7 @@
                                                         {:needs_resource "source"
                                                          :cmd            "ls"}
                                                         "test"         "test"
-                                                        "busybox:musl" "a-run-id"))))))
+                                                        test-image "a-run-id"))))))
 
   (testing "mount needed for step"
     (is (p/mount-needed? {:mounted #{"another-resource"}} {:needs_resource "a-resource"}))
@@ -114,9 +116,9 @@
 
 (deftest ^:integration successful-step-executions
   (testing "successful simple step execution"
-    (eng/pull-image "busybox:musl")
+    (eng/pull-image test-image)
     (u/with-system (fn [db _]
-                     (let [initial-state {:image     "busybox:musl"
+                     (let [initial-state {:image     test-image
                                           :mounted   #{}
                                           :run-id    "a-simple-run-id"
                                           :db-client db
@@ -126,12 +128,12 @@
                            step          {:cmd "whoami"}
                            final-state   (p/exec-step initial-state step)]
                        (is (not (f/failed? final-state)))
-                       (is (not= "busybox:musl" (:image final-state)))
+                       (is (not= test-image (:image final-state)))
                        (is (empty? (:mounted final-state))))
                      (p/gc-images "a-simple-run-id"))))
 
   (testing "successful step with resource execution"
-    (eng/pull-image "busybox:musl")
+    (eng/pull-image test-image)
     (u/with-system (fn [db _]
                      (crux/await-tx db
                                     (crux/submit-tx db
@@ -151,8 +153,8 @@
                                                                      :provider "git"
                                                                      :params   {:repo   "https://github.com/bob-cd/bob"
                                                                                 :branch "main"}}]
-                                                       :image      "busybox:musl"}]]))
-                     (let [initial-state {:image     "busybox:musl"
+                                                       :image      test-image}]]))
+                     (let [initial-state {:image     test-image
                                           :mounted   #{}
                                           :run-id    "a-resource-run-id"
                                           :db-client db
@@ -167,7 +169,7 @@
                      (p/gc-images "a-resource-run-id"))))
 
   (testing "successful step with artifact execution"
-    (eng/pull-image "busybox:musl")
+    (eng/pull-image test-image)
     (u/with-system
       (fn [db _]
         (crux/await-tx db
@@ -175,7 +177,7 @@
                                        [[:crux.tx/put
                                          {:crux.db/id :bob.artifact-store/local
                                           :url        "http://localhost:8001"}]]))
-        (let [initial-state {:image     "busybox:musl"
+        (let [initial-state {:image     test-image
                              :mounted   #{}
                              :run-id    "a-artifact-run-id"
                              :db-client db
@@ -195,7 +197,7 @@
         (http/delete "http://localhost:8001/bob_artifact/test/test/a-artifact-run-id/text"))))
 
   (testing "successful step with resource and artifact execution"
-    (eng/pull-image "busybox:musl")
+    (eng/pull-image test-image)
     (u/with-system
       (fn [db _]
         (crux/await-tx db
@@ -222,8 +224,8 @@
                                                         :provider "git"
                                                         :params   {:repo   "https://github.com/bob-cd/bob"
                                                                    :branch "main"}}]
-                                          :image      "busybox:musl"}]]))
-        (let [initial-state {:image     "busybox:musl"
+                                          :image      test-image}]]))
+        (let [initial-state {:image     test-image
                              :mounted   #{}
                              :run-id    "a-full-run-id"
                              :db-client db
@@ -249,7 +251,7 @@
 
   (testing "wrong command step failure"
     (u/with-system (fn [db _]
-                     (let [initial-state {:image     "busybox:musl"
+                     (let [initial-state {:image     test-image
                                           :mounted   #{}
                                           :run-id    "a-simple-run-id"
                                           :db-client db
@@ -272,7 +274,7 @@
                                                        :name       "test"
                                                        :steps      [{:cmd "echo hello"} {:cmd "sh -c \"echo ${k1}\""}]
                                                        :vars       {:k1 "v1"}
-                                                       :image      "busybox:musl"}]]))
+                                                       :image      test-image}]]))
                      (let [result   @(p/start db
                                        queue
                                        {:group  "test"
@@ -302,7 +304,7 @@
                                                        :name       "test"
                                                        :steps      [{:cmd "echo hello"} {:cmd "this-bombs"}]
                                                        :vars       {:k1 "v1"}
-                                                       :image      "busybox:musl"}]]))
+                                                       :image      test-image}]]))
                      (let [result   @(p/start db
                                        queue
                                        {:group  "test"
@@ -333,7 +335,7 @@
                                        [[:crux.tx/put
                                          {:crux.db/id :bob.pipeline.test/stop-test
                                           :steps      [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
-                                          :image      "busybox:musl"}]]))
+                                          :image      test-image}]]))
         (let [_        (p/start db
                          queue
                          {:group  "test"
