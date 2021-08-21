@@ -114,136 +114,136 @@
     (is (not (p/mount-needed? {:mounted #{"a-resource"}} {:needs_resource "a-resource"})))
     (is (not (p/mount-needed? {:mounted #{"a-resource"}} {})))))
 
-(deftest ^:integration successful-step-executions
-  (testing "successful simple step execution"
-    (eng/pull-image test-image)
-    (u/with-system (fn [db _]
-                     (let [initial-state {:image     test-image
-                                          :mounted   #{}
-                                          :run-id    "a-simple-run-id"
-                                          :db-client db
-                                          :env       {}
-                                          :group     "test"
-                                          :name      "test"}
-                           step          {:cmd "ls"}
-                           final-state   (p/exec-step initial-state step)]
-                       (is (not (f/failed? final-state)))
-                       (is (not= test-image (:image final-state)))
-                       (is (empty? (:mounted final-state))))
-                     (p/gc-images "a-simple-run-id"))))
+#_(deftest ^:integration successful-step-executions
+    (testing "successful simple step execution"
+      (eng/pull-image test-image)
+      (u/with-system (fn [db _]
+                       (let [initial-state {:image     test-image
+                                            :mounted   #{}
+                                            :run-id    "a-simple-run-id"
+                                            :db-client db
+                                            :env       {}
+                                            :group     "test"
+                                            :name      "test"}
+                             step          {:cmd "ls"}
+                             final-state   (p/exec-step initial-state step)]
+                         (is (not (f/failed? final-state)))
+                         (is (not= test-image (:image final-state)))
+                         (is (empty? (:mounted final-state))))
+                       (p/gc-images "a-simple-run-id"))))
 
-  (testing "successful step with resource execution"
-    (eng/pull-image test-image)
-    (u/with-system (fn [db _]
-                     (crux/await-tx db
-                                    (crux/submit-tx db
-                                                    [[:crux.tx/put
-                                                      {:crux.db/id :bob.resource-provider/git
-                                                       :url        "http://localhost:8000"}]]))
-                     (crux/await-tx db
-                                    (crux/submit-tx db
-                                                    [[:crux.tx/put
-                                                      {:crux.db/id :bob.pipeline.test/test
-                                                       :group      "test"
-                                                       :name       "test"
-                                                       :steps      []
-                                                       :vars       {}
-                                                       :resources  [{:name     "source"
-                                                                     :type     "external"
-                                                                     :provider "git"
-                                                                     :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                                :branch "main"}}]
-                                                       :image      test-image}]]))
-                     (let [initial-state {:image     test-image
-                                          :mounted   #{}
-                                          :run-id    "a-resource-run-id"
-                                          :db-client db
-                                          :env       {}
-                                          :group     "test"
-                                          :name      "test"}
-                           step          {:cmd            "ls"
-                                          :needs_resource "source"}
-                           final-state   (p/exec-step initial-state step)]
-                       (is (not (f/failed? final-state)))
-                       (is (contains? (:mounted final-state) "source")))
-                     (p/gc-images "a-resource-run-id"))))
+    (testing "successful step with resource execution"
+      (eng/pull-image test-image)
+      (u/with-system (fn [db _]
+                       (crux/await-tx db
+                                      (crux/submit-tx db
+                                                      [[:crux.tx/put
+                                                        {:crux.db/id :bob.resource-provider/git
+                                                         :url        "http://localhost:8000"}]]))
+                       (crux/await-tx db
+                                      (crux/submit-tx db
+                                                      [[:crux.tx/put
+                                                        {:crux.db/id :bob.pipeline.test/test
+                                                         :group      "test"
+                                                         :name       "test"
+                                                         :steps      []
+                                                         :vars       {}
+                                                         :resources  [{:name     "source"
+                                                                       :type     "external"
+                                                                       :provider "git"
+                                                                       :params   {:repo   "https://github.com/bob-cd/bob"
+                                                                                  :branch "main"}}]
+                                                         :image      test-image}]]))
+                       (let [initial-state {:image     test-image
+                                            :mounted   #{}
+                                            :run-id    "a-resource-run-id"
+                                            :db-client db
+                                            :env       {}
+                                            :group     "test"
+                                            :name      "test"}
+                             step          {:cmd            "ls"
+                                            :needs_resource "source"}
+                             final-state   (p/exec-step initial-state step)]
+                         (is (not (f/failed? final-state)))
+                         (is (contains? (:mounted final-state) "source")))
+                       (p/gc-images "a-resource-run-id"))))
 
-  (testing "successful step with artifact execution"
-    (eng/pull-image test-image)
-    (u/with-system
-      (fn [db _]
-        (crux/await-tx db
-                       (crux/submit-tx db
-                                       [[:crux.tx/put
-                                         {:crux.db/id :bob.artifact-store/local
-                                          :url        "http://localhost:8001"}]]))
-        (let [initial-state {:image     test-image
-                             :mounted   #{}
-                             :run-id    "a-artifact-run-id"
-                             :db-client db
-                             :env       {}
-                             :group     "test"
-                             :name      "test"}
-              step          {:cmd               "touch text.txt"
-                             :produces_artifact {:path  "text.txt"
-                                                 :name  "text"
-                                                 :store "local"}}
-              final-state   (p/exec-step initial-state step)]
-          (is (not (f/failed? final-state)))
-          (is (empty? (:mounted final-state)))
-          (is (= 200
-                 (:status (http/get "http://localhost:8001/bob_artifact/test/test/a-artifact-run-id/text")))))
-        (p/gc-images "a-artifact-run-id")
-        (http/delete "http://localhost:8001/bob_artifact/test/test/a-artifact-run-id/text"))))
+    (testing "successful step with artifact execution"
+      (eng/pull-image test-image)
+      (u/with-system
+        (fn [db _]
+          (crux/await-tx db
+                         (crux/submit-tx db
+                                         [[:crux.tx/put
+                                           {:crux.db/id :bob.artifact-store/local
+                                            :url        "http://localhost:8001"}]]))
+          (let [initial-state {:image     test-image
+                               :mounted   #{}
+                               :run-id    "a-artifact-run-id"
+                               :db-client db
+                               :env       {}
+                               :group     "test"
+                               :name      "test"}
+                step          {:cmd               "touch text.txt"
+                               :produces_artifact {:path  "text.txt"
+                                                   :name  "text"
+                                                   :store "local"}}
+                final-state   (p/exec-step initial-state step)]
+            (is (not (f/failed? final-state)))
+            (is (empty? (:mounted final-state)))
+            (is (= 200
+                   (:status (http/get "http://localhost:8001/bob_artifact/test/test/a-artifact-run-id/text")))))
+          (p/gc-images "a-artifact-run-id")
+          (http/delete "http://localhost:8001/bob_artifact/test/test/a-artifact-run-id/text"))))
 
-  (testing "successful step with resource and artifact execution"
-    (eng/pull-image test-image)
-    (u/with-system
-      (fn [db _]
-        (crux/await-tx db
-                       (crux/submit-tx db
-                                       [[:crux.tx/put
-                                         {:crux.db/id :bob.resource-provider/git
-                                          :url        "http://localhost:8000"}]]))
+    (testing "successful step with resource and artifact execution"
+      (eng/pull-image test-image)
+      (u/with-system
+        (fn [db _]
+          (crux/await-tx db
+                         (crux/submit-tx db
+                                         [[:crux.tx/put
+                                           {:crux.db/id :bob.resource-provider/git
+                                            :url        "http://localhost:8000"}]]))
 
-        (crux/await-tx db
-                       (crux/submit-tx db
-                                       [[:crux.tx/put
-                                         {:crux.db/id :bob.artifact-store/local
-                                          :url        "http://localhost:8001"}]]))
-        (crux/await-tx db
-                       (crux/submit-tx db
-                                       [[:crux.tx/put
-                                         {:crux.db/id :bob.pipeline.test/test
-                                          :group      "test"
-                                          :name       "test"
-                                          :steps      []
-                                          :vars       {}
-                                          :resources  [{:name     "source"
-                                                        :type     "external"
-                                                        :provider "git"
-                                                        :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                   :branch "main"}}]
-                                          :image      test-image}]]))
-        (let [initial-state {:image     test-image
-                             :mounted   #{}
-                             :run-id    "a-full-run-id"
-                             :db-client db
-                             :env       {}
-                             :group     "test"
-                             :name      "test"}
-              step          {:needs_resource    "source"
-                             :cmd               "ls"
-                             :produces_artifact {:path  "README.md"
-                                                 :name  "text"
-                                                 :store "local"}}
-              final-state   (p/exec-step initial-state step)]
-          (is (not (f/failed? final-state)))
-          (is (contains? (:mounted final-state) "source"))
-          (is (= 200
-                 (:status (http/get "http://localhost:8001/bob_artifact/test/test/a-full-run-id/text")))))
-        (p/gc-images "a-full-run-id")
-        (http/delete "http://localhost:8001/bob_artifact/test/test/a-full-run-id/text")))))
+          (crux/await-tx db
+                         (crux/submit-tx db
+                                         [[:crux.tx/put
+                                           {:crux.db/id :bob.artifact-store/local
+                                            :url        "http://localhost:8001"}]]))
+          (crux/await-tx db
+                         (crux/submit-tx db
+                                         [[:crux.tx/put
+                                           {:crux.db/id :bob.pipeline.test/test
+                                            :group      "test"
+                                            :name       "test"
+                                            :steps      []
+                                            :vars       {}
+                                            :resources  [{:name     "source"
+                                                          :type     "external"
+                                                          :provider "git"
+                                                          :params   {:repo   "https://github.com/bob-cd/bob"
+                                                                     :branch "main"}}]
+                                            :image      test-image}]]))
+          (let [initial-state {:image     test-image
+                               :mounted   #{}
+                               :run-id    "a-full-run-id"
+                               :db-client db
+                               :env       {}
+                               :group     "test"
+                               :name      "test"}
+                step          {:needs_resource    "source"
+                               :cmd               "ls"
+                               :produces_artifact {:path  "README.md"
+                                                   :name  "text"
+                                                   :store "local"}}
+                final-state   (p/exec-step initial-state step)]
+            (is (not (f/failed? final-state)))
+            (is (contains? (:mounted final-state) "source"))
+            (is (= 200
+                   (:status (http/get "http://localhost:8001/bob_artifact/test/test/a-full-run-id/text")))))
+          (p/gc-images "a-full-run-id")
+          (http/delete "http://localhost:8001/bob_artifact/test/test/a-full-run-id/text")))))
 
 (deftest ^:integration failed-step-executions
   (testing "reduces upon build failure"
