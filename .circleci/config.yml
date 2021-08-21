@@ -17,14 +17,10 @@ version: 2
 
 jobs:
   build:
-    docker:
-      - image: circleci/clojure:openjdk-16-tools-deps-buster
+    machine: true
 
     steps:
       - checkout
-
-      - setup_remote_docker:
-          version: 20.10.6
 
       - run:
           name: Setup Babashka
