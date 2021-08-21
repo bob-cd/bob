@@ -18,7 +18,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: openjdk-16-tools-deps-buster
+      - image: circleci/clojure:openjdk-16-tools-deps-buster
 
     steps:
       - checkout
