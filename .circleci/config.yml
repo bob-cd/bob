@@ -1,0 +1,56 @@
+#   This file is part of Bob.
+#
+#   Bob is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU Affero General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Bob is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#   GNU Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with Bob. If not, see <http://www.gnu.org/licenses/>.
+
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: openjdk-16-tools-deps-buster
+
+    steps:
+      - checkout
+
+      - setup_remote_docker:
+          version: 20.10.6
+
+      - run:
+          name: Setup Babashka
+          command: |
+            curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
+            bash install
+
+      - run:
+          name: Setup wait-for
+          command: |
+            curl -sLO https://raw.githubusercontent.com/eficode/wait-for/master/wait-for
+            chmod +x wait-for
+            mv wait-for /usr/bin
+
+      - run:
+          name: Run all tests
+          command: bb test
+
+      - run:
+          name: Build JARs
+          command: bb compile
+
+      - run:
+          name: Build Docker images
+          command: bb image"
+
+      - run:
+          name: Run end to end tests
+          command: bb e2e
