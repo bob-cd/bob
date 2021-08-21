@@ -30,14 +30,14 @@ jobs:
           name: Setup Babashka
           command: |
             curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
-            bash install
+            sudo bash install
 
       - run:
           name: Setup wait-for
           command: |
             curl -sLO https://raw.githubusercontent.com/eficode/wait-for/master/wait-for
             chmod +x wait-for
-            mv wait-for /usr/bin
+            sudo mv wait-for /usr/bin
 
       - run:
           name: Run all tests
