@@ -36,6 +36,10 @@ jobs:
             sudo mv wait-for /usr/bin
 
       - run:
+          name: Setup java
+          command: circleci-install java openjdk11
+
+      - run:
           name: Setup clojure
           command: |
             curl -O https://download.clojure.org/install/linux-install-1.10.3.943.sh
