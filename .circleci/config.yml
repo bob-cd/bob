@@ -17,7 +17,8 @@ version: 2
 
 jobs:
   build:
-    machine: true
+    machine:
+      image: ubuntu-2004:202107-02
 
     steps:
       - checkout
@@ -34,10 +35,6 @@ jobs:
             curl -sLO https://raw.githubusercontent.com/eficode/wait-for/master/wait-for
             chmod +x wait-for
             sudo mv wait-for /usr/bin
-
-      - run:
-          name: Setup java
-          command: circleci-install java openjdk11
 
       - run:
           name: Setup clojure
