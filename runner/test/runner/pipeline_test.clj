@@ -114,6 +114,7 @@
     (is (not (p/mount-needed? {:mounted #{"a-resource"}} {:needs_resource "a-resource"})))
     (is (not (p/mount-needed? {:mounted #{"a-resource"}} {})))))
 
+; TODO: Why the F does this fail on CIs?
 #_(deftest ^:integration successful-step-executions
     (testing "successful simple step execution"
       (eng/pull-image test-image)
