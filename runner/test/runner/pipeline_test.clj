@@ -23,7 +23,7 @@
             [runner.engine-test :as et]
             [runner.pipeline :as p]))
 
-(def test-image "quay.io/libpod/alpine")
+(def test-image "alpine:latest")
 
 (deftest ^:integration logging-to-db
   (u/with-system (fn [db _]
@@ -125,7 +125,7 @@
                                           :env       {}
                                           :group     "test"
                                           :name      "test"}
-                           step          {:cmd "whoami"}
+                           step          {:cmd "ls"}
                            final-state   (p/exec-step initial-state step)]
                        (is (not (f/failed? final-state)))
                        (is (not= test-image (:image final-state)))

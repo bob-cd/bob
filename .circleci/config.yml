@@ -13,7 +13,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-version: 2
+version: 2.1
 
 jobs:
   build:
@@ -37,11 +37,14 @@ jobs:
             sudo mv wait-for /usr/bin
 
       - run:
-          name: Setup clojure
+          name: Setup Clojure
           command: |
-            curl -O https://download.clojure.org/install/linux-install-1.10.3.943.sh
-            chmod +x linux-install-1.10.3.943.sh
-            sudo ./linux-install-1.10.3.943.sh
+            curl -sLO https://download.clojure.org/install/linux-install-1.10.3.943.sh
+            sudo bash linux-install-1.10.3.943.sh
+
+      - restore_cache:
+          keys:
+            - bob-v1-
 
       - run:
           name: Run all tests
@@ -58,6 +61,11 @@ jobs:
       - run:
           name: Run end to end tests
           command: bb e2e
+
+      - save_cache:
+          key: bob-v1-{{ checksum "apiserver/deps.edn" }}-{{ checksum "entities/deps.edn" }}-{{ checksum "runner/deps.edn" }}-{{ checksum "common/deps.edn" }}
+          paths:
+            - ~/.m2
 
       - run:
           name: Publish images
