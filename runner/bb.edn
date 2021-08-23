@@ -19,7 +19,8 @@
                        :task (do
                                (shell {:continue true} "docker kill bob-test-storage bob-test-queue resource-git artifact-local podman")
                                (shell {:continue true} "docker rm bob-test-storage bob-test-queue resource-git artifact-local podman")
-                               (shell {:continue true} "docker network rm bob-net"))}
+                               (shell {:continue true} "docker network rm bob-net")
+                               (shell {:continue true} "docker volume prune -f"))}
          test         {:doc  "Sets up the cluster and runs tests"
                        :task (do
                                (try
