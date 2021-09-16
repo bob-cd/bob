@@ -21,7 +21,7 @@
             [langohr.basic :as lb]
             [langohr.queue :as lq]
             [clojure.data.json :as json]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [java-http-clj.core :as http]
             [apiserver.handlers :as h]
             [apiserver.util :as u])

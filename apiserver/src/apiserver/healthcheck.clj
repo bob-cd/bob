@@ -15,7 +15,7 @@
 
 (ns apiserver.healthcheck
   (:require [failjure.core :as f]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [taoensso.timbre :as log])
   (:import [java.util.concurrent Executors TimeUnit]))
 

@@ -18,15 +18,15 @@
             [environ.core :as env]
             [taoensso.timbre :as log]
             [failjure.core :as f]
-            [xt.api :as xt]
-            [xt.jdbc :as jdbc]
+            [xtdb.api :as xt]
+            [xtdb.jdbc :as jdbc]
             [langohr.core :as rmq]
             [langohr.channel :as lch]
             [langohr.queue :as lq]
             [langohr.exchange :as le]
             [langohr.consumers :as lc])
   (:import [java.net ConnectException]
-           [xt.api IXtdb]))
+           [xtdb.api IXtdb]))
 
 (defn int-from-env
   [key default]

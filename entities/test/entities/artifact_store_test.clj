@@ -15,7 +15,7 @@
 
 (ns entities.artifact-store-test
   (:require [clojure.test :refer [deftest testing is]]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [entities.util :as u]
             [entities.artifact-store :as artifact-store]))
 

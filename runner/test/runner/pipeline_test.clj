@@ -15,9 +15,8 @@
 
 (ns runner.pipeline-test
   (:require [clojure.test :refer [deftest testing is]]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [failjure.core :as f]
-            [java-http-clj.core :as http]
             [runner.util :as u]
             [runner.engine :as eng]
             [runner.engine-test :as et]

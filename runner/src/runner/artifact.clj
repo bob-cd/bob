@@ -17,7 +17,7 @@
   (:require [clojure.string :as s]
             [taoensso.timbre :as log]
             [java-http-clj.core :as http]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [failjure.core :as f]
             [runner.engine :as eng]))
 

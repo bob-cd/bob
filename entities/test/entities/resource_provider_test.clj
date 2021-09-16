@@ -15,7 +15,7 @@
 
 (ns entities.resource-provider-test
   (:require [clojure.test :refer [deftest testing is]]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [entities.util :as u]
             [entities.resource-provider :as resource-provider]))
 

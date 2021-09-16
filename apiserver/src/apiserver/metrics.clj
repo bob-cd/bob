@@ -17,7 +17,7 @@
   (:require [iapetos.core :as prometheus]
             [iapetos.export :as export]
             [failjure.core :as f]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [langohr.queue :as lq]))
 
 (defonce registry

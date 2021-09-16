@@ -17,7 +17,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.string :as s]
             [clojure.java.io :as io]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [failjure.core :as f]
             [contajners.core :as c]
             [runner.util :as u]

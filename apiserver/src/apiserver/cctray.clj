@@ -15,7 +15,7 @@
 
 (ns apiserver.cctray
   (:require [clojure.data.xml :as xml]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [failjure.core :as f]))
 
 (defn make-project

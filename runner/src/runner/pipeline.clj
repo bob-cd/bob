@@ -16,7 +16,7 @@
 (ns runner.pipeline
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [common.errors :as errors]
             [runner.engine :as eng]
             [runner.resource :as r]

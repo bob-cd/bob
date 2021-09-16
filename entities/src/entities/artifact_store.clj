@@ -16,7 +16,7 @@
 (ns entities.artifact-store
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [common.errors :as err]))
 
 (defn register-artifact-store

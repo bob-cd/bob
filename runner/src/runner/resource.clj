@@ -19,7 +19,7 @@
             [failjure.core :as f]
             [taoensso.timbre :as log]
             [java-http-clj.core :as http]
-            [xt.api :as xt]
+            [xtdb.api :as xt]
             [runner.engine :as eng]
             [runner.artifact :as a])
   (:import [java.io BufferedOutputStream File FileOutputStream]
