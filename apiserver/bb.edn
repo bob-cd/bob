@@ -52,12 +52,13 @@
                                  (finally
                                    (run 'docker-clean))))}
          compile      {:doc  "Builds the compiled artifact"
-                       :task (shell "clojure -X:uberjar")}
+                       :task (shell "clojure -T:build uber")}
          image        {:doc  "Builds the docker image"
                        :task (shell "docker build -t ghcr.io/bob-cd/apiserver .")}
          push         {:doc  "Pushes the docker image"
                        :task (shell "docker push ghcr.io/bob-cd/apiserver")}
          clean        {:doc  "Cleans up"
                        :task (do
-                               (shell "rm -rf .cpcache apiserver.jar")
+                               (shell "clojure -T:build clean")
+                               (shell "rm -rf .cpcache")
                                (shell {:continue true} "docker rmi ghcr.io/bob-cd/apiserver"))}}}
