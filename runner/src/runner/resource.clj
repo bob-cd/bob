@@ -19,7 +19,7 @@
             [failjure.core :as f]
             [taoensso.timbre :as log]
             [java-http-clj.core :as http]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [runner.engine :as eng]
             [runner.artifact :as a])
   (:import [java.io BufferedOutputStream File FileOutputStream]
@@ -28,10 +28,10 @@
 (defn fetch-resource
   "Downloads a resource(tar file) and returns the stream."
   [url]
-  (f/try-all [_                     (log/infof "Fetching resource from %s" url)
+  (f/try-all [_ (log/infof "Fetching resource from %s" url)
               {:keys [status body]} (http/get url {} {:as :input-stream})
-              _                     (when (>= status 400)
-                                      (f/fail (slurp body)))]
+              _ (when (>= status 400)
+                  (f/fail (slurp body)))]
     body
     (f/when-failed [err]
       (log/errorf "Failed to fetch resource: %s" (f/message err))
@@ -65,7 +65,7 @@
 (defn valid-resource-provider?
   "Checks if the resource is registered."
   [db-client resource]
-  (some? (crux/entity (crux/db db-client) (keyword (str "bob.resource-provider/" (:provider resource))))))
+  (some? (xt/entity (xt/db db-client) (keyword (str "bob.resource-provider/" (:provider resource))))))
 
 (defn url-of
   "Generates a URL for the resource fetch of a pipeline."
@@ -74,7 +74,7 @@
     "external" (let [url   (->> provider
                                 (str "bob.resource-provider/")
                                 keyword
-                                (crux/entity (crux/db db-client))
+                                (xt/entity (xt/db db-client))
                                 :url)
                      query (s/join "&"
                                    (map #(format "%s=%s"
@@ -105,21 +105,21 @@
   - Return the id of the committed image.
   - Deletes the temp folder."
   [resource-stream image cmd resource-name]
-  (f/try-all [_                 (log/debug "Patching tar stream for container mounting")
+  (f/try-all [_ (log/debug "Patching tar stream for container mounting")
               archive-path      (-> resource-stream
                                     TarInputStream.
                                     (prefix-dir-on-tar! resource-name))
-              _                 (log/debug "Creating temp container for resource mount")
+              _ (log/debug "Creating temp container for resource mount")
               container-id      (eng/create-container image)
-              _                 (log/debug "Copying resources to container")
-              _                 (eng/put-container-archive container-id (io/input-stream archive-path) "/root")
-              _                 (-> archive-path
-                                    File.
-                                    .delete)
-              _                 (log/debug "Committing resourceful container")
+              _ (log/debug "Copying resources to container")
+              _ (eng/put-container-archive container-id (io/input-stream archive-path) "/root")
+              _ (-> archive-path
+                    File.
+                    .delete)
+              _ (log/debug "Committing resourceful container")
               provisioned-image (eng/commit-container container-id cmd)
-              _                 (log/debug "Removing temp container")
-              _                 (eng/delete-container container-id)]
+              _ (log/debug "Removing temp container")
+              _ (eng/delete-container container-id)]
     provisioned-image
     (f/when-failed [err]
       (log/errorf "Failed to create initial image: %s" (f/message err))
@@ -139,9 +139,9 @@
   - Returns the id or the error."
   [db-client resource image]
   (f/try-all [resource-name   (:name resource)
-              _               (when (not (valid-resource-provider? db-client resource))
-                                (f/fail (str "Invalid external resources, possibly not registered "
-                                             resource-name)))
+              _ (when (not (valid-resource-provider? db-client resource))
+                  (f/fail (str "Invalid external resources, possibly not registered "
+                               resource-name)))
               resource-stream (fetch-resource (url-of db-client resource))]
     (initial-image-of resource-stream image nil resource-name)
     (f/when-failed [err]
@@ -166,12 +166,12 @@
         :database
         sys/db-client))
 
-  (crux/submit-tx db-client
-                  [[:crux.tx/put
-                    {:crux.db/id :bob.resource-provider/git
-                     :type       :resource-provider
-                     :name       "git"
-                     :url        "http://localhost:8000"}]])
+  (xt/submit-tx db-client
+                [[:xt.tx/put
+                  {:xt.db/id :bob.resource-provider/git
+                   :type     :resource-provider
+                   :name     "git"
+                   :url      "http://localhost:8000"}]])
 
   (valid-resource-provider? db-client {:provider "git"})
 
@@ -183,10 +183,10 @@
                       :branch "a-branch"}})
 
   (s/join "&"
-    (map #(format "%s=%s"
-                  (name (key %))
-                  (val %))
-          {:repo "a-repo" :branch "a-branch"}))
+          (map #(format "%s=%s"
+                        (name (key %))
+                        (val %))
+               {:repo "a-repo" :branch "a-branch"}))
 
   (mounted-image-from db-client
                       {:name     "source"

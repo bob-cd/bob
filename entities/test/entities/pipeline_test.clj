@@ -15,7 +15,7 @@
 
 (ns entities.pipeline-test
   (:require [clojure.test :refer [deftest testing is]]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [entities.util :as u]
             [entities.pipeline :as p]))
 
@@ -48,19 +48,19 @@
                                                   :branch "main"}}]
                           :image     "busybox:musl"}
               create-res (p/create db queue-chan pipeline)
-              _          (Thread/sleep 1000)
-              effect     (crux/entity (crux/db db) :bob.pipeline.test/test)]
+              _ (Thread/sleep 1000)
+              effect     (xt/entity (xt/db db) :bob.pipeline.test/test)]
           (is (= "Ok" create-res))
           (is (= (-> pipeline
                      (assoc :type :pipeline)
-                     (assoc :crux.db/id :bob.pipeline.test/test))
+                     (assoc :xt.db/id :bob.pipeline.test/test))
                  effect))))))
   (testing "deletion"
     (u/with-system (fn [db queue-chan]
                      (let [pipeline   {:name  "test"
                                        :group "test"}
                            delete-res (p/delete db queue-chan pipeline)
-                           _          (Thread/sleep 1000)
-                           effect     (crux/entity (crux/db db) :bob.pipeline.test/test)]
+                           _ (Thread/sleep 1000)
+                           effect     (xt/entity (xt/db db) :bob.pipeline.test/test)]
                        (is (= "Ok" delete-res))
                        (is (nil? effect)))))))

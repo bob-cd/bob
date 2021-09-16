@@ -16,7 +16,7 @@
 (ns entities.pipeline
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [common.errors :as err]))
 
 (defn create
@@ -39,10 +39,10 @@
                                 (:group pipeline)
                                 (:name pipeline)))
         data   (-> pipeline
-                   (assoc :crux.db/id id)
+                   (assoc :xt.db/id id)
                    (assoc :type :pipeline))
         result (f/try*
-                 (crux/submit-tx db-client [[:crux.tx/put data]]))]
+                 (xt/submit-tx db-client [[:xt.tx/put data]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Pipeline creation failed: %s" (f/message result)))
       "Ok")))
@@ -55,5 +55,5 @@
                             (:name pipeline)))]
     (log/debugf "Deleting pipeline %s" pipeline)
     (f/try*
-      (crux/submit-tx db-client [[:crux.tx/delete id]]))
+      (xt/submit-tx db-client [[:xt.tx/delete id]]))
     "Ok"))

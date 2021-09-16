@@ -16,19 +16,19 @@
 (ns entities.artifact-store
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [common.errors :as err]))
 
 (defn register-artifact-store
   "Registers an artifact store with an unique name and an url supplied in a map."
   [db-client queue-chan data]
   (let [result (f/try*
-                 (crux/submit-tx db-client
-                                 [[:crux.tx/put
-                                   {:crux.db/id (keyword (str "bob.artifact-store/" (:name data)))
-                                    :type       :artifact-store
-                                    :url        (:url data)
-                                    :name       (:name data)}]]))]
+                 (xt/submit-tx db-client
+                               [[:xt.tx/put
+                                 {:xt.db/id (keyword (str "bob.artifact-store/" (:name data)))
+                                  :type     :artifact-store
+                                  :url      (:url data)
+                                  :name     (:name data)}]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Could not register artifact store: %s" (f/message result)))
       (do
@@ -39,6 +39,6 @@
   "Unregisters an artifact store by its name supplied in a map."
   [db-client _queue-chan data]
   (f/try*
-    (crux/submit-tx db-client [[:crux.tx/delete (keyword (str "bob.artifact-store/" (:name data)))]]))
+    (xt/submit-tx db-client [[:xt.tx/delete (keyword (str "bob.artifact-store/" (:name data)))]]))
   (log/infof "Un-registered artifact store %s" (:name data))
   "Ok")

@@ -22,10 +22,10 @@ Using a traditional CRUD workflow with PostgeSQL raises the following issues:
 ## Decision
 
 Based on the above facts the following is decided:
-- Use [Crux](https://opencrux.com/) as the temporal, document store for the following reasons:
-    - Though being new compared to [Datomic](https://www.datomic.com/) its free and open source
+- Use [XTDB](https://xtdb.com) as the temporal, document store for the following reasons:
+    - Though being newer compared to [Datomic](https://www.datomic.com/) its free and open source and ready for production use
     - Has a quite unbundled design and uses a variety of storage backends and is transactor free
-    - Is [bi-temporal](https://opencrux.com/about/bitemporality.html) and thereby offering more systematic analytical queries across time
+    - Is [bi-temporal](https://xtdb.com/articles/bitemporality.html) and thereby offering more systematic analytical queries across time
     - Has an HTTP interface for non JVM clients
 - Use it with JDBC/PostgreSQL backend which is quite readily available and managed in all popular cloud providers
 - Remove the CRUD way of doing things, expose the DB too via API for more powerful, direct analytical querying

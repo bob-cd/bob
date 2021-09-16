@@ -18,15 +18,15 @@
             [environ.core :as env]
             [taoensso.timbre :as log]
             [failjure.core :as f]
-            [crux.api :as crux]
-            [crux.jdbc :as jdbc]
+            [xt.api :as xt]
+            [xt.jdbc :as jdbc]
             [langohr.core :as rmq]
             [langohr.channel :as lch]
             [langohr.queue :as lq]
             [langohr.exchange :as le]
             [langohr.consumers :as lc])
   (:import [java.net ConnectException]
-           [crux.api ICruxAPI]))
+           [xt.api IXtdb]))
 
 (defn int-from-env
   [key default]
@@ -36,7 +36,6 @@
 
 (defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5432/bob"))
 (defonce storage-user (:bob-storage-user env/env "bob"))
-(defonce storage-name (:bob-storage-database env/env "bob"))
 (defonce storage-password (:bob-storage-password env/env "bob"))
 
 (defonce queue-url (:bob-queue-url env/env "amqp://localhost:5672"))
@@ -72,17 +71,17 @@
     (assoc this
            :client
            (try-connect
-             #(crux/start-node {::jdbc/connection-pool {:dialect 'crux.jdbc.psql/->dialect
-                                                        :db-spec {:jdbcUrl  db-url
-                                                                  :user     db-user
-                                                                  :password db-password}}
-                                :crux/tx-log           {:crux/module     `crux.jdbc/->tx-log
-                                                        :connection-pool ::jdbc/connection-pool}
-                                :crux/document-store   {:crux/module     `crux.jdbc/->document-store
-                                                        :connection-pool ::jdbc/connection-pool}}))))
+             #(xt/start-node {::jdbc/connection-pool {:dialect 'xt.jdbc.psql/->dialect
+                                                      :db-spec {:jdbcUrl  db-url
+                                                                :user     db-user
+                                                                :password db-password}}
+                              :xt/tx-log             {:xt/module       `xt.jdbc/->tx-log
+                                                      :connection-pool ::jdbc/connection-pool}
+                              :xt/document-store     {:xt/module       `xt.jdbc/->document-store
+                                                      :connection-pool ::jdbc/connection-pool}}))))
   (stop [this]
     (log/info "Disconnecting DB")
-    (.close ^ICruxAPI (:client this))
+    (.close ^IXtdb (:client this))
     (assoc this :client nil))
   IDatabase
   (db-client [this]

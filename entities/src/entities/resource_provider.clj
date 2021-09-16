@@ -16,19 +16,19 @@
 (ns entities.resource-provider
   (:require [failjure.core :as f]
             [taoensso.timbre :as log]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [common.errors :as err]))
 
 (defn register-resource-provider
   "Registers a rersource provider with an unique name and an url supplied in a map."
   [db-client queue-chan data]
   (let [result (f/try*
-                 (crux/submit-tx db-client
-                                 [[:crux.tx/put
-                                   {:crux.db/id (keyword (str "bob.resource-provider/" (:name data)))
-                                    :type       :resource-provider
-                                    :name       (:name data)
-                                    :url        (:url data)}]]))]
+                 (xt/submit-tx db-client
+                               [[:xt.tx/put
+                                 {:xt.db/id (keyword (str "bob.resource-provider/" (:name data)))
+                                  :type     :resource-provider
+                                  :name     (:name data)
+                                  :url      (:url data)}]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Could not register resource provider: %s" (f/message result)))
       (do
@@ -39,6 +39,6 @@
   "Unregisters an resource provider by its name supplied in a map."
   [db-client _queue-chan data]
   (f/try*
-    (crux/submit-tx db-client [[:crux.tx/delete (keyword (str "bob.resource-provider/" (:name data)))]]))
+    (xt/submit-tx db-client [[:xt.tx/delete (keyword (str "bob.resource-provider/" (:name data)))]]))
   (log/infof "Un-registered resource provider %s" (:name data))
   "Ok")

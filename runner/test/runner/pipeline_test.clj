@@ -15,7 +15,7 @@
 
 (ns runner.pipeline-test
   (:require [clojure.test :refer [deftest testing is]]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [failjure.core :as f]
             [java-http-clj.core :as http]
             [runner.util :as u]
@@ -33,8 +33,8 @@
                      (is (= {:type   :log-line
                              :run-id "a-run-id"
                              :line   "a log line"}
-                            (-> (crux/db db)
-                                (crux/q
+                            (-> (xt/db db)
+                                (xt/q
                                   '{:find  [(pull log [:type :run-id :line])]
                                     :where [[log :run-id "a-run-id"]]})
                                 first
@@ -46,8 +46,8 @@
                      (is (= {:type   :log-line
                              :run-id "another-run-id"
                              :line   "[bob] another log line"}
-                            (-> (crux/db db)
-                                (crux/q
+                            (-> (xt/db db)
+                                (xt/q
                                   '{:find  [(pull log [:type :run-id :line])]
                                     :where [[log :run-id "another-run-id"]]})
                                 first
@@ -70,30 +70,32 @@
   (u/with-system (fn [db _]
                    (testing "successful resource provisioning of a step"
                      (eng/pull-image test-image)
-                     (crux/await-tx db
-                                    (crux/submit-tx db
-                                                    [[:crux.tx/put
-                                                      {:crux.db/id :bob.resource-provider/git
-                                                       :url        "http://localhost:8000"}]]))
-                     (crux/await-tx db
-                                    (crux/submit-tx db
-                                                    [[:crux.tx/put
-                                                      {:crux.db/id :bob.pipeline.test/test
-                                                       :group      "test"
-                                                       :name       "test"
-                                                       :steps      []
-                                                       :vars       {}
-                                                       :resources  [{:name     "source"
-                                                                     :type     "external"
-                                                                     :provider "git"
-                                                                     :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                                :branch "main"}}]
-                                                       :image      test-image}]]))
+                     (xt/await-tx db
+                                  (xt/submit-tx db
+                                                [[:xt.tx/put
+                                                  {:xt.db/id :bob.resource-provider/git
+                                                   :url      "http://localhost:8000"}]]))
+                     (xt/await-tx db
+                                  (xt/submit-tx db
+                                                [[:xt.tx/put
+                                                  {:xt.db/id  :bob.pipeline.test/test
+                                                   :group     "test"
+                                                   :name      "test"
+                                                   :steps     []
+                                                   :vars      {}
+                                                   :resources [{:name     "source"
+                                                                :type     "external"
+                                                                :provider "git"
+                                                                :params   {:repo   "https://github.com/bob-cd/bob"
+                                                                           :branch "main"}}]
+                                                   :image     test-image}]]))
                      (let [image (p/resourceful-step db
                                                      {:needs_resource "source"
                                                       :cmd            "ls"}
-                                                     "test"         "test"
-                                                     test-image "a-run-id")]
+                                                     "test"
+                                                     "test"
+                                                     test-image
+                                                     "a-run-id")]
                        (is (not (f/failed? image)))
                        (eng/delete-image image))
                      (eng/delete-image test-image))))
@@ -103,8 +105,10 @@
                      (is (f/failed? (p/resourceful-step db
                                                         {:needs_resource "source"
                                                          :cmd            "ls"}
-                                                        "test"         "test"
-                                                        test-image "a-run-id"))))))
+                                                        "test"
+                                                        "test"
+                                                        test-image
+                                                        "a-run-id"))))))
 
   (testing "mount needed for step"
     (is (p/mount-needed? {:mounted #{"another-resource"}} {:needs_resource "a-resource"}))
@@ -136,25 +140,25 @@
     (testing "successful step with resource execution"
       (eng/pull-image test-image)
       (u/with-system (fn [db _]
-                       (crux/await-tx db
-                                      (crux/submit-tx db
-                                                      [[:crux.tx/put
-                                                        {:crux.db/id :bob.resource-provider/git
-                                                         :url        "http://localhost:8000"}]]))
-                       (crux/await-tx db
-                                      (crux/submit-tx db
-                                                      [[:crux.tx/put
-                                                        {:crux.db/id :bob.pipeline.test/test
-                                                         :group      "test"
-                                                         :name       "test"
-                                                         :steps      []
-                                                         :vars       {}
-                                                         :resources  [{:name     "source"
-                                                                       :type     "external"
-                                                                       :provider "git"
-                                                                       :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                                  :branch "main"}}]
-                                                         :image      test-image}]]))
+                       (xt/await-tx db
+                                    (xt/submit-tx db
+                                                  [[:xt.tx/put
+                                                    {:xt.db/id :bob.resource-provider/git
+                                                     :url      "http://localhost:8000"}]]))
+                       (xt/await-tx db
+                                    (xt/submit-tx db
+                                                  [[:xt.tx/put
+                                                    {:xt.db/id  :bob.pipeline.test/test
+                                                     :group     "test"
+                                                     :name      "test"
+                                                     :steps     []
+                                                     :vars      {}
+                                                     :resources [{:name     "source"
+                                                                  :type     "external"
+                                                                  :provider "git"
+                                                                  :params   {:repo   "https://github.com/bob-cd/bob"
+                                                                             :branch "main"}}]
+                                                     :image     test-image}]]))
                        (let [initial-state {:image     test-image
                                             :mounted   #{}
                                             :run-id    "a-resource-run-id"
@@ -173,11 +177,11 @@
       (eng/pull-image test-image)
       (u/with-system
         (fn [db _]
-          (crux/await-tx db
-                         (crux/submit-tx db
-                                         [[:crux.tx/put
-                                           {:crux.db/id :bob.artifact-store/local
-                                            :url        "http://localhost:8001"}]]))
+          (xt/await-tx db
+                       (xt/submit-tx db
+                                     [[:xt.tx/put
+                                       {:xt.db/id :bob.artifact-store/local
+                                        :url      "http://localhost:8001"}]]))
           (let [initial-state {:image     test-image
                                :mounted   #{}
                                :run-id    "a-artifact-run-id"
@@ -203,31 +207,31 @@
         (eng/pull-image test-image)
         (u/with-system
           (fn [db _]
-            (crux/await-tx db
-                           (crux/submit-tx db
-                                           [[:crux.tx/put
-                                             {:crux.db/id :bob.resource-provider/git
-                                              :url        "http://localhost:8000"}]]))
+            (xt/await-tx db
+                         (xt/submit-tx db
+                                       [[:xt.tx/put
+                                         {:xt.db/id :bob.resource-provider/git
+                                          :url      "http://localhost:8000"}]]))
 
-            (crux/await-tx db
-                           (crux/submit-tx db
-                                           [[:crux.tx/put
-                                             {:crux.db/id :bob.artifact-store/local
-                                              :url        "http://localhost:8001"}]]))
-            (crux/await-tx db
-                           (crux/submit-tx db
-                                           [[:crux.tx/put
-                                             {:crux.db/id :bob.pipeline.test/test
-                                              :group      "test"
-                                              :name       "test"
-                                              :steps      []
-                                              :vars       {}
-                                              :resources  [{:name     "source"
-                                                            :type     "external"
-                                                            :provider "git"
-                                                            :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                       :branch "main"}}]
-                                              :image      test-image}]]))
+            (xt/await-tx db
+                         (xt/submit-tx db
+                                       [[:xt.tx/put
+                                         {:xt.db/id :bob.artifact-store/local
+                                          :url      "http://localhost:8001"}]]))
+            (xt/await-tx db
+                         (xt/submit-tx db
+                                       [[:xt.tx/put
+                                         {:xt.db/id  :bob.pipeline.test/test
+                                          :group     "test"
+                                          :name      "test"
+                                          :steps     []
+                                          :vars      {}
+                                          :resources [{:name     "source"
+                                                       :type     "external"
+                                                       :provider "git"
+                                                       :params   {:repo   "https://github.com/bob-cd/bob"
+                                                                  :branch "main"}}]
+                                          :image     test-image}]]))
             (let [initial-state {:image     test-image
                                  :mounted   #{}
                                  :run-id    "a-full-run-id"
@@ -269,27 +273,27 @@
 (deftest ^:integration pipeline-starts
   (testing "successful pipeline run"
     (u/with-system (fn [db queue]
-                     (crux/await-tx db
-                                    (crux/submit-tx db
-                                                    [[:crux.tx/put
-                                                      {:crux.db/id :bob.pipeline.test/test
-                                                       :group      "test"
-                                                       :name       "test"
-                                                       :steps      [{:cmd "echo hello"} {:cmd "sh -c \"echo ${k1}\""}]
-                                                       :vars       {:k1 "v1"}
-                                                       :image      test-image}]]))
+                     (xt/await-tx db
+                                  (xt/submit-tx db
+                                                [[:xt.tx/put
+                                                  {:xt.db/id :bob.pipeline.test/test
+                                                   :group    "test"
+                                                   :name     "test"
+                                                   :steps    [{:cmd "echo hello"} {:cmd "sh -c \"echo ${k1}\""}]
+                                                   :vars     {:k1 "v1"}
+                                                   :image    test-image}]]))
                      (let [result   @(p/start db
                                        queue
                                        {:group  "test"
                                         :name   "test"
                                         :run_id "a-run-id"})
-                           history  (crux/entity-history (crux/db db)
-                                                         (keyword (str "bob.pipeline.run/" result))
-                                                         :desc
-                                                         {:with-docs? true})
-                           run-info (crux/entity (crux/db db) (keyword (str "bob.pipeline.run/" result)))
+                           history  (xt/entity-history (xt/db db
+                                                              (keyword (str "bob.pipeline.run/" result))
+                                                              :desc
+                                                              {:with-docs? true}))
+                           run-info (xt/entity (xt/db db) (keyword (str "bob.pipeline.run/" result)))
                            statuses (->> history
-                                         (map :crux.db/doc)
+                                         (map :xt.db/doc)
                                          (map :status))]
                        (is (= [:passed :running :initializing]
                               statuses))
@@ -299,28 +303,28 @@
 
   (testing "failed pipeline run"
     (u/with-system (fn [db queue]
-                     (crux/await-tx db
-                                    (crux/submit-tx db
-                                                    [[:crux.tx/put
-                                                      {:crux.db/id :bob.pipeline.test/test
-                                                       :group      "test"
-                                                       :name       "test"
-                                                       :steps      [{:cmd "echo hello"} {:cmd "this-bombs"}]
-                                                       :vars       {:k1 "v1"}
-                                                       :image      test-image}]]))
+                     (xt/await-tx db
+                                  (xt/submit-tx db
+                                                [[:xt.tx/put
+                                                  {:xt.db/id :bob.pipeline.test/test
+                                                   :group    "test"
+                                                   :name     "test"
+                                                   :steps    [{:cmd "echo hello"} {:cmd "this-bombs"}]
+                                                   :vars     {:k1 "v1"}
+                                                   :image    test-image}]]))
                      (let [result   @(p/start db
                                        queue
                                        {:group  "test"
                                         :name   "test"
                                         :run_id "a-run-id"})
                            id       (f/message result)
-                           run-info (crux/entity (crux/db db) (keyword (str "bob.pipeline.run/" id)))
-                           history  (crux/entity-history (crux/db db)
-                                                         (keyword (str "bob.pipeline.run/" id))
-                                                         :desc
-                                                         {:with-docs? true})
+                           run-info (xt/entity (xt/db db) (keyword (str "bob.pipeline.run/" id)))
+                           history  (xt/entity-history (xt/db db
+                                                              (keyword (str "bob.pipeline.run/" id))
+                                                              :desc
+                                                              {:with-docs? true}))
                            statuses (->> history
-                                         (map :crux.db/doc)
+                                         (map :xt.db/doc)
                                          (map :status)
                                          (into #{}))]
                        (is (f/failed? result))
@@ -333,30 +337,30 @@
   (testing "stopping a pipeline run"
     (u/with-system
       (fn [db queue]
-        (crux/await-tx db
-                       (crux/submit-tx db
-                                       [[:crux.tx/put
-                                         {:crux.db/id :bob.pipeline.test/stop-test
-                                          :steps      [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
-                                          :image      test-image}]]))
-        (let [_        (p/start db
-                         queue
-                         {:group  "test"
-                          :name   "stop-test"
-                          :run_id "a-stop-id"})
-              _        (Thread/sleep 5000) ;; Longer, possibly flaky wait
-              _        (p/stop db
-                         queue
-                         {:group  "test"
-                          :name   "stop-test"
-                          :run_id "a-stop-id"})
-              run-info (crux/entity (crux/db db) :bob.pipeline.run/a-stop-id)
-              history  (crux/entity-history (crux/db db)
-                                            :bob.pipeline.run/a-stop-id
-                                            :desc
-                                            {:with-docs? true})
+        (xt/await-tx db
+                     (xt/submit-tx db
+                                   [[:xt.tx/put
+                                     {:xt.db/id :bob.pipeline.test/stop-test
+                                      :steps    [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
+                                      :image    test-image}]]))
+        (let [_ (p/start db
+                  queue
+                  {:group  "test"
+                   :name   "stop-test"
+                   :run_id "a-stop-id"})
+              _ (Thread/sleep 5000) ;; Longer, possibly flaky wait
+              _ (p/stop db
+                  queue
+                  {:group  "test"
+                   :name   "stop-test"
+                   :run_id "a-stop-id"})
+              run-info (xt/entity (xt/db db) :bob.pipeline.run/a-stop-id)
+              history  (xt/entity-history (xt/db db
+                                                 :bob.pipeline.run/a-stop-id
+                                                 :desc
+                                                 {:with-docs? true}))
               statuses (->> history
-                            (map :crux.db/doc)
+                            (map :xt.db/doc)
                             (map :status)
                             (into #{}))]
           (is (not (contains? statuses :failed)))

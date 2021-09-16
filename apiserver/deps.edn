@@ -20,7 +20,7 @@
            com.taoensso/timbre          {:mvn/version "5.1.2"}
            failjure/failjure            {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj  {:mvn/version "0.4.2"}
-           pro.juxt.crux/crux-core      {:mvn/version "1.18.0"}
+           com.xtdb/xtdb-core           {:mvn/version "1.19.0-beta1"}
            metosin/reitit-core          {:mvn/version "0.5.15"}
            metosin/reitit-http          {:mvn/version "0.5.15"}
            metosin/reitit-interceptors  {:mvn/version "0.5.15"}

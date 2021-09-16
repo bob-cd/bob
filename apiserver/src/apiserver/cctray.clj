@@ -15,7 +15,7 @@
 
 (ns apiserver.cctray
   (:require [clojure.data.xml :as xml]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [failjure.core :as f]))
 
 (defn make-project
@@ -27,7 +27,7 @@
                             :stopped           "Exception"
                             "Unknown")
         last-build-label  (-> data
-                              :crux.db/id
+                              :xt.db/id
                               clojure.core/name)]
     [[:name
       (format "%s:%s"
@@ -44,14 +44,14 @@
 
 (defn generate-report
   [db]
-  (f/try-all [statuses (crux/q (crux/db db)
-                               '{:find  [(pull run [:group :name :status :completed :crux.db/id])]
-                                 :where [[pipeline :type :pipeline]
-                                         [pipeline :group group]
-                                         [pipeline :name name]
-                                         [run :type :pipeline-run]
-                                         [run :group group]
-                                         [run :name name]]})]
+  (f/try-all [statuses (xt/q (xt/db db
+                                    '{:find  [(pull run [:group :name :status :completed :xt.db/id])]
+                                      :where [[pipeline :type :pipeline]
+                                              [pipeline :group group]
+                                              [pipeline :name name]
+                                              [run :type :pipeline-run]
+                                              [run :group group]
+                                              [run :name name]]}))]
     (-> [:Projects (map make-project statuses)]
         xml/sexp-as-element
         xml/emit-str)

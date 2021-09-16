@@ -15,7 +15,7 @@
 
 (ns entities.resource-provider-test
   (:require [clojure.test :refer [deftest testing is]]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [entities.util :as u]
             [entities.resource-provider :as resource-provider]))
 
@@ -28,20 +28,20 @@
         (let [resource-provider {:name "github"
                                  :url  "my.resource.com"}
               create-res        (resource-provider/register-resource-provider db queue-chan resource-provider)
-              _                 (Thread/sleep 1000)
-              effect            (crux/entity (crux/db db) :bob.resource-provider/github)]
+              _ (Thread/sleep 1000)
+              effect            (xt/entity (xt/db db) :bob.resource-provider/github)]
           (is (= "Ok" create-res))
-          (is (= {:crux.db/id :bob.resource-provider/github
-                  :type       :resource-provider
-                  :url        "my.resource.com"
-                  :name       "github"}
+          (is (= {:xt.db/id :bob.resource-provider/github
+                  :type     :resource-provider
+                  :url      "my.resource.com"
+                  :name     "github"}
                  effect))))))
   (testing "deletion"
     (u/with-system
       (fn [db queue-chan]
         (let [resource-provider {:name "github"}
               delete-res        (resource-provider/un-register-resource-provider db queue-chan resource-provider)
-              _                 (Thread/sleep 1000)
-              effect            (crux/entity (crux/db db) :bob.resource-provider/github)]
+              _ (Thread/sleep 1000)
+              effect            (xt/entity (xt/db db) :bob.resource-provider/github)]
           (is (= "Ok" delete-res))
           (is (nil? effect)))))))

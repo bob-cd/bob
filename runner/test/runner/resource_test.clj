@@ -17,7 +17,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.string :as s]
             [clojure.java.io :as io]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [failjure.core :as f]
             [contajners.core :as c]
             [runner.util :as u]
@@ -47,31 +47,31 @@
 
 (deftest ^:integration valid-resource-provider-test
   (u/with-system (fn [db _]
-                   (crux/await-tx db
-                                  (crux/submit-tx db
-                                                  [[:crux.tx/put
-                                                    {:crux.db/id :bob.resource-provider/git
-                                                     :url        "http://localhost:8000"}]]))
+                   (xt/await-tx db
+                                (xt/submit-tx db
+                                              [[:xt.tx/put
+                                                {:xt.db/id :bob.resource-provider/git
+                                                 :url      "http://localhost:8000"}]]))
                    (testing "valid resource provider"
                      (is (r/valid-resource-provider? db {:provider "git"})))
                    (testing "invalid resource provider"
                      (is (not (r/valid-resource-provider? db {:provider "invalid"}))))
-                   (crux/await-tx db
-                                  (crux/submit-tx db
-                                                  [[:crux.tx/delete :bob.resource-provider/git]])))))
+                   (xt/await-tx db
+                                (xt/submit-tx db
+                                              [[:xt.tx/delete :bob.resource-provider/git]])))))
 
 (deftest ^:integration url-generation-test
   (u/with-system (fn [db _]
-                   (crux/await-tx db
-                                  (crux/submit-tx db
-                                                  [[:crux.tx/put
-                                                    {:crux.db/id :bob.resource-provider/git
-                                                     :url        "http://localhost:8000"}]]))
-                   (crux/await-tx db
-                                  (crux/submit-tx db
-                                                  [[:crux.tx/put
-                                                    {:crux.db/id :bob.artifact-store/local
-                                                     :url        "http://localhost:8001"}]]))
+                   (xt/await-tx db
+                                (xt/submit-tx db
+                                              [[:xt.tx/put
+                                                {:xt.db/id :bob.resource-provider/git
+                                                 :url      "http://localhost:8000"}]]))
+                   (xt/await-tx db
+                                (xt/submit-tx db
+                                              [[:xt.tx/put
+                                                {:xt.db/id :bob.artifact-store/local
+                                                 :url      "http://localhost:8001"}]]))
                    (testing "generate url for an external resource"
                      (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
                             (r/url-of db
@@ -89,9 +89,9 @@
                                        :params   {:group  "dev"
                                                   :name   "test"
                                                   :run_id "a-run-id"}}))))
-                   (crux/await-tx db
-                                  (crux/submit-tx db
-                                                  [[:crux.tx/delete :bob.resource-provider/git]])))))
+                   (xt/await-tx db
+                                (xt/submit-tx db
+                                              [[:xt.tx/delete :bob.resource-provider/git]])))))
 
 (deftest ^:integration initial-image-test
   (eng/pull-image "busybox:musl")
@@ -109,11 +109,11 @@
 
 (deftest ^:integration mounted-image-test
   (u/with-system (fn [db _]
-                   (crux/await-tx db
-                                  (crux/submit-tx db
-                                                  [[:crux.tx/put
-                                                    {:crux.db/id :bob.resource-provider/git
-                                                     :url        "http://localhost:8000"}]]))
+                   (xt/await-tx db
+                                (xt/submit-tx db
+                                              [[:xt.tx/put
+                                                {:xt.db/id :bob.resource-provider/git
+                                                 :url      "http://localhost:8000"}]]))
                    (eng/pull-image "busybox:musl")
                    (testing "successful mount"
                      (let [image  (r/mounted-image-from db
@@ -127,9 +127,9 @@
                                        (map :Id))]
                        (is (some #{image} images))
                        (eng/delete-image "busybox:musl")
-                       (crux/await-tx db
-                                      (crux/submit-tx db
-                                                      [[:crux.tx/delete :bob.resource-provider/git]]))))
+                       (xt/await-tx db
+                                    (xt/submit-tx db
+                                                  [[:xt.tx/delete :bob.resource-provider/git]]))))
                    (testing "unsuccessful mount"
                      (is (f/failed? (r/mounted-image-from db
                                                           {:name     "source"

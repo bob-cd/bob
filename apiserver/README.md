@@ -8,7 +8,7 @@ This is intended as the coherent gateway for the Bob cluster having the schema c
 - This is implemented in Clojure/JVM
 - Implements a [spec-first](https://www.atlassian.com/blog/technology/spec-first-api-development) REST API with this OpenAPI 3.0+ [schema](/apiserver/src/main/resources/bob/api.yaml)
 - Uses [RabbitMQ](https://www.rabbitmq.com/) to send the requests from the API
-- Uses [Crux](https://www.opencrux.com/) backed by [PostgreSQL](https://www.postgresql.org/) for reading the cluster state
+- Uses [XTDB](https://xtdb.com) backed by [PostgreSQL](https://www.postgresql.org/) for reading the cluster state
 
 ## Configuration
 The [environ library](https://github.com/weavejester/environ) is used and therefore several variables can be

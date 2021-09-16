@@ -872,8 +872,8 @@ paths:
   "/query":
     get:
       operationId: Query
-      summary: Runs a query on Crux, intended for point in time analytics
-      description: Runs a direct crux datalog read query on the DB, useful for arbitrary analytics and point in time queries
+      summary: Runs a query on XTDB, intended for point in time analytics
+      description: Runs a direct xt datalog read query on the DB, useful for arbitrary analytics and point in time queries
       tags:
         - analytics
 

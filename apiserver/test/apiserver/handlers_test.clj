@@ -21,7 +21,7 @@
             [langohr.basic :as lb]
             [langohr.queue :as lq]
             [clojure.data.json :as json]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [java-http-clj.core :as http]
             [apiserver.handlers :as h]
             [apiserver.util :as u])
@@ -124,18 +124,18 @@
                                 (dissoc data :run_id)))
                        (t/is (= "pipeline/start" type))))
                    (t/testing "starting paused pipeline"
-                     (crux/await-tx
+                     (xt/await-tx
                        db
-                       (crux/submit-tx
+                       (xt/submit-tx
                          db
-                         [[:crux.tx/put
-                           {:crux.db/id :bob.pipeline.dev-paused/test-paused
-                            :type       :pipeline
-                            :group      "dev-paused"
-                            :name       "test-paused"
-                            :image      "busybox:musl"
-                            :paused     true
-                            :steps      [{:cmd "echo yes"}]}]]))
+                         [[:xt.tx/put
+                           {:xt.db/id :bob.pipeline.dev-paused/test-paused
+                            :type     :pipeline
+                            :group    "dev-paused"
+                            :name     "test-paused"
+                            :image    "busybox:musl"
+                            :paused   true
+                            :steps    [{:cmd "echo yes"}]}]]))
                      (let [{:keys [status body]} (h/pipeline-start {:parameters {:path {:group "dev-paused"
                                                                                         :name  "test-paused"}}
                                                                     :queue      queue
@@ -151,14 +151,14 @@
                                 :auto-delete true
                                 :durable     false})
                    (lq/bind queue "bob.tests" "bob.fanout")
-                   (crux/await-tx db
-                                  (crux/submit-tx db
-                                                  [[:crux.tx/put
-                                                    {:crux.db/id :bob.pipeline.run/a-run-id
-                                                     :type       :pipeline-run
-                                                     :group      "dev"
-                                                     :name       "test"
-                                                     :status     :running}]]))
+                   (xt/await-tx db
+                                (xt/submit-tx db
+                                              [[:xt.tx/put
+                                                {:xt.db/id :bob.pipeline.run/a-run-id
+                                                 :type     :pipeline-run
+                                                 :group    "dev"
+                                                 :name     "test"
+                                                 :status   :running}]]))
                    (t/testing "pipeline stop"
                      (h/pipeline-stop {:parameters {:path {:group "dev"
                                                            :name  "test"
@@ -173,17 +173,17 @@
 
 (t/deftest pipeline-pause-unpause
   (u/with-system (fn [db _]
-                   (crux/await-tx
+                   (xt/await-tx
                      db
-                     (crux/submit-tx
+                     (xt/submit-tx
                        db
-                       [[:crux.tx/put
-                         {:crux.db/id :bob.pipeline.dev/test
-                          :type       :pipeline
-                          :group      "dev"
-                          :name       "test"
-                          :image      "busybox:musl"
-                          :steps      [{:cmd "echo yes"}]}]]))
+                       [[:xt.tx/put
+                         {:xt.db/id :bob.pipeline.dev/test
+                          :type     :pipeline
+                          :group    "dev"
+                          :name     "test"
+                          :image    "busybox:musl"
+                          :steps    [{:cmd "echo yes"}]}]]))
                    (t/testing "pipeline pause"
                      (h/pipeline-pause-unpause true
                                                {:parameters {:path {:group "dev"
@@ -200,27 +200,27 @@
 (t/deftest pipeline-logs-test
   (u/with-system (fn [db _]
                    (t/testing "pipeline logs"
-                     (crux/await-tx
+                     (xt/await-tx
                        db
-                       (crux/submit-tx db
-                                       [[:crux.tx/put
-                                         {:crux.db/id :bob.pipeline.log/l-1
-                                          :type       :log-line
-                                          :time       (Instant/now)
-                                          :run-id     "r-1"
-                                          :line       "l1"}]
-                                        [:crux.tx/put
-                                         {:crux.db/id :bob.pipeline.log/l-2
-                                          :type       :log-line
-                                          :time       (Instant/now)
-                                          :run-id     "r-1"
-                                          :line       "l2"}]
-                                        [:crux.tx/put
-                                         {:crux.db/id :bob.pipeline.log/l-3
-                                          :type       :log-line
-                                          :time       (Instant/now)
-                                          :run-id     "r-1"
-                                          :line       "l3"}]]))
+                       (xt/submit-tx db
+                                     [[:xt.tx/put
+                                       {:xt.db/id :bob.pipeline.log/l-1
+                                        :type     :log-line
+                                        :time     (Instant/now)
+                                        :run-id   "r-1"
+                                        :line     "l1"}]
+                                      [:xt.tx/put
+                                       {:xt.db/id :bob.pipeline.log/l-2
+                                        :type     :log-line
+                                        :time     (Instant/now)
+                                        :run-id   "r-1"
+                                        :line     "l2"}]
+                                      [:xt.tx/put
+                                       {:xt.db/id :bob.pipeline.log/l-3
+                                        :type     :log-line
+                                        :time     (Instant/now)
+                                        :run-id   "r-1"
+                                        :line     "l3"}]]))
                      (t/is (= ["l1" "l2"]
                               (-> (h/pipeline-logs {:db         db
                                                     :parameters {:path {:id     "r-1"
@@ -232,15 +232,15 @@
 (t/deftest pipeline-status-test
   (u/with-system (fn [db _]
                    (t/testing "existing pipeline status"
-                     (crux/await-tx
+                     (xt/await-tx
                        db
-                       (crux/submit-tx db
-                                       [[:crux.tx/put
-                                         {:crux.db/id :bob.pipeline.run/r-1
-                                          :type       :pipeline-run
-                                          :group      "dev"
-                                          :name       "test"
-                                          :status     :running}]]))
+                       (xt/submit-tx db
+                                     [[:xt.tx/put
+                                       {:xt.db/id :bob.pipeline.run/r-1
+                                        :type     :pipeline-run
+                                        :group    "dev"
+                                        :name     "test"
+                                        :status   :running}]]))
                      (t/is (= :running
                               (-> (h/pipeline-status {:db         db
                                                       :parameters {:path {:id "r-1"}}})
@@ -257,14 +257,14 @@
 (t/deftest pipeline-artifact-fetch-test
   (u/with-system (fn [db _]
                    (t/testing "fetching a valid artifact"
-                     (crux/await-tx
+                     (xt/await-tx
                        db
-                       (crux/submit-tx
+                       (xt/submit-tx
                          db
-                         [[:crux.tx/put
-                           {:crux.db/id :bob.artifact-store/local
-                            :type       :artifact-store
-                            :url        "http://localhost:8001"}]]))
+                         [[:xt.tx/put
+                           {:xt.db/id :bob.artifact-store/local
+                            :type     :artifact-store
+                            :url      "http://localhost:8001"}]]))
                      (http/post "http://localhost:8001/bob_artifact/dev/test/a-run-id/file"
                                 {:as   :input-stream
                                  :body (io/input-stream "test/test.tar")})
@@ -300,31 +300,31 @@
 (t/deftest pipeline-list-test
   (u/with-system (fn [db _]
                    (t/testing "listing pipelines"
-                     (crux/await-tx
+                     (xt/await-tx
                        db
-                       (crux/submit-tx
+                       (xt/submit-tx
                          db
-                         [[:crux.tx/put
-                           {:crux.db/id :bob.pipeline.dev/test1
-                            :type       :pipeline
-                            :group      "dev"
-                            :name       "test1"
-                            :image      "busybox:musl"
-                            :steps      [{:cmd "echo yes"}]}]
-                          [:crux.tx/put
-                           {:crux.db/id :bob.pipeline.dev/test2
-                            :type       :pipeline
-                            :group      "dev"
-                            :name       "test2"
-                            :image      "alpine:latest"
-                            :steps      [{:cmd "echo yesnt"}]}]
-                          [:crux.tx/put
-                           {:crux.db/id :bob.pipeline.prod/test1
-                            :type       :pipeline
-                            :group      "prod"
-                            :name       "test1"
-                            :image      "alpine:latest"
-                            :steps      [{:cmd "echo boo"}]}]]))
+                         [[:xt.tx/put
+                           {:xt.db/id :bob.pipeline.dev/test1
+                            :type     :pipeline
+                            :group    "dev"
+                            :name     "test1"
+                            :image    "busybox:musl"
+                            :steps    [{:cmd "echo yes"}]}]
+                          [:xt.tx/put
+                           {:xt.db/id :bob.pipeline.dev/test2
+                            :type     :pipeline
+                            :group    "dev"
+                            :name     "test2"
+                            :image    "alpine:latest"
+                            :steps    [{:cmd "echo yesnt"}]}]
+                          [:xt.tx/put
+                           {:xt.db/id :bob.pipeline.prod/test1
+                            :type     :pipeline
+                            :group    "prod"
+                            :name     "test1"
+                            :image    "alpine:latest"
+                            :steps    [{:cmd "echo boo"}]}]]))
                      (let [resp (h/pipeline-list {:db         db
                                                   :parameters {:query {:group "dev"}}})]
                        (t/is (= [{:group "dev"
@@ -342,22 +342,22 @@
 (t/deftest pipeline-runs-list-test
   (u/with-system (fn [db _]
                    (t/testing "listing pipeline runs"
-                     (crux/await-tx
+                     (xt/await-tx
                        db
-                       (crux/submit-tx
+                       (xt/submit-tx
                          db
-                         [[:crux.tx/put
-                           {:crux.db/id :bob.pipeline.run/r-1
-                            :type       :pipeline-run
-                            :group      "dev"
-                            :name       "test"
-                            :status     :passed}]
-                          [:crux.tx/put
-                           {:crux.db/id :bob.pipeline.run/r-2
-                            :type       :pipeline-run
-                            :group      "dev"
-                            :name       "test"
-                            :status     :failed}]]))
+                         [[:xt.tx/put
+                           {:xt.db/id :bob.pipeline.run/r-1
+                            :type     :pipeline-run
+                            :group    "dev"
+                            :name     "test"
+                            :status   :passed}]
+                          [:xt.tx/put
+                           {:xt.db/id :bob.pipeline.run/r-2
+                            :type     :pipeline-run
+                            :group    "dev"
+                            :name     "test"
+                            :status   :failed}]]))
                      (let [resp (h/pipeline-runs-list {:db         db
                                                        :parameters {:path {:group "dev"
                                                                            :name  "test"}}})]
@@ -387,19 +387,19 @@
                        (t/is (= {:name "git"} data))
                        (t/is (= "resource-provider/delete" type))))
                    (t/testing "resource-provider listing"
-                     (crux/await-tx
+                     (xt/await-tx
                        db
-                       (crux/submit-tx db
-                                       [[:crux.tx/put
-                                         {:crux.db/id :bob.resource-provider.dev/test1
-                                          :type       :resource-provider
-                                          :name       "test1"
-                                          :url        "http://localhost:8000"}]
-                                        [:crux.tx/put
-                                         {:crux.db/id :bob.resource-provider.dev/test2
-                                          :type       :resource-provider
-                                          :name       "test2"
-                                          :url        "http://localhost:8001"}]]))
+                       (xt/submit-tx db
+                                     [[:xt.tx/put
+                                       {:xt.db/id :bob.resource-provider.dev/test1
+                                        :type     :resource-provider
+                                        :name     "test1"
+                                        :url      "http://localhost:8000"}]
+                                      [:xt.tx/put
+                                       {:xt.db/id :bob.resource-provider.dev/test2
+                                        :type     :resource-provider
+                                        :name     "test2"
+                                        :url      "http://localhost:8001"}]]))
                      (t/is (= [{:name "test1"
                                 :url  "http://localhost:8000"}
                                {:name "test2"
@@ -426,19 +426,19 @@
                        (t/is (= {:name "s3"} data))
                        (t/is (= "artifact-store/delete" type))))
                    (t/testing "artifact-store listing"
-                     (crux/await-tx
+                     (xt/await-tx
                        db
-                       (crux/submit-tx db
-                                       [[:crux.tx/put
-                                         {:crux.db/id :bob.resource-provider.dev/test1
-                                          :type       :artifact-store
-                                          :name       "test1"
-                                          :url        "http://localhost:8000"}]
-                                        [:crux.tx/put
-                                         {:crux.db/id :bob.resource-provider.dev/test2
-                                          :type       :artifact-store
-                                          :name       "test2"
-                                          :url        "http://localhost:8001"}]]))
+                       (xt/submit-tx db
+                                     [[:xt.tx/put
+                                       {:xt.db/id :bob.resource-provider.dev/test1
+                                        :type     :artifact-store
+                                        :name     "test1"
+                                        :url      "http://localhost:8000"}]
+                                      [:xt.tx/put
+                                       {:xt.db/id :bob.resource-provider.dev/test2
+                                        :type     :artifact-store
+                                        :name     "test2"
+                                        :url      "http://localhost:8001"}]]))
                      (t/is (= [{:name "test1"
                                 :url  "http://localhost:8000"}
                                {:name "test2"
@@ -451,13 +451,13 @@
   (u/with-system
     (fn [db _]
       (t/testing "direct query"
-        (crux/await-tx
+        (xt/await-tx
           db
-          (crux/submit-tx
+          (xt/submit-tx
             db
-            [[:crux.tx/put
-              {:crux.db/id :food/biryani
-               :type       :indian}]]))
+            [[:xt.tx/put
+              {:xt.db/id :food/biryani
+               :type     :indian}]]))
         (t/is
           (=
             "[[{\"type\":\"indian\"}]]"
@@ -470,11 +470,11 @@
                         :where [[f :type :indian]]})"}}})))))
       (t/testing "timed query"
         (let [point-in-time (str (Instant/now))]
-          (crux/await-tx
+          (xt/await-tx
             db
-            (crux/submit-tx
+            (xt/submit-tx
               db
-              [[:crux.tx/delete :food/biryani]]))
+              [[:xt.tx/delete :food/biryani]]))
           (t/is
             (=
               "[[{\"type\":\"indian\"}]]"

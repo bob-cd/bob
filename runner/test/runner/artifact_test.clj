@@ -15,7 +15,7 @@
 
 (ns runner.artifact-test
   (:require [clojure.test :refer [deftest testing is]]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [failjure.core :as f]
             [java-http-clj.core :as http]
             [runner.util :as u]
@@ -26,11 +26,11 @@
   (eng/pull-image "busybox:musl")
   (u/with-system (fn [db _]
                    (let [id (eng/create-container "busybox:musl")]
-                     (crux/await-tx db
-                                    (crux/submit-tx db
-                                                    [[:crux.tx/put
-                                                      {:crux.db/id :bob.artifact-store/local
-                                                       :url        "http://localhost:8001"}]]))
+                     (xt/await-tx db
+                                  (xt/submit-tx db
+                                                [[:xt.tx/put
+                                                  {:xt.db/id :bob.artifact-store/local
+                                                   :url      "http://localhost:8001"}]]))
 
                      (testing "successful artifact upload"
                        (is (= "Ok"
@@ -43,7 +43,7 @@
                        (is (f/failed? (a/upload-artifact db "dev" "test" "r-1" "file1" id "/invalid-path" "local")))
                        (is (= 404
                               (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file1")))))
-                     (crux/await-tx db
-                                    (crux/submit-tx db
-                                                    [[:crux.tx/delete :bob.artifact-store/local]])))))
+                     (xt/await-tx db
+                                  (xt/submit-tx db
+                                                [[:xt.tx/delete :bob.artifact-store/local]])))))
   (eng/delete-image "busybox:musl"))

@@ -15,7 +15,7 @@
 
 (ns apiserver.healthcheck
   (:require [failjure.core :as f]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [taoensso.timbre :as log])
   (:import [java.util.concurrent Executors TimeUnit]))
 
@@ -27,7 +27,7 @@
 ;; TODO: Better health check
 (defn db
   [{:keys [db]}]
-  (when (not (crux/status db))
+  (when (not (xt/status db))
     (f/fail "DB is unhealthy")))
 
 (defn check

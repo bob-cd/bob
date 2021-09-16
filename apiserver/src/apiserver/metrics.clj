@@ -17,7 +17,7 @@
   (:require [iapetos.core :as prometheus]
             [iapetos.export :as export]
             [failjure.core :as f]
-            [crux.api :as crux]
+            [xt.api :as xt]
             [langohr.queue :as lq]))
 
 (defonce registry
@@ -36,10 +36,10 @@
   (f/try-all [statuses [:running :passed :failed :stopped]
               counts   (pmap (fn [status]
                                {:status status
-                                :count  (count (crux/q (crux/db db)
-                                                       `{:find  [run]
-                                                         :where [[run :type :pipeline-run]
-                                                                 [run :status ~status]]}))})
+                                :count  (count (xt/q (xt/db db)
+                                                     `{:find  [run]
+                                                       :where [[run :type :pipeline-run]
+                                                               [run :status ~status]]}))})
                              statuses)]
     (doseq [{:keys [status count]} counts]
       (case status

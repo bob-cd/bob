@@ -9,7 +9,7 @@ The logs are streamed live directly to the Database.
 ## How does this work
 - This is implemented in Clojure/JVM
 - Uses [RabbitMQ](https://www.rabbitmq.com/) to receive messages and perform the necessary effects
-- Uses [Crux](https://www.opencrux.com/) backed by [PostgreSQL](https://www.postgresql.org/) for temporal persistence
+- Uses [XTDB](https://xtdb.com) backed by [PostgreSQL](https://www.postgresql.org/) for temporal persistence
 - Uses [contajners](https://github.com/lispyclouds/contajners) to talk to [podman](https://podman.io/) to implement step executions.
 
 ## Configuration

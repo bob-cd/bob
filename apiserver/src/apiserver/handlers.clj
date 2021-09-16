@@ -21,7 +21,7 @@
             [failjure.core :as f]
             [clojure.data.json :as json]
             [langohr.basic :as lb]
-            [crux.api :as crux]
+            [xtdb.api :as xt]
             [java-http-clj.core :as http]
             [apiserver.healthcheck :as hc]
             [apiserver.metrics :as metrics]
@@ -46,8 +46,8 @@
 
 (defn pipeline-data
   [db group name]
-  (crux/entity
-    (crux/db db)
+  (xt/entity
+    (xt/db db)
     (keyword (str "bob.pipeline." group)
              name)))
 
@@ -140,7 +140,7 @@
               changed (if pause?
                         (assoc data :paused true)
                         (dissoc data :paused))
-              _ (crux/await-tx db (crux/submit-tx db [[:crux.tx/put changed]]))]
+              _ (xt/await-tx db (xt/submit-tx db [[:xt.tx/put changed]]))]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -148,14 +148,14 @@
 (defn pipeline-logs
   [{{{:keys [id offset lines]} :path} :parameters
     db                                :db}]
-  (f/try-all [result   (crux/q (crux/db db)
-                               {:find     '[(pull log [:line]) time]
-                                :where    [['log :type :log-line]
-                                           ['log :time 'time]
-                                           ['log :run-id id]]
-                                :order-by [['time :asc]]
-                                :limit    lines
-                                :offset   offset})
+  (f/try-all [result   (xt/q (xt/db db
+                                    {:find     '[(pull log [:line]) time]
+                                     :where    [['log :type :log-line]
+                                                ['log :time 'time]
+                                                ['log :run-id id]]
+                                     :order-by [['time :asc]]
+                                     :limit    lines
+                                     :offset   offset}))
               response (->> result
                             (map first)
                             (map :line))]
@@ -166,7 +166,7 @@
 (defn pipeline-status
   [{{{:keys [id]} :path} :parameters
     db                   :db}]
-  (f/try-all [{:keys [status]} (crux/entity (crux/db db) (keyword "bob.pipeline.run" id))]
+  (f/try-all [{:keys [status]} (xt/entity (xt/db db) (keyword "bob.pipeline.run" id))]
     (if (some? status)
       (respond status 200)
       (respond "Cannot find status" 404))
@@ -176,14 +176,14 @@
 (defn pipeline-runs-list
   [{{{:keys [group name]} :path} :parameters
     db                           :db}]
-  (f/try-all [result   (crux/q (crux/db db)
-                               {:find  ['(pull run [:status :crux.db/id])]
-                                :where [['run :type :pipeline-run]
-                                        ['run :group group]
-                                        ['run :name name]]})
+  (f/try-all [result   (xt/q (xt/db db
+                                    {:find  ['(pull run [:status :xt.db/id])]
+                                     :where [['run :type :pipeline-run]
+                                             ['run :group group]
+                                             ['run :name name]]}))
               response (->> result
                             (map first)
-                            (map #(s/rename-keys % {:crux.db/id :run_id}))
+                            (map #(s/rename-keys % {:xt.db/id :run_id}))
                             (map #(update % :run_id clojure.core/name)))]
     (respond response 200)
     (f/when-failed [err]
@@ -192,18 +192,18 @@
 (defn pipeline-artifact
   [{{{:keys [group name id store-name artifact-name]} :path} :parameters
     db                                                       :db}]
-  (f/try-all [base-url (-> (crux/entity (crux/db db) (keyword "bob.artifact-store" store-name))
+  (f/try-all [base-url (-> (xt/entity (xt/db db) (keyword "bob.artifact-store" store-name))
                            (get :url))
-              _        (when (nil? base-url)
-                         (f/fail {:type :external
-                                  :msg  (str "Cannot locate artifact store " store-name)}))
+              _ (when (nil? base-url)
+                  (f/fail {:type :external
+                           :msg  (str "Cannot locate artifact store " store-name)}))
               url      (cs/join "/" [base-url "bob_artifact" group name id artifact-name])
               resp     (http/get url {:follow-redirects true} {:as :input-stream})
-              _        (when (>= (:status resp) 400)
-                         (f/fail {:type :external
-                                  :msg  (-> resp
-                                            :body
-                                            slurp)}))]
+              _ (when (>= (:status resp) 400)
+                  (f/fail {:type :external
+                           :msg  (-> resp
+                                     :body
+                                     slurp)}))]
     {:status  200
      :headers {"Content-Type" "application/tar"}
      :body    (:body resp)}
@@ -229,8 +229,8 @@
                           :status [['run :type :pipeline-run]
                                    ['run :status status]]}
               filters    (mapcat #(get clauses (key %)) query)
-              result     (crux/q (crux/db db)
-                                 (update-in base-query [:where] into filters))]
+              result     (xt/q (xt/db db
+                                      (update-in base-query [:where] into filters)))]
     (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -257,9 +257,9 @@
 
 (defn resource-provider-list
   [{db :db}]
-  (f/try-all [result (crux/q (crux/db db)
-                             '{:find  [(pull resource-provider [:name :url])]
-                               :where [[resource-provider :type :resource-provider]]})]
+  (f/try-all [result (xt/q (xt/db db
+                                  '{:find  [(pull resource-provider [:name :url])]
+                                    :where [[resource-provider :type :resource-provider]]}))]
     (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -286,9 +286,9 @@
 
 (defn artifact-store-list
   [{db :db}]
-  (f/try-all [result (crux/q (crux/db db)
-                             '{:find  [(pull artifact-store [:name :url])]
-                               :where [[artifact-store :type :artifact-store]]})]
+  (f/try-all [result (xt/q (xt/db db
+                                  '{:find  [(pull artifact-store [:name :url])]
+                                    :where [[artifact-store :type :artifact-store]]}))]
     (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -298,11 +298,11 @@
     db                     :db}]
   (f/try-all [query      (read-string q)
               db-in-time (if (nil? t)
-                           (crux/db db)
-                           (crux/db db (ins/read-instant-date t)))]
+                           (xt/db db)
+                           (xt/db db (ins/read-instant-date t)))]
     {:status  200
      :headers {"Content-Type" "application/json"}
-     :body    (json/write-str (crux/q db-in-time query))}
+     :body    (json/write-str (xt/q db-in-time query))}
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
