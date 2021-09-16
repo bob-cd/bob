@@ -24,6 +24,10 @@ jobs:
       - checkout
 
       - run:
+          name: Get rid of erroneous git config
+          command: rm -rf /home/circleci/.gitconfig
+
+      - run:
           name: Setup Babashka
           command: |
             curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
@@ -38,9 +42,11 @@ jobs:
 
       - run:
           name: Setup Clojure
+          environment:
+            CLOJURE_CLI_VERSION: "1.10.3.967"
           command: |
-            curl -sLO https://download.clojure.org/install/linux-install-1.10.3.943.sh
-            sudo bash linux-install-1.10.3.943.sh
+            curl -sLO https://download.clojure.org/install/linux-install-${CLOJURE_CLI_VERSION}.sh
+            sudo bash linux-install-${CLOJURE_CLI_VERSION}.sh
 
       - restore_cache:
           keys:
@@ -69,6 +75,4 @@ jobs:
 
       - run:
           name: Publish images
-          command: |
-            echo ${GHCR_TOKEN} | docker login ghcr.io --username lispyclouds --password-stdin && \
-            bb push
+          command: echo ${GHCR_TOKEN} | docker login ghcr.io --username lispyclouds --password-stdin && bb push
