@@ -167,11 +167,11 @@
         sys/db-client))
 
   (xt/submit-tx db-client
-                [[:xt.tx/put
-                  {:xt.db/id :bob.resource-provider/git
-                   :type     :resource-provider
-                   :name     "git"
-                   :url      "http://localhost:8000"}]])
+                [[::xt/put
+                  {:xt/id :bob.resource-provider/git
+                   :type  :resource-provider
+                   :name  "git"
+                   :url   "http://localhost:8000"}]])
 
   (valid-resource-provider? db-client {:provider "git"})
 

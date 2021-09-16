@@ -31,12 +31,12 @@
 (defn log->db
   [db-client run-id line]
   (xt/submit-tx db-client
-                [[:xt.tx/put
-                  {:xt.db/id (keyword (str "bob.pipeline.log/l-" (UUID/randomUUID)))
-                   :type     :log-line
-                   :time     (Instant/now)
-                   :run-id   run-id
-                   :line     line}]]))
+                [[::xt/put
+                  {:xt/id  (keyword (str "bob.pipeline.log/l-" (UUID/randomUUID)))
+                   :type   :log-line
+                   :time   (Instant/now)
+                   :run-id run-id
+                   :line   line}]]))
 
 (defn log-event
   [db-client run-id line]
@@ -71,10 +71,10 @@
     (f/try-all [_ (log-event db-client
                              run-id
                              (str "Fetching and mounting resource " resource))
-                pipeline      (xt/entity (xt/db db-client
-                                                (keyword (format "bob.pipeline.%s/%s"
-                                                                 group
-                                                                 name))))
+                pipeline      (xt/entity (xt/db db-client)
+                                         (keyword (format "bob.pipeline.%s/%s"
+                                                          group
+                                                          name)))
                 resource-info (->> pipeline
                                    :resources
                                    (filter #(= resource (:name %)))
@@ -185,10 +185,10 @@
 
 (defn- start*
   [db-client queue-chan group name run-id run-info run-db-id]
-  (f/try-all [pipeline                   (xt/entity (xt/db db-client
-                                                           (keyword (format "bob.pipeline.%s/%s"
-                                                                            group
-                                                                            name))))
+  (f/try-all [pipeline                   (xt/entity (xt/db db-client)
+                                                    (keyword (format "bob.pipeline.%s/%s"
+                                                                     group
+                                                                     name)))
               _ (when-not pipeline
                   (f/fail (format "Unable to find pipeline %s/%s"
                                   group
@@ -197,7 +197,7 @@
               _ (log/infof "Starting new run: %s" run-id)
               _ (xt/await-tx db-client
                              (xt/submit-tx db-client
-                                           [[:xt.tx/put
+                                           [[::xt/put
                                              (assoc run-info
                                                     :status  :initializing
                                                     :started (Instant/now))]]))
@@ -213,7 +213,7 @@
                                           :name      name}
               _ (xt/await-tx db-client
                              (xt/submit-tx db-client
-                                           [[:xt.tx/put
+                                           [[::xt/put
                                              (assoc (run-info-of db-client run-id)
                                                     :status
                                                     :running)]]))
@@ -222,7 +222,7 @@
               _ (clean-up-run run-id)
               _ (xt/await-tx db-client
                              (xt/submit-tx db-client
-                                           [[:xt.tx/put
+                                           [[::xt/put
                                              (assoc (run-info-of db-client run-id)
                                                     :status    :passed
                                                     :completed (Instant/now))]]))
@@ -241,7 +241,7 @@
             db-client
             (xt/submit-tx
               db-client
-              [[:xt.tx/put
+              [[::xt/put
                 (assoc (run-info-of db-client run-id) :status :failed :completed (Instant/now))]]))))
       (gc-images run-id)
       (clean-up-run run-id)
@@ -252,10 +252,10 @@
   "Attempts to asynchronously start a pipeline by group and name."
   [db-client queue-chan {:keys [group name run_id]}]
   (let [run-db-id (keyword (str "bob.pipeline.run/" run_id))
-        run-info  {:xt.db/id run-db-id
-                   :type     :pipeline-run
-                   :group    group
-                   :name     name}
+        run-info  {:xt/id run-db-id
+                   :type  :pipeline-run
+                   :group group
+                   :name  name}
         run-ref   (future (start* db-client queue-chan group name run_id run-info run-db-id))]
     (swap! node-state
       update-in
@@ -279,7 +279,7 @@
     (xt/await-tx db-client
                  (xt/submit-tx
                    db-client
-                   [[:xt.tx/put
+                   [[::xt/put
                      (assoc (run-info-of db-client run_id) :status :stopped :completed (Instant/now))]]))
     (when-let [container (:container-id run)]
       (eng/kill-container container)
@@ -309,8 +309,8 @@
   (def db-client (sys/db))
 
   (xt/submit-tx db-client
-                [[:xt.tx/put
-                  {:xt.db/id  :bob.pipeline.test/test
+                [[::xt/put
+                  {:xt/id     :bob.pipeline.test/test
                    :group     "test"
                    :name      "test"
                    :steps     [{:cmd "echo hello"}
@@ -328,9 +328,9 @@
   (xt/entity (xt/db db-client) :bob.pipeline.test/test)
 
   (xt/submit-tx db-client
-                [[:xt.tx/put
-                  {:xt.db/id :bob.resource-provider/git
-                   :url      "http://localhost:8000"}]])
+                [[::xt/put
+                  {:xt/id :bob.resource-provider/git
+                   :url   "http://localhost:8000"}]])
 
   (xt/entity (xt/db db-client) :bob.resource-provider/git)
 
@@ -341,9 +341,9 @@
                     "busybox:musl" "a-run-id")
 
   (xt/submit-tx db-client
-                [[:xt.tx/put
-                  {:xt.db/id :bob.artifact-store/local
-                   :url      "http://localhost:8001"}]])
+                [[::xt/put
+                  {:xt/id :bob.artifact-store/local
+                   :url   "http://localhost:8001"}]])
 
   (xt/entity (xt/db db-client) :bob.artifact-store/local)
 
@@ -365,22 +365,22 @@
     {:group "test"
      :name  "test"})
 
-  (xt/q (xt/db db-client
-               '{:find  [(pull log [:line])]
-                 :where [[log :type :log-line] [log :run-id "r-60a0d2e8-ec6e-4004-8136-978f4e042f25"]]}))
+  (xt/q (xt/db db-client)
+        '{:find  [(pull log [:line])]
+          :where [[log :type :log-line] [log :run-id "r-60a0d2e8-ec6e-4004-8136-978f4e042f25"]]})
 
-  (->> (xt/q (xt/db db-client
-                    '{:find  [(pull run [:xt.db/id])]
-                      :where [[run :type :pipeline-run]]}))
+  (->> (xt/q (xt/db db-client)
+             '{:find  [(pull run [:xt/id])]
+               :where [[run :type :pipeline-run]]})
        first
-       (map :xt.db/id)
+       (map :xt/id)
        (map name))
 
   (xt/submit-tx db-client
-                [[:xt.tx/put
-                  {:xt.db/id :bob.pipeline.test/stop-test
-                   :steps    [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
-                   :image    "busybox:musl"}]])
+                [[::xt/put
+                  {:xt/id :bob.pipeline.test/stop-test
+                   :steps [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
+                   :image "busybox:musl"}]])
 
   (xt/entity (xt/db db-client) :bob.pipeline.test/stop-test)
 

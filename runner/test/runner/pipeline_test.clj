@@ -71,13 +71,13 @@
                      (eng/pull-image test-image)
                      (xt/await-tx db
                                   (xt/submit-tx db
-                                                [[:xt.tx/put
-                                                  {:xt.db/id :bob.resource-provider/git
+                                                [[::xt/put
+                                                  {:xt/id :bob.resource-provider/git
                                                    :url      "http://localhost:8000"}]]))
                      (xt/await-tx db
                                   (xt/submit-tx db
-                                                [[:xt.tx/put
-                                                  {:xt.db/id  :bob.pipeline.test/test
+                                                [[::xt/put
+                                                  {:xt/id  :bob.pipeline.test/test
                                                    :group     "test"
                                                    :name      "test"
                                                    :steps     []
@@ -141,13 +141,13 @@
       (u/with-system (fn [db _]
                        (xt/await-tx db
                                     (xt/submit-tx db
-                                                  [[:xt.tx/put
-                                                    {:xt.db/id :bob.resource-provider/git
+                                                  [[::xt/put
+                                                    {:xt/id :bob.resource-provider/git
                                                      :url      "http://localhost:8000"}]]))
                        (xt/await-tx db
                                     (xt/submit-tx db
-                                                  [[:xt.tx/put
-                                                    {:xt.db/id  :bob.pipeline.test/test
+                                                  [[::xt/put
+                                                    {:xt/id  :bob.pipeline.test/test
                                                      :group     "test"
                                                      :name      "test"
                                                      :steps     []
@@ -178,8 +178,8 @@
         (fn [db _]
           (xt/await-tx db
                        (xt/submit-tx db
-                                     [[:xt.tx/put
-                                       {:xt.db/id :bob.artifact-store/local
+                                     [[::xt/put
+                                       {:xt/id :bob.artifact-store/local
                                         :url      "http://localhost:8001"}]]))
           (let [initial-state {:image     test-image
                                :mounted   #{}
@@ -208,19 +208,19 @@
           (fn [db _]
             (xt/await-tx db
                          (xt/submit-tx db
-                                       [[:xt.tx/put
-                                         {:xt.db/id :bob.resource-provider/git
+                                       [[::xt/put
+                                         {:xt/id :bob.resource-provider/git
                                           :url      "http://localhost:8000"}]]))
 
             (xt/await-tx db
                          (xt/submit-tx db
-                                       [[:xt.tx/put
-                                         {:xt.db/id :bob.artifact-store/local
+                                       [[::xt/put
+                                         {:xt/id :bob.artifact-store/local
                                           :url      "http://localhost:8001"}]]))
             (xt/await-tx db
                          (xt/submit-tx db
-                                       [[:xt.tx/put
-                                         {:xt.db/id  :bob.pipeline.test/test
+                                       [[::xt/put
+                                         {:xt/id  :bob.pipeline.test/test
                                           :group     "test"
                                           :name      "test"
                                           :steps     []
@@ -274,8 +274,8 @@
     (u/with-system (fn [db queue]
                      (xt/await-tx db
                                   (xt/submit-tx db
-                                                [[:xt.tx/put
-                                                  {:xt.db/id :bob.pipeline.test/test
+                                                [[::xt/put
+                                                  {:xt/id :bob.pipeline.test/test
                                                    :group    "test"
                                                    :name     "test"
                                                    :steps    [{:cmd "echo hello"} {:cmd "sh -c \"echo ${k1}\""}]
@@ -286,13 +286,13 @@
                                        {:group  "test"
                                         :name   "test"
                                         :run_id "a-run-id"})
-                           history  (xt/entity-history (xt/db db
-                                                              (keyword (str "bob.pipeline.run/" result))
-                                                              :desc
-                                                              {:with-docs? true}))
+                           history  (xt/entity-history (xt/db db)
+                                                       (keyword (str "bob.pipeline.run/" result))
+                                                       :desc
+                                                       {:with-docs? true})
                            run-info (xt/entity (xt/db db) (keyword (str "bob.pipeline.run/" result)))
                            statuses (->> history
-                                         (map :xt.db/doc)
+                                         (map ::xt/doc)
                                          (map :status))]
                        (is (= [:passed :running :initializing]
                               statuses))
@@ -304,8 +304,8 @@
     (u/with-system (fn [db queue]
                      (xt/await-tx db
                                   (xt/submit-tx db
-                                                [[:xt.tx/put
-                                                  {:xt.db/id :bob.pipeline.test/test
+                                                [[::xt/put
+                                                  {:xt/id :bob.pipeline.test/test
                                                    :group    "test"
                                                    :name     "test"
                                                    :steps    [{:cmd "echo hello"} {:cmd "this-bombs"}]
@@ -318,12 +318,12 @@
                                         :run_id "a-run-id"})
                            id       (f/message result)
                            run-info (xt/entity (xt/db db) (keyword (str "bob.pipeline.run/" id)))
-                           history  (xt/entity-history (xt/db db
-                                                              (keyword (str "bob.pipeline.run/" id))
-                                                              :desc
-                                                              {:with-docs? true}))
+                           history  (xt/entity-history (xt/db db)
+                                                       (keyword (str "bob.pipeline.run/" id))
+                                                       :desc
+                                                       {:with-docs? true})
                            statuses (->> history
-                                         (map :xt.db/doc)
+                                         (map ::xt/doc)
                                          (map :status)
                                          (into #{}))]
                        (is (f/failed? result))
@@ -338,8 +338,8 @@
       (fn [db queue]
         (xt/await-tx db
                      (xt/submit-tx db
-                                   [[:xt.tx/put
-                                     {:xt.db/id :bob.pipeline.test/stop-test
+                                   [[::xt/put
+                                     {:xt/id :bob.pipeline.test/stop-test
                                       :steps    [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
                                       :image    test-image}]]))
         (let [_ (p/start db
@@ -354,12 +354,12 @@
                    :name   "stop-test"
                    :run_id "a-stop-id"})
               run-info (xt/entity (xt/db db) :bob.pipeline.run/a-stop-id)
-              history  (xt/entity-history (xt/db db
-                                                 :bob.pipeline.run/a-stop-id
-                                                 :desc
-                                                 {:with-docs? true}))
+              history  (xt/entity-history (xt/db db)
+                                          :bob.pipeline.run/a-stop-id
+                                          :desc
+                                          {:with-docs? true})
               statuses (->> history
-                            (map :xt.db/doc)
+                            (map ::xt/doc)
                             (map :status)
                             (into #{}))]
           (is (not (contains? statuses :failed)))

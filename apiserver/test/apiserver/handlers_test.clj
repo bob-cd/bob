@@ -128,14 +128,14 @@
                        db
                        (xt/submit-tx
                          db
-                         [[:xt.tx/put
-                           {:xt.db/id :bob.pipeline.dev-paused/test-paused
-                            :type     :pipeline
-                            :group    "dev-paused"
-                            :name     "test-paused"
-                            :image    "busybox:musl"
-                            :paused   true
-                            :steps    [{:cmd "echo yes"}]}]]))
+                         [[::xt/put
+                           {:xt/id  :bob.pipeline.dev-paused/test-paused
+                            :type   :pipeline
+                            :group  "dev-paused"
+                            :name   "test-paused"
+                            :image  "busybox:musl"
+                            :paused true
+                            :steps  [{:cmd "echo yes"}]}]]))
                      (let [{:keys [status body]} (h/pipeline-start {:parameters {:path {:group "dev-paused"
                                                                                         :name  "test-paused"}}
                                                                     :queue      queue
@@ -153,12 +153,12 @@
                    (lq/bind queue "bob.tests" "bob.fanout")
                    (xt/await-tx db
                                 (xt/submit-tx db
-                                              [[:xt.tx/put
-                                                {:xt.db/id :bob.pipeline.run/a-run-id
-                                                 :type     :pipeline-run
-                                                 :group    "dev"
-                                                 :name     "test"
-                                                 :status   :running}]]))
+                                              [[::xt/put
+                                                {:xt/id  :bob.pipeline.run/a-run-id
+                                                 :type   :pipeline-run
+                                                 :group  "dev"
+                                                 :name   "test"
+                                                 :status :running}]]))
                    (t/testing "pipeline stop"
                      (h/pipeline-stop {:parameters {:path {:group "dev"
                                                            :name  "test"
@@ -177,13 +177,13 @@
                      db
                      (xt/submit-tx
                        db
-                       [[:xt.tx/put
-                         {:xt.db/id :bob.pipeline.dev/test
-                          :type     :pipeline
-                          :group    "dev"
-                          :name     "test"
-                          :image    "busybox:musl"
-                          :steps    [{:cmd "echo yes"}]}]]))
+                       [[::xt/put
+                         {:xt/id :bob.pipeline.dev/test
+                          :type  :pipeline
+                          :group "dev"
+                          :name  "test"
+                          :image "busybox:musl"
+                          :steps [{:cmd "echo yes"}]}]]))
                    (t/testing "pipeline pause"
                      (h/pipeline-pause-unpause true
                                                {:parameters {:path {:group "dev"
@@ -203,24 +203,24 @@
                      (xt/await-tx
                        db
                        (xt/submit-tx db
-                                     [[:xt.tx/put
-                                       {:xt.db/id :bob.pipeline.log/l-1
-                                        :type     :log-line
-                                        :time     (Instant/now)
-                                        :run-id   "r-1"
-                                        :line     "l1"}]
-                                      [:xt.tx/put
-                                       {:xt.db/id :bob.pipeline.log/l-2
-                                        :type     :log-line
-                                        :time     (Instant/now)
-                                        :run-id   "r-1"
-                                        :line     "l2"}]
-                                      [:xt.tx/put
-                                       {:xt.db/id :bob.pipeline.log/l-3
-                                        :type     :log-line
-                                        :time     (Instant/now)
-                                        :run-id   "r-1"
-                                        :line     "l3"}]]))
+                                     [[::xt/put
+                                       {:xt/id  :bob.pipeline.log/l-1
+                                        :type   :log-line
+                                        :time   (Instant/now)
+                                        :run-id "r-1"
+                                        :line   "l1"}]
+                                      [::xt/put
+                                       {:xt/id  :bob.pipeline.log/l-2
+                                        :type   :log-line
+                                        :time   (Instant/now)
+                                        :run-id "r-1"
+                                        :line   "l2"}]
+                                      [::xt/put
+                                       {:xt/id  :bob.pipeline.log/l-3
+                                        :type   :log-line
+                                        :time   (Instant/now)
+                                        :run-id "r-1"
+                                        :line   "l3"}]]))
                      (t/is (= ["l1" "l2"]
                               (-> (h/pipeline-logs {:db         db
                                                     :parameters {:path {:id     "r-1"
@@ -235,12 +235,12 @@
                      (xt/await-tx
                        db
                        (xt/submit-tx db
-                                     [[:xt.tx/put
-                                       {:xt.db/id :bob.pipeline.run/r-1
-                                        :type     :pipeline-run
-                                        :group    "dev"
-                                        :name     "test"
-                                        :status   :running}]]))
+                                     [[::xt/put
+                                       {:xt/id  :bob.pipeline.run/r-1
+                                        :type   :pipeline-run
+                                        :group  "dev"
+                                        :name   "test"
+                                        :status :running}]]))
                      (t/is (= :running
                               (-> (h/pipeline-status {:db         db
                                                       :parameters {:path {:id "r-1"}}})
@@ -261,10 +261,10 @@
                        db
                        (xt/submit-tx
                          db
-                         [[:xt.tx/put
-                           {:xt.db/id :bob.artifact-store/local
-                            :type     :artifact-store
-                            :url      "http://localhost:8001"}]]))
+                         [[::xt/put
+                           {:xt/id :bob.artifact-store/local
+                            :type  :artifact-store
+                            :url   "http://localhost:8001"}]]))
                      (http/post "http://localhost:8001/bob_artifact/dev/test/a-run-id/file"
                                 {:as   :input-stream
                                  :body (io/input-stream "test/test.tar")})
@@ -304,27 +304,27 @@
                        db
                        (xt/submit-tx
                          db
-                         [[:xt.tx/put
-                           {:xt.db/id :bob.pipeline.dev/test1
-                            :type     :pipeline
-                            :group    "dev"
-                            :name     "test1"
-                            :image    "busybox:musl"
-                            :steps    [{:cmd "echo yes"}]}]
-                          [:xt.tx/put
-                           {:xt.db/id :bob.pipeline.dev/test2
-                            :type     :pipeline
-                            :group    "dev"
-                            :name     "test2"
-                            :image    "alpine:latest"
-                            :steps    [{:cmd "echo yesnt"}]}]
-                          [:xt.tx/put
-                           {:xt.db/id :bob.pipeline.prod/test1
-                            :type     :pipeline
-                            :group    "prod"
-                            :name     "test1"
-                            :image    "alpine:latest"
-                            :steps    [{:cmd "echo boo"}]}]]))
+                         [[::xt/put
+                           {:xt/id :bob.pipeline.dev/test1
+                            :type  :pipeline
+                            :group "dev"
+                            :name  "test1"
+                            :image "busybox:musl"
+                            :steps [{:cmd "echo yes"}]}]
+                          [::xt/put
+                           {:xt/id :bob.pipeline.dev/test2
+                            :type  :pipeline
+                            :group "dev"
+                            :name  "test2"
+                            :image "alpine:latest"
+                            :steps [{:cmd "echo yesnt"}]}]
+                          [::xt/put
+                           {:xt/id :bob.pipeline.prod/test1
+                            :type  :pipeline
+                            :group "prod"
+                            :name  "test1"
+                            :image "alpine:latest"
+                            :steps [{:cmd "echo boo"}]}]]))
                      (let [resp (h/pipeline-list {:db         db
                                                   :parameters {:query {:group "dev"}}})]
                        (t/is (= [{:group "dev"
@@ -346,18 +346,18 @@
                        db
                        (xt/submit-tx
                          db
-                         [[:xt.tx/put
-                           {:xt.db/id :bob.pipeline.run/r-1
-                            :type     :pipeline-run
-                            :group    "dev"
-                            :name     "test"
-                            :status   :passed}]
-                          [:xt.tx/put
-                           {:xt.db/id :bob.pipeline.run/r-2
-                            :type     :pipeline-run
-                            :group    "dev"
-                            :name     "test"
-                            :status   :failed}]]))
+                         [[::xt/put
+                           {:xt/id  :bob.pipeline.run/r-1
+                            :type   :pipeline-run
+                            :group  "dev"
+                            :name   "test"
+                            :status :passed}]
+                          [::xt/put
+                           {:xt/id  :bob.pipeline.run/r-2
+                            :type   :pipeline-run
+                            :group  "dev"
+                            :name   "test"
+                            :status :failed}]]))
                      (let [resp (h/pipeline-runs-list {:db         db
                                                        :parameters {:path {:group "dev"
                                                                            :name  "test"}}})]
@@ -390,16 +390,16 @@
                      (xt/await-tx
                        db
                        (xt/submit-tx db
-                                     [[:xt.tx/put
-                                       {:xt.db/id :bob.resource-provider.dev/test1
-                                        :type     :resource-provider
-                                        :name     "test1"
-                                        :url      "http://localhost:8000"}]
-                                      [:xt.tx/put
-                                       {:xt.db/id :bob.resource-provider.dev/test2
-                                        :type     :resource-provider
-                                        :name     "test2"
-                                        :url      "http://localhost:8001"}]]))
+                                     [[::xt/put
+                                       {:xt/id :bob.resource-provider.dev/test1
+                                        :type  :resource-provider
+                                        :name  "test1"
+                                        :url   "http://localhost:8000"}]
+                                      [::xt/put
+                                       {:xt/id :bob.resource-provider.dev/test2
+                                        :type  :resource-provider
+                                        :name  "test2"
+                                        :url   "http://localhost:8001"}]]))
                      (t/is (= [{:name "test1"
                                 :url  "http://localhost:8000"}
                                {:name "test2"
@@ -429,16 +429,16 @@
                      (xt/await-tx
                        db
                        (xt/submit-tx db
-                                     [[:xt.tx/put
-                                       {:xt.db/id :bob.resource-provider.dev/test1
-                                        :type     :artifact-store
-                                        :name     "test1"
-                                        :url      "http://localhost:8000"}]
-                                      [:xt.tx/put
-                                       {:xt.db/id :bob.resource-provider.dev/test2
-                                        :type     :artifact-store
-                                        :name     "test2"
-                                        :url      "http://localhost:8001"}]]))
+                                     [[::xt/put
+                                       {:xt/id :bob.resource-provider.dev/test1
+                                        :type  :artifact-store
+                                        :name  "test1"
+                                        :url   "http://localhost:8000"}]
+                                      [::xt/put
+                                       {:xt/id :bob.resource-provider.dev/test2
+                                        :type  :artifact-store
+                                        :name  "test2"
+                                        :url   "http://localhost:8001"}]]))
                      (t/is (= [{:name "test1"
                                 :url  "http://localhost:8000"}
                                {:name "test2"
@@ -455,9 +455,9 @@
           db
           (xt/submit-tx
             db
-            [[:xt.tx/put
-              {:xt.db/id :food/biryani
-               :type     :indian}]]))
+            [[::xt/put
+              {:xt/id :food/biryani
+               :type  :indian}]]))
         (t/is
           (=
             "[[{\"type\":\"indian\"}]]"
@@ -474,7 +474,7 @@
             db
             (xt/submit-tx
               db
-              [[:xt.tx/delete :food/biryani]]))
+              [[::xt/delete :food/biryani]]))
           (t/is
             (=
               "[[{\"type\":\"indian\"}]]"

@@ -140,7 +140,7 @@
               changed (if pause?
                         (assoc data :paused true)
                         (dissoc data :paused))
-              _ (xt/await-tx db (xt/submit-tx db [[:xt.tx/put changed]]))]
+              _ (xt/await-tx db (xt/submit-tx db [[::xt/put changed]]))]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -148,14 +148,14 @@
 (defn pipeline-logs
   [{{{:keys [id offset lines]} :path} :parameters
     db                                :db}]
-  (f/try-all [result   (xt/q (xt/db db
-                                    {:find     '[(pull log [:line]) time]
-                                     :where    [['log :type :log-line]
-                                                ['log :time 'time]
-                                                ['log :run-id id]]
-                                     :order-by [['time :asc]]
-                                     :limit    lines
-                                     :offset   offset}))
+  (f/try-all [result   (xt/q (xt/db db)
+                             {:find     '[(pull log [:line]) time]
+                              :where    [['log :type :log-line]
+                                         ['log :time 'time]
+                                         ['log :run-id id]]
+                              :order-by [['time :asc]]
+                              :limit    lines
+                              :offset   offset})
               response (->> result
                             (map first)
                             (map :line))]
@@ -176,14 +176,14 @@
 (defn pipeline-runs-list
   [{{{:keys [group name]} :path} :parameters
     db                           :db}]
-  (f/try-all [result   (xt/q (xt/db db
-                                    {:find  ['(pull run [:status :xt.db/id])]
-                                     :where [['run :type :pipeline-run]
-                                             ['run :group group]
-                                             ['run :name name]]}))
+  (f/try-all [result   (xt/q (xt/db db)
+                             {:find  ['(pull run [:status :xt/id])]
+                              :where [['run :type :pipeline-run]
+                                      ['run :group group]
+                                      ['run :name name]]})
               response (->> result
                             (map first)
-                            (map #(s/rename-keys % {:xt.db/id :run_id}))
+                            (map #(s/rename-keys % {:xt/id :run_id}))
                             (map #(update % :run_id clojure.core/name)))]
     (respond response 200)
     (f/when-failed [err]
@@ -229,8 +229,8 @@
                           :status [['run :type :pipeline-run]
                                    ['run :status status]]}
               filters    (mapcat #(get clauses (key %)) query)
-              result     (xt/q (xt/db db
-                                      (update-in base-query [:where] into filters)))]
+              result     (xt/q (xt/db db)
+                               (update-in base-query [:where] into filters))]
     (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -257,9 +257,9 @@
 
 (defn resource-provider-list
   [{db :db}]
-  (f/try-all [result (xt/q (xt/db db
-                                  '{:find  [(pull resource-provider [:name :url])]
-                                    :where [[resource-provider :type :resource-provider]]}))]
+  (f/try-all [result (xt/q (xt/db db)
+                           '{:find  [(pull resource-provider [:name :url])]
+                             :where [[resource-provider :type :resource-provider]]})]
     (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -286,9 +286,9 @@
 
 (defn artifact-store-list
   [{db :db}]
-  (f/try-all [result (xt/q (xt/db db
-                                  '{:find  [(pull artifact-store [:name :url])]
-                                    :where [[artifact-store :type :artifact-store]]}))]
+  (f/try-all [result (xt/q (xt/db db)
+                           '{:find  [(pull artifact-store [:name :url])]
+                             :where [[artifact-store :type :artifact-store]]})]
     (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))

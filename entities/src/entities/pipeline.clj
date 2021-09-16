@@ -39,10 +39,10 @@
                                 (:group pipeline)
                                 (:name pipeline)))
         data   (-> pipeline
-                   (assoc :xt.db/id id)
+                   (assoc :xt/id id)
                    (assoc :type :pipeline))
         result (f/try*
-                 (xt/submit-tx db-client [[:xt.tx/put data]]))]
+                 (xt/submit-tx db-client [[::xt/put data]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Pipeline creation failed: %s" (f/message result)))
       "Ok")))
@@ -55,5 +55,5 @@
                             (:name pipeline)))]
     (log/debugf "Deleting pipeline %s" pipeline)
     (f/try*
-      (xt/submit-tx db-client [[:xt.tx/delete id]]))
+      (xt/submit-tx db-client [[::xt/delete id]]))
     "Ok"))

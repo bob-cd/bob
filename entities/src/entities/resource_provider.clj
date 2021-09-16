@@ -24,11 +24,11 @@
   [db-client queue-chan data]
   (let [result (f/try*
                  (xt/submit-tx db-client
-                               [[:xt.tx/put
-                                 {:xt.db/id (keyword (str "bob.resource-provider/" (:name data)))
-                                  :type     :resource-provider
-                                  :name     (:name data)
-                                  :url      (:url data)}]]))]
+                               [[::xt/put
+                                 {:xt/id (keyword (str "bob.resource-provider/" (:name data)))
+                                  :type  :resource-provider
+                                  :name  (:name data)
+                                  :url   (:url data)}]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Could not register resource provider: %s" (f/message result)))
       (do
@@ -39,6 +39,6 @@
   "Unregisters an resource provider by its name supplied in a map."
   [db-client _queue-chan data]
   (f/try*
-    (xt/submit-tx db-client [[:xt.tx/delete (keyword (str "bob.resource-provider/" (:name data)))]]))
+    (xt/submit-tx db-client [[::xt/delete (keyword (str "bob.resource-provider/" (:name data)))]]))
   (log/infof "Un-registered resource provider %s" (:name data))
   "Ok")

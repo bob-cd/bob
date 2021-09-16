@@ -53,7 +53,7 @@
           (is (= "Ok" create-res))
           (is (= (-> pipeline
                      (assoc :type :pipeline)
-                     (assoc :xt.db/id :bob.pipeline.test/test))
+                     (assoc :xt/id :bob.pipeline.test/test))
                  effect))))))
   (testing "deletion"
     (u/with-system (fn [db queue-chan]

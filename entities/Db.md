@@ -3,7 +3,7 @@
 ### [Pipeline](https://bob-cd.github.io/pages/concepts/pipeline.html)
 
 ```clojure
-{:xt.db/id  :bob.pipeline.<group-name>/<pipeline-name>
+{:xt/id     :bob.pipeline.<group-name>/<pipeline-name>
  :group     <group-name>
  :name      <pipeline-name>
  :type      :pipeline
@@ -23,15 +23,15 @@
 ### [Resource Provider](https://bob-cd.github.io/pages/concepts/resource.html)
 
 ```clojure
-{:xt.db/id :bob.resource-provider/github-provider
- :type     :resource-provider
- :url      "http://localhost:8000"}
+{:xt/id :bob.resource-provider/github-provider
+ :type  :resource-provider
+ :url   "http://localhost:8000"}
 ```
 
 ### [Artifact Store](https://bob-cd.github.io/pages/concepts/artifact.html)
 
 ```clojure
-{:xt.db/id :bob.artifact-store/local-store
- :type     :artifact-store
- :url      "http://localhost:8001"}
+{:xt/id :bob.artifact-store/local-store
+ :type  :artifact-store
+ :url   "http://localhost:8001"}
 ```

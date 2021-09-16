@@ -49,8 +49,8 @@
   (u/with-system (fn [db _]
                    (xt/await-tx db
                                 (xt/submit-tx db
-                                              [[:xt.tx/put
-                                                {:xt.db/id :bob.resource-provider/git
+                                              [[::xt/put
+                                                {:xt/id :bob.resource-provider/git
                                                  :url      "http://localhost:8000"}]]))
                    (testing "valid resource provider"
                      (is (r/valid-resource-provider? db {:provider "git"})))
@@ -58,19 +58,19 @@
                      (is (not (r/valid-resource-provider? db {:provider "invalid"}))))
                    (xt/await-tx db
                                 (xt/submit-tx db
-                                              [[:xt.tx/delete :bob.resource-provider/git]])))))
+                                              [[::xt/delete :bob.resource-provider/git]])))))
 
 (deftest ^:integration url-generation-test
   (u/with-system (fn [db _]
                    (xt/await-tx db
                                 (xt/submit-tx db
-                                              [[:xt.tx/put
-                                                {:xt.db/id :bob.resource-provider/git
+                                              [[::xt/put
+                                                {:xt/id :bob.resource-provider/git
                                                  :url      "http://localhost:8000"}]]))
                    (xt/await-tx db
                                 (xt/submit-tx db
-                                              [[:xt.tx/put
-                                                {:xt.db/id :bob.artifact-store/local
+                                              [[::xt/put
+                                                {:xt/id :bob.artifact-store/local
                                                  :url      "http://localhost:8001"}]]))
                    (testing "generate url for an external resource"
                      (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
@@ -91,7 +91,7 @@
                                                   :run_id "a-run-id"}}))))
                    (xt/await-tx db
                                 (xt/submit-tx db
-                                              [[:xt.tx/delete :bob.resource-provider/git]])))))
+                                              [[::xt/delete :bob.resource-provider/git]])))))
 
 (deftest ^:integration initial-image-test
   (eng/pull-image "busybox:musl")
@@ -111,8 +111,8 @@
   (u/with-system (fn [db _]
                    (xt/await-tx db
                                 (xt/submit-tx db
-                                              [[:xt.tx/put
-                                                {:xt.db/id :bob.resource-provider/git
+                                              [[::xt/put
+                                                {:xt/id :bob.resource-provider/git
                                                  :url      "http://localhost:8000"}]]))
                    (eng/pull-image "busybox:musl")
                    (testing "successful mount"
@@ -129,7 +129,7 @@
                        (eng/delete-image "busybox:musl")
                        (xt/await-tx db
                                     (xt/submit-tx db
-                                                  [[:xt.tx/delete :bob.resource-provider/git]]))))
+                                                  [[::xt/delete :bob.resource-provider/git]]))))
                    (testing "unsuccessful mount"
                      (is (f/failed? (r/mounted-image-from db
                                                           {:name     "source"

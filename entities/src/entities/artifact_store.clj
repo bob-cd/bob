@@ -24,11 +24,11 @@
   [db-client queue-chan data]
   (let [result (f/try*
                  (xt/submit-tx db-client
-                               [[:xt.tx/put
-                                 {:xt.db/id (keyword (str "bob.artifact-store/" (:name data)))
-                                  :type     :artifact-store
-                                  :url      (:url data)
-                                  :name     (:name data)}]]))]
+                               [[::xt/put
+                                 {:xt/id (keyword (str "bob.artifact-store/" (:name data)))
+                                  :type  :artifact-store
+                                  :url   (:url data)
+                                  :name  (:name data)}]]))]
     (if (f/failed? result)
       (err/publish-error queue-chan (format "Could not register artifact store: %s" (f/message result)))
       (do
@@ -39,6 +39,6 @@
   "Unregisters an artifact store by its name supplied in a map."
   [db-client _queue-chan data]
   (f/try*
-    (xt/submit-tx db-client [[:xt.tx/delete (keyword (str "bob.artifact-store/" (:name data)))]]))
+    (xt/submit-tx db-client [[::xt/delete (keyword (str "bob.artifact-store/" (:name data)))]]))
   (log/infof "Un-registered artifact store %s" (:name data))
   "Ok")

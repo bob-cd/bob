@@ -3,17 +3,17 @@
 ### Log line
 
 ```clojure
-{:xt.db/id :bob.pipeline.log/l-<UUID>
- :type     :log-line
- :time     #inst "UTC Date instant"
- :run-id   "r-UUID of associated run"
- :line     "this is a log line from a run"}
+{:xt/id  :bob.pipeline.log/l-<UUID>
+ :type   :log-line
+ :time   #inst "UTC Date instant"
+ :run-id "r-UUID of associated run"
+ :line   "this is a log line from a run"}
 ```
 
 ### Run
 
 ```clojure
-{:xt.db/id  :bob.pipeline.run/r-<UUID>
+{:xt/id     :bob.pipeline.run/r-<UUID>
  :type      :pipeline-run
  :group     "<group-name>"
  :name      "<pipeline-name>"

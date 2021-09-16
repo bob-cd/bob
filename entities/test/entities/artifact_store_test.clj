@@ -30,7 +30,7 @@
                            _ (Thread/sleep 1000)
                            effect         (xt/entity (xt/db db) :bob.artifact-store/s3)]
                        (is (= "Ok" create-res))
-                       (is (= {:xt.db/id :bob.artifact-store/s3
+                       (is (= {:xt/id :bob.artifact-store/s3
                                :type     :artifact-store
                                :url      "my.store.com"
                                :name     "s3"}

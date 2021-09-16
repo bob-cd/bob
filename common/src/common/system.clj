@@ -19,7 +19,6 @@
             [taoensso.timbre :as log]
             [failjure.core :as f]
             [xtdb.api :as xt]
-            [xtdb.jdbc :as jdbc]
             [langohr.core :as rmq]
             [langohr.channel :as lch]
             [langohr.queue :as lq]
@@ -71,14 +70,14 @@
     (assoc this
            :client
            (try-connect
-             #(xt/start-node {::jdbc/connection-pool {:dialect 'xt.jdbc.psql/->dialect
-                                                      :db-spec {:jdbcUrl  db-url
-                                                                :user     db-user
-                                                                :password db-password}}
-                              :xt/tx-log             {:xt/module       `xt.jdbc/->tx-log
-                                                      :connection-pool ::jdbc/connection-pool}
-                              :xt/document-store     {:xt/module       `xt.jdbc/->document-store
-                                                      :connection-pool ::jdbc/connection-pool}}))))
+             #(xt/start-node {:xtdb.jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
+                                                          :db-spec {:jdbcUrl  db-url
+                                                                    :user     db-user
+                                                                    :password db-password}}
+                              :xtdb/tx-log               {:xtdb/module     'xtdb.jdbc/->tx-log
+                                                          :connection-pool :xtdb.jdbc/connection-pool}
+                              :xtdb/document-store       {:xtdb/module     'xtdb.jdbc/->document-store
+                                                          :connection-pool :xtdb.jdbc/connection-pool}}))))
   (stop [this]
     (log/info "Disconnecting DB")
     (.close ^IXtdb (:client this))

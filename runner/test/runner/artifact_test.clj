@@ -28,8 +28,8 @@
                    (let [id (eng/create-container "busybox:musl")]
                      (xt/await-tx db
                                   (xt/submit-tx db
-                                                [[:xt.tx/put
-                                                  {:xt.db/id :bob.artifact-store/local
+                                                [[::xt/put
+                                                  {:xt/id :bob.artifact-store/local
                                                    :url      "http://localhost:8001"}]]))
 
                      (testing "successful artifact upload"
@@ -45,5 +45,5 @@
                               (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file1")))))
                      (xt/await-tx db
                                   (xt/submit-tx db
-                                                [[:xt.tx/delete :bob.artifact-store/local]])))))
+                                                [[::xt/delete :bob.artifact-store/local]])))))
   (eng/delete-image "busybox:musl"))

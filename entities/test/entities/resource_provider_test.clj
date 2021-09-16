@@ -31,7 +31,7 @@
               _ (Thread/sleep 1000)
               effect            (xt/entity (xt/db db) :bob.resource-provider/github)]
           (is (= "Ok" create-res))
-          (is (= {:xt.db/id :bob.resource-provider/github
+          (is (= {:xt/id :bob.resource-provider/github
                   :type     :resource-provider
                   :url      "my.resource.com"
                   :name     "github"}
