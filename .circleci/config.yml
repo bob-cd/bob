@@ -25,9 +25,7 @@ jobs:
 
       - run:
           name: Git clean slate
-          command: |
-            rm -rf /home/circleci/.gitconfig
-            rm -rf /home/circleci/.gitlibs
+          command: rm -rf /home/circleci/.gitconfig
 
       - run:
           name: Setup Babashka
@@ -57,6 +55,10 @@ jobs:
       - run:
           name: Run all tests
           command: bb test
+
+      - run:
+          name: Purge gitlibs
+          command: rm -rf /home/circleci/.gitlibs
 
       - run:
           name: Build JARs
