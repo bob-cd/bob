@@ -24,8 +24,10 @@ jobs:
       - checkout
 
       - run:
-          name: Get rid of erroneous git config
-          command: rm -rf /home/circleci/.gitconfig
+          name: Git clean slate
+          command: |
+            rm -rf /home/circleci/.gitconfig
+            rm -rf /home/circleci/.gitlibs
 
       - run:
           name: Setup Babashka
