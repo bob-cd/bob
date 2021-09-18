@@ -20,6 +20,7 @@
                            (def entities-dir "entities")
                            (def runner-dir "runner")
 
+                           (def prep-task "bb prep")
                            (def compile-task "bb compile")
                            (def test-task "bb test")
                            (def image-task "bb image")
@@ -28,6 +29,8 @@
 
          apiserver       {:doc  "Builds the apiserver"
                           :task (shell {:dir apiserver-dir} compile-task)}
+         apiserver-prep  {:doc "Prepares the deps of the apiserver"
+                          :task (shell {:dir apiserver-dir} prep-task)}
          test-apiserver  {:doc  "Runs tests for the apiserver"
                           :task (shell {:dir apiserver-dir} test-task)}
          image-apiserver {:doc  "Make a docker image of the apiserver"
@@ -37,6 +40,8 @@
 
          entities        {:doc  "Builds the entities service"
                           :task (shell {:dir entities-dir} compile-task)}
+         entities-prep   {:doc "Prepares the deps of the entities service"
+                          :task (shell {:dir entities-dir} prep-task)}
          test-entities   {:doc  "Runs tests for the entities service"
                           :task (shell {:dir entities-dir} test-task)}
          image-entities  {:doc  "Make a docker image of the entities service"
@@ -46,12 +51,18 @@
 
          runner          {:doc  "Builds the runner"
                           :task (shell {:dir runner-dir} compile-task)}
+         runner-prep     {:doc "Prepares the deps of runner"
+                          :task (shell {:dir runner-dir} prep-task)}
          test-runner     {:doc  "Runs tests for runner"
                           :task (shell {:dir runner-dir} test-task)}
          image-runner    {:doc  "Make a docker image of runner"
                           :task (shell {:dir runner-dir} image-task)}
          push-runner     {:doc  "Push the docker image of runner"
                           :task (shell {:dir runner-dir} push-task)}
+
+         prep            {:doc "Prepares the deps"
+                          :task (run '-prep)}
+         -prep           {:depends [apiserver-prep entities-prep runner-prep]}
 
          compile         {:doc  "Compile all services"
                           :task (run '-compile {:parallel true})}

@@ -21,6 +21,10 @@
                                (shell {:continue true} "docker rm bob-test-storage bob-test-queue artifact-local")
                                (shell {:continue true} "docker network rm bob-net")
                                (shell {:continue true} "docker volume prune -f"))}
+         prep         {:doc "Prepares the deps"
+                       :task (do (shell "clojure -P -A:build")
+                                 (shell "clojure -P -M -A:test")
+                                 (shell "clojure -P"))}
          test         {:doc  "Sets up the cluster and runs tests"
                        :task (do
                                (run 'docker-clean)

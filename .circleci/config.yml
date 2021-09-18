@@ -25,7 +25,7 @@ jobs:
 
       - run:
           name: Git clean slate
-          command: rm -rf /home/circleci/.gitconfig
+          command: rm -rf ~/.gitconfig
 
       - run:
           name: Setup Babashka
@@ -53,15 +53,21 @@ jobs:
             - bob-v1-
 
       - run:
+          name: Prep all deps
+          command: bb prep
+
+      - save_cache:
+          key: bob-v1-{{ checksum "apiserver/deps.edn" }}-{{ checksum "entities/deps.edn" }}-{{ checksum "runner/deps.edn" }}-{{ checksum "common/deps.edn" }}
+          paths:
+            - ~/.m2
+            - ~/.gitlibs
+
+      - run:
           name: Run all tests
           command: bb test
 
       - run:
-          name: Purge gitlibs
-          command: rm -rf /home/circleci/.gitlibs
-
-      - run:
-          name: Build JARs
+          name: Build executables
           command: bb compile
 
       - run:
@@ -71,11 +77,6 @@ jobs:
       - run:
           name: Run end to end tests
           command: bb e2e
-
-      - save_cache:
-          key: bob-v1-{{ checksum "apiserver/deps.edn" }}-{{ checksum "entities/deps.edn" }}-{{ checksum "runner/deps.edn" }}-{{ checksum "common/deps.edn" }}
-          paths:
-            - ~/.m2
 
       - run:
           name: Publish images
