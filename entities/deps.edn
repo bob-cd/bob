@@ -25,5 +25,5 @@
                                 org.clojure/test.check            {:mvn/version "1.1.0"}
                                 com.github.seancorfield/next.jdbc {:mvn/version "1.2.709"}}
                    :main-opts  ["-m" "kaocha.runner"]}
-           :build {:deps       {io.github.clojure/tools.build {:tag "v0.5.0" :sha "7d77952"}}
+           :build {:deps       {io.github.clojure/tools.build {:tag "v0.5.1" :sha "21da7d4"}}
                    :ns-default build}}}

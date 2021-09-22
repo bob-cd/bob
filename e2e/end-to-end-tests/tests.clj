@@ -25,7 +25,7 @@
 
 (def default-message "Initialized")
 
-(def default-image-name "busybox:musl")
+(def default-image-name "docker.io/library/busybox:musl")
 
 (def initial-step {:cmd (format "sh -c \"echo %s && sleep 1\"" default-message)})
 
@@ -291,7 +291,6 @@
                                               options)]
       (t/is (= 202 status))
       (t/is (= "Ok" (get-resp-message body))))))
-
 
 (t/deftest pipeline-test
   (t/testing "creates a pipeline and can prove the pipeline exists by listing it"
