@@ -13,8 +13,17 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-FROM adoptopenjdk/openjdk16:alpine-jre
+FROM eclipse-temurin:17-jdk AS jdk
 
+RUN jlink \
+    --compress=2 \
+    --module-path jmods \
+    --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http \
+    --output jlinked
+
+FROM ubuntu:latest
+
+COPY --from=jdk /jlinked jdk
 COPY apiserver.jar .
 
-ENTRYPOINT ["java", "-jar", "apiserver.jar"]
+ENTRYPOINT ["/jdk/bin/java", "-jar", "apiserver.jar"]

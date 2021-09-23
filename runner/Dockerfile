@@ -13,7 +13,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Bob. If not, see <http://www.gnu.org/licenses/>.
 
-FROM adoptopenjdk/openjdk16:jdk-16.0.1_9-centos AS jdk
+FROM eclipse-temurin:17-jdk AS jdk
 
 RUN jlink \
     --compress=2 \
@@ -21,17 +21,14 @@ RUN jlink \
     --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http \
     --output jlinked
 
-
 # Based on Fedora
 FROM quay.io/podman/stable:latest
 
-WORKDIR /opt
-
 COPY --from=jdk /jlinked jdk
 COPY runner.jar .
-COPY entrypoint.sh .
-RUN chmod +x entrypoint.sh
-
+RUN echo -e "set -e \n\
+podman system service -t 0 unix:///tmp/pod.sock & \n\
+/jdk/bin/java -jar runner.jar" > entrypoint.sh
 ENV CONTAINER_ENGINE_URL "unix:///tmp/pod.sock"
 
-ENTRYPOINT ["/opt/entrypoint.sh"]
+ENTRYPOINT ["sh", "entrypoint.sh"]
