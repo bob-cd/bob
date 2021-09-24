@@ -74,9 +74,9 @@ jobs:
           name: Build images
           command: bb image
 
-      - run:
-          name: Run end to end tests
-          command: bb e2e
+#      - run:
+#          name: Run end to end tests
+#          command: bb e2e
 
       - run:
           name: Publish images
