@@ -14,5 +14,5 @@
          environ/environ            {:mvn/version "1.2.0"}
          com.xtdb/xtdb-core         {:mvn/version "1.19.0-beta1"}
          com.xtdb/xtdb-jdbc         {:mvn/version "1.19.0-beta1"}
-         org.postgresql/postgresql  {:mvn/version "42.2.23"}
+         org.postgresql/postgresql  {:mvn/version "42.2.24"}
          org.clojure/data.json      {:mvn/version "2.4.0"}}}
