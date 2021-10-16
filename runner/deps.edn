@@ -11,7 +11,7 @@
            com.taoensso/timbre                {:mvn/version "5.1.2"}
            failjure/failjure                  {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj        {:mvn/version "0.4.3"}
-           com.xtdb/xtdb-core                 {:mvn/version "1.19.0-beta1"}
+           com.xtdb/xtdb-core                 {:mvn/version "1.19.0"}
            org.clojars.lispyclouds/contajners {:mvn/version "0.0.1"}
            org.kamranzafar/jtar               {:mvn/version "2.3"}
            common/common                      {:local/root "../common"}}
@@ -19,5 +19,5 @@
                                 org.clojure/test.check            {:mvn/version "1.1.0"}
                                 com.github.seancorfield/next.jdbc {:mvn/version "1.2.731"}}
                    :main-opts  ["-m" "kaocha.runner"]}
-           :build {:deps       {io.github.clojure/tools.build {:tag "v0.5.1" :sha "21da7d4"}}
+           :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.6.2" :git/sha "226fb52"}}
                    :ns-default build}}}
