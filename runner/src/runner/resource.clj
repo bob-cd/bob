@@ -20,7 +20,10 @@
   "Downloads a resource(tar file) and returns the stream."
   [url]
   (f/try-all [_ (log/infof "Fetching resource from %s" url)
-              {:keys [status body]} (http/get url {} {:as :input-stream})
+              {:keys [status body]} (try
+                                      (http/get url {} {:as :input-stream})
+                                      (catch Exception _
+                                        (f/fail (str "Error connecting to " url))))
               _ (when (>= status 400)
                   (f/fail (slurp body)))]
     body
