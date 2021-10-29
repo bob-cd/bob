@@ -30,7 +30,7 @@
 
 (println "Waiting for cluster readiness.")
 
-(wait-for "podman" "http://localhost:8080/v3.2.3/libpod/_ping")
+(wait-for "podman" "http://localhost:8080/v3.4.1/libpod/_ping")
 (wait-for "resource-git" "http://localhost:8000/ping")
 (wait-for "artifact-local" "http://localhost:8001/ping")
 (wait-for-tcp "postgres" "localhost" 5433)

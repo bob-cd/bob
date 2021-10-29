@@ -12,7 +12,8 @@
            failjure/failjure                  {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj        {:mvn/version "0.4.3"}
            com.xtdb/xtdb-core                 {:mvn/version "1.19.0"}
-           org.clojars.lispyclouds/contajners {:mvn/version "0.0.1"}
+           org.clojars.lispyclouds/contajners {:git/sha "039d06860151ab25bea4e1b2d8f58b68316031aa"
+                                               :git/url "https://github.com/lispyclouds/contajners.git"}
            org.kamranzafar/jtar               {:mvn/version "2.3"}
            common/common                      {:local/root "../common"}}
  :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.0.902"}

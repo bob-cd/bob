@@ -12,6 +12,8 @@
             [taoensso.timbre :as log])
   (:import [java.io BufferedReader]))
 
+(def api-version "v3.4.1")
+
 (def conn
   {:uri (or (System/getenv "CONTAINER_ENGINE_URL")
             "http://localhost:8080")})
@@ -20,19 +22,19 @@
   (c/client {:engine   :podman
              :category :libpod/images
              :conn     conn
-             :version  "v3.2.3"}))
+             :version  api-version}))
 
 (def containers
   (c/client {:engine   :podman
              :category :libpod/containers
              :conn     conn
-             :version  "v3.2.3"}))
+             :version  api-version}))
 
 (def commit
   (c/client {:engine   :podman
              :category :libpod/commit
              :conn     conn
-             :version  "v3.2.3"}))
+             :version  api-version}))
 
 (defn sh-tokenize
   "Tokenizes a shell command given as a string into the command and its args.
@@ -185,7 +187,7 @@
   (f/try-all [client     (c/client {:engine   :podman
                                     :category :containers
                                     :conn     conn
-                                    :version  "v3.2.3"})
+                                    :version  api-version})
               log-stream (c/invoke client
                                    {:op               :ContainerLogs ; TODO: Use ContainerLogsLibpod
                                     :params           {:name   id
@@ -309,7 +311,7 @@
 (comment
   (sh-tokenize "sh -c 'echo ${k1}'")
 
-  (c/categories :podman "v3.2.3")
+  (c/categories :podman api-version)
 
   (c/ops images)
 
