@@ -11,13 +11,13 @@
            com.taoensso/timbre                {:mvn/version "5.1.2"}
            failjure/failjure                  {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj        {:mvn/version "0.4.3"}
-           com.xtdb/xtdb-core                 {:mvn/version "1.19.0"}
-           org.clojars.lispyclouds/contajners {:mvn/version "0.0.2"}
+           com.xtdb/xtdb-core                 {:mvn/version "1.20.0"}
+           org.clojars.lispyclouds/contajners {:mvn/version "0.0.4"}
            org.kamranzafar/jtar               {:mvn/version "2.3"}
            common/common                      {:local/root "../common"}}
- :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.60.945"}
-                                org.clojure/test.check            {:mvn/version "1.1.0"}
-                                com.github.seancorfield/next.jdbc {:mvn/version "1.2.737"}}
+ :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.60.977"}
+                                org.clojure/test.check            {:mvn/version "1.1.1"}
+                                com.github.seancorfield/next.jdbc {:mvn/version "1.2.761"}}
                    :main-opts  ["-m" "kaocha.runner"]}
-           :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.6.2" :git/sha "226fb52"}}
+           :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.7.5" :git/sha "34727f7"}}
                    :ns-default build}}}
