@@ -21,7 +21,9 @@
                                   (xt/submit-tx db
                                                 [[::xt/put
                                                   {:xt/id :bob.artifact-store/local
-                                                   :url      "http://localhost:8001"}]]))
+                                                   :type  :artifact-store
+                                                   :url   "http://localhost:8001"
+                                                   :name  "local"}]]))
 
                      (testing "successful artifact upload"
                        (is (= "Ok"

@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Setup Clojure
           environment:
-            CLOJURE_CLI_VERSION: "1.10.3.998"
+            CLOJURE_CLI_VERSION: "1.10.3.1069"
           command: |
             curl -sLO https://download.clojure.org/install/linux-install-${CLOJURE_CLI_VERSION}.sh
             sudo bash linux-install-${CLOJURE_CLI_VERSION}.sh
@@ -64,10 +64,6 @@ jobs:
       - run:
           name: Build images
           command: bb image
-
-#      - run:
-#          name: Run end to end tests
-#          command: bb e2e
 
       - run:
           name: Publish images

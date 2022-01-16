@@ -42,7 +42,9 @@
                                 (xt/submit-tx db
                                               [[::xt/put
                                                 {:xt/id :bob.resource-provider/git
-                                                 :url      "http://localhost:8000"}]]))
+                                                 :type  :resource-provider
+                                                 :name  "git"
+                                                 :url   "http://localhost:8000"}]]))
                    (testing "valid resource provider"
                      (is (r/valid-resource-provider? db {:provider "git"})))
                    (testing "invalid resource provider"
@@ -57,12 +59,16 @@
                                 (xt/submit-tx db
                                               [[::xt/put
                                                 {:xt/id :bob.resource-provider/git
-                                                 :url      "http://localhost:8000"}]]))
+                                                 :type  :resource-provider
+                                                 :name  "git"
+                                                 :url   "http://localhost:8000"}]]))
                    (xt/await-tx db
                                 (xt/submit-tx db
                                               [[::xt/put
                                                 {:xt/id :bob.artifact-store/local
-                                                 :url      "http://localhost:8001"}]]))
+                                                 :type  :artifact-store
+                                                 :name  "local"
+                                                 :url   "http://localhost:8001"}]]))
                    (testing "generate url for an external resource"
                      (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
                             (r/url-of db
@@ -104,7 +110,9 @@
                                 (xt/submit-tx db
                                               [[::xt/put
                                                 {:xt/id :bob.resource-provider/git
-                                                 :url      "http://localhost:8000"}]]))
+                                                 :type  :resource-provider
+                                                 :name  "git"
+                                                 :url   "http://localhost:8000"}]]))
                    (eng/pull-image "busybox:musl")
                    (testing "successful mount"
                      (let [image  (r/mounted-image-from db

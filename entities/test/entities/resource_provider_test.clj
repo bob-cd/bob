@@ -6,33 +6,32 @@
 
 (ns entities.resource-provider-test
   (:require [clojure.test :refer [deftest testing is]]
+            [clojure.spec.alpha :as spec]
             [xtdb.api :as xt]
+            [common.schemas]
             [entities.util :as u]
             [entities.resource-provider :as resource-provider]))
 
 ;; TODO: Better way to wait for consistency than sleep
-
 (deftest ^:integration resource-provider
-  (testing "creation"
-    (u/with-system
-      (fn [db queue-chan]
-        (let [resource-provider {:name "github"
-                                 :url  "my.resource.com"}
-              create-res        (resource-provider/register-resource-provider db queue-chan resource-provider)
-              _ (Thread/sleep 1000)
-              effect            (xt/entity (xt/db db) :bob.resource-provider/github)]
-          (is (= "Ok" create-res))
-          (is (= {:xt/id :bob.resource-provider/github
-                  :type     :resource-provider
-                  :url      "my.resource.com"
-                  :name     "github"}
-                 effect))))))
-  (testing "deletion"
-    (u/with-system
-      (fn [db queue-chan]
-        (let [resource-provider {:name "github"}
-              delete-res        (resource-provider/un-register-resource-provider db queue-chan resource-provider)
-              _ (Thread/sleep 1000)
-              effect            (xt/entity (xt/db db) :bob.resource-provider/github)]
-          (is (= "Ok" delete-res))
-          (is (nil? effect)))))))
+  (let [id :bob.resource-provider/github]
+    (testing "creation"
+      (u/with-system
+        (fn [db queue-chan]
+          (let [resource-provider {:name "github"
+                                   :url  "my.resource.com"}
+                create-res        (resource-provider/register-resource-provider db queue-chan resource-provider)
+                _ (Thread/sleep 1000)
+                effect            (xt/entity (xt/db db) id)]
+            (is (= "Ok" create-res))
+            (is (= id (:xt/id effect)))
+            (is (spec/valid? :bob.db/resource-provider effect))))))
+    (testing "deletion"
+      (u/with-system
+        (fn [db queue-chan]
+          (let [resource-provider {:name "github"}
+                delete-res        (resource-provider/un-register-resource-provider db queue-chan resource-provider)
+                _ (Thread/sleep 1000)
+                effect            (xt/entity (xt/db db) id)]
+            (is (= "Ok" delete-res))
+            (is (nil? effect))))))))

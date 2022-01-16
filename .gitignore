@@ -1,7 +1,5 @@
 .idea
 *.iml
-.clj-kondo/.cache
-**/*/.clj-kondo/.cache
 .terraform
 *tfplan*
 .DS_Store
@@ -9,3 +7,5 @@
 .cpcache
 .nrepl-port
 target/
+.clj-kondo/
+!.clj-kondo/config.edn

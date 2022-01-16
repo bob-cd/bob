@@ -9,11 +9,13 @@
             [clojure.set :as s]
             [clojure.instant :as ins]
             [clojure.string :as cs]
+            [clojure.spec.alpha :as spec]
             [failjure.core :as f]
             [clojure.data.json :as json]
             [langohr.basic :as lb]
             [xtdb.api :as xt]
             [java-http-clj.core :as http]
+            [common.schemas]
             [apiserver.healthcheck :as hc]
             [apiserver.metrics :as metrics]
             [apiserver.cctray :as cctray])
@@ -37,10 +39,15 @@
 
 (defn pipeline-data
   [db group name]
-  (xt/entity
-    (xt/db db)
-    (keyword (str "bob.pipeline." group)
-             name)))
+  (f/try-all [data (xt/entity
+                     (xt/db db)
+                     (keyword (str "bob.pipeline." group) name))
+              _ (when (and (some? data)
+                           (not (spec/valid? :bob.db/pipeline data)))
+                  (f/fail (str "Invalid pipeline: " data)))]
+    data
+    (f/when-failed [err]
+      err)))
 
 (defn exec
   ([task]
@@ -96,13 +103,13 @@
     :parameters
     db :db
     queue :queue}]
-  (f/try-all [id      (str "r-" (UUID/randomUUID))
-              message (assoc pipeline-info
-                             :metadata
-                             (if metadata
-                               metadata
-                               {:runner/type "container"}))
-              paused  (:paused (pipeline-data db (:group pipeline-info) (:name pipeline-info)))]
+  (f/try-all [id               (str "r-" (UUID/randomUUID))
+              message          (assoc pipeline-info
+                                      :metadata
+                                      (if metadata
+                                        metadata
+                                        {:runner/type "container"}))
+              {:keys [paused]} (pipeline-data db (:group pipeline-info) (:name pipeline-info))]
     (if paused
       (respond "Pipeline is paused. Unpause it first." 422)
       (exec #(publish queue
@@ -157,7 +164,11 @@
 (defn pipeline-status
   [{{{:keys [id]} :path} :parameters
     db                   :db}]
-  (f/try-all [{:keys [status]} (xt/entity (xt/db db) (keyword "bob.pipeline.run" id))]
+  (f/try-all [run    (xt/entity (xt/db db) (keyword "bob.pipeline.run" id))
+              status (if (and (some? run)
+                              (not (spec/valid? :bob.db/run run)))
+                       (f/fail (str "Invalid run: " run))
+                       (:status run))]
     (if (some? status)
       (respond status 200)
       (respond "Cannot find status" 404))
@@ -183,11 +194,13 @@
 (defn pipeline-artifact
   [{{{:keys [group name id store-name artifact-name]} :path} :parameters
     db                                                       :db}]
-  (f/try-all [base-url (-> (xt/entity (xt/db db) (keyword "bob.artifact-store" store-name))
-                           (get :url))
-              _ (when (nil? base-url)
+  (f/try-all [store    (xt/entity (xt/db db) (keyword "bob.artifact-store" store-name))
+              _ (when (nil? store)
                   (f/fail {:type :external
                            :msg  (str "Cannot locate artifact store " store-name)}))
+              base-url (if-not (spec/valid? :bob.db/artifact-store store)
+                         (f/fail (str "Invalid artifact-store: " store))
+                         (:url store))
               url      (cs/join "/" [base-url "bob_artifact" group name id artifact-name])
               resp     (http/get url {:follow-redirects true} {:as :input-stream})
               _ (when (>= (:status resp) 400)

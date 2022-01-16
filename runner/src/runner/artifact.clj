@@ -5,16 +5,23 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.artifact
-  (:require [clojure.string :as s]
+  (:require [clojure.spec.alpha :as spec]
+            [clojure.string :as s]
             [taoensso.timbre :as log]
             [java-http-clj.core :as http]
             [xtdb.api :as xt]
             [failjure.core :as f]
+            [common.schemas]
             [runner.engine :as eng]))
 
 (defn store-url
   [db-client store]
-  (:url (xt/entity (xt/db db-client) (keyword (str "bob.artifact-store/" store)))))
+  (f/try-all [store (xt/entity (xt/db db-client) (keyword (str "bob.artifact-store/" store)))
+              _ (when-not (spec/valid? :bob.db/artifact-store store)
+                  (f/fail "Invalid artifact store: " store))]
+    (:url store)
+    (f/when-failed [err]
+      err)))
 
 (defn upload-artifact
   "Opens up a stream to the path in a container by id and POSTs it to the artifact store."
@@ -46,8 +53,6 @@
       (f/fail "No such artifact store registered"))))
 
 (comment
-  (require '[clojure.java.io :as io])
-
   (http/post "http://localhost:8001/bob_artifact/dev/test/r-1/tar"
-             {:body (io/input-stream "test/test.tar")
+             {:body (clojure.java.io/input-stream "test/test.tar")
               :as   :input-stream}))

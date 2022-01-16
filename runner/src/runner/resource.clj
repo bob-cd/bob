@@ -5,12 +5,14 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.resource
-  (:require [clojure.string :as s]
+  (:require [clojure.spec.alpha :as spec]
+            [clojure.string :as s]
             [clojure.java.io :as io]
             [failjure.core :as f]
             [taoensso.timbre :as log]
             [java-http-clj.core :as http]
             [xtdb.api :as xt]
+            [common.schemas]
             [runner.engine :as eng]
             [runner.artifact :as a])
   (:import [java.io BufferedOutputStream File FileOutputStream]
@@ -65,16 +67,17 @@
   "Generates a URL for the resource fetch of a pipeline."
   [db-client {:keys [name type provider params]}]
   (case type
-    "external" (let [url   (->> provider
-                                (str "bob.resource-provider/")
-                                keyword
-                                (xt/entity (xt/db db-client))
-                                :url)
-                     query (s/join "&"
-                                   (map #(format "%s=%s"
-                                                 (clojure.core/name (key %))
-                                                 (val %))
-                                        params))]
+    "external" (let [{:keys [url] :as rp} (->> provider
+                                               (str "bob.resource-provider/")
+                                               keyword
+                                               (xt/entity (xt/db db-client)))
+                     _ (when-not (spec/valid? :bob.db/resource-provider rp)
+                         (throw (Exception. (str "Invalid resource provider: " rp))))
+                     query                (s/join "&"
+                                                  (map #(format "%s=%s"
+                                                                (clojure.core/name (key %))
+                                                                (val %))
+                                                       params))]
                  (format "%s/bob_resource?%s"
                          url
                          query))

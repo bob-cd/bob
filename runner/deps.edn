@@ -12,7 +12,7 @@
            failjure/failjure                  {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj        {:mvn/version "0.4.3"}
            com.xtdb/xtdb-core                 {:mvn/version "1.20.0"}
-           org.clojars.lispyclouds/contajners {:mvn/version "0.0.4"}
+           org.clojars.lispyclouds/contajners {:mvn/version "0.0.5"}
            org.kamranzafar/jtar               {:mvn/version "2.3"}
            common/common                      {:local/root "../common"}}
  :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.60.977"}

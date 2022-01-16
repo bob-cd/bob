@@ -5,10 +5,12 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.pipeline
-  (:require [failjure.core :as f]
+  (:require [clojure.spec.alpha :as spec]
+            [failjure.core :as f]
             [taoensso.timbre :as log]
             [xtdb.api :as xt]
             [common.errors :as errors]
+            [common.schemas]
             [runner.engine :as eng]
             [runner.resource :as r]
             [runner.artifact :as a])
@@ -66,6 +68,8 @@
                                          (keyword (format "bob.pipeline.%s/%s"
                                                           group
                                                           name)))
+                _ (when-not (spec/valid? :bob.db/pipeline pipeline)
+                    (f/fail "Invalid pipeline: " pipeline))
                 resource-info (->> pipeline
                                    :resources
                                    (filter #(= resource (:name %)))
@@ -164,7 +168,12 @@
 
 (defn run-info-of
   [db-client run-id]
-  (xt/entity (xt/db db-client) (keyword (str "bob.pipeline.run/" run-id))))
+  (f/try-all [run-info (xt/entity (xt/db db-client) (keyword (str "bob.pipeline.run/" run-id)))
+              _ (when-not (spec/valid? :bob.db/run run-info)
+                  (f/fail (str "Invalid run: " run-info)))]
+    run-info
+    (f/when-failed [err]
+      err)))
 
 (defn clean-up-run
   [run-id]
@@ -180,6 +189,8 @@
                                                     (keyword (format "bob.pipeline.%s/%s"
                                                                      group
                                                                      name)))
+              _ (when-not (spec/valid? :bob.db/pipeline pipeline)
+                  (f/fail (str "Invalid pipeline in DB: " pipeline)))
               _ (when-not pipeline
                   (f/fail (format "Unable to find pipeline %s/%s"
                                   group
@@ -221,9 +232,10 @@
               _ (log-event db-client run-id "Run successful")]
     run-id
     (f/when-failed [err]
-      (let [status (:status (xt/entity (xt/db db-client) run-db-id))
-            error  (f/message err)]
-        (when-not (= status :stopped)
+      (let [{:keys [status] :as run} (xt/entity (xt/db db-client) run-db-id)
+            error                    (f/message err)]
+        (when (and (spec/valid? :bob.db/run run)
+                   (not= status :stopped))
           (log/infof "Marking run %s as failed with reason: %s"
                      run-id
                      error)
@@ -241,44 +253,48 @@
 
 (defn start
   "Attempts to asynchronously start a pipeline by group and name."
-  [db-client queue-chan {:keys [group name run_id]}]
-  (let [run-db-id (keyword (str "bob.pipeline.run/" run_id))
-        run-info  {:xt/id run-db-id
-                   :type  :pipeline-run
-                   :group group
-                   :name  name}
-        run-ref   (future (start* db-client queue-chan group name run_id run-info run-db-id))]
-    (swap! node-state
-      update-in
-      [:runs run_id]
-      assoc
-      :ref
-      run-ref)
-    run-ref))
+  [db-client queue-chan {:keys [group name run_id] :as data}]
+  (if-not (spec/valid? :bob.command.pipeline-start/data data)
+    (errors/publish-error queue-chan (str "Invalid pipeline start command: " data))
+    (let [run-db-id (keyword (str "bob.pipeline.run/" run_id))
+          run-info  {:xt/id run-db-id
+                     :type  :pipeline-run
+                     :group group
+                     :name  name}
+          run-ref   (future (start* db-client queue-chan group name run_id run-info run-db-id))]
+      (swap! node-state
+        update-in
+        [:runs run_id]
+        assoc
+        :ref
+        run-ref)
+      run-ref)))
 
 (defn stop
   "Idempotently stops a pipeline by group, name and run_id
 
   Sets the :status in Db to :stopped and kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
-  [db-client _queue-chan {:keys [group name run_id]}]
-  (when-let [run (get-in @node-state [:runs run_id])]
-    (log/infof "Stopping run %s for pipeline %s %s"
-               run_id
-               group
-               name)
-    (xt/await-tx db-client
-                 (xt/submit-tx
-                   db-client
-                   [[::xt/put
-                     (assoc (run-info-of db-client run_id) :status :stopped :completed (Instant/now))]]))
-    (when-let [container (:container-id run)]
-      (eng/kill-container container)
-      (eng/delete-container container)
-      (gc-images run_id))
-    (when-let [run (get-in @node-state [:runs run_id :ref])]
-      (when-not (future-done? run)
-        (future-cancel run)))))
+  [db-client queue-chan {:keys [group name run_id] :as data}]
+  (if-not (spec/valid? :bob.command.pipeline-stop/data data)
+    (errors/publish-error queue-chan (str "Invalid pipeline stop command: " data))
+    (when-let [run (get-in @node-state [:runs run_id])]
+      (log/infof "Stopping run %s for pipeline %s %s"
+                 run_id
+                 group
+                 name)
+      (xt/await-tx db-client
+                   (xt/submit-tx
+                     db-client
+                     [[::xt/put
+                       (assoc (run-info-of db-client run_id) :status :stopped :completed (Instant/now))]]))
+      (when-let [container (:container-id run)]
+        (eng/kill-container container)
+        (eng/delete-container container)
+        (gc-images run_id))
+      (when-let [run (get-in @node-state [:runs run_id :ref])]
+        (when-not (future-done? run)
+          (future-cancel run))))))
 
 (comment
   (reset! node-state

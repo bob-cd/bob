@@ -7,6 +7,7 @@
 (ns apiserver.handlers-test
   (:require [clojure.test :as t]
             [clojure.java.io :as io]
+            [clojure.spec.alpha :as spec]
             [failjure.core :as f]
             [langohr.channel :as lch]
             [langohr.basic :as lb]
@@ -14,6 +15,7 @@
             [clojure.data.json :as json]
             [xtdb.api :as xt]
             [java-http-clj.core :as http]
+            [common.schemas]
             [apiserver.handlers :as h]
             [apiserver.util :as u])
   (:import [java.time Instant]))
@@ -72,48 +74,40 @@
                    (t/testing "pipeline creation"
                      (h/pipeline-create {:parameters {:path {:group "dev"
                                                              :name  "test"}
-                                                      :body {:image "test image"}}
+                                                      :body {:image "test image"
+                                                             :steps []}}
                                          :queue      queue})
-                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
-                       (t/is (= {:image "test image"
-                                 :group "dev"
-                                 :name  "test"}
-                                data))
-                       (t/is (= "pipeline/create" type))))
+                     (t/is (spec/valid? :bob.command/pipeline-create (queue-get queue "bob.entities"))))
                    (t/testing "pipeline deletion"
                      (h/pipeline-delete {:parameters {:path {:group "dev"
                                                              :name  "test"}}
                                          :queue      queue})
-                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
-                       (t/is (= {:group "dev"
-                                 :name  "test"}
-                                data))
-                       (t/is (= "pipeline/delete" type))))
+                     (t/is (spec/valid? :bob.command/pipeline-delete (queue-get queue "bob.entities"))))
                    (t/testing "pipeline start default"
                      (h/pipeline-start {:parameters {:path {:group "dev"
                                                             :name  "test"}}
                                         :queue      queue
                                         :db         db})
-                     (let [{:keys [type data]} (queue-get queue "bob.jobs")]
-                       (t/is (contains? data :run_id))
-                       (t/is (= {:group    "dev"
-                                 :name     "test"
-                                 :metadata {:runner/type "container"}}
-                                (dissoc data :run_id)))
-                       (t/is (= "pipeline/start" type))))
+                     (let [msg (queue-get queue "bob.jobs")]
+                       (t/is (spec/valid? :bob.command/pipeline-start msg))
+                       (t/is (= "container"
+                                (-> msg
+                                    :data
+                                    :metadata
+                                    :runner/type)))))
                    (t/testing "pipeline start with metadata"
                      (h/pipeline-start {:parameters {:path {:group "dev"
                                                             :name  "test"}
                                                      :body {:runner/type "something else"}}
                                         :queue      queue
                                         :db         db})
-                     (let [{:keys [type data]} (queue-get queue "bob.jobs")]
-                       (t/is (contains? data :run_id))
-                       (t/is (= {:group    "dev"
-                                 :name     "test"
-                                 :metadata {:runner/type "something else"}}
-                                (dissoc data :run_id)))
-                       (t/is (= "pipeline/start" type))))
+                     (let [msg (queue-get queue "bob.jobs")]
+                       (t/is (spec/valid? :bob.command/pipeline-start msg))
+                       (t/is (= "something else"
+                                (-> msg
+                                    :data
+                                    :metadata
+                                    :runner/type)))))
                    (t/testing "starting paused pipeline"
                      (xt/await-tx
                        db
@@ -153,14 +147,9 @@
                    (t/testing "pipeline stop"
                      (h/pipeline-stop {:parameters {:path {:group "dev"
                                                            :name  "test"
-                                                           :id    "a-run-id"}}
+                                                           :id    "r-a-run-id"}}
                                        :queue      queue})
-                     (let [{:keys [type data]} (queue-get queue "bob.tests")]
-                       (t/is (= {:group  "dev"
-                                 :name   "test"
-                                 :run_id "a-run-id"}
-                                data))
-                       (t/is (= "pipeline/stop" type)))))))
+                     (t/is (spec/valid? :bob.command/pipeline-stop (queue-get queue "bob.tests")))))))
 
 (t/deftest pipeline-pause-unpause
   (u/with-system (fn [db _]
@@ -255,6 +244,7 @@
                          [[::xt/put
                            {:xt/id :bob.artifact-store/local
                             :type  :artifact-store
+                            :name  "local"
                             :url   "http://localhost:8001"}]]))
                      (http/post "http://localhost:8001/bob_artifact/dev/test/a-run-id/file"
                                 {:as   :input-stream
@@ -366,17 +356,11 @@
                      (h/resource-provider-create {:parameters {:path {:name "git"}
                                                                :body {:url "http://localhost:8000"}}
                                                   :queue      queue})
-                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
-                       (t/is (= {:name "git"
-                                 :url  "http://localhost:8000"}
-                                data))
-                       (t/is (= "resource-provider/create" type))))
+                     (t/is (spec/valid? :bob.command/resource-provider-create (queue-get queue "bob.entities"))))
                    (t/testing "resource-provider de-registration"
                      (h/resource-provider-delete {:parameters {:path {:name "git"}}
                                                   :queue      queue})
-                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
-                       (t/is (= {:name "git"} data))
-                       (t/is (= "resource-provider/delete" type))))
+                     (t/is (spec/valid? :bob.command/resource-provider-delete (queue-get queue "bob.entities"))))
                    (t/testing "resource-provider listing"
                      (xt/await-tx
                        db
@@ -405,17 +389,11 @@
                      (h/artifact-store-create {:parameters {:path {:name "s3"}
                                                             :body {:url "http://localhost:8000"}}
                                                :queue      queue})
-                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
-                       (t/is (= {:name "s3"
-                                 :url  "http://localhost:8000"}
-                                data))
-                       (t/is (= "artifact-store/create" type))))
+                     (t/is (spec/valid? :bob.command/artifact-store-create (queue-get queue "bob.entities"))))
                    (t/testing "artifact-store de-registration"
                      (h/artifact-store-delete {:parameters {:path {:name "s3"}}
                                                :queue      queue})
-                     (let [{:keys [type data]} (queue-get queue "bob.entities")]
-                       (t/is (= {:name "s3"} data))
-                       (t/is (= "artifact-store/delete" type))))
+                     (t/is (spec/valid? :bob.command/artifact-store-delete (queue-get queue "bob.entities"))))
                    (t/testing "artifact-store listing"
                      (xt/await-tx
                        db
