@@ -32,11 +32,6 @@ The priority of your configuration is following:
 1. Java system properties
 1. Defaults
 
-## Message Schemas
-
-### Queue [Schema](/runner/Queue.md)
-### Database [Schema](/runner/Db.md)
-
 ## Building and Running
 
 ### Requirements, min versions, latest recommended.
