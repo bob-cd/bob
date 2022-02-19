@@ -28,10 +28,6 @@ set by specifying them as environment variable or as java system property. Possi
 | bob-connection-retry-attempts | BOB_CONNECTION_RETRY_ATTEMPTS | 10                                   |
 | bob-connection-retry-delay    | BOB_CONNECTION_RETRY_DELAY    | 2000                                 |
 
-## Message Schemas
-
-Same as [Runner](/runner) and [Entities](/entities)
-
 ## Building and Running
 
 ### Requirements, min versions, latest recommended.
@@ -39,6 +35,7 @@ Same as [Runner](/runner) and [Entities](/entities)
 - RabbitMQ 3.8+
 - PostgreSQL 11+
 - Clojure [tools.deps](https://clojure.org/guides/getting_started)
+- [Babashka](https://github.com/babashka/babashka#installation)
 - (Optional) A bob artifact store like [artifact-local](https://github.com/bob-cd/artifact-local)
 
 ### Using Docker to easily boot up a local cluster
@@ -47,7 +44,7 @@ Same as [Runner](/runner) and [Entities](/entities)
 - Run `docker run --rm -it --name bob-storage -p 5432:5432 -e POSTGRES_DB=bob -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob postgres:alpine` to run the latest PostgreSQL instance on port `5432`.
 
 ### Ways of connecting APIServer to the cluster
-- To build an uberjar run `clojure -X:depstar uberjar :jar apiserver.jar :aot true :main-class apiserver.main` to obtain an `apiserver.jar.jar`. Running `java -jar apiserver.jar` should connect to it all nicely.
+- To build an uberjar run `bb compile` to obtain an `apiserver.jar`. Running `java -jar apiserver.jar` should connect to it all nicely.
 - To run directly without building a JAR, run `clj -M -m apiserver_next.main` from this dir.
 
 ## Setting up the dev environment with the REPL

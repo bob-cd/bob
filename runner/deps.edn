@@ -15,9 +15,9 @@
            org.clojars.lispyclouds/contajners {:mvn/version "0.0.5"}
            org.kamranzafar/jtar               {:mvn/version "2.3"}
            common/common                      {:local/root "../common"}}
- :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.62.993"}
+ :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.63.998"}
                                 org.clojure/test.check            {:mvn/version "1.1.1"}
                                 com.github.seancorfield/next.jdbc {:mvn/version "1.2.772"}}
                    :main-opts  ["-m" "kaocha.runner"]}
-           :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.7.5" :git/sha "34727f7"}}
+           :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.7.7" :git/sha "1474ad6"}}
                    :ns-default build}}}

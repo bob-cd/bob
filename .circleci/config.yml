@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Setup Clojure
           environment:
-            CLOJURE_CLI_VERSION: "1.10.3.1069"
+            CLOJURE_CLI_VERSION: "1.10.3.1082"
           command: |
             curl -sLO https://download.clojure.org/install/linux-install-${CLOJURE_CLI_VERSION}.sh
             sudo bash linux-install-${CLOJURE_CLI_VERSION}.sh
