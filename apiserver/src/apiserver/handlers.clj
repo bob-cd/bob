@@ -75,6 +75,17 @@
       (respond (f/message check) 500)
       (respond "Yes we can! 🔨 🔨" 200))))
 
+(defn get-runs
+  [db group name]
+  (f/try-all [result (xt/q (xt/db db)
+                           {:find  ['(pull run [*])]
+                            :where [['run :type :pipeline-run]
+                                    ['run :group group]
+                                    ['run :name name]]})]
+    (map first result)
+    (f/when-failed [err]
+      err)))
+
 (defn pipeline-create
   [{{{:keys [group name]} :path
      pipeline             :body}
@@ -90,12 +101,25 @@
 
 (defn pipeline-delete
   [{{pipeline-info :path} :parameters
+    db                    :db
     queue                 :queue}]
-  (exec #(publish queue
-                  "pipeline/delete"
-                  "bob.direct"
-                  "bob.entities"
-                  pipeline-info)))
+  (f/try-all [{:keys [group name]} pipeline-info
+              runs                 (get-runs db group name)
+              running              (->> runs
+                                        (filter #(= (:status %) :running))
+                                        (map :xt/id)
+                                        (map clojure.core/name))]
+    (if (seq running)
+      (respond {:runs  running
+                :error "Pipeline has active runs. Wait for them to finish or stop them."}
+               422)
+      (exec #(publish queue
+                      "pipeline/delete"
+                      "bob.direct"
+                      "bob.entities"
+                      pipeline-info)))
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
 
 (defn pipeline-start
   [{{pipeline-info :path
@@ -178,13 +202,9 @@
 (defn pipeline-runs-list
   [{{{:keys [group name]} :path} :parameters
     db                           :db}]
-  (f/try-all [result   (xt/q (xt/db db)
-                             {:find  ['(pull run [:status :xt/id])]
-                              :where [['run :type :pipeline-run]
-                                      ['run :group group]
-                                      ['run :name name]]})
-              response (->> result
-                            (map first)
+  (f/try-all [runs     (get-runs db group name)
+              response (->> runs
+                            (map #(dissoc % :group :name :type))
                             (map #(s/rename-keys % {:xt/id :run_id}))
                             (map #(update % :run_id clojure.core/name)))]
     (respond response 200)

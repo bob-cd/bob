@@ -81,8 +81,34 @@
                    (t/testing "pipeline deletion"
                      (h/pipeline-delete {:parameters {:path {:group "dev"
                                                              :name  "test"}}
+                                         :db         db
                                          :queue      queue})
                      (t/is (spec/valid? :bob.command/pipeline-delete (queue-get queue "bob.entities"))))
+                   (t/testing "invalid pipeline deletion with active runs"
+                     (xt/await-tx
+                       db
+                       (xt/submit-tx
+                         db
+                         [[::xt/put
+                           {:xt/id  :bob.pipeline.run/r-1
+                            :type   :pipeline-run
+                            :group  "dev"
+                            :name   "test"
+                            :status :running}]
+                          [::xt/put
+                           {:xt/id  :bob.pipeline.run/r-2
+                            :type   :pipeline-run
+                            :group  "dev"
+                            :name   "test"
+                            :status :passed}]]))
+                     (let [{:keys [status body]} (h/pipeline-delete {:parameters {:path {:group "dev"
+                                                                                         :name  "test"}}
+                                                                     :db         db
+                                                                     :queue      queue})]
+                       (t/is (= 422 status))
+                       (t/is (= {:error "Pipeline has active runs. Wait for them to finish or stop them."
+                                 :runs  ["r-1"]}
+                                (:message body)))))
                    (t/testing "pipeline start default"
                      (h/pipeline-start {:parameters {:path {:group "dev"
                                                             :name  "test"}}

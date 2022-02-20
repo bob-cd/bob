@@ -192,6 +192,20 @@ paths:
                 success:
                   value:
                     message: "Ok"
+        "422":
+          description: Invalid deletion when pipeline is running
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                success:
+                  value:
+                    message:
+                      error: "Pipeline has active runs. Wait for them to finish or stop them."
+                      runs:
+                        - run-id-1
+                        - run-id-2
 
   "/pipelines/start/groups/{group}/names/{name}":
     post:
