@@ -23,20 +23,20 @@
                    (testing "log raw line"
                      (p/log->db db "r-a-run-id" "a log line")
                      (Thread/sleep 1000)
-                     (is (u/spec-assert :bob.db/log-line
-                                        (-> (xt/db db)
-                                            (xt/q '{:find  [(pull log [:type :run-id :line])]
-                                                    :where [[log :run-id "r-a-run-id"]]})
-                                            ffirst))))
+                     (u/spec-assert :bob.db/log-line
+                                     (-> (xt/db db)
+                                         (xt/q '{:find  [(pull log [:type :run-id :line])]
+                                                 :where [[log :run-id "r-a-run-id"]]})
+                                         ffirst)))
 
                    (testing "log event"
                      (p/log-event db "r-another-run-id" "another log line")
                      (Thread/sleep 1000)
-                     (is (u/spec-assert :bob.db/log-line-event
-                                        (-> (xt/db db)
-                                            (xt/q '{:find  [(pull log [:type :run-id :line])]
-                                                    :where [[log :run-id "r-another-run-id"]]})
-                                            ffirst)))))))
+                     (u/spec-assert :bob.db/log-line-event
+                                    (-> (xt/db db)
+                                        (xt/q '{:find  [(pull log [:type :run-id :line])]
+                                                :where [[log :run-id "r-another-run-id"]]})
+                                        ffirst))))))
 
 (deftest ^:integration garbage-collection
   (testing "mark image"
@@ -294,7 +294,7 @@
                        (is (= [:passed :running :initializing]
                               statuses))
                        (is (not (f/failed? result)))
-                       (is (u/spec-assert :bob.db/run run-info))))))
+                       (u/spec-assert :bob.db/run run-info)))))
 
   (testing "failed pipeline run"
     (u/with-system (fn [db queue]
@@ -323,7 +323,7 @@
                                          (map ::xt/doc)
                                          (map :status)
                                          (into #{}))]
-                       (is (u/spec-assert :bob.db/run run-info))
+                       (u/spec-assert :bob.db/run run-info)
                        (is (f/failed? result))
                        (is (contains? statuses :running))
                        (is (contains? statuses :failed)))))))
@@ -362,7 +362,7 @@
                             (map ::xt/doc)
                             (map :status)
                             (into #{}))]
-          (is (u/spec-assert :bob.db/run run-info))
+          (u/spec-assert :bob.db/run run-info)
           (is (not (contains? statuses :failed)))
           (is (contains? statuses :running))
           (is (contains? statuses :stopped)))))))
