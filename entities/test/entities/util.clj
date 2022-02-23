@@ -5,7 +5,9 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.util
-  (:require [com.stuartsierra.component :as component]
+  (:require [clojure.test :as t]
+            [clojure.spec.alpha :as s]
+            [com.stuartsierra.component :as component]
             [next.jdbc :as jdbc]
             [common.system :as sys]
             [entities.system :as esys]))
@@ -24,3 +26,8 @@
     (component/stop queue)
     (component/stop db)
     (jdbc/execute! ds ["DELETE FROM tx_events;"])))
+
+(defn spec-assert
+  [spec value]
+  (t/is (s/valid? spec value)
+        (s/explain spec value)))

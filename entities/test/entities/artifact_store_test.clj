@@ -24,7 +24,7 @@
                              effect         (xt/entity (xt/db db) id)]
                          (is (= "Ok" create-res))
                          (is (= id (:xt/id effect)))
-                         (is (spec/valid? :bob.db/artifact-store effect))))))
+                         (is (u/spec-assert :bob.db/artifact-store effect))))))
     (testing "deletion"
       (u/with-system (fn [db queue-chan]
                        (let [artifact-store {:name "s3"}

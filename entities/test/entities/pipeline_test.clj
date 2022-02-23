@@ -45,7 +45,7 @@
                 effect     (xt/entity (xt/db db) id)]
             (is (= "Ok" create-res))
             (is (= id (:xt/id effect)))
-            (is (spec/valid? :bob.db/pipeline effect))))))
+            (is (u/spec-assert :bob.db/pipeline effect))))))
     (testing "deletion"
       (u/with-system (fn [db queue-chan]
                        (let [pipeline   {:name  "test"
