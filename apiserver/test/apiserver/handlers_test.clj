@@ -77,13 +77,13 @@
                                                       :body {:image "test image"
                                                              :steps []}}
                                          :queue      queue})
-                     (t/is (spec/valid? :bob.command/pipeline-create (queue-get queue "bob.entities"))))
+                     (u/spec-assert :bob.command/pipeline-create (queue-get queue "bob.entities")))
                    (t/testing "pipeline deletion"
                      (h/pipeline-delete {:parameters {:path {:group "dev"
                                                              :name  "test"}}
                                          :db         db
                                          :queue      queue})
-                     (t/is (spec/valid? :bob.command/pipeline-delete (queue-get queue "bob.entities"))))
+                     (u/spec-assert :bob.command/pipeline-delete (queue-get queue "bob.entities")))
                    (t/testing "invalid pipeline deletion with active runs"
                      (xt/await-tx
                        db
@@ -115,7 +115,7 @@
                                         :queue      queue
                                         :db         db})
                      (let [msg (queue-get queue "bob.jobs")]
-                       (t/is (spec/valid? :bob.command/pipeline-start msg))
+                       (u/spec-assert :bob.command/pipeline-start msg)
                        (t/is (= "container"
                                 (-> msg
                                     :data
@@ -128,7 +128,7 @@
                                         :queue      queue
                                         :db         db})
                      (let [msg (queue-get queue "bob.jobs")]
-                       (t/is (spec/valid? :bob.command/pipeline-start msg))
+                       (u/spec-assert :bob.command/pipeline-start msg)
                        (t/is (= "something else"
                                 (-> msg
                                     :data
@@ -175,7 +175,7 @@
                                                            :name  "test"
                                                            :id    "r-a-run-id"}}
                                        :queue      queue})
-                     (t/is (spec/valid? :bob.command/pipeline-stop (queue-get queue "bob.tests")))))))
+                     (u/spec-assert :bob.command/pipeline-stop (queue-get queue "bob.tests"))))))
 
 (t/deftest pipeline-pause-unpause
   (u/with-system (fn [db _]
@@ -382,11 +382,11 @@
                      (h/resource-provider-create {:parameters {:path {:name "git"}
                                                                :body {:url "http://localhost:8000"}}
                                                   :queue      queue})
-                     (t/is (spec/valid? :bob.command/resource-provider-create (queue-get queue "bob.entities"))))
+                     (u/spec-assert :bob.command/resource-provider-create (queue-get queue "bob.entities")))
                    (t/testing "resource-provider de-registration"
                      (h/resource-provider-delete {:parameters {:path {:name "git"}}
                                                   :queue      queue})
-                     (t/is (spec/valid? :bob.command/resource-provider-delete (queue-get queue "bob.entities"))))
+                     (u/spec-assert :bob.command/resource-provider-delete (queue-get queue "bob.entities")))
                    (t/testing "resource-provider listing"
                      (xt/await-tx
                        db
@@ -415,11 +415,11 @@
                      (h/artifact-store-create {:parameters {:path {:name "s3"}
                                                             :body {:url "http://localhost:8000"}}
                                                :queue      queue})
-                     (t/is (spec/valid? :bob.command/artifact-store-create (queue-get queue "bob.entities"))))
+                     (u/spec-assert :bob.command/artifact-store-create (queue-get queue "bob.entities")))
                    (t/testing "artifact-store de-registration"
                      (h/artifact-store-delete {:parameters {:path {:name "s3"}}
                                                :queue      queue})
-                     (t/is (spec/valid? :bob.command/artifact-store-delete (queue-get queue "bob.entities"))))
+                     (u/spec-assert :bob.command/artifact-store-delete (queue-get queue "bob.entities")))
                    (t/testing "artifact-store listing"
                      (xt/await-tx
                        db
