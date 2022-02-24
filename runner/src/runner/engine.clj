@@ -12,7 +12,7 @@
             [taoensso.timbre :as log])
   (:import [java.io BufferedReader]))
 
-(def api-version "v3.4.1")
+(def api-version "v4.0.0")
 
 (def conn
   {:uri (or (System/getenv "CONTAINER_ENGINE_URL")
