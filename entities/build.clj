@@ -4,7 +4,8 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-;; see https://ask.clojure.org/index.php/10905/control-transient-deps-that-compiled-assembled-into-uberjar?show=10913#c10913
+;; see
+;; https://ask.clojure.org/index.php/10905/control-transient-deps-that-compiled-assembled-into-uberjar?show=10913#c10913
 (require 'clojure.tools.deps.alpha.util.s3-transporter)
 
 (ns build
@@ -34,7 +35,7 @@
                     :src-dirs     src-dirs
                     :class-dir    class-dir
                     :ns-compile   '[entities.main]
-                    :compile-opts ["-Dclojure.compiler.direct-linking=true"]})
+                    :compile-opts {:direct-linking true}})
     (b/uber {:class-dir class-dir
              :uber-file uber-file
              :basis     basis
