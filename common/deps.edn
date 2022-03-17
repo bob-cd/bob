@@ -9,7 +9,7 @@
          failjure/failjure          {:mvn/version "2.2.0"}
          com.fzakaria/slf4j-timbre  {:mvn/version "0.3.21"}
          com.novemberain/langohr    {:mvn/version "5.3.0"}
-         com.stuartsierra/component {:mvn/version "1.0.0"}
+         com.stuartsierra/component {:mvn/version "1.1.0"}
          com.taoensso/timbre        {:mvn/version "5.1.2"}
          environ/environ            {:mvn/version "1.2.0"}
          com.xtdb/xtdb-core         {:mvn/version "1.20.0"}

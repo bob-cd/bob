@@ -7,7 +7,7 @@
 {:paths   ["src"]
  :deps    {org.clojure/clojure                {:mvn/version "1.10.3"}
            com.fzakaria/slf4j-timbre          {:mvn/version "0.3.21"}
-           com.stuartsierra/component         {:mvn/version "1.0.0"}
+           com.stuartsierra/component         {:mvn/version "1.1.0"}
            com.taoensso/timbre                {:mvn/version "5.1.2"}
            failjure/failjure                  {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj        {:mvn/version "0.4.3"}
@@ -19,5 +19,5 @@
                                 org.clojure/test.check            {:mvn/version "1.1.1"}
                                 com.github.seancorfield/next.jdbc {:mvn/version "1.2.772"}}
                    :main-opts  ["-m" "kaocha.runner"]}
-           :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.7.7" :git/sha "1474ad6"}}
+           :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
                    :ns-default build}}}
