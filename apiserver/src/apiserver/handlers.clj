@@ -18,8 +18,7 @@
             [common.schemas]
             [apiserver.healthcheck :as hc]
             [apiserver.metrics :as metrics]
-            [apiserver.cctray :as cctray])
-  (:import [java.util UUID]))
+            [apiserver.cctray :as cctray]))
 
 (defn respond
   ([content]
@@ -127,7 +126,7 @@
     :parameters
     db :db
     queue :queue}]
-  (f/try-all [id               (str "r-" (UUID/randomUUID))
+  (f/try-all [id               (str "r-" (random-uuid))
               message          (assoc pipeline-info
                                       :metadata
                                       (if metadata

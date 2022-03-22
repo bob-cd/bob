@@ -8,8 +8,7 @@
   (:require [com.stuartsierra.component :as component]
             [common.system :as sys]
             [common.dispatch :as d]
-            [runner.pipeline :as p])
-  (:import [java.util UUID]))
+            [runner.pipeline :as p]))
 
 (def ^:private routes
   {"pipeline/start" p/start
@@ -17,7 +16,7 @@
 
 (defn queue-conf
   [db]
-  (let [broadcast-queue (str "bob.broadcasts." (UUID/randomUUID))
+  (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
         subscriber      (partial d/queue-msg-subscriber (sys/db-client db) routes)]
     {:exchanges     {"bob.direct" {:type    "direct"
                                    :durable true}

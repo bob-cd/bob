@@ -21,7 +21,7 @@
 (defn int-from-env
   [key default]
   (try
-    (Integer/parseInt (get env/env key (str default)))
+    (parse-long (get env/env key (str default)))
     (catch Exception _ default)))
 
 (defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5432/bob"))

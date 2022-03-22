@@ -14,8 +14,7 @@
             [runner.engine :as eng]
             [runner.resource :as r]
             [runner.artifact :as a])
-  (:import [java.util UUID]
-           [java.time Instant]))
+  (:import [java.time Instant]))
 
 (defonce ^:private node-state
          (atom {:images-for-gc {}
@@ -25,7 +24,7 @@
   [db-client run-id line]
   (xt/submit-tx db-client
                 [[::xt/put
-                  {:xt/id  (keyword (str "bob.pipeline.log/l-" (UUID/randomUUID)))
+                  {:xt/id  (keyword (str "bob.pipeline.log/l-" (random-uuid)))
                    :type   :log-line
                    :time   (Instant/now)
                    :run-id run-id

@@ -162,14 +162,6 @@
                                 :auto-delete true
                                 :durable     false})
                    (lq/bind queue "bob.tests" "bob.fanout")
-                   (xt/await-tx db
-                                (xt/submit-tx db
-                                              [[::xt/put
-                                                {:xt/id  :bob.pipeline.run/a-run-id
-                                                 :type   :pipeline-run
-                                                 :group  "dev"
-                                                 :name   "test"
-                                                 :status :running}]]))
                    (t/testing "pipeline stop"
                      (h/pipeline-stop {:parameters {:path {:group "dev"
                                                            :name  "test"
