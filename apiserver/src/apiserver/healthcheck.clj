@@ -8,8 +8,7 @@
   (:require [failjure.core :as f]
             [xtdb.api :as xt]
             [taoensso.timbre :as log]
-            [java-http-clj.core :as http]
-            [apiserver.handlers :as h])
+            [java-http-clj.core :as http])
   (:import [java.util.concurrent Executors TimeUnit]))
 
 (defn queue
@@ -36,11 +35,17 @@
                       url)))))
 
 (defn check-entities
-  [opts]
-  (let [{{message :message} :body} (h/artifact-store-list opts)
-        entities                   message
-        {{message :message} :body} (h/resource-provider-list opts)]
-    (->> (into entities message)
+  [{db :db}]
+  (let
+    [result
+     (xt/q
+       (xt/db db)
+       '{:find  [(pull entity [:name :url])]
+         :where [(or
+                   [entity :type :artifact-store]
+                   [entity :type :resource-provider])]})]
+    (->> result
+         (map first)
          (map check-entity)
          (filter f/failed?)
          (into []))))
