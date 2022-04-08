@@ -7,7 +7,9 @@
 (ns apiserver.healthcheck
   (:require [failjure.core :as f]
             [xtdb.api :as xt]
-            [taoensso.timbre :as log])
+            [taoensso.timbre :as log]
+            [java-http-clj.core :as http]
+            [apiserver.handlers :as h])
   (:import [java.util.concurrent Executors TimeUnit]))
 
 (defn queue
@@ -15,17 +17,41 @@
   (when (not (.isOpen queue))
     (f/fail "Queue is unreachable")))
 
-;; TODO: Better health check
 (defn db
   [{:keys [db]}]
   (when (not (xt/status db))
     (f/fail "DB is unhealthy")))
 
+(defn check-entity
+  [{:keys [name url]}]
+  (f/try-all [{status :status} (http/get url)]
+    (if (>= status 400)
+      (f/fail (format "Error checking %s at %s"
+                      name
+                      url))
+      "Ok")
+    (f/when-failed [_]
+      (f/fail (format "Error checking %s at %s"
+                      name
+                      url)))))
+
+(defn check-entities
+  [opts]
+  (let [{{message :message} :body} (h/artifact-store-list opts)
+        entities                   message
+        {{message :message} :body} (h/resource-provider-list opts)]
+    (->> (into entities message)
+         (map check-entity)
+         (filter f/failed?)
+         (into []))))
+
 (defn check
   [opts]
-  (let [results (->> [queue db]
+  (let [results (->> [queue db check-entities]
                      (pmap #(% opts))
-                     (filter #(f/failed? %)))]
+                     (doall)
+                     (flatten)
+                     (filter f/failed?))]
     (when (seq results)
       (run! #(log/errorf "Health checks failing: %s" (f/message %)) results)
       (f/fail results))))
@@ -37,3 +63,8 @@
                         0
                         health-check-freq
                         TimeUnit/MILLISECONDS))
+
+(comment
+  (->> (into (list {:name "a1" :url "https://httpbin.org/get"})
+             (list {:name "r1" :url "http://localhost:8000/ping"}))
+       (map check-entity)))
