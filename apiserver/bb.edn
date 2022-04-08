@@ -43,9 +43,9 @@
                                    --network bob-net
                                    ghcr.io/bob-cd/artifact-local")
                                  (println "Waiting for cluster readiness.")
-                                 (w/wait-for "artifact-store" "http://localhost:8001/ping")
-                                 (w/wait-for "postgres" "tcp://127.0.0.1:5433")
-                                 (w/wait-for "rabbitmq" "tcp://127.0.0.1:5673")
+                                 (w/wait-for {"artifact-store" "http://localhost:8001/ping"
+                                              "postgres"       "tcp://127.0.0.1:5433"
+                                              "rabbitmq"       "tcp://127.0.0.1:5673"})
                                  (shell "clojure -M:test")
                                  (finally
                                    (run 'docker-clean))))}
