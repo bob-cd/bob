@@ -4,9 +4,7 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-{:min-bb-version "0.4.0"
-
- :tasks {:init           (do
+{:tasks {:init           (do
                            (def apiserver-dir "apiserver")
                            (def entities-dir "entities")
                            (def runner-dir "runner")

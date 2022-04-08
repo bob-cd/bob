@@ -4,9 +4,9 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-{:min-bb-version "0.4.0"
-
- :tasks {docker-clean {:doc  "Cleans up cluster containers"
+{:paths ["../tasks"]
+ :tasks {:requires    ([wait :as w])
+         docker-clean {:doc  "Cleans up cluster containers"
                        :task (do
                                (shell {:continue true} "docker kill bob-test-storage bob-test-queue")
                                (shell {:continue true} "docker rm bob-test-storage bob-test-queue")
@@ -36,7 +36,9 @@
                                    -p 5673:5672
                                    --network bob-net
                                    rabbitmq:3-alpine")
-                                 (load-file "tasks/wait.clj")
+                                 (println "Waiting for cluster readiness.")
+                                 (w/wait-for "postgres" "tcp://127.0.0.1:5433")
+                                 (w/wait-for "rabbitmq" "tcp://127.0.0.1:5673")
                                  (shell "clojure -M:test")
                                  (finally
                                    (run 'docker-clean))))}

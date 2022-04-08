@@ -4,9 +4,9 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-{:min-bb-version "0.4.0"
-
- :tasks {docker-clean {:doc  "Cleans up cluster containers"
+{:paths ["../tasks"]
+ :tasks {:requires    ([wait :as w])
+         docker-clean {:doc  "Cleans up cluster containers"
                        :task (do
                                (shell {:continue true} "docker kill bob-test-storage bob-test-queue artifact-local")
                                (shell {:continue true} "docker rm bob-test-storage bob-test-queue artifact-local")
@@ -42,7 +42,10 @@
                                    -p 8001:8001
                                    --network bob-net
                                    ghcr.io/bob-cd/artifact-local")
-                                 (load-file "tasks/wait.clj")
+                                 (println "Waiting for cluster readiness.")
+                                 (w/wait-for "artifact-store" "http://localhost:8001/ping")
+                                 (w/wait-for "postgres" "tcp://127.0.0.1:5433")
+                                 (w/wait-for "rabbitmq" "tcp://127.0.0.1:5673")
                                  (shell "clojure -M:test")
                                  (finally
                                    (run 'docker-clean))))}

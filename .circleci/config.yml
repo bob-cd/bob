@@ -25,19 +25,10 @@ jobs:
             sudo bash install
 
       - run:
-          name: Setup wait-for
-          command: |
-            curl -sLO https://raw.githubusercontent.com/eficode/wait-for/master/wait-for
-            chmod +x wait-for
-            sudo mv wait-for /usr/bin
-
-      - run:
           name: Setup Clojure
-          environment:
-            CLOJURE_CLI_VERSION: "1.10.3.1082"
           command: |
-            curl -sLO https://download.clojure.org/install/linux-install-${CLOJURE_CLI_VERSION}.sh
-            sudo bash linux-install-${CLOJURE_CLI_VERSION}.sh
+            curl -sLO https://download.clojure.org/install/linux-install.sh
+            sudo bash linux-install.sh
 
       - restore_cache:
           keys:
