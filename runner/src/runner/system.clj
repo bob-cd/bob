@@ -14,42 +14,53 @@
   {"pipeline/start" p/start
    "pipeline/stop"  p/stop})
 
-(defn queue-conf
-  [db]
-  (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
-        subscriber      (partial d/queue-msg-subscriber (sys/db-client db) routes)]
-    {:exchanges     {"bob.direct" {:type    "direct"
-                                   :durable true}
-                     "bob.fanout" {:type    "fanout"
-                                   :durable true}}
-     :queues        {"bob.jobs"      {:exclusive   false
-                                      :auto-delete false
-                                      :durable     true}
-                     "bob.errors"    {:exclusive   false
-                                      :auto-delete false
-                                      :durable     true}
-                     broadcast-queue {:exclusive   true
-                                      :auto-delete true
-                                      :durable     true}}
-     :bindings      {"bob.jobs"      "bob.direct"
-                     broadcast-queue "bob.fanout"}
-     :subscriptions {"bob.jobs"      subscriber
-                     broadcast-queue subscriber}}))
+(defrecord QueueConf
+  [database]
+  component/Lifecycle
+  (start [this]
+    (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
+          subscriber      (partial d/queue-msg-subscriber (sys/db-client database) routes)
+          conf            {:exchanges     {"bob.direct" {:type    "direct"
+                                                         :durable true}
+                                           "bob.fanout" {:type    "fanout"
+                                                         :durable true}}
+                           :queues        {"bob.jobs"      {:exclusive   false
+                                                            :auto-delete false
+                                                            :durable     true}
+                                           "bob.errors"    {:exclusive   false
+                                                            :auto-delete false
+                                                            :durable     true}
+                                           broadcast-queue {:exclusive   true
+                                                            :auto-delete true
+                                                            :durable     true}}
+                           :bindings      {"bob.jobs"      "bob.direct"
+                                           broadcast-queue "bob.fanout"}
+                           :subscriptions {"bob.jobs"      subscriber
+                                           broadcast-queue subscriber}}]
+      (assoc this :conf conf)))
+  (stop [this]
+    (assoc this :conf nil)))
 
-(def system (atom nil))
+(def system-map
+  (component/system-map
+    {:database   (sys/map->Database {})
+     :queue-conf (component/using (map->QueueConf {})
+                                  [:database])
+     :queue      (component/using (sys/map->Queue {})
+                                  [:queue-conf])}))
+
+(defonce system nil)
 
 (defn start
   []
-  (let [db    (component/start (sys/db))
-        queue (component/start
-                (sys/queue (queue-conf db)))]
-    (reset! system [db queue])))
+  (alter-var-root #'system
+                  (constantly (component/start system-map))))
 
 (defn stop
   []
-  (when @system
-    (run! component/stop (reverse @system))
-    (reset! system nil)))
+  (alter-var-root #'system
+                  #(when %
+                     (component/stop %))))
 
 (defn reset
   []

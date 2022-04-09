@@ -20,33 +20,47 @@
    "resource-provider/create" resource-provider/register-resource-provider
    "resource-provider/delete" resource-provider/un-register-resource-provider})
 
-(defn queue-conf
-  [db]
-  {:exchanges     {"bob.direct" {:type    "direct"
-                                 :durable true}}
-   :queues        {"bob.errors"   {:exclusive   false
-                                   :auto-delete false
-                                   :durable     true}
-                   "bob.entities" {:exclusive   false
-                                   :auto-delete false
-                                   :durable     true}}
-   :bindings      {"bob.entities" "bob.direct"}
-   :subscriptions {"bob.entities" (partial d/queue-msg-subscriber (sys/db-client db) routes)}})
+(defrecord QueueConf
+  [database]
+  component/Lifecycle
+  (start [this]
+    (assoc this
+           :conf
+           {:exchanges     {"bob.direct" {:type "direct"}
+                            :durable     true}
+            :queues        {"bob.errors"   {:exclusive   false
+                                            :auto-delete false
+                                            :durable     true}
+                            "bob.entities" {:exclusive   false
+                                            :auto-delete false
+                                            :durable     true}}
+            :bindings      {"bob.entities" "bob.direct"}
+            :subscriptions {"bob.entities" (partial d/queue-msg-subscriber
+                                                    (sys/db-client database)
+                                                    routes)}}))
+  (stop [this]
+    (assoc this :conf nil)))
 
-(def system (atom nil))
+(def system-map
+  (component/system-map
+    {:database   (sys/map->Database {})
+     :queue-conf (component/using (map->QueueConf {})
+                                  [:database])
+     :queue      (component/using (sys/map->Queue {})
+                                  [:queue-conf])}))
+
+(defonce system nil)
 
 (defn start
   []
-  (let [db    (component/start (sys/db))
-        queue (component/start
-                (sys/queue (queue-conf db)))]
-    (reset! system [db queue])))
+  (alter-var-root #'system
+                  (constantly (component/start system-map))))
 
 (defn stop
   []
-  (when @system
-    (run! component/stop (reverse @system))
-    (reset! system nil)))
+  (alter-var-root #'system
+                  #(when %
+                     (component/stop %))))
 
 (defn reset
   []

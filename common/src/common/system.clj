@@ -54,7 +54,7 @@
   (db-client [this]))
 
 (defrecord Database
-  [db-url db-user db-password]
+  [url user password]
   component/Lifecycle
   (start [this]
     (log/info "Connecting to DB")
@@ -62,9 +62,9 @@
            :client
            (try-connect
              #(xt/start-node {:xtdb.jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
-                                                          :db-spec {:jdbcUrl  db-url
-                                                                    :user     db-user
-                                                                    :password db-password}}
+                                                          :db-spec {:jdbcUrl  (or url storage-url)
+                                                                    :user     (or user storage-user)
+                                                                    :password (or password storage-password)}}
                               :xtdb/tx-log               {:xtdb/module     'xtdb.jdbc/->tx-log
                                                           :connection-pool :xtdb.jdbc/connection-pool}
                               :xtdb/document-store       {:xtdb/module     'xtdb.jdbc/->document-store
@@ -85,12 +85,12 @@
   (queue-chan [this]))
 
 (defrecord Queue
-  [queue-url queue-user queue-password conf]
+  [conf url user password]
   component/Lifecycle
   (start [this]
-    (let [conn (try-connect #(rmq/connect {:uri      queue-url
-                                           :username queue-user
-                                           :password queue-password}))
+    (let [conn (try-connect #(rmq/connect {:uri      (or url queue-url)
+                                           :username (or user queue-user)
+                                           :password (or password queue-password)}))
           chan (lch/open conn)]
       (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
       (doseq [[ex props] (:exchanges conf)]
@@ -120,15 +120,3 @@
   IQueue
   (queue-chan [this]
               (:chan this)))
-
-(defn db
-  ([]
-   (Database. storage-url storage-user storage-password))
-  ([url user password]
-   (Database. url user password)))
-
-(defn queue
-  ([conf]
-   (Queue. queue-url queue-user queue-password conf))
-  ([url user password conf]
-   (Queue. url user password conf)))

@@ -24,12 +24,12 @@
     (let [server (assoc this
                         :api-server
                         (jetty/run-jetty (s/server (:client database) (:chan queue) health-check-freq)
-                                         {:host   host
-                                          :port   port
-                                          :join?  false
-                                          :async? true
+                                         {:host                 host
+                                          :port                 port
+                                          :join?                false
+                                          :async?               true
                                           :send-server-version? false
-                                          :send-date-header? false}))]
+                                          :send-date-header?    false}))]
       (log/infof "Listening on %d" port)
       server))
   (stop [this]
@@ -54,21 +54,25 @@
    :bindings  {"bob.jobs"     "bob.direct"
                "bob.entities" "bob.direct"}})
 
-(def system (atom nil))
+(def system-map
+  (component/system-map
+    {:database  (sys/map->Database {})
+     :queue     (sys/map->Queue {:conf queue-conf})
+     :apiserver (component/using (map->APIServer {:host api-host :port api-port})
+                                 [:database :queue])}))
+
+(defonce system nil)
 
 (defn start
   []
-  (let [db        (component/start (sys/db))
-        queue     (component/start
-                    (sys/queue queue-conf))
-        apiserver (component/start (APIServer. db queue api-host api-port))]
-    (reset! system [db queue apiserver])))
+  (alter-var-root #'system
+                  (constantly (component/start system-map))))
 
 (defn stop
   []
-  (when @system
-    (run! component/stop (reverse @system))
-    (reset! system nil)))
+  (alter-var-root #'system
+                  #(when %
+                     (component/stop %))))
 
 (defn reset
   []
