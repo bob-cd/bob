@@ -56,10 +56,10 @@
 
 (def system-map
   (component/system-map
-    {:database  (sys/map->Database {})
-     :queue     (sys/map->Queue {:conf queue-conf})
-     :apiserver (component/using (map->APIServer {:host api-host :port api-port})
-                                 [:database :queue])}))
+    :database  (sys/map->Database {})
+    :queue     (sys/map->Queue {:conf queue-conf})
+    :apiserver (component/using (map->APIServer {:host api-host :port api-port})
+                                [:database :queue])))
 
 (defonce system nil)
 

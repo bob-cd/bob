@@ -43,11 +43,11 @@
 
 (def system-map
   (component/system-map
-    {:database   (sys/map->Database {})
-     :queue-conf (component/using (map->QueueConf {})
-                                  [:database])
-     :queue      (component/using (sys/map->Queue {})
-                                  [:queue-conf])}))
+    :database   (sys/map->Database {})
+    :queue-conf (component/using (map->QueueConf {})
+                                 [:database])
+    :queue      (component/using (sys/map->Queue {})
+                                 [:queue-conf])))
 
 (defonce system nil)
 
