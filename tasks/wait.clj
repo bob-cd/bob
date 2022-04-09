@@ -34,4 +34,4 @@
                               (throw (Exception. "Not ready."))))
                   "tcp"  #(doto (Socket. (.getHost uri) (.getPort uri))
                             (.close)))]
-      (retry service logic 1000 200 20))))
+      (retry service logic 1000 400 50))))

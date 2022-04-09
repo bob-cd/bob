@@ -9,23 +9,33 @@
             [clojure.spec.alpha :as s]
             [com.stuartsierra.component :as component]
             [next.jdbc :as jdbc]
-            [common.system :as sys]
             [runner.system :as rsys])
   (:import [common.system Database Queue]))
 
+(def system-map
+  (component/system-map
+    :database (Database. "jdbc:postgresql://localhost:5433/bob-test" "bob" "bob")
+    :conf     (component/using (rsys/map->QueueConf {})
+                               [:database])
+    :queue    (component/using (Queue. nil "amqp://localhost:5673" "guest" "guest")
+                               [:conf])))
+
 (defn with-system
   [test-fn]
-  (let [db    (component/start (Database. "jdbc:postgresql://localhost:5433/bob-test" "bob" "bob"))
-        queue (component/start (Queue. (rsys/queue-conf db) "amqp://localhost:5673" "guest" "guest"))
-        ds    (jdbc/get-datasource {:dbtype   "postgresql"
-                                    :dbname   "bob-test"
-                                    :user     "bob"
-                                    :password "bob"
-                                    :host     "localhost"
-                                    :port     5433})]
-    (test-fn (sys/db-client db) (sys/queue-chan queue))
-    (component/stop queue)
-    (component/stop db)
+  (let [system (component/start system-map)
+        ds     (jdbc/get-datasource {:dbtype   "postgresql"
+                                     :dbname   "bob-test"
+                                     :user     "bob"
+                                     :password "bob"
+                                     :host     "localhost"
+                                     :port     5433})]
+    (test-fn (-> system
+                 :database
+                 :client)
+             (-> system
+                 :queue
+                 :chan))
+    (component/stop system)
     (jdbc/execute! ds ["DELETE FROM tx_events;"])))
 
 (defn spec-assert
