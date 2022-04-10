@@ -9,26 +9,26 @@
             [clojure.spec.alpha :as s]
             [integrant.core :as ig]
             [next.jdbc :as jdbc]
-            [common.system :as sys]
+            [common.system]
             [entities.system]))
 
 (defn with-system
   [test-fn]
-  (let [config (sys/configure {:storage {:url      "jdbc:postgresql://localhost:5433/bob-test"
-                                         :user     "bob"
-                                         :password "bob"}
-                               :queue   {:conf     (ig/ref :entities/queue-config)
-                                         :url      "amqp://localhost:5673"
-                                         :user     "guest"
-                                         :password "guest"}})
-        merged (merge config {:entities/queue-config {:database (ig/ref :bob/storage)}})
+  (let [config {:bob/storage           {:url      "jdbc:postgresql://localhost:5433/bob-test"
+                                        :user     "bob"
+                                        :password "bob"}
+                :entities/queue-config {:database (ig/ref :bob/storage)}
+                :bob/queue             {:conf     (ig/ref :entities/queue-config)
+                                        :url      "amqp://localhost:5673"
+                                        :user     "guest"
+                                        :password "guest"}}
         ds     (jdbc/get-datasource {:dbtype   "postgresql"
                                      :dbname   "bob-test"
                                      :user     "bob"
                                      :password "bob"
                                      :host     "localhost"
                                      :port     5433})
-        system (ig/init merged)]
+        system (ig/init config)]
     (test-fn (system :bob/storage)
              (-> system
                  :bob/queue

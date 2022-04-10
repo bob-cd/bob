@@ -21,7 +21,7 @@
 (defonce queue-user (:bob-queue-user env/env "guest"))
 (defonce queue-password (:bob-queue-password env/env "guest"))
 
-(defonce api-host (sys/int-from-env :bob-api-host "0.0.0.0"))
+(defonce api-host (:bob-api-host env/env "0.0.0.0"))
 (defonce api-port (sys/int-from-env :bob-api-port 7777))
 (defonce health-check-freq (sys/int-from-env :bob-health-check-freq 60000))
 
@@ -43,18 +43,18 @@
                "bob.entities" "bob.direct"}})
 
 (def config
-  (merge (sys/configure {:storage {:url      storage-url
-                                   :user     storage-user
-                                   :password storage-password}
-                         :queue   {:url      queue-url
-                                   :user     queue-user
-                                   :password queue-password
-                                   :conf     queue-conf}})
-         {:bob/apiserver {:host              api-host
-                          :port              api-port
-                          :health-check-freq health-check-freq
-                          :database          (ig/ref :bob/storage)
-                          :queue             (ig/ref :bob/queue)}}))
+  {:bob/storage   {:url      storage-url
+                   :user     storage-user
+                   :password storage-password}
+   :bob/queue     {:url      queue-url
+                   :user     queue-user
+                   :password queue-password
+                   :conf     queue-conf}
+   :bob/apiserver {:host              api-host
+                   :port              api-port
+                   :health-check-freq health-check-freq
+                   :database          (ig/ref :bob/storage)
+                   :queue             (ig/ref :bob/queue)}})
 
 (defmethod ig/init-key
   :bob/apiserver

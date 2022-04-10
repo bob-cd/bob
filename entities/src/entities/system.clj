@@ -7,7 +7,7 @@
 (ns entities.system
   (:require [integrant.core :as ig]
             [environ.core :as env]
-            [common.system :as sys]
+            [common.system]
             [common.dispatch :as d]
             [entities.pipeline :as pipeline]
             [entities.artifact-store :as artifact-store]
@@ -30,16 +30,14 @@
 (defonce queue-password (:bob-queue-password env/env "guest"))
 
 (def config
-  (merge
-    (sys/configure
-      {:storage {:url      storage-url
-                 :user     storage-user
-                 :password storage-password}
-       :queue   {:url      queue-url
-                 :user     queue-user
-                 :password queue-password
-                 :conf     (ig/ref :entities/queue-config)}})
-    {:entities/queue-config {:database (ig/ref :bob/storage)}}))
+  {:bob/storage           {:url      storage-url
+                           :user     storage-user
+                           :password storage-password}
+   :entities/queue-config {:database (ig/ref :bob/storage)}
+   :bob/queue             {:url      queue-url
+                           :user     queue-user
+                           :password queue-password
+                           :conf     (ig/ref :entities/queue-config)}})
 
 (defmethod ig/init-key
   :entities/queue-config
@@ -54,10 +52,6 @@
                                    :durable     true}}
    :bindings      {"bob.entities" "bob.direct"}
    :subscriptions {"bob.entities" (partial d/queue-msg-subscriber database routes)}})
-
-(defmethod ig/halt-key!
-  :entities/queue-config
-  [_ _])
 
 (defonce system nil)
 

@@ -9,18 +9,18 @@
             [clojure.spec.alpha :as s]
             [integrant.core :as ig]
             [next.jdbc :as jdbc]
-            [common.system :as sys]
+            [common.system]
             [apiserver.system :as asys]))
 
 (defn with-system
   [test-fn]
-  (let [config (sys/configure {:storage {:url      "jdbc:postgresql://localhost:5433/bob-test"
-                                         :user     "bob"
-                                         :password "bob"}
-                               :queue   {:conf     asys/queue-conf
-                                         :url      "amqp://localhost:5673"
-                                         :user     "guest"
-                                         :password "guest"}})
+  (let [config {:bob/storage {:url      "jdbc:postgresql://localhost:5433/bob-test"
+                              :user     "bob"
+                              :password "bob"}
+                :bob/queue   {:conf     asys/queue-conf
+                              :url      "amqp://localhost:5673"
+                              :user     "guest"
+                              :password "guest"}}
         ds     (jdbc/get-datasource {:dbtype   "postgresql"
                                      :dbname   "bob-test"
                                      :user     "bob"

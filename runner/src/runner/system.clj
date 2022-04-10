@@ -7,7 +7,7 @@
 (ns runner.system
   (:require [integrant.core :as ig]
             [environ.core :as env]
-            [common.system :as sys]
+            [common.system]
             [common.dispatch :as d]
             [runner.pipeline :as p]))
 
@@ -24,44 +24,37 @@
 (defonce queue-password (:bob-queue-password env/env "guest"))
 
 (def config
-  (merge
-    (sys/configure
-      {:storage {:url      storage-url
-                 :user     storage-user
-                 :password storage-password}
-       :queue   {:url      queue-url
-                 :user     queue-user
-                 :password queue-password
-                 :conf     (ig/ref :runner/queue-config)}})
-    {:runner/queue-config {:database (ig/ref :bob/storage)}}))
+  {:bob/storage         {:url      storage-url
+                         :user     storage-user
+                         :password storage-password}
+   :runner/queue-config {:database (ig/ref :bob/storage)}
+   :bob/queue           {:url      queue-url
+                         :user     queue-user
+                         :password queue-password
+                         :conf     (ig/ref :runner/queue-config)}})
 
 (defmethod ig/init-key
   :runner/queue-config
   [_ {:keys [database]}]
   (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
-        subscriber      (partial d/queue-msg-subscriber database routes)
-        conf            {:exchanges     {"bob.direct" {:type    "direct"
-                                                       :durable true}
-                                         "bob.fanout" {:type    "fanout"
-                                                       :durable true}}
-                         :queues        {"bob.jobs"      {:exclusive   false
-                                                          :auto-delete false
-                                                          :durable     true}
-                                         "bob.errors"    {:exclusive   false
-                                                          :auto-delete false
-                                                          :durable     true}
-                                         broadcast-queue {:exclusive   true
-                                                          :auto-delete true
-                                                          :durable     true}}
-                         :bindings      {"bob.jobs"      "bob.direct"
-                                         broadcast-queue "bob.fanout"}
-                         :subscriptions {"bob.jobs"      subscriber
-                                         broadcast-queue subscriber}}]
-    conf))
-
-(defmethod ig/halt-key!
-  :runner/queue-config
-  [_ _])
+        subscriber      (partial d/queue-msg-subscriber database routes)]
+    {:exchanges     {"bob.direct" {:type    "direct"
+                                   :durable true}
+                     "bob.fanout" {:type    "fanout"
+                                   :durable true}}
+     :queues        {"bob.jobs"      {:exclusive   false
+                                      :auto-delete false
+                                      :durable     true}
+                     "bob.errors"    {:exclusive   false
+                                      :auto-delete false
+                                      :durable     true}
+                     broadcast-queue {:exclusive   true
+                                      :auto-delete true
+                                      :durable     true}}
+     :bindings      {"bob.jobs"      "bob.direct"
+                     broadcast-queue "bob.fanout"}
+     :subscriptions {"bob.jobs"      subscriber
+                     broadcast-queue subscriber}}))
 
 (defonce system nil)
 

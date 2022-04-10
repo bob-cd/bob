@@ -42,10 +42,6 @@
            (recur conn-fn (dec n)))
          res)))))
 
-(defn configure
-  [{:keys [storage queue]}]
-  {:bob/storage storage :bob/queue queue})
-
 (defmethod ig/init-key
   :bob/storage
   [_ {:keys [url user password]}]
