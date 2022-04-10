@@ -13,7 +13,7 @@
             [apiserver.server :as s])
   (:import [org.eclipse.jetty.server Server]))
 
-(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5431/bob"))
+(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5432/bob"))
 (defonce storage-user (:bob-storage-user env/env "bob"))
 (defonce storage-password (:bob-storage-password env/env "bob"))
 

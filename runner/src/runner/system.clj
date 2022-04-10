@@ -15,7 +15,7 @@
   {"pipeline/start" p/start
    "pipeline/stop"  p/stop})
 
-(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5431/bob"))
+(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5432/bob"))
 (defonce storage-user (:bob-storage-user env/env "bob"))
 (defonce storage-password (:bob-storage-password env/env "bob"))
 
@@ -23,10 +23,23 @@
 (defonce queue-user (:bob-queue-user env/env "guest"))
 (defonce queue-password (:bob-queue-password env/env "guest"))
 
-(defn configure-queue
-  [uuid]
-  (let [broadcast-queue (str "bob.broadcasts." uuid)
-        subscriber      (partial d/queue-msg-subscriber (ig/ref :bob/storage) routes)
+(def config
+  (merge
+    (sys/configure
+      {:storage {:url      storage-url
+                 :user     storage-user
+                 :password storage-password}
+       :queue   {:url      queue-url
+                 :user     queue-user
+                 :password queue-password
+                 :conf     (ig/ref :runner/queue-config)}})
+    {:runner/queue-config {:database (ig/ref :bob/storage)}}))
+
+(defmethod ig/init-key
+  :runner/queue-config
+  [_ {:keys [database]}]
+  (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
+        subscriber      (partial d/queue-msg-subscriber database routes)
         conf            {:exchanges     {"bob.direct" {:type    "direct"
                                                        :durable true}
                                          "bob.fanout" {:type    "fanout"
@@ -46,23 +59,16 @@
                                          broadcast-queue subscriber}}]
     conf))
 
-(defn configure
-  [uuid]
-  (sys/configure
-    {:storage {:url      storage-url
-               :user     storage-user
-               :password storage-password}
-     :queue   {:url      queue-url
-               :user     queue-user
-               :password queue-password
-               :conf     (configure-queue uuid)}}))
+(defmethod ig/halt-key!
+  :runner/queue-config
+  [_ _])
 
 (defonce system nil)
 
 (defn start
   []
   (alter-var-root #'system
-                  (constantly (ig/init (configure (random-uuid))))))
+                  (constantly (ig/init config))))
 
 (defn stop
   []

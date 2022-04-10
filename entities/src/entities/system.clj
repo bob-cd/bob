@@ -21,7 +21,7 @@
    "resource-provider/create" resource-provider/register-resource-provider
    "resource-provider/delete" resource-provider/un-register-resource-provider})
 
-(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5431/bob"))
+(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5432/bob"))
 (defonce storage-user (:bob-storage-user env/env "bob"))
 (defonce storage-password (:bob-storage-password env/env "bob"))
 
@@ -29,7 +29,21 @@
 (defonce queue-user (:bob-queue-user env/env "guest"))
 (defonce queue-password (:bob-queue-password env/env "guest"))
 
-(def queue-config
+(def config
+  (merge
+    (sys/configure
+      {:storage {:url      storage-url
+                 :user     storage-user
+                 :password storage-password}
+       :queue   {:url      queue-url
+                 :user     queue-user
+                 :password queue-password
+                 :conf     (ig/ref :entities/queue-config)}})
+    {:entities/queue-config {:database (ig/ref :bob/storage)}}))
+
+(defmethod ig/init-key
+  :entities/queue-config
+  [_ {:keys [database]}]
   {:exchanges     {"bob.direct" {:type    "direct"
                                  :durable true}}
    :queues        {"bob.errors"   {:exclusive   false
@@ -39,17 +53,11 @@
                                    :auto-delete false
                                    :durable     true}}
    :bindings      {"bob.entities" "bob.direct"}
-   :subscriptions {"bob.entities" (partial d/queue-msg-subscriber (ig/ref :bob/storage) routes)}})
+   :subscriptions {"bob.entities" (partial d/queue-msg-subscriber database routes)}})
 
-(def config
-  (sys/configure
-    {:storage {:url      storage-url
-               :user     storage-user
-               :password storage-password}
-     :queue   {:url      queue-url
-               :user     queue-user
-               :password queue-password
-               :conf     queue-config}}))
+(defmethod ig/halt-key!
+  :entities/queue-config
+  [_ _])
 
 (defonce system nil)
 
