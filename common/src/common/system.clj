@@ -5,7 +5,7 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns common.system
-  (:require [com.stuartsierra.component :as component]
+  (:require [integrant.core :as ig]
             [environ.core :as env]
             [taoensso.timbre :as log]
             [failjure.core :as f]
@@ -23,14 +23,6 @@
   (try
     (parse-long (get env/env key (str default)))
     (catch Exception _ default)))
-
-(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5432/bob"))
-(defonce storage-user (:bob-storage-user env/env "bob"))
-(defonce storage-password (:bob-storage-password env/env "bob"))
-
-(defonce queue-url (:bob-queue-url env/env "amqp://localhost:5672"))
-(defonce queue-user (:bob-queue-user env/env "guest"))
-(defonce queue-password (:bob-queue-password env/env "guest"))
 
 (defonce connection-retry-attempts (int-from-env :bob-connection-retry-attempts 10))
 (defonce connection-retry-delay (int-from-env :bob-connection-retry-delay 2000))
@@ -50,73 +42,66 @@
            (recur conn-fn (dec n)))
          res)))))
 
-(defprotocol IDatabase
-  (db-client [this]))
+(defn configure
+  [{:keys [storage queue]}]
+  {:bob/storage storage :bob/queue queue})
 
-(defrecord Database
-  [url user password]
-  component/Lifecycle
-  (start [this]
-    (log/info "Connecting to DB")
-    (assoc this
-           :client
-           (try-connect
-             #(xt/start-node {:xtdb.jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
-                                                          :db-spec {:jdbcUrl  (or url storage-url)
-                                                                    :user     (or user storage-user)
-                                                                    :password (or password storage-password)}}
-                              :xtdb/tx-log               {:xtdb/module     'xtdb.jdbc/->tx-log
-                                                          :connection-pool :xtdb.jdbc/connection-pool}
-                              :xtdb/document-store       {:xtdb/module     'xtdb.jdbc/->document-store
-                                                          :connection-pool :xtdb.jdbc/connection-pool}}))))
-  (stop [this]
-    (log/info "Disconnecting DB")
-    (.close ^IXtdb (:client this))
-    (assoc this :client nil))
-  IDatabase
-  (db-client [this]
-             (:client this)))
+(defmethod ig/init-key
+  :bob/storage
+  [_ {:keys [url user password]}]
+  (log/info "Connecting to DB")
+  (try-connect
+    #(xt/start-node {:xtdb.jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
+                                                 :db-spec {:jdbcUrl  url
+                                                           :user     user
+                                                           :password password}}
+                     :xtdb/tx-log               {:xtdb/module     'xtdb.jdbc/->tx-log
+                                                 :connection-pool :xtdb.jdbc/connection-pool}
+                     :xtdb/document-store       {:xtdb/module     'xtdb.jdbc/->document-store
+                                                 :connection-pool :xtdb.jdbc/connection-pool}})))
+
+(defmethod ig/halt-key!
+  :bob/storage
+  [_ ^IXtdb node]
+  (log/info "Disconnecting DB")
+  (.close node))
 
 (defn fanout?
   [conf ex]
   (= "fanout" (get-in conf [:exchanges ex :type])))
 
-(defprotocol IQueue
-  (queue-chan [this]))
-
-(defrecord Queue
-  [conf url user password]
-  component/Lifecycle
-  (start [this]
-    (let [conn (try-connect #(rmq/connect {:uri      (or url queue-url)
-                                           :username (or user queue-user)
-                                           :password (or password queue-password)}))
-          chan (lch/open conn)]
-      (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
-      (doseq [[ex props] (:exchanges conf)]
-        (log/infof "Declared exchange %s" ex)
-        (le/declare chan ex (:type props) (select-keys props [:durable])))
-      (doseq [[queue props] (:queues conf)]
-        (log/infof "Declared queue %s" queue)
-        (lq/declare chan queue props))
-      (doseq [[queue ex] (:bindings conf)]
-        (log/infof "Bound %s -> %s"
-                   queue
-                   ex)
-        (lq/bind chan
+(defmethod ig/init-key
+  :bob/queue
+  [_ {:keys [url user password conf]}]
+  (let [conn (try-connect #(rmq/connect {:uri      url
+                                         :username user
+                                         :password password}))
+        chan (lch/open conn)]
+    (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
+    (doseq [[ex props] (:exchanges conf)]
+      (log/infof "Declared exchange %s" ex)
+      (le/declare chan ex (:type props) (select-keys props [:durable])))
+    (doseq [[queue props] (:queues conf)]
+      (log/infof "Declared queue %s" queue)
+      (lq/declare chan queue props))
+    (doseq [[queue ex] (:bindings conf)]
+      (log/infof "Bound %s -> %s"
                  queue
-                 ex
-                 (if (fanout? conf ex)
-                   {}
-                   {:routing-key queue})))
-      (doseq [[queue subscriber] (:subscriptions conf)]
-        (log/infof "Subscribed to %s" queue)
-        (lc/subscribe chan queue subscriber {:auto-ack true}))
-      (assoc this :conn conn :chan chan)))
-  (stop [this]
-    (log/info "Disconnecting queue")
-    (rmq/close (:conn this))
-    (assoc this :conn nil :chan nil))
-  IQueue
-  (queue-chan [this]
-              (:chan this)))
+                 ex)
+      (lq/bind chan
+               queue
+               ex
+               (if (fanout? conf ex)
+                 {}
+                 {:routing-key queue})))
+    (doseq [[queue subscriber] (:subscriptions conf)]
+      (log/infof "Subscribed to %s" queue)
+      (lc/subscribe chan queue subscriber {:auto-ack true}))
+    {:conn conn :chan chan}))
+
+(defmethod ig/halt-key!
+  :bob/queue
+  [_ {:keys [conn]}]
+  (log/info "Disconnecting Queue")
+  (when-not (rmq/open? conn)
+    (rmq/close conn)))

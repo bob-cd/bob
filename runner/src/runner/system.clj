@@ -5,7 +5,8 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.system
-  (:require [com.stuartsierra.component :as component]
+  (:require [integrant.core :as ig]
+            [environ.core :as env]
             [common.system :as sys]
             [common.dispatch :as d]
             [runner.pipeline :as p]))
@@ -14,53 +15,60 @@
   {"pipeline/start" p/start
    "pipeline/stop"  p/stop})
 
-(defrecord QueueConf
-  [database]
-  component/Lifecycle
-  (start [this]
-    (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
-          subscriber      (partial d/queue-msg-subscriber (sys/db-client database) routes)
-          conf            {:exchanges     {"bob.direct" {:type    "direct"
-                                                         :durable true}
-                                           "bob.fanout" {:type    "fanout"
-                                                         :durable true}}
-                           :queues        {"bob.jobs"      {:exclusive   false
-                                                            :auto-delete false
-                                                            :durable     true}
-                                           "bob.errors"    {:exclusive   false
-                                                            :auto-delete false
-                                                            :durable     true}
-                                           broadcast-queue {:exclusive   true
-                                                            :auto-delete true
-                                                            :durable     true}}
-                           :bindings      {"bob.jobs"      "bob.direct"
-                                           broadcast-queue "bob.fanout"}
-                           :subscriptions {"bob.jobs"      subscriber
-                                           broadcast-queue subscriber}}]
-      (assoc this :conf conf)))
-  (stop [this]
-    (assoc this :conf nil)))
+(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5431/bob"))
+(defonce storage-user (:bob-storage-user env/env "bob"))
+(defonce storage-password (:bob-storage-password env/env "bob"))
 
-(def system-map
-  (component/system-map
-    :database (sys/map->Database {})
-    :conf     (component/using (QueueConf. nil)
-                               [:database])
-    :queue    (component/using (sys/map->Queue {})
-                               [:conf])))
+(defonce queue-url (:bob-queue-url env/env "amqp://localhost:5672"))
+(defonce queue-user (:bob-queue-user env/env "guest"))
+(defonce queue-password (:bob-queue-password env/env "guest"))
+
+(defn configure-queue
+  [uuid]
+  (let [broadcast-queue (str "bob.broadcasts." uuid)
+        subscriber      (partial d/queue-msg-subscriber (ig/ref :bob/storage) routes)
+        conf            {:exchanges     {"bob.direct" {:type    "direct"
+                                                       :durable true}
+                                         "bob.fanout" {:type    "fanout"
+                                                       :durable true}}
+                         :queues        {"bob.jobs"      {:exclusive   false
+                                                          :auto-delete false
+                                                          :durable     true}
+                                         "bob.errors"    {:exclusive   false
+                                                          :auto-delete false
+                                                          :durable     true}
+                                         broadcast-queue {:exclusive   true
+                                                          :auto-delete true
+                                                          :durable     true}}
+                         :bindings      {"bob.jobs"      "bob.direct"
+                                         broadcast-queue "bob.fanout"}
+                         :subscriptions {"bob.jobs"      subscriber
+                                         broadcast-queue subscriber}}]
+    conf))
+
+(defn configure
+  [uuid]
+  (sys/configure
+    {:storage {:url      storage-url
+               :user     storage-user
+               :password storage-password}
+     :queue   {:url      queue-url
+               :user     queue-user
+               :password queue-password
+               :conf     (configure-queue uuid)}}))
 
 (defonce system nil)
 
 (defn start
   []
   (alter-var-root #'system
-                  (constantly (component/start system-map))))
+                  (constantly (ig/init (configure (random-uuid))))))
 
 (defn stop
   []
   (alter-var-root #'system
                   #(when %
-                     (component/stop %))))
+                     (ig/halt! %))))
 
 (defn reset
   []

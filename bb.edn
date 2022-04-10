@@ -70,9 +70,6 @@
                           :task (run '-push {:parallel true})}
          -push           {:depends [push-apiserver push-entities push-runner]}
 
-         e2e             {:doc  "Runs e2e tests"
-                          :task (shell {:dir "e2e"} "bb run.clj")}
-
          clean           {:doc  "Clean up"
                           :task (do
                                   (shell {:dir apiserver-dir} clean-task)

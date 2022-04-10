@@ -5,37 +5,25 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.system
-  (:require [com.stuartsierra.component :as component]
+  (:require [integrant.core :as ig]
+            [environ.core :as env]
             [taoensso.timbre :as log]
             [ring.adapter.jetty :as jetty]
             [common.system :as sys]
             [apiserver.server :as s])
   (:import [org.eclipse.jetty.server Server]))
 
+(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5431/bob"))
+(defonce storage-user (:bob-storage-user env/env "bob"))
+(defonce storage-password (:bob-storage-password env/env "bob"))
+
+(defonce queue-url (:bob-queue-url env/env "amqp://localhost:5672"))
+(defonce queue-user (:bob-queue-user env/env "guest"))
+(defonce queue-password (:bob-queue-password env/env "guest"))
+
 (defonce api-host (sys/int-from-env :bob-api-host "0.0.0.0"))
 (defonce api-port (sys/int-from-env :bob-api-port 7777))
 (defonce health-check-freq (sys/int-from-env :bob-health-check-freq 60000))
-
-(defrecord APIServer
-  [database queue host port]
-  component/Lifecycle
-  (start [this]
-    (log/info "Starting APIServer")
-    (let [server (assoc this
-                        :api-server
-                        (jetty/run-jetty (s/server (:client database) (:chan queue) health-check-freq)
-                                         {:host                 host
-                                          :port                 port
-                                          :join?                false
-                                          :async?               true
-                                          :send-server-version? false
-                                          :send-date-header?    false}))]
-      (log/infof "Listening on %d" port)
-      server))
-  (stop [this]
-    (log/info "Stopping APIServer")
-    (.stop ^Server (:api-server this))
-    (assoc this :server nil)))
 
 (def queue-conf
   {:exchanges {"bob.direct" {:type    "direct"
@@ -54,25 +42,52 @@
    :bindings  {"bob.jobs"     "bob.direct"
                "bob.entities" "bob.direct"}})
 
-(def system-map
-  (component/system-map
-    :database  (sys/map->Database {})
-    :queue     (sys/map->Queue {:conf queue-conf})
-    :apiserver (component/using (map->APIServer {:host api-host :port api-port})
-                                [:database :queue])))
+(def config
+  (merge (sys/configure {:storage {:url      storage-url
+                                   :user     storage-user
+                                   :password storage-password}
+                         :queue   {:url      queue-url
+                                   :user     queue-user
+                                   :password queue-password
+                                   :conf     queue-conf}})
+         {:bob/apiserver {:host              api-host
+                          :port              api-port
+                          :health-check-freq health-check-freq
+                          :database          (ig/ref :bob/storage)
+                          :queue             (ig/ref :bob/queue)}}))
+
+(defmethod ig/init-key
+  :bob/apiserver
+  [_ {:keys [host port health-check-freq database queue]}]
+  (log/info "Starting APIServer")
+  (let [server (jetty/run-jetty (s/server database (:chan queue) health-check-freq)
+                                {:host                 host
+                                 :port                 port
+                                 :join?                false
+                                 :async?               true
+                                 :send-server-version? false
+                                 :send-date-header?    false})]
+    (log/infof "Listening on %d" port)
+    server))
+
+(defmethod ig/halt-key!
+  :bob/apiserver
+  [_ ^Server server]
+  (log/info "Stopping APIServer")
+  (.stop server))
 
 (defonce system nil)
 
 (defn start
   []
   (alter-var-root #'system
-                  (constantly (component/start system-map))))
+                  (constantly (ig/init config))))
 
 (defn stop
   []
   (alter-var-root #'system
                   #(when %
-                     (component/stop %))))
+                     (ig/halt! %))))
 
 (defn reset
   []

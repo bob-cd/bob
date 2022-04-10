@@ -5,7 +5,8 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.system
-  (:require [com.stuartsierra.component :as component]
+  (:require [integrant.core :as ig]
+            [environ.core :as env]
             [common.system :as sys]
             [common.dispatch :as d]
             [entities.pipeline :as pipeline]
@@ -20,47 +21,48 @@
    "resource-provider/create" resource-provider/register-resource-provider
    "resource-provider/delete" resource-provider/un-register-resource-provider})
 
-(defrecord QueueConf
-  [database]
-  component/Lifecycle
-  (start [this]
-    (assoc this
-           :conf
-           {:exchanges     {"bob.direct" {:type "direct"}
-                            :durable     true}
-            :queues        {"bob.errors"   {:exclusive   false
-                                            :auto-delete false
-                                            :durable     true}
-                            "bob.entities" {:exclusive   false
-                                            :auto-delete false
-                                            :durable     true}}
-            :bindings      {"bob.entities" "bob.direct"}
-            :subscriptions {"bob.entities" (partial d/queue-msg-subscriber
-                                                    (sys/db-client database)
-                                                    routes)}}))
-  (stop [this]
-    (assoc this :conf nil)))
+(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5431/bob"))
+(defonce storage-user (:bob-storage-user env/env "bob"))
+(defonce storage-password (:bob-storage-password env/env "bob"))
 
-(def system-map
-  (component/system-map
-    :database (sys/map->Database {})
-    :conf     (component/using (map->QueueConf {})
-                               [:database])
-    :queue    (component/using (sys/map->Queue {})
-                               [:conf])))
+(defonce queue-url (:bob-queue-url env/env "amqp://localhost:5672"))
+(defonce queue-user (:bob-queue-user env/env "guest"))
+(defonce queue-password (:bob-queue-password env/env "guest"))
+
+(def queue-config
+  {:exchanges     {"bob.direct" {:type    "direct"
+                                 :durable true}}
+   :queues        {"bob.errors"   {:exclusive   false
+                                   :auto-delete false
+                                   :durable     true}
+                   "bob.entities" {:exclusive   false
+                                   :auto-delete false
+                                   :durable     true}}
+   :bindings      {"bob.entities" "bob.direct"}
+   :subscriptions {"bob.entities" (partial d/queue-msg-subscriber (ig/ref :bob/storage) routes)}})
+
+(def config
+  (sys/configure
+    {:storage {:url      storage-url
+               :user     storage-user
+               :password storage-password}
+     :queue   {:url      queue-url
+               :user     queue-user
+               :password queue-password
+               :conf     queue-config}}))
 
 (defonce system nil)
 
 (defn start
   []
   (alter-var-root #'system
-                  (constantly (component/start system-map))))
+                  (constantly (ig/init config))))
 
 (defn stop
   []
   (alter-var-root #'system
                   #(when %
-                     (component/stop %))))
+                     (ig/halt! %))))
 
 (defn reset
   []

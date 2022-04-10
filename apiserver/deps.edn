@@ -7,7 +7,8 @@
 {:paths   ["src" "resources"]
  :deps    {org.clojure/clojure          {:mvn/version "1.11.1"}
            com.fzakaria/slf4j-timbre    {:mvn/version "0.3.21"}
-           com.stuartsierra/component   {:mvn/version "1.1.0"}
+           integrant/integrant          {:mvn/version "0.8.0"}
+           environ/environ              {:mvn/version "1.2.0"}
            com.taoensso/timbre          {:mvn/version "5.2.1"}
            failjure/failjure            {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj  {:mvn/version "0.4.3"}

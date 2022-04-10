@@ -51,7 +51,7 @@ The priority of your configuration is following:
 - To run directly without building a JAR, run `clj -M -m runner.main` from this dir.
 
 ## Setting up the dev environment with the REPL
-- This uses [Component](https://github.com/stuartsierra/component) to manage state across the app.
+- This uses [Integrant](https://github.com/weavejester/integrant) to manage state across the app.
 - When loaded into the editor/REPL, find the `reset` fn in this [namespace](/runner/src/runner/system.clj). Eval this when there is change to reload the state cleanly.
 
 ### Running integration tests

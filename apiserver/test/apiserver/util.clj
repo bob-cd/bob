@@ -7,25 +7,32 @@
 (ns apiserver.util
   (:require [clojure.test :as t]
             [clojure.spec.alpha :as s]
-            [com.stuartsierra.component :as component]
+            [integrant.core :as ig]
             [next.jdbc :as jdbc]
             [common.system :as sys]
-            [apiserver.system :as asys])
-  (:import [common.system Database Queue]))
+            [apiserver.system :as asys]))
 
 (defn with-system
   [test-fn]
-  (let [db    (component/start (Database. "jdbc:postgresql://localhost:5433/bob-test" "bob" "bob"))
-        queue (component/start (Queue. asys/queue-conf "amqp://localhost:5673" "guest" "guest"))
-        ds    (jdbc/get-datasource {:dbtype   "postgresql"
-                                    :dbname   "bob-test"
-                                    :user     "bob"
-                                    :password "bob"
-                                    :host     "localhost"
-                                    :port     5433})]
-    (test-fn (sys/db-client db) (sys/queue-chan queue))
-    (component/stop queue)
-    (component/stop db)
+  (let [config (sys/configure {:storage {:url      "jdbc:postgresql://localhost:5433/bob-test"
+                                         :user     "bob"
+                                         :password "bob"}
+                               :queue   {:conf     asys/queue-conf
+                                         :url      "amqp://localhost:5673"
+                                         :user     "guest"
+                                         :password "guest"}})
+        ds     (jdbc/get-datasource {:dbtype   "postgresql"
+                                     :dbname   "bob-test"
+                                     :user     "bob"
+                                     :password "bob"
+                                     :host     "localhost"
+                                     :port     5433})
+        system (ig/init config)]
+    (test-fn (system :bob/storage)
+             (-> system
+                 :bob/queue
+                 :chan))
+    (ig/halt! system)
     (jdbc/execute! ds ["DELETE FROM tx_events;"])))
 
 (defn spec-assert
