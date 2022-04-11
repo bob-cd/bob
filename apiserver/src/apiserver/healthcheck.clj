@@ -23,7 +23,7 @@
 
 (defn check-entity
   [{:keys [name url]}]
-  (f/try-all [{status :status} (http/get url)]
+  (f/try-all [{status :status} (http/get (str url "/ping"))]
     (if (>= status 400)
       (f/fail (format "Error checking %s at %s"
                       name
