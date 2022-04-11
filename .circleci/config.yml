@@ -53,9 +53,15 @@ jobs:
           command: bb compile
 
       - run:
-          name: Build images
-          command: bb image
+          name: Create multi-platform capabale buildx builder
+          command: |
+            docker run --privileged --rm tonistiigi/binfmt --install all
+            docker buildx create --use
 
       - run:
-          name: Publish images
-          command: echo ${GHCR_TOKEN} | docker login ghcr.io --username lispyclouds --password-stdin && bb push
+          name: Docker login
+          command: echo ${GHCR_TOKEN} | docker login ghcr.io --username lispyclouds --password-stdin
+
+      - run:
+          name: Build and publish images
+          command: bb image
