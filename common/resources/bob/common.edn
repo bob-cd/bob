@@ -4,5 +4,5 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-{:bob/connection-retry-attempts #or [#env BOB_CONNECTION_RETRY_ATTEMPTS 10]
- :bob/connection-retry-delay    #or [#env BOB_CONNECTION_RETRY_DELAY 2000]}
+{:bob/connection-retry-attempts #long #or [#env BOB_CONNECTION_RETRY_ATTEMPTS 10]
+ :bob/connection-retry-delay    #long #or [#env BOB_CONNECTION_RETRY_DELAY 2000]}

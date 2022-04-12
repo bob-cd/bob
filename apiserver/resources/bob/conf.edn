@@ -26,7 +26,7 @@
                             :bindings  {"bob.jobs"     "bob.direct"
                                         "bob.entities" "bob.direct"}}}
  :bob/apiserver {:host              #or [#env BOB_API_HOST "0.0.0.0"]
-                 :port              #or [#env BOB_API_PORT 7777]
-                 :health-check-freq #or [#env BOB_HEALTH_CHECK_FREQ 60000]
+                 :port              #long #or [#env BOB_API_PORT 7777]
+                 :health-check-freq #long #or [#env BOB_HEALTH_CHECK_FREQ 60000]
                  :database          #ig/ref :bob/storage
                  :queue             #ig/ref :bob/queue}}

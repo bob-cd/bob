@@ -63,7 +63,7 @@
          -test           {:depends [test-apiserver test-entities test-runner]}
 
          image           {:doc  "Build docker images for all services"
-                          :task (run '-image {:parallel false})}
+                          :task (run '-image)}
          -image          {:depends [image-apiserver image-entities image-runner]}
 
          clean           {:doc  "Clean up"

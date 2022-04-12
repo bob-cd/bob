@@ -41,7 +41,8 @@
   (alter-var-root #'system
                   (constantly (-> "bob/conf.edn"
                                   (io/resource)
-                                  (aero/read-config)))))
+                                  (aero/read-config)
+                                  (ig/init)))))
 
 (defn stop
   []
