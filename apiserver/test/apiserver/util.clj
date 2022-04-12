@@ -7,17 +7,25 @@
 (ns apiserver.util
   (:require [clojure.test :as t]
             [clojure.spec.alpha :as s]
+            [clojure.java.io :as io]
             [integrant.core :as ig]
+            [aero.core :as aero]
             [next.jdbc :as jdbc]
             [common.system]
-            [apiserver.system :as asys]))
+            [apiserver.system]))
+
+(def queue-conf
+  (-> "bob/conf.edn"
+      (io/resource)
+      (aero/read-config)
+      (get-in [:bob/queue :conf])))
 
 (defn with-system
   [test-fn]
   (let [config {:bob/storage {:url      "jdbc:postgresql://localhost:5433/bob-test"
                               :user     "bob"
                               :password "bob"}
-                :bob/queue   {:conf     asys/queue-conf
+                :bob/queue   {:conf     queue-conf
                               :url      "amqp://localhost:5673"
                               :user     "guest"
                               :password "guest"}}

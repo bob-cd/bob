@@ -13,24 +13,18 @@ The logs are streamed live directly to the Database.
 - Uses [contajners](https://github.com/lispyclouds/contajners) to talk to [podman](https://podman.io/) to implement step executions.
 
 ## Configuration
-The [environ library](https://github.com/weavejester/environ) is used and therefore several variables can be
-set by specifying them as environment variable or as java system property. Possible variables are:
+[Aero](https://github.com/juxt/aero) is used and therefore several variables can be set by specifying them as environment variables. Possible variables are:
 
-| java system properties        | environment variables         | defaults                             |
-|-------------------------------|-------------------------------|--------------------------------------|
-| bob-storage-url               | BOB_STORAGE_URL               | jdbc:postgresql://localhost:5432/bob |
-| bob-storage-user              | BOB_STORAGE_USER              | bob                                  |
-| bob-storage-password          | BOB_STORAGE_PASSWORD          | bob                                  |
-| bob-queue-url                 | BOB_QUEUE_URL                 | amqp://localhost:5672                |
-| bob-queue-user                | BOB_QUEUE_USER                | guest                                |
-| bob-queue-password            | BOB_QUEUE_PASSWORD            | guest                                |
-| bob-connection-retry-attempts | BOB_CONNECTION_RETRY_ATTEMPTS | 10                                   |
-| bob-connection-retry-delay    | BOB_CONNECTION_RETRY_DELAY    | 2000                                 |
-
-The priority of your configuration is following:
-1. Environment variables
-1. Java system properties
-1. Defaults
+| Environment variables         | defaults                             |
+|-------------------------------|--------------------------------------|
+| BOB_STORAGE_URL               | jdbc:postgresql://localhost:5432/bob |
+| BOB_STORAGE_USER              | bob                                  |
+| BOB_STORAGE_PASSWORD          | bob                                  |
+| BOB_QUEUE_URL                 | amqp://localhost:5672                |
+| BOB_QUEUE_USER                | guest                                |
+| BOB_QUEUE_PASSWORD            | guest                                |
+| BOB_CONNECTION_RETRY_ATTEMPTS | 10                                   |
+| BOB_CONNECTION_RETRY_DELAY    | 2000                                 |
 
 ## Building and Running
 

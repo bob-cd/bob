@@ -5,8 +5,9 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns common.system
-  (:require [integrant.core :as ig]
-            [environ.core :as env]
+  (:require [clojure.java.io :as io]
+            [integrant.core :as ig]
+            [aero.core :as aero]
             [taoensso.timbre :as log]
             [failjure.core :as f]
             [xtdb.api :as xt]
@@ -18,18 +19,14 @@
   (:import [java.net ConnectException]
            [xtdb.api IXtdb]))
 
-(defn int-from-env
-  [key default]
-  (try
-    (parse-long (get env/env key (str default)))
-    (catch Exception _ default)))
-
-(defonce connection-retry-attempts (int-from-env :bob-connection-retry-attempts 10))
-(defonce connection-retry-delay (int-from-env :bob-connection-retry-delay 2000))
+(def config
+  (-> "bob/common.edn"
+      (io/resource)
+      (aero/read-config)))
 
 (defn try-connect
   ([conn-fn]
-   (try-connect conn-fn connection-retry-attempts))
+   (try-connect conn-fn (:bob/connection-retry-attempts config)))
   ([conn-fn n]
    (if (= n 0)
      (throw (ConnectException. "Cannot connect to system"))
@@ -38,7 +35,7 @@
        (if (f/failed? res)
          (do
            (log/warnf "Connection failed with %s, retrying %d" (f/message res) n)
-           (Thread/sleep connection-retry-delay)
+           (Thread/sleep (:bob/connection-retry-delay config))
            (recur conn-fn (dec n)))
          res)))))
 
@@ -101,3 +98,8 @@
   (log/info "Disconnecting Queue")
   (when-not (rmq/open? conn)
     (rmq/close conn)))
+
+(defmethod aero/reader
+  'ig/ref
+  [_ _ value]
+  (ig/ref value))

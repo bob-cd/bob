@@ -1,0 +1,14 @@
+; Copyright 2018-2022 Rahul De
+;
+; Use of this source code is governed by an MIT-style
+; license that can be found in the LICENSE file or at
+; https://opensource.org/licenses/MIT.
+
+{:bob/storage           {:url      #or [#env BOB_STORAGE_URL "jdbc:postgresql://localhost:5432/bob"]
+                         :user     #or [#env BOB_STORAGE_USER "bob"]
+                         :password #or [#env BOB_STORAGE_PASSWORD "bob"]}
+ :entities/queue-config {:database #ig/ref :bob/storage}
+ :bob/queue             {:url      #or [#env BOB_QUEUE_URL "amqp://localhost:5672"]
+                         :user     #or [#env BOB_QUEUE_USER "guest"]
+                         :password #or [#env BOB_QUEUE_PASSWORD "guest"]
+                         :conf     #ig/ref :entities/queue-config}}

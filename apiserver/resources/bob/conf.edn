@@ -1,0 +1,32 @@
+; Copyright 2018-2022 Rahul De
+;
+; Use of this source code is governed by an MIT-style
+; license that can be found in the LICENSE file or at
+; https://opensource.org/licenses/MIT.
+
+{:bob/storage   {:url      #or [#env BOB_STORAGE_URL "jdbc:postgresql://localhost:5432/bob"]
+                 :user     #or [#env BOB_STORAGE_USER "bob"]
+                 :password #or [#env BOB_STORAGE_PASSWORD "bob"]}
+ :bob/queue     {:url      #or [#env BOB_QUEUE_URL "amqp://localhost:5672"]
+                 :user     #or [#env BOB_QUEUE_USER "guest"]
+                 :password #or [#env BOB_QUEUE_PASSWORD "guest"]
+                 :conf     {:exchanges {"bob.direct" {:type    "direct"
+                                                      :durable true}
+                                        "bob.fanout" {:type    "fanout"
+                                                      :durable true}}
+                            :queues    {"bob.jobs"     {:exclusive   false
+                                                        :auto-delete false
+                                                        :durable     true}
+                                        "bob.errors"   {:exclusive   false
+                                                        :auto-delete false
+                                                        :durable     true}
+                                        "bob.entities" {:exclusive   false
+                                                        :auto-delete false
+                                                        :durable     true}}
+                            :bindings  {"bob.jobs"     "bob.direct"
+                                        "bob.entities" "bob.direct"}}}
+ :bob/apiserver {:host              #or [#env BOB_API_HOST "0.0.0.0"]
+                 :port              #or [#env BOB_API_PORT 7777]
+                 :health-check-freq #or [#env BOB_HEALTH_CHECK_FREQ 60000]
+                 :database          #ig/ref :bob/storage
+                 :queue             #ig/ref :bob/queue}}

@@ -5,56 +5,14 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.system
-  (:require [integrant.core :as ig]
-            [environ.core :as env]
+  (:require [clojure.java.io :as io]
+            [integrant.core :as ig]
+            [aero.core :as aero]
             [taoensso.timbre :as log]
             [ring.adapter.jetty :as jetty]
-            [common.system :as sys]
+            [common.system]
             [apiserver.server :as s])
   (:import [org.eclipse.jetty.server Server]))
-
-(defonce storage-url (:bob-storage-url env/env "jdbc:postgresql://localhost:5432/bob"))
-(defonce storage-user (:bob-storage-user env/env "bob"))
-(defonce storage-password (:bob-storage-password env/env "bob"))
-
-(defonce queue-url (:bob-queue-url env/env "amqp://localhost:5672"))
-(defonce queue-user (:bob-queue-user env/env "guest"))
-(defonce queue-password (:bob-queue-password env/env "guest"))
-
-(defonce api-host (:bob-api-host env/env "0.0.0.0"))
-(defonce api-port (sys/int-from-env :bob-api-port 7777))
-(defonce health-check-freq (sys/int-from-env :bob-health-check-freq 60000))
-
-(def queue-conf
-  {:exchanges {"bob.direct" {:type    "direct"
-                             :durable true}
-               "bob.fanout" {:type    "fanout"
-                             :durable true}}
-   :queues    {"bob.jobs"     {:exclusive   false
-                               :auto-delete false
-                               :durable     true}
-               "bob.errors"   {:exclusive   false
-                               :auto-delete false
-                               :durable     true}
-               "bob.entities" {:exclusive   false
-                               :auto-delete false
-                               :durable     true}}
-   :bindings  {"bob.jobs"     "bob.direct"
-               "bob.entities" "bob.direct"}})
-
-(def config
-  {:bob/storage   {:url      storage-url
-                   :user     storage-user
-                   :password storage-password}
-   :bob/queue     {:url      queue-url
-                   :user     queue-user
-                   :password queue-password
-                   :conf     queue-conf}
-   :bob/apiserver {:host              api-host
-                   :port              api-port
-                   :health-check-freq health-check-freq
-                   :database          (ig/ref :bob/storage)
-                   :queue             (ig/ref :bob/queue)}})
 
 (defmethod ig/init-key
   :bob/apiserver
@@ -81,7 +39,9 @@
 (defn start
   []
   (alter-var-root #'system
-                  (constantly (ig/init config))))
+                  (constantly (-> "bob/conf.edn"
+                                  (io/resource)
+                                  (aero/read-config)))))
 
 (defn stop
   []
@@ -95,4 +55,6 @@
   (start))
 
 (comment
+  (aero/read-config (io/resource "bob/conf.edn"))
+
   (reset))
