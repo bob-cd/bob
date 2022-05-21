@@ -12,7 +12,7 @@
            com.taoensso/timbre          {:mvn/version "5.2.1"}
            failjure/failjure            {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj  {:mvn/version "0.4.3"}
-           com.xtdb/xtdb-core           {:mvn/version "1.20.0"}
+           com.xtdb/xtdb-core           {:mvn/version "1.21.0"}
            metosin/reitit-core          {:mvn/version "0.5.18"}
            metosin/reitit-http          {:mvn/version "0.5.18"}
            metosin/reitit-interceptors  {:mvn/version "0.5.18"}
