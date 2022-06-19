@@ -27,7 +27,7 @@ The core of Bob is composed of 3 main services:
 All of these services live, breathe, and deploy from their own section of this mono-repo. Post-deployment, they are coordinated via a central persistent queue. Read more about Bob's [Architecture](https://bob-cd.github.io/pages/architecture.html).
 
 ## Join the conversation
-Please start a [discussion](https://github.com/bob-cd/bob/discussions) on literally any topic and we are happy to help and learn from each other! You can check out the Kanban [board](https://github.com/bob-cd/bob/projects/1) to see the roadmap and planned work.
+Please start a [discussion](https://github.com/bob-cd/bob/discussions) on literally any topic and we are happy to help and learn from each other!
 
 For a more Clojure specific discussion there we also have a Clojurians Slack [channel](https://clojurians.slack.com/messages/CPBAYJJF6).
 
