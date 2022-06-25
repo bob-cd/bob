@@ -12,7 +12,7 @@
            com.taoensso/timbre          {:mvn/version "5.2.1"}
            failjure/failjure            {:mvn/version "2.2.0"}
            java-http-clj/java-http-clj  {:mvn/version "0.4.3"}
-           com.xtdb/xtdb-core           {:mvn/version "1.21.0"}
+           com.xtdb/xtdb-core           {:mvn/version "1.21.0.1"}
            metosin/reitit-core          {:mvn/version "0.5.18"}
            metosin/reitit-http          {:mvn/version "0.5.18"}
            metosin/reitit-interceptors  {:mvn/version "0.5.18"}
@@ -26,7 +26,7 @@
            org.clojure/data.xml         {:mvn/version "0.2.0-alpha6"}
            org.clojure/data.json        {:mvn/version "2.4.0"}
            common/common                {:local/root "../common"}}
- :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.66.1034"}
+ :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.68.1059"}
                                 org.clojure/test.check            {:mvn/version "1.1.1"}
                                 com.github.seancorfield/next.jdbc {:mvn/version "1.2.780"}}
                    :main-opts  ["-m" "kaocha.runner"]}

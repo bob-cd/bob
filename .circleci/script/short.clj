@@ -34,7 +34,7 @@
   (gen-job
     shorted?
     (ordered-map
-      :machine {:image "ubuntu-2004:202107-02"}
+      :machine {:image "ubuntu-2204:current"}
       :steps
       (gen-steps
         shorted?
