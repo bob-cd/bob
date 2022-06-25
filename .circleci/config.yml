@@ -6,62 +6,30 @@
 
 version: 2.1
 
-jobs:
-  build:
-    machine:
-      image: ubuntu-2004:202107-02
+setup: true
 
+orbs:
+  continuation: circleci/continuation@0.1.2
+
+jobs:
+  setup:
+    resource_class: small
+    docker:
+      - image: cimg/base:edge
     steps:
       - checkout
-
-      - run:
-          name: Git clean slate
-          command: rm -rf ~/.gitconfig
-
       - run:
           name: Setup Babashka
           command: |
             curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
             sudo bash install
-
       - run:
-          name: Setup Clojure
-          command: |
-            curl -sLO https://download.clojure.org/install/linux-install.sh
-            sudo bash linux-install.sh
+          name: Generate config
+          command: bb .circleci/script/short.clj > generated_config.yml
+      - continuation/continue:
+          configuration_path: generated_config.yml
 
-      - restore_cache:
-          keys:
-            - bob-v1-
-
-      - run:
-          name: Prep all deps
-          command: bb prep
-
-      - save_cache:
-          key: bob-v1-{{ checksum "apiserver/deps.edn" }}-{{ checksum "entities/deps.edn" }}-{{ checksum "runner/deps.edn" }}-{{ checksum "common/deps.edn" }}
-          paths:
-            - ~/.m2
-            - ~/.gitlibs
-
-      - run:
-          name: Run all tests
-          command: bb test
-
-      - run:
-          name: Build executables
-          command: bb compile
-
-      - run:
-          name: Create multi-platform capabale buildx builder
-          command: |
-            docker run --privileged --rm tonistiigi/binfmt --install all
-            docker buildx create --use
-
-      - run:
-          name: Docker login
-          command: echo ${GHCR_TOKEN} | docker login ghcr.io --username lispyclouds --password-stdin
-
-      - run:
-          name: Build and publish images
-          command: bb image
+workflows:
+  setup:
+    jobs:
+      - setup
