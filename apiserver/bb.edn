@@ -52,7 +52,7 @@
          compile      {:doc  "Builds the compiled artifact"
                        :task (shell "clojure -T:build uber")}
          image        {:doc  "Build and push the docker image"
-                       :task (shell "docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/bob-cd/apiserver .")}
+                       :task (shell "docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/bob-cd/apiserver -f Containerfile .")}
          clean        {:doc  "Cleans up"
                        :task (do
                                (shell "clojure -T:build clean")
