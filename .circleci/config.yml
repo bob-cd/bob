@@ -25,7 +25,7 @@ jobs:
             sudo bash install
       - run:
           name: Generate config
-          command: bb .circleci/script/short.clj > generated_config.yml
+          command: bb .circleci/script/gen-ci.clj > generated_config.yml
       - continuation/continue:
           configuration_path: generated_config.yml
 

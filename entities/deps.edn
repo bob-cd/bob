@@ -13,9 +13,9 @@
            failjure/failjure         {:mvn/version "2.2.0"}
            com.xtdb/xtdb-core        {:mvn/version "1.21.0.1"}
            common/common             {:local/root "../common"}}
- :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.68.1059"}
+ :aliases {:test  {:extra-deps {lambdaisland/kaocha               {:mvn/version "1.69.1069"}
                                 org.clojure/test.check            {:mvn/version "1.1.1"}
-                                com.github.seancorfield/next.jdbc {:mvn/version "1.2.780"}}
+                                com.github.seancorfield/next.jdbc {:mvn/version "1.2.796"}}
                    :main-opts  ["-m" "kaocha.runner"]}
            :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.8.3" :git/sha "0d20256"}}
                    :ns-default build}}}
