@@ -35,6 +35,7 @@
                     :src-dirs     src-dirs
                     :class-dir    class-dir
                     :ns-compile   '[runner.main]
+                    :java-cmd     (System/getenv "JAVA_CMD")
                     :compile-opts {:direct-linking true}})
     (b/uber {:class-dir class-dir
              :uber-file uber-file
