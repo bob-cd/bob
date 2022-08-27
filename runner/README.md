@@ -29,7 +29,7 @@ The logs are streamed live directly to the Database.
 ## Building and Running
 
 ### Requirements, min versions, latest recommended.
-- JDK 11+
+- JDK 19+
 - RabbitMQ 3.8+
 - PostgreSQL 11+
 - Clojure [tools.deps](https://clojure.org/guides/getting_started)

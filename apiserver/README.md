@@ -30,7 +30,7 @@ This is intended as the coherent gateway for the Bob cluster having the schema c
 ## Building and Running
 
 ### Requirements, min versions, latest recommended.
-- JDK 11+
+- JDK 19+
 - RabbitMQ 3.8+
 - PostgreSQL 11+
 - Clojure [tools.deps](https://clojure.org/guides/getting_started)

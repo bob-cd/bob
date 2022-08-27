@@ -27,7 +27,7 @@ Following the [diagram](https://github.com/bob-cd/bob/issues/70#issuecomment-611
 ## Building and Running
 
 ### Requirements, min versions, latest recommended.
-- JDK 11+
+- JDK 19+
 - RabbitMQ 3.8+
 - PostgreSQL 11+
 - Clojure [tools.deps](https://clojure.org/guides/getting_started)
