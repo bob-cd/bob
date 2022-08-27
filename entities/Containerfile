@@ -21,4 +21,4 @@ FROM ubuntu:latest
 COPY --from=jdk /jlinked jdk
 COPY entities.jar .
 
-ENTRYPOINT ["/jdk/bin/java", "-jar", "entities.jar"]
+ENTRYPOINT ["/jdk/bin/java", "--enable-preview", "-jar", "entities.jar"]
