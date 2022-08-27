@@ -29,12 +29,16 @@
         (assoc :resource_class "small" :docker [{:image "ubuntu:latest"}]))
     conf))
 
+(def java-home "/tmp/jdk")
+
 (defn build
   [shorted?]
   (gen-job
     shorted?
     (ordered-map
-      :machine {:image "ubuntu-2204:current"}
+      :machine     {:image "ubuntu-2204:current"}
+      :environment {:JAVA_HOME java-home
+                    :JAVA_CMD  (str java-home "/bin/java")}
       :steps
       (gen-steps
         shorted?
@@ -43,6 +47,14 @@
          (run "Setup Babashka"
               "curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
 sudo bash install")
+         (run
+           "Setup Java"
+           (format
+             "wget -O jdk.tar.gz https://download.java.net/java/GA/jdk19/877d6127e982470ba2a7faa31cc93d04/36/GPL/openjdk-19_linux-x64_bin.tar.gz
+mkdir %s
+tar -zxf jdk.tar.gz -C %s --strip-components=1"
+             java-home
+             java-home))
          (run "Setup Clojure"
               "curl -sLO https://download.clojure.org/install/linux-install.sh
 sudo bash linux-install.sh")
