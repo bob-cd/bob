@@ -63,11 +63,14 @@
 
 (defn schedule
   [queue database health-check-freq]
-  (.scheduleAtFixedRate (Executors/newScheduledThreadPool 1)
-                        #(check {:queue queue :db database})
-                        0
-                        health-check-freq
-                        TimeUnit/MILLISECONDS))
+  (let [loom-factory (-> (Thread/ofVirtual)
+                         (.name "loom-thread-" 0)
+                         (.factory))]
+    (.scheduleAtFixedRate (Executors/newSingleThreadScheduledExecutor loom-factory)
+                          #(check {:queue queue :db database})
+                          0
+                          health-check-freq
+                          TimeUnit/MILLISECONDS)))
 
 (comment
   (->> (into (list {:name "a1" :url "https://httpbin.org/get"})
