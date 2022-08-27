@@ -36,9 +36,7 @@
   (gen-job
     shorted?
     (ordered-map
-      :machine     {:image "ubuntu-2204:current"}
-      :environment {:JAVA_HOME java-home
-                    :JAVA_CMD  (str java-home "/bin/java")}
+      :machine {:image "ubuntu-2204:current"}
       :steps
       (gen-steps
         shorted?
@@ -52,7 +50,9 @@ sudo bash install")
            (format
              "wget -O jdk.tar.gz https://download.java.net/java/GA/jdk19/877d6127e982470ba2a7faa31cc93d04/36/GPL/openjdk-19_linux-x64_bin.tar.gz
 mkdir %s
-tar -zxf jdk.tar.gz -C %s --strip-components=1"
+tar -zxf jdk.tar.gz -C %s --strip-components=1
+sudo update-alternatives --install /usr/bin/java java %s/bin/java 0"
+             java-home
              java-home
              java-home))
          (run "Setup Clojure"
