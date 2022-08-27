@@ -63,10 +63,10 @@
 
 (defn schedule
   [queue database health-check-freq]
-  (let [loom-factory (-> (Thread/ofVirtual)
-                         (.name "loom-thread-" 0)
-                         (.factory))]
-    (.scheduleAtFixedRate (Executors/newSingleThreadScheduledExecutor loom-factory)
+  (let [vfactory (.. (Thread/ofVirtual)
+                     (name "virtual-thread-" 0)
+                     (factory))]
+    (.scheduleAtFixedRate (Executors/newSingleThreadScheduledExecutor vfactory)
                           #(check {:queue queue :db database})
                           0
                           health-check-freq

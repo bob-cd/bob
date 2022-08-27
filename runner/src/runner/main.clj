@@ -22,7 +22,7 @@
 
 (defn -main
   [& _]
-  ; Replace future-call's executor with Loom
+  ; Replace future-call's executor with virtual threads
   (set! Agent/soloExecutor (Executors/newVirtualThreadPerTaskExecutor))
   (repl/set-break-handler! shutdown!)
   (system/start))
