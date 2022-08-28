@@ -17,7 +17,8 @@ RUN jlink \
     --output jlinked
 
 # Based on Fedora
-FROM quay.io/podman/stable:latest
+# TODO: Checkout whats up with 4.2+, privileges!
+FROM quay.io/podman/stable:v4.1.1
 
 COPY --from=jdk /jlinked jdk
 COPY runner.jar .

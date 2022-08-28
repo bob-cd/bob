@@ -24,9 +24,14 @@
                                  (shell "docker run
                                    -d
                                    --name podman
-                                   --privileged
+                                   --device /dev/fuse
+                                   --security-opt seccomp=unconfined
+                                   --security-opt apparmor=unconfined
+                                   --security-opt label=disable
+                                   --cap-add sys_admin
+                                   --cap-add mknod
                                    -p 8080:8080
-                                   quay.io/podman/stable
+                                   quay.io/podman/stable:v4.1.1
                                    bash -c 'dnf install -y socat && \\
                                      (podman system service -t 0 unix:///tmp/pod.sock &) && \\
                                      socat TCP-LISTEN:8080,fork UNIX-CONNECT:/tmp/pod.sock'")
