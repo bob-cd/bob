@@ -32,9 +32,7 @@
                                    --cap-add mknod
                                    -p 8080:8080
                                    quay.io/podman/stable:v4.1.1
-                                   bash -c 'dnf install -y socat && \\
-                                     (podman system service -t 0 unix:///tmp/pod.sock &) && \\
-                                     socat TCP-LISTEN:8080,fork UNIX-CONNECT:/tmp/pod.sock'")
+                                   podman system service -t 0 tcp://0.0.0.0:8080")
                                  (shell "docker run
                                    -d
                                    --name bob-test-storage
