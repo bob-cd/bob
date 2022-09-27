@@ -4,7 +4,7 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM eclipse-temurin:19_36-jdk
+FROM eclipse-temurin:19_36-jdk AS jdk
 
 RUN jlink \
     --compress=2 \
