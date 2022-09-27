@@ -4,8 +4,7 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-# TODO: Use Temurin jdk19 builds
-FROM openjdk:19-rc-jdk AS jdk
+FROM eclipse-temurin:19_36-jdk
 
 RUN jlink \
     --compress=2 \

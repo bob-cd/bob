@@ -24,10 +24,10 @@
                      (p/log->db db "r-a-run-id" "a log line")
                      (Thread/sleep 1000)
                      (u/spec-assert :bob.db/log-line
-                                     (-> (xt/db db)
-                                         (xt/q '{:find  [(pull log [:type :run-id :line])]
-                                                 :where [[log :run-id "r-a-run-id"]]})
-                                         ffirst)))
+                                    (-> (xt/db db)
+                                        (xt/q '{:find  [(pull log [:type :run-id :line])]
+                                                :where [[log :run-id "r-a-run-id"]]})
+                                        ffirst)))
 
                    (testing "log event"
                      (p/log-event db "r-another-run-id" "another log line")
@@ -106,7 +106,6 @@
     (is (not (p/mount-needed? {:mounted #{"a-resource"}} {:needs_resource "a-resource"})))
     (is (not (p/mount-needed? {:mounted #{"a-resource"}} {})))))
 
-; TODO: May get stuck?
 (deftest ^:integration successful-step-executions
   (testing "successful simple step execution"
     (eng/pull-image test-image)
@@ -193,7 +192,6 @@
                  (:status (http/get "http://localhost:8001/bob_artifact/test/test/r-a-artifact-run-id/text")))))
         (p/gc-images "a-artifact-run-id"))))
 
-  ; TODO: This gets stuck?!
   (testing "successful step with resource and artifact execution"
     (eng/pull-image test-image)
     (u/with-system
