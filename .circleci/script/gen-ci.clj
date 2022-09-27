@@ -50,7 +50,7 @@ sudo bash install")
          (run
            "Setup Java"
            (format
-             "wget -O jdk.tar.gz https://download.java.net/java/GA/jdk19/877d6127e982470ba2a7faa31cc93d04/36/GPL/openjdk-19_linux-x64_bin.tar.gz
+             "wget -O jdk.tar.gz https://download.oracle.com/java/19/latest/jdk-19_linux-x64_bin.tar.gz
 mkdir %s
 tar -zxf jdk.tar.gz -C %s --strip-components=1"
              java-home
