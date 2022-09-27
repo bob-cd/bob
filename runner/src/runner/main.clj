@@ -8,8 +8,7 @@
   (:require [clojure.repl :as repl]
             [taoensso.timbre :as log]
             [runner.system :as system])
-  (:import [clojure.lang Agent]
-           [java.util.concurrent Executors])
+  (:import [java.util.concurrent Executors])
   (:gen-class))
 
 (defn shutdown!
@@ -23,6 +22,6 @@
 (defn -main
   [& _]
   ; Replace future-call's executor with virtual threads
-  (set! Agent/soloExecutor (Executors/newVirtualThreadPerTaskExecutor))
+  (set-agent-send-off-executor! (Executors/newVirtualThreadPerTaskExecutor))
   (repl/set-break-handler! shutdown!)
   (system/start))
