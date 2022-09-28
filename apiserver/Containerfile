@@ -10,7 +10,7 @@ RUN jlink \
     --compress=2 \
     --module-path jmods \
     --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http \
-    --strip-debug \
+    --strip-java-debug-attributes \
     --no-man-pages \
     --no-header-files \
     --output jlinked
