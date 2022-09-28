@@ -4,7 +4,7 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM eclipse-temurin:19-jdk AS jdk
+FROM eclipse-temurin:19-jdk-alpine AS jdk
 
 RUN jlink \
     --compress=2 \
@@ -15,9 +15,8 @@ RUN jlink \
     --no-header-files \
     --output jlinked
 
-# Based on Fedora
-# TODO: Checkout whats up with 4.2+, privileges!
-FROM quay.io/podman/stable:v4.1.1
+# Based on Alpine
+FROM docker.io/mgoltzsche/podman:minimal
 
 COPY --from=jdk /jlinked jdk
 COPY runner.jar .

@@ -31,7 +31,7 @@
                                    --cap-add sys_admin
                                    --cap-add mknod
                                    -p 8080:8080
-                                   quay.io/podman/stable:v4.1.1
+                                   docker.io/mgoltzsche/podman:minimal
                                    podman system service -t 0 tcp://0.0.0.0:8080")
                                  (shell "docker run
                                    -d
