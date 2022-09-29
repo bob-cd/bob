@@ -4,19 +4,21 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM azul/zulu-openjdk-alpine:19 AS jdk
+FROM eclipse-temurin:19-jdk AS jdk
 
+# should be --strip-java-debug-attributes on alpine
 RUN jlink \
     --compress=2 \
     --module-path jmods \
     --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http \
-    --strip-java-debug-attributes \
+    --strip-debug \
     --no-man-pages \
     --no-header-files \
     --output jlinked
 
-# Based on Alpine
-FROM docker.io/mgoltzsche/podman:minimal
+# TODO: Use v4.2.1+ when available
+# Optional TODO: check if unprivileged https://github.com/mgoltzsche/podman-static works
+FROM quay.io/podman/stable:v4.1.1
 
 COPY --from=jdk /jlinked jdk
 COPY runner.jar .
