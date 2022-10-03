@@ -16,9 +16,8 @@ RUN jlink \
     --no-header-files \
     --output jlinked
 
-# TODO: Use v4.2.1+ when available
 # Optional TODO: check if unprivileged https://github.com/mgoltzsche/podman-static works
-FROM quay.io/podman/stable:v4.1.1
+FROM quay.io/podman/stable:v4.2.1
 
 COPY --from=jdk /jlinked jdk
 COPY runner.jar .

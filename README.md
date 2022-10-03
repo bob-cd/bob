@@ -2,9 +2,6 @@
 
 > What [CI/CD](https://en.wikipedia.org/wiki/CI/CD) should've been.
 
-### Status
-🚧 Experimental 🚧
-
 Most CI/CD tools are too opinionated and do too much. Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility, and strives for [simpler, decomposed and hence more composable and unbundled design](https://www.youtube.com/watch?v=MCZ3YgeEUPg). For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
 
 ## Getting Started
@@ -13,11 +10,11 @@ To build and run your pipelines, check out the [Getting Started](https://bob-cd.
 ## Internals
 
 Bob's API (accessible entirely through HTTP) enables a core set of CI/CD features. The following are the only concepts that Bob is opinionated about:
-  - Steps: Direct commands (like a shell command, `pytest`, etc)
+  - Step: Direct commands (like a shell command, `pytest`, etc)
   - Pipeline: Ordered series of steps
-  - Environment: Key-Value store associated with either Steps and/or Pipelines
-  - Resources: Things (like source code or artifacts) consumed by Pipelines
-  - Artifacts: Something produced by a Pipeline
+  - Environment: Key-Value pair associated with either Steps and/or Pipelines
+  - Resource: Things (like source code or artifacts) consumed by Pipelines
+  - Artifact: Something produced by a Pipeline
 
 The core of Bob is composed of 3 main services:
 - [API server](/apiserver)
