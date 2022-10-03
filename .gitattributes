@@ -4,6 +4,4 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-Dockerfile* linguist-language=Dockerfile
-*.joker     linguist-language=Clojure
 .zprintrc   linguist-language=Clojure

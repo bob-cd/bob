@@ -2,9 +2,9 @@
 
 Following the [diagram](https://github.com/bob-cd/bob/issues/70#issuecomment-611661635), this is the service that is responsible for performing the **starting, stopping, pausing and streaming logs** of [Pipelines](https://bob-cd.github.io/pages/concepts/pipeline.html).
 
-This provides a general enough and ephemeral execution environment via Docker. Each pipeline must begin with a starting image and the steps are applied in order on that image to reach the final state.
+This provides a general enough, isolated and ephemeral execution environment. Each pipeline must begin with a starting image and the steps are applied in order on that image to reach the final state.
 
-The logs are streamed live directly to the Database.
+**Runners are guaranteed to be [rootless](https://www.zend.com/blog/rootless-containers); ideal for usage in cloud native environments.**
 
 ## How does this work
 - This is implemented in Clojure/JVM
