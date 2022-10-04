@@ -131,15 +131,12 @@
 
 (spec/def :bob.command.pipeline-start/type #{"pipeline/start"})
 
-(spec/def :bob.command.pipeline-start.data/metadata map?)
-
 (spec/def :bob.command.pipeline-start/run_id :bob.pipeline.run/run-id)
 
 (spec/def :bob.command.pipeline-start/data
   (spec/keys :req-un [:bob.pipeline/group
                       :bob.pipeline/name
-                      :bob.command.pipeline-start/run_id]
-             :opt-un [:bob.command.pipeline-start.data/metadata]))
+                      :bob.command.pipeline-start/run_id]))
 
 (spec/def :bob.command/pipeline-start
   (spec/keys :req-un

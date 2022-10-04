@@ -11,11 +11,12 @@
             [xtdb.api :as xt]
             [langohr.queue :as lq]))
 
+;; TODO: List queues and then add metric for queued jobs
+
 (defonce registry
          (-> (prometheus/collector-registry)
              (prometheus/register
                (prometheus/gauge :bob/queued-entities {:description "Number of queued entity changes to be applied"})
-               (prometheus/gauge :bob/queued-jobs {:description "Number of queued jobs to be picked up"})
                (prometheus/gauge :bob/errors {:description "Number of errors"})
                (prometheus/gauge :bob/running-jobs {:description "Number of jobs currently running"})
                (prometheus/gauge :bob/failed-jobs {:description "Number of failed jobs"})
@@ -43,10 +44,7 @@
 
 (defn collect-metrics
   [queue db]
-  (f/try-all [_ (->> "bob.jobs"
-                     (lq/message-count queue)
-                     (prometheus/set (registry :bob/queued-jobs)))
-              _ (->> "bob.entities"
+  (f/try-all [_ (->> "bob.entities"
                      (lq/message-count queue)
                      (prometheus/set (registry :bob/queued-entities)))
               _ (->> "bob.errors"

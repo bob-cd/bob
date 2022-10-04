@@ -109,31 +109,13 @@
                        (t/is (= {:error "Pipeline has active runs. Wait for them to finish or stop them."
                                  :runs  ["r-1"]}
                                 (:message body)))))
-                   (t/testing "pipeline start default"
+                   (t/testing "pipeline start"
                      (h/pipeline-start {:parameters {:path {:group "dev"
                                                             :name  "test"}}
                                         :queue      queue
                                         :db         db})
                      (let [msg (queue-get queue "bob.container.jobs")]
-                       (u/spec-assert :bob.command/pipeline-start msg)
-                       (t/is (= "container"
-                                (-> msg
-                                    :data
-                                    :metadata
-                                    :runner/type)))))
-                   (t/testing "pipeline start with metadata"
-                     (h/pipeline-start {:parameters {:path {:group "dev"
-                                                            :name  "test"}
-                                                     :body {:runner/type "something else"}}
-                                        :queue      queue
-                                        :db         db})
-                     (let [msg (queue-get queue "bob.container.jobs")]
-                       (u/spec-assert :bob.command/pipeline-start msg)
-                       (t/is (= "something else"
-                                (-> msg
-                                    :data
-                                    :metadata
-                                    :runner/type)))))
+                       (u/spec-assert :bob.command/pipeline-start msg)))
                    (t/testing "starting paused pipeline"
                      (xt/await-tx
                        db
