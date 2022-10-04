@@ -8,7 +8,7 @@
   (:require [clojure.java.io :as io]
             [integrant.core :as ig]
             [aero.core :as aero]
-            [common.system]
+            [common.system :as cs]
             [common.dispatch :as d]
             [runner.pipeline :as p]))
 
@@ -47,7 +47,7 @@
   (alter-var-root #'system
                   (constantly (-> "bob/conf.edn"
                                   (io/resource)
-                                  (aero/read-config)
+                                  (aero/read-config {:resolver cs/resource-resolver})
                                   (ig/init)))))
 
 (defn stop

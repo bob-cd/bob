@@ -39,6 +39,10 @@
            (recur conn-fn (dec n)))
          res)))))
 
+(defn resource-resolver
+  [_ file-path]
+  (io/resource file-path))
+
 (defmethod ig/init-key
   :bob/storage
   [_ {:keys [url user password]}]

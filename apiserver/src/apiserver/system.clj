@@ -10,7 +10,7 @@
             [aero.core :as aero]
             [taoensso.timbre :as log]
             [ring.adapter.jetty :as jetty]
-            [common.system]
+            [common.system :as cs]
             [apiserver.server :as s])
   (:import [org.eclipse.jetty.server Server]))
 
@@ -41,7 +41,7 @@
   (alter-var-root #'system
                   (constantly (-> "bob/conf.edn"
                                   (io/resource)
-                                  (aero/read-config)
+                                  (aero/read-config {:resolver cs/resource-resolver})
                                   (ig/init)))))
 
 (defn stop
