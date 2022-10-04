@@ -14,17 +14,13 @@
                                                       :durable true}
                                         "bob.fanout" {:type    "fanout"
                                                       :durable true}}
-                            :queues    {"bob.jobs"     {:exclusive   false
-                                                        :auto-delete false
-                                                        :durable     true}
-                                        "bob.errors"   {:exclusive   false
+                            :queues    {"bob.errors"   {:exclusive   false
                                                         :auto-delete false
                                                         :durable     true}
                                         "bob.entities" {:exclusive   false
                                                         :auto-delete false
                                                         :durable     true}}
-                            :bindings  {"bob.jobs"     "bob.direct"
-                                        "bob.entities" "bob.direct"}}}
+                            :bindings  {"bob.entities" "bob.direct"}}}
  :bob/apiserver {:host              #or [#env BOB_API_HOST "0.0.0.0"]
                  :port              #long #or [#env BOB_API_PORT 7777]
                  :health-check-freq #long #or [#env BOB_HEALTH_CHECK_FREQ 60000]

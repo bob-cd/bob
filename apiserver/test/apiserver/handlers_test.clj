@@ -114,7 +114,7 @@
                                                             :name  "test"}}
                                         :queue      queue
                                         :db         db})
-                     (let [msg (queue-get queue "bob.jobs")]
+                     (let [msg (queue-get queue "bob.container.jobs")]
                        (u/spec-assert :bob.command/pipeline-start msg)
                        (t/is (= "container"
                                 (-> msg
@@ -127,7 +127,7 @@
                                                      :body {:runner/type "something else"}}
                                         :queue      queue
                                         :db         db})
-                     (let [msg (queue-get queue "bob.jobs")]
+                     (let [msg (queue-get queue "bob.container.jobs")]
                        (u/spec-assert :bob.command/pipeline-start msg)
                        (t/is (= "something else"
                                 (-> msg

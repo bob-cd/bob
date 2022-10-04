@@ -127,19 +127,14 @@
     db :db
     queue :queue}]
   (f/try-all [id               (str "r-" (random-uuid))
-              message          (assoc pipeline-info
-                                      :metadata
-                                      (if metadata
-                                        metadata
-                                        {:runner/type "container"}))
               {:keys [paused]} (pipeline-data db (:group pipeline-info) (:name pipeline-info))]
     (if paused
       (respond "Pipeline is paused. Unpause it first." 422)
       (exec #(publish queue
                       "pipeline/start"
                       "bob.direct"
-                      "bob.jobs"
-                      (assoc message :run_id id))
+                      (format "bob.%s.jobs" (or (:runner/type metadata) "container"))
+                      (assoc pipeline-info :run_id id))
             id))
     (f/when-failed [err]
       (respond (f/message err) 500))))

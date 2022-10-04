@@ -20,12 +20,13 @@
   :runner/queue-config
   [_ {:keys [database]}]
   (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
-        subscriber      (partial d/queue-msg-subscriber database routes)]
+        subscriber      (partial d/queue-msg-subscriber database routes)
+        jobs-queue      "bob.container.jobs"]
     {:exchanges     {"bob.direct" {:type    "direct"
                                    :durable true}
                      "bob.fanout" {:type    "fanout"
                                    :durable true}}
-     :queues        {"bob.jobs"      {:exclusive   false
+     :queues        {jobs-queue      {:exclusive   false
                                       :auto-delete false
                                       :durable     true}
                      "bob.errors"    {:exclusive   false
@@ -34,9 +35,9 @@
                      broadcast-queue {:exclusive   true
                                       :auto-delete true
                                       :durable     true}}
-     :bindings      {"bob.jobs"      "bob.direct"
+     :bindings      {jobs-queue      "bob.direct"
                      broadcast-queue "bob.fanout"}
-     :subscriptions {"bob.jobs"      subscriber
+     :subscriptions {jobs-queue      subscriber
                      broadcast-queue subscriber}}))
 
 (defonce system nil)
