@@ -5,16 +5,18 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.resource-test
-  (:require [clojure.test :refer [deftest testing is]]
-            [clojure.string :as s]
-            [clojure.java.io :as io]
-            [xtdb.api :as xt]
-            [failjure.core :as f]
-            [contajners.core :as c]
-            [runner.util :as u]
-            [runner.engine :as eng]
-            [runner.resource :as r])
-  (:import [org.kamranzafar.jtar TarInputStream]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.string :as s]
+   [clojure.test :refer [deftest is testing]]
+   [contajners.core :as c]
+   [failjure.core :as f]
+   [runner.engine :as eng]
+   [runner.resource :as r]
+   [runner.util :as u]
+   [xtdb.api :as xt])
+  (:import
+   [org.kamranzafar.jtar TarInputStream]))
 
 (deftest ^:integration resource-fetch-test
   (testing "successful resource fetch"

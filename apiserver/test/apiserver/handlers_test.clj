@@ -5,20 +5,22 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.handlers-test
-  (:require [clojure.test :as t]
-            [clojure.java.io :as io]
-            [clojure.spec.alpha :as spec]
-            [failjure.core :as f]
-            [langohr.channel :as lch]
-            [langohr.basic :as lb]
-            [langohr.queue :as lq]
-            [clojure.data.json :as json]
-            [xtdb.api :as xt]
-            [java-http-clj.core :as http]
-            [common.schemas]
-            [apiserver.handlers :as h]
-            [apiserver.util :as u])
-  (:import [java.time Instant]))
+  (:require
+   [apiserver.handlers :as h]
+   [apiserver.util :as u]
+   [clojure.data.json :as json]
+   [clojure.java.io :as io]
+   [clojure.spec.alpha]
+   [clojure.test :as t]
+   [common.schemas]
+   [failjure.core :as f]
+   [java-http-clj.core :as http]
+   [langohr.basic :as lb]
+   [langohr.channel :as lch]
+   [langohr.queue :as lq]
+   [xtdb.api :as xt])
+  (:import
+   [java.time Instant]))
 
 (t/deftest helpers-test
   (t/testing "default response"

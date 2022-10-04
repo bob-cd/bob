@@ -5,14 +5,15 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.artifact
-  (:require [clojure.spec.alpha :as spec]
-            [clojure.string :as s]
-            [taoensso.timbre :as log]
-            [java-http-clj.core :as http]
-            [xtdb.api :as xt]
-            [failjure.core :as f]
-            [common.schemas]
-            [runner.engine :as eng]))
+  (:require
+   [clojure.spec.alpha :as spec]
+   [clojure.string :as s]
+   [common.schemas]
+   [failjure.core :as f]
+   [java-http-clj.core :as http]
+   [runner.engine :as eng]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt]))
 
 (defn store-url
   [db-client store]

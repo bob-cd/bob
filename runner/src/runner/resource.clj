@@ -5,18 +5,20 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.resource
-  (:require [clojure.spec.alpha :as spec]
-            [clojure.string :as s]
-            [clojure.java.io :as io]
-            [failjure.core :as f]
-            [taoensso.timbre :as log]
-            [java-http-clj.core :as http]
-            [xtdb.api :as xt]
-            [common.schemas]
-            [runner.engine :as eng]
-            [runner.artifact :as a])
-  (:import [java.io BufferedOutputStream File FileOutputStream]
-           [org.kamranzafar.jtar TarInputStream TarOutputStream]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.spec.alpha :as spec]
+   [clojure.string :as s]
+   [common.schemas]
+   [failjure.core :as f]
+   [java-http-clj.core :as http]
+   [runner.artifact :as a]
+   [runner.engine :as eng]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt])
+  (:import
+   [java.io BufferedOutputStream File FileOutputStream]
+   [org.kamranzafar.jtar TarInputStream TarOutputStream]))
 
 (defn fetch-resource
   "Downloads a resource(tar file) and returns the stream."

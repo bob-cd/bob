@@ -5,12 +5,13 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.db
-  (:require [clojure.spec.alpha :as spec]
-            [failjure.core :as f]
-            [taoensso.timbre :as log]
-            [xtdb.api :as xt]
-            [common.errors :as err]
-            [common.schemas]))
+  (:require
+   [clojure.spec.alpha :as spec]
+   [common.errors :as err]
+   [common.schemas]
+   [failjure.core :as f]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt]))
 
 (defn validate-and-transact
   [db-client queue-chan schema data txn entity]

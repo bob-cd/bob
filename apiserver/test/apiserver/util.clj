@@ -5,14 +5,15 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.util
-  (:require [clojure.test :as t]
-            [clojure.spec.alpha :as s]
-            [clojure.java.io :as io]
-            [integrant.core :as ig]
-            [aero.core :as aero]
-            [next.jdbc :as jdbc]
-            [common.system]
-            [apiserver.system]))
+  (:require
+   [aero.core :as aero]
+   [apiserver.system]
+   [clojure.java.io :as io]
+   [clojure.spec.alpha :as s]
+   [clojure.test :as t]
+   [common.system]
+   [integrant.core :as ig]
+   [next.jdbc :as jdbc]))
 
 (def queue-conf
   (-> "bob/conf.edn"

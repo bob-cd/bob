@@ -5,9 +5,10 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.cctray
-  (:require [clojure.data.xml :as xml]
-            [xtdb.api :as xt]
-            [failjure.core :as f]))
+  (:require
+   [clojure.data.xml :as xml]
+   [failjure.core :as f]
+   [xtdb.api :as xt]))
 
 (defn make-project
   [{:keys [group name status completed]

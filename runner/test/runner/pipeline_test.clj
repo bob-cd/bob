@@ -5,16 +5,17 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.pipeline-test
-  (:require [clojure.test :refer [deftest testing is]]
-            [clojure.spec.alpha :as spec]
-            [xtdb.api :as xt]
-            [failjure.core :as f]
-            [java-http-clj.core :as http]
-            [common.schemas]
-            [runner.util :as u]
-            [runner.engine :as eng]
-            [runner.engine-test :as et]
-            [runner.pipeline :as p]))
+  (:require
+   [clojure.spec.alpha]
+   [clojure.test :refer [deftest is testing]]
+   [common.schemas]
+   [failjure.core :as f]
+   [java-http-clj.core :as http]
+   [runner.engine :as eng]
+   [runner.engine-test :as et]
+   [runner.pipeline :as p]
+   [runner.util :as u]
+   [xtdb.api :as xt]))
 
 (def test-image "alpine:latest")
 

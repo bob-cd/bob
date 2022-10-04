@@ -5,20 +5,21 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.handlers
-  (:require [clojure.java.io :as io]
-            [clojure.set :as s]
-            [clojure.instant :as ins]
-            [clojure.string :as cs]
-            [clojure.spec.alpha :as spec]
-            [failjure.core :as f]
-            [clojure.data.json :as json]
-            [langohr.basic :as lb]
-            [xtdb.api :as xt]
-            [java-http-clj.core :as http]
-            [common.schemas]
-            [apiserver.healthcheck :as hc]
-            [apiserver.metrics :as metrics]
-            [apiserver.cctray :as cctray]))
+  (:require
+   [apiserver.cctray :as cctray]
+   [apiserver.healthcheck :as hc]
+   [apiserver.metrics :as metrics]
+   [clojure.data.json :as json]
+   [clojure.instant :as ins]
+   [clojure.java.io :as io]
+   [clojure.set :as s]
+   [clojure.spec.alpha :as spec]
+   [clojure.string :as cs]
+   [common.schemas]
+   [failjure.core :as f]
+   [java-http-clj.core :as http]
+   [langohr.basic :as lb]
+   [xtdb.api :as xt]))
 
 (defn respond
   ([content]

@@ -5,9 +5,10 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.main
-  (:require [clojure.repl :as repl]
-            [taoensso.timbre :as log]
-            [entities.system :as system])
+  (:require
+   [clojure.repl :as repl]
+   [entities.system :as system]
+   [taoensso.timbre :as log])
   (:gen-class))
 
 (defn shutdown!

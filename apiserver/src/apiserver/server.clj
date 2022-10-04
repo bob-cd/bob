@@ -6,19 +6,20 @@
 
 ;; TODO: Throw all of this away when https://github.com/juxt/apex can be used.
 (ns apiserver.server
-  (:require [clojure.java.io :as io]
-            [muuntaja.core :as m]
-            [reitit.ring :as ring]
-            [reitit.http :as http]
-            [reitit.coercion.malli :as malli]
-            [reitit.http.coercion :as coercion]
-            [reitit.http.interceptors.parameters :as parameters]
-            [reitit.http.interceptors.muuntaja :as muuntaja]
-            [reitit.http.interceptors.exception :as exception]
-            [reitit.interceptor.sieppari :as sieppari]
-            [navi.core :as navi]
-            [apiserver.handlers :as h]
-            [apiserver.healthcheck :as hc]))
+  (:require
+   [apiserver.handlers :as h]
+   [apiserver.healthcheck :as hc]
+   [clojure.java.io :as io]
+   [muuntaja.core :as m]
+   [navi.core :as navi]
+   [reitit.coercion.malli :as malli]
+   [reitit.http :as http]
+   [reitit.http.coercion :as coercion]
+   [reitit.http.interceptors.exception :as exception]
+   [reitit.http.interceptors.muuntaja :as muuntaja]
+   [reitit.http.interceptors.parameters :as parameters]
+   [reitit.interceptor.sieppari :as sieppari]
+   [reitit.ring :as ring]))
 
 (defn system-interceptor
   [db queue]

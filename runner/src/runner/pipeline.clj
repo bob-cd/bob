@@ -5,16 +5,18 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.pipeline
-  (:require [clojure.spec.alpha :as spec]
-            [failjure.core :as f]
-            [taoensso.timbre :as log]
-            [xtdb.api :as xt]
-            [common.errors :as errors]
-            [common.schemas]
-            [runner.engine :as eng]
-            [runner.resource :as r]
-            [runner.artifact :as a])
-  (:import [java.time Instant]))
+  (:require
+   [clojure.spec.alpha :as spec]
+   [common.errors :as errors]
+   [common.schemas]
+   [failjure.core :as f]
+   [runner.artifact :as a]
+   [runner.engine :as eng]
+   [runner.resource :as r]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt])
+  (:import
+   [java.time Instant]))
 
 (defonce ^:private node-state
          (atom {:images-for-gc {}

@@ -5,19 +5,21 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns common.system
-  (:require [clojure.java.io :as io]
-            [integrant.core :as ig]
-            [aero.core :as aero]
-            [taoensso.timbre :as log]
-            [failjure.core :as f]
-            [xtdb.api :as xt]
-            [langohr.core :as rmq]
-            [langohr.channel :as lch]
-            [langohr.queue :as lq]
-            [langohr.exchange :as le]
-            [langohr.consumers :as lc])
-  (:import [java.net ConnectException]
-           [xtdb.api IXtdb]))
+  (:require
+   [aero.core :as aero]
+   [clojure.java.io :as io]
+   [failjure.core :as f]
+   [integrant.core :as ig]
+   [langohr.channel :as lch]
+   [langohr.consumers :as lc]
+   [langohr.core :as rmq]
+   [langohr.exchange :as le]
+   [langohr.queue :as lq]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt])
+  (:import
+   [java.net ConnectException]
+   [xtdb.api IXtdb]))
 
 (def config
   (-> "bob/common.edn"

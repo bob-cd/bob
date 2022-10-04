@@ -5,9 +5,10 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.main
-  (:require [clojure.repl :as repl]
-            [taoensso.timbre :as log]
-            [apiserver.system :as system])
+  (:require
+   [apiserver.system :as system]
+   [clojure.repl :as repl]
+   [taoensso.timbre :as log])
   (:gen-class))
 
 (defn shutdown!

@@ -5,8 +5,9 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.resource-provider
-  (:require [xtdb.api :as xt]
-            [entities.db :as db]))
+  (:require
+   [entities.db :as db]
+   [xtdb.api :as xt]))
 
 (defn register-resource-provider
   "Registers an resource-provider with an unique name and an url supplied in a map."

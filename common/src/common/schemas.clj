@@ -5,8 +5,9 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns common.schemas
-  (:require [clojure.spec.alpha :as spec]
-            [clojure.string :as s]))
+  (:require
+   [clojure.spec.alpha :as spec]
+   [clojure.string :as s]))
 
 (spec/def :bob.pipeline/group string?)
 

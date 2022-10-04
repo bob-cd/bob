@@ -5,9 +5,10 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns common.errors
-  (:require [langohr.basic :as lb]
-            [clojure.data.json :as json]
-            [taoensso.timbre :as log]))
+  (:require
+   [clojure.data.json :as json]
+   [langohr.basic :as lb]
+   [taoensso.timbre :as log]))
 
 (defn publish-error
   [chan message]

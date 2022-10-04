@@ -5,8 +5,9 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.pipeline
-  (:require [xtdb.api :as xt]
-            [entities.db :as db]))
+  (:require
+   [entities.db :as db]
+   [xtdb.api :as xt]))
 
 (defn create
   "Creates a pipeline using the supplied data."

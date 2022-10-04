@@ -5,14 +5,16 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.system
-  (:require [clojure.java.io :as io]
-            [integrant.core :as ig]
-            [aero.core :as aero]
-            [taoensso.timbre :as log]
-            [ring.adapter.jetty :as jetty]
-            [common.system :as cs]
-            [apiserver.server :as s])
-  (:import [org.eclipse.jetty.server Server]))
+  (:require
+   [aero.core :as aero]
+   [apiserver.server :as s]
+   [clojure.java.io :as io]
+   [common.system :as cs]
+   [integrant.core :as ig]
+   [ring.adapter.jetty :as jetty]
+   [taoensso.timbre :as log])
+  (:import
+   [org.eclipse.jetty.server Server]))
 
 ; Ignore key
 (defmethod ig/init-key

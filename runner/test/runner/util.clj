@@ -5,12 +5,13 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.util
-  (:require [clojure.test :as t]
-            [clojure.spec.alpha :as s]
-            [integrant.core :as ig]
-            [next.jdbc :as jdbc]
-            [common.system]
-            [runner.system]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [clojure.test :as t]
+   [common.system]
+   [integrant.core :as ig]
+   [next.jdbc :as jdbc]
+   [runner.system]))
 
 (defn with-system
   [test-fn]

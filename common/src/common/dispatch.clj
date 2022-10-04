@@ -5,10 +5,11 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns common.dispatch
-  (:require [taoensso.timbre :as log]
-            [clojure.data.json :as json]
-            [failjure.core :as f]
-            [common.errors :as err]))
+  (:require
+   [clojure.data.json :as json]
+   [common.errors :as err]
+   [failjure.core :as f]
+   [taoensso.timbre :as log]))
 
 (defn queue-msg-subscriber
   [db-client routes chan meta-data payload]

@@ -5,10 +5,12 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.main
-  (:require [clojure.repl :as repl]
-            [taoensso.timbre :as log]
-            [runner.system :as system])
-  (:import [java.util.concurrent Executors])
+  (:require
+   [clojure.repl :as repl]
+   [runner.system :as system]
+   [taoensso.timbre :as log])
+  (:import
+   [java.util.concurrent Executors])
   (:gen-class))
 
 (defn shutdown!

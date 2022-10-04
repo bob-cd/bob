@@ -5,11 +5,12 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.engine-test
-  (:require [clojure.test :refer [deftest testing is]]
-            [clojure.java.io :as io]
-            [contajners.core :as c]
-            [failjure.core :as f]
-            [runner.engine :as e]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.test :refer [deftest is testing]]
+   [contajners.core :as c]
+   [failjure.core :as f]
+   [runner.engine :as e]))
 
 ;; helpers
 

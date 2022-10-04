@@ -5,12 +5,14 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.engine
-  (:require [clojure.java.io :as io]
-            [clojure.string :as s]
-            [contajners.core :as c]
-            [failjure.core :as f]
-            [taoensso.timbre :as log])
-  (:import [java.io BufferedReader]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.string :as s]
+   [contajners.core :as c]
+   [failjure.core :as f]
+   [taoensso.timbre :as log])
+  (:import
+   [java.io BufferedReader]))
 
 (def api-version "v4.0.0")
 

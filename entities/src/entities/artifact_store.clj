@@ -5,8 +5,9 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.artifact-store
-  (:require [xtdb.api :as xt]
-            [entities.db :as db]))
+  (:require
+   [entities.db :as db]
+   [xtdb.api :as xt]))
 
 (defn register-artifact-store
   "Registers an artifact store with an unique name and an url supplied in a map."

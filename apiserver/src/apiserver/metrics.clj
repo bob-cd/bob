@@ -5,11 +5,12 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.metrics
-  (:require [iapetos.core :as prometheus]
-            [iapetos.export :as export]
-            [failjure.core :as f]
-            [xtdb.api :as xt]
-            [langohr.queue :as lq]))
+  (:require
+   [failjure.core :as f]
+   [iapetos.core :as prometheus]
+   [iapetos.export :as export]
+   [langohr.queue :as lq]
+   [xtdb.api :as xt]))
 
 ;; TODO: List queues and then add metric for queued jobs
 

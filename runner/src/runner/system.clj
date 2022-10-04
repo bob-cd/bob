@@ -5,12 +5,13 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.system
-  (:require [clojure.java.io :as io]
-            [integrant.core :as ig]
-            [aero.core :as aero]
-            [common.system :as cs]
-            [common.dispatch :as d]
-            [runner.pipeline :as p]))
+  (:require
+   [aero.core :as aero]
+   [clojure.java.io :as io]
+   [common.dispatch :as d]
+   [common.system :as cs]
+   [integrant.core :as ig]
+   [runner.pipeline :as p]))
 
 (def ^:private routes
   {"pipeline/start" p/start

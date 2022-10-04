@@ -5,14 +5,15 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.system
-  (:require [clojure.java.io :as io]
-            [aero.core :as aero]
-            [integrant.core :as ig]
-            [common.system :as cs]
-            [common.dispatch :as d]
-            [entities.pipeline :as pipeline]
-            [entities.artifact-store :as artifact-store]
-            [entities.resource-provider :as resource-provider]))
+  (:require
+   [aero.core :as aero]
+   [clojure.java.io :as io]
+   [common.dispatch :as d]
+   [common.system :as cs]
+   [entities.artifact-store :as artifact-store]
+   [entities.pipeline :as pipeline]
+   [entities.resource-provider :as resource-provider]
+   [integrant.core :as ig]))
 
 (def ^:private routes
   {"pipeline/create"          pipeline/create

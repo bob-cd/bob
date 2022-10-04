@@ -5,12 +5,13 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.pipeline-test
-  (:require [clojure.test :refer [deftest testing is]]
-            [clojure.spec.alpha :as spec]
-            [xtdb.api :as xt]
-            [common.schemas]
-            [entities.util :as u]
-            [entities.pipeline :as p]))
+  (:require
+   [clojure.spec.alpha]
+   [clojure.test :refer [deftest is testing]]
+   [common.schemas]
+   [entities.pipeline :as p]
+   [entities.util :as u]
+   [xtdb.api :as xt]))
 
 ;; TODO: Better way to wait for consistency than sleep
 (deftest ^:integration pipleine

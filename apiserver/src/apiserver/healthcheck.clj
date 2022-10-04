@@ -5,11 +5,13 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns apiserver.healthcheck
-  (:require [failjure.core :as f]
-            [xtdb.api :as xt]
-            [taoensso.timbre :as log]
-            [java-http-clj.core :as http])
-  (:import [java.util.concurrent Executors TimeUnit]))
+  (:require
+   [failjure.core :as f]
+   [java-http-clj.core :as http]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt])
+  (:import
+   [java.util.concurrent Executors TimeUnit]))
 
 (defn queue
   [{:keys [queue]}]

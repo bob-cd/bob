@@ -5,12 +5,13 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns entities.util
-  (:require [clojure.test :as t]
-            [clojure.spec.alpha :as s]
-            [integrant.core :as ig]
-            [next.jdbc :as jdbc]
-            [common.system]
-            [entities.system]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [clojure.test :as t]
+   [common.system]
+   [entities.system]
+   [integrant.core :as ig]
+   [next.jdbc :as jdbc]))
 
 (defn with-system
   [test-fn]

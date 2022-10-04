@@ -5,13 +5,14 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns runner.artifact-test
-  (:require [clojure.test :refer [deftest testing is]]
-            [xtdb.api :as xt]
-            [failjure.core :as f]
-            [java-http-clj.core :as http]
-            [runner.util :as u]
-            [runner.engine :as eng]
-            [runner.artifact :as a]))
+  (:require
+   [clojure.test :refer [deftest is testing]]
+   [failjure.core :as f]
+   [java-http-clj.core :as http]
+   [runner.artifact :as a]
+   [runner.engine :as eng]
+   [runner.util :as u]
+   [xtdb.api :as xt]))
 
 (deftest upload-artifact-test
   (eng/pull-image "busybox:musl")
