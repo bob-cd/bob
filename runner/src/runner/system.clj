@@ -16,6 +16,11 @@
   {"pipeline/start" p/start
    "pipeline/stop"  p/stop})
 
+; Ignore key
+(defmethod ig/init-key
+  :common
+  [_ _])
+
 (defmethod ig/init-key
   :runner/queue-config
   [_ {:keys [database]}]

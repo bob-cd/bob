@@ -14,6 +14,11 @@
             [apiserver.server :as s])
   (:import [org.eclipse.jetty.server Server]))
 
+; Ignore key
+(defmethod ig/init-key
+  :common
+  [_ _])
+
 (defmethod ig/init-key
   :bob/apiserver
   [_ {:keys [host port health-check-freq database queue]}]

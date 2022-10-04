@@ -22,6 +22,11 @@
    "resource-provider/create" resource-provider/register-resource-provider
    "resource-provider/delete" resource-provider/un-register-resource-provider})
 
+; Ignore key
+(defmethod ig/init-key
+  :common
+  [_ _])
+
 (defmethod ig/init-key
   :entities/queue-config
   [_ {:keys [database]}]
