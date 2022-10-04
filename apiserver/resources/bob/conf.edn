@@ -4,13 +4,13 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-{:bob/common    #include "bob/common.edn"
- :bob/storage   #ref [:bob/common :bob/storage-conn]
- :bob/queue     {:url      #ref [:bob/common :bob/queue-conn :url]
-                 :user     #ref [:bob/common :bob/queue-conn :user]
-                 :password #ref [:bob/common :bob/queue-conn :password]
-                 :conf     {:exchanges #ref [:bob/common :bob/exchanges]
-                            :queues    #merge [#ref [:bob/common :bob/queues]
+{:commom    #include "bob/common.edn"
+ :bob/storage   #ref [:commom :bob/storage-conn]
+ :bob/queue     {:url      #ref [:commom :bob/queue-conn :url]
+                 :user     #ref [:commom :bob/queue-conn :user]
+                 :password #ref [:commom :bob/queue-conn :password]
+                 :conf     {:exchanges #ref [:commom :bob/exchanges]
+                            :queues    #merge [#ref [:commom :bob/queues]
                                                {"bob.entities" {:exclusive   false
                                                                 :auto-delete false
                                                                 :durable     true}}]
