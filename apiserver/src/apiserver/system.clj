@@ -16,11 +16,6 @@
   (:import
    [org.eclipse.jetty.server Server]))
 
-; Ignore key
-(defmethod ig/init-key
-  :common
-  [_ _])
-
 (defmethod ig/init-key
   :bob/apiserver
   [_ {:keys [host port health-check-freq database queue]}]
@@ -49,6 +44,7 @@
                   (constantly (-> "bob/conf.edn"
                                   (io/resource)
                                   (aero/read-config {:resolver cs/resource-resolver})
+                                  (dissoc :common)
                                   (ig/init)))))
 
 (defn stop
