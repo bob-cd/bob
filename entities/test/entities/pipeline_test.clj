@@ -6,16 +6,18 @@
 
 (ns entities.pipeline-test
   (:require
-   [clojure.spec.alpha]
-   [clojure.test :refer [deftest is testing]]
-   [common.schemas]
-   [entities.pipeline :as p]
-   [entities.util :as u]
-   [xtdb.api :as xt]))
+    [clojure.spec.alpha]
+    [clojure.test :refer [deftest is testing]]
+    [common.schemas]
+    [entities.pipeline :as p]
+    [entities.util :as u]
+    [xtdb.api :as xt]))
 
 ;; TODO: Better way to wait for consistency than sleep
 (deftest ^:integration pipleine
-  (let [id :bob.pipeline.test/test]
+  (let [pipeline-id :bob.pipeline.test/test
+        run-id      :bob.pipeline.run/r-a-run
+        log-id      :bob.pipeline.log/l-a-log]
     (testing "creation"
       (u/with-system
         (fn [db queue-chan]
@@ -43,16 +45,32 @@
                             :image     "busybox:musl"}
                 create-res (p/create db queue-chan pipeline)
                 _ (Thread/sleep 1000)
-                effect     (xt/entity (xt/db db) id)]
+                effect     (xt/entity (xt/db db) pipeline-id)]
             (is (= "Ok" create-res))
-            (is (= id (:xt/id effect)))
+            (is (= pipeline-id (:xt/id effect)))
             (u/spec-assert :bob.db/pipeline effect)))))
     (testing "deletion"
       (u/with-system (fn [db queue-chan]
-                       (let [pipeline   {:name  "test"
-                                         :group "test"}
-                             delete-res (p/delete db queue-chan pipeline)
+                       (xt/await-tx
+                         db
+                         (xt/submit-tx db
+                                       [[::xt/put
+                                         {:xt/id run-id
+                                          :type  :pipeline-run
+                                          :group "test"
+                                          :name  "test"}]
+                                        [::xt/put
+                                         {:xt/id  log-id
+                                          :type   :log-line
+                                          :run-id run-id}]]))
+                       (let [pipeline        {:name  "test"
+                                              :group "test"}
+                             delete-res      (p/delete db queue-chan pipeline)
                              _ (Thread/sleep 1000)
-                             effect     (xt/entity (xt/db db) id)]
+                             pipeline-effect (xt/entity (xt/db db) pipeline-id)
+                             run-effect      (xt/entity (xt/db db) run-id)
+                             log-effect      (xt/entity (xt/db db) log-id)]
                          (is (= "Ok" delete-res))
-                         (is (nil? effect))))))))
+                         (is (nil? pipeline-effect))
+                         (is (nil? run-effect))
+                         (is (nil? log-effect))))))))
