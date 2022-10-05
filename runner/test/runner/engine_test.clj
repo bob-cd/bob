@@ -153,7 +153,7 @@
   (testing "success"
     (let [id     (e/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
           _ (future (e/start-container id #(println %)))
-          _ (Thread/sleep 1000)
+          _ (Thread/sleep 2000)
           _ (e/kill-container id)
           status (e/status-of id)]
       (is (not (:running? status)))
