@@ -7,7 +7,6 @@
 (ns apiserver.metrics
   (:require
     [clojure.data.json :as json]
-    [clojure.string :as str]
     [failjure.core :as f]
     [iapetos.core :as prometheus]
     [iapetos.export :as export]
@@ -60,7 +59,7 @@
                  (json/read-str {:key-fn keyword}))]
     (->> data
          (map :name)
-         (filter #(str/ends-with? % ".jobs")))))
+         (filter #(re-matches #"bob\..*.\.jobs" %)))))
 
 (defn collect-metrics
   [queue db queue-conn-opts]

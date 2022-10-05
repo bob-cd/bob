@@ -6,13 +6,13 @@
 
 (ns runner.engine
   (:require
-   [clojure.java.io :as io]
-   [clojure.string :as s]
-   [contajners.core :as c]
-   [failjure.core :as f]
-   [taoensso.timbre :as log])
+    [clojure.java.io :as io]
+    [clojure.string :as s]
+    [contajners.core :as c]
+    [failjure.core :as f]
+    [taoensso.timbre :as log])
   (:import
-   [java.io BufferedReader]))
+    [java.io BufferedReader]))
 
 (def api-version "v4.0.0")
 
@@ -186,12 +186,8 @@
    and calls the reaction-fn with log lines
    as soon as they arrive."
   [id reaction-fn]
-  (f/try-all [client     (c/client {:engine   :podman
-                                    :category :containers
-                                    :conn     conn
-                                    :version  api-version})
-              log-stream (c/invoke client
-                                   {:op               :ContainerLogs ; TODO: Use ContainerLogsLibpod
+  (f/try-all [log-stream (c/invoke containers
+                                   {:op               :ContainerLogsLibpod
                                     :params           {:name   id
                                                        :follow (-> id
                                                                    status-of
@@ -228,7 +224,7 @@
               _ (log/debugf "Attaching to container %s for logs" id)
               _ (react-to-log-line id logging-fn)
               status (c/invoke containers
-                               {:op               :ContainerWaitLibpod ; TODO: Check why it blocks when container isn't running
+                               {:op               :ContainerWaitLibpod
                                 :params           {:name id}
                                 :throw-exceptions true})]
     (if (zero? status)
