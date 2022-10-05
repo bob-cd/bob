@@ -6,21 +6,21 @@
 
 (ns apiserver.system
   (:require
-   [aero.core :as aero]
-   [apiserver.server :as s]
-   [clojure.java.io :as io]
-   [common.system :as cs]
-   [integrant.core :as ig]
-   [ring.adapter.jetty :as jetty]
-   [taoensso.timbre :as log])
+    [aero.core :as aero]
+    [apiserver.server :as s]
+    [clojure.java.io :as io]
+    [common.system :as cs]
+    [integrant.core :as ig]
+    [ring.adapter.jetty :as jetty]
+    [taoensso.timbre :as log])
   (:import
-   [org.eclipse.jetty.server Server]))
+    [org.eclipse.jetty.server Server]))
 
 (defmethod ig/init-key
   :bob/apiserver
   [_ {:keys [host port health-check-freq database queue]}]
   (log/info "Starting APIServer")
-  (let [server (jetty/run-jetty (s/server database (:chan queue) health-check-freq)
+  (let [server (jetty/run-jetty (s/server database (:chan queue) (:conn-opts queue) health-check-freq)
                                 {:host                 host
                                  :port                 port
                                  :join?                false

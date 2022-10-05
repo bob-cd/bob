@@ -6,20 +6,20 @@
 
 (ns common.system
   (:require
-   [aero.core :as aero]
-   [clojure.java.io :as io]
-   [failjure.core :as f]
-   [integrant.core :as ig]
-   [langohr.channel :as lch]
-   [langohr.consumers :as lc]
-   [langohr.core :as rmq]
-   [langohr.exchange :as le]
-   [langohr.queue :as lq]
-   [taoensso.timbre :as log]
-   [xtdb.api :as xt])
+    [aero.core :as aero]
+    [clojure.java.io :as io]
+    [failjure.core :as f]
+    [integrant.core :as ig]
+    [langohr.channel :as lch]
+    [langohr.consumers :as lc]
+    [langohr.core :as rmq]
+    [langohr.exchange :as le]
+    [langohr.queue :as lq]
+    [taoensso.timbre :as log]
+    [xtdb.api :as xt])
   (:import
-   [java.net ConnectException]
-   [xtdb.api IXtdb]))
+    [java.net ConnectException]
+    [xtdb.api IXtdb]))
 
 (def config
   (-> "bob/common.edn"
@@ -71,11 +71,13 @@
 
 (defmethod ig/init-key
   :bob/queue
-  [_ {:keys [url user password conf]}]
-  (let [conn (try-connect #(rmq/connect {:uri      url
-                                         :username user
-                                         :password password}))
-        chan (lch/open conn)]
+  [_ {:keys [url user password conf api-url]}]
+  (let [conn-opts {:uri      url
+                   :username user
+                   :password password
+                   :api-url  api-url}
+        conn      (try-connect #(rmq/connect conn-opts))
+        chan      (lch/open conn)]
     (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
     (doseq [[ex props] (:exchanges conf)]
       (log/infof "Declared exchange %s" ex)
@@ -96,7 +98,7 @@
     (doseq [[queue subscriber] (:subscriptions conf)]
       (log/infof "Subscribed to %s" queue)
       (lc/subscribe chan queue subscriber {:auto-ack true}))
-    {:conn conn :chan chan}))
+    {:conn conn :chan chan :conn-opts conn-opts}))
 
 (defmethod ig/halt-key!
   :bob/queue

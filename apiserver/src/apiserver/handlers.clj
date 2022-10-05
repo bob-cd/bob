@@ -6,20 +6,20 @@
 
 (ns apiserver.handlers
   (:require
-   [apiserver.cctray :as cctray]
-   [apiserver.healthcheck :as hc]
-   [apiserver.metrics :as metrics]
-   [clojure.data.json :as json]
-   [clojure.instant :as ins]
-   [clojure.java.io :as io]
-   [clojure.set :as s]
-   [clojure.spec.alpha :as spec]
-   [clojure.string :as cs]
-   [common.schemas]
-   [failjure.core :as f]
-   [java-http-clj.core :as http]
-   [langohr.basic :as lb]
-   [xtdb.api :as xt]))
+    [apiserver.cctray :as cctray]
+    [apiserver.healthcheck :as hc]
+    [apiserver.metrics :as metrics]
+    [clojure.data.json :as json]
+    [clojure.instant :as ins]
+    [clojure.java.io :as io]
+    [clojure.set :as s]
+    [clojure.spec.alpha :as spec]
+    [clojure.string :as cs]
+    [common.schemas]
+    [failjure.core :as f]
+    [java-http-clj.core :as http]
+    [langohr.basic :as lb]
+    [xtdb.api :as xt]))
 
 (defn respond
   ([content]
@@ -336,9 +336,10 @@
       (respond (f/message err) 500))))
 
 (defn metrics
-  [{queue :queue
-    db    :db}]
-  (f/try-all [metrics (metrics/collect-metrics queue db)]
+  [{queue           :queue
+    db              :db
+    queue-conn-opts :queue-conn-opts}]
+  (f/try-all [metrics (metrics/collect-metrics queue db queue-conn-opts)]
     {:status  200
      :headers {"Content-Type" "text/plain"}
      :body    metrics}

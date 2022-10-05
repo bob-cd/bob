@@ -9,6 +9,7 @@
  :bob/queue     {:url      #ref [:common :bob/queue-conn :url]
                  :user     #ref [:common :bob/queue-conn :user]
                  :password #ref [:common :bob/queue-conn :password]
+                 :api-url  #or [#env BOB_QUEUE_API_URL "http://localhost:15672/api"]
                  :conf     {:exchanges #ref [:common :bob/exchanges]
                             :queues    #merge [#ref [:common :bob/queues]
                                                {"bob.entities" {:exclusive   false

@@ -21,6 +21,7 @@ This is intended as the coherent gateway for the Bob cluster having the schema c
 | BOB_QUEUE_URL                 | amqp://localhost:5672                |
 | BOB_QUEUE_USER                | guest                                |
 | BOB_QUEUE_PASSWORD            | guest                                |
+| BOB_QUEUE_API_URL             | http://localhost:15672/api           |
 | BOB_API_HOST                  | 0.0.0.0                              |
 | BOB_API_PORT                  | 7777                                 |
 | BOB_HEALTH_CHECK_FREQ         | 60000                                |
