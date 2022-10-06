@@ -1,8 +1,12 @@
-# Bob the Builder [![CircleCI](https://circleci.com/gh/bob-cd/bob/tree/main.svg?style=svg)](https://circleci.com/gh/bob-cd/bob/tree/main) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![project chat](https://img.shields.io/badge/slack-join_chat-brightgreen.svg)](https://clojurians.slack.com/messages/CPBAYJJF6)
+# Bob the Builder
+
+[![CircleCI](https://circleci.com/gh/bob-cd/bob/tree/main.svg?style=svg)](https://circleci.com/gh/bob-cd/bob/tree/main)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![project chat](https://img.shields.io/badge/slack-join_chat-brightgreen.svg)](https://clojurians.slack.com/messages/CPBAYJJF6)
 
 > What [CI/CD](https://en.wikipedia.org/wiki/CI/CD) should've been.
 
-Most CI/CD tools are too opinionated and do too much. Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs philosophy of extensibility, and strives for [simpler, decomposed and hence more composable and unbundled design](https://www.youtube.com/watch?v=MCZ3YgeEUPg). For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
+Most CI/CD tools are too opinionated and do too much. Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs/LISP like philosophy of small core with external extensibility, and strives for [simpler, decomposed and hence more composable and unbundled design](https://www.youtube.com/watch?v=MCZ3YgeEUPg). For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
 
 ## Getting Started
 To build and run your pipelines, check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
