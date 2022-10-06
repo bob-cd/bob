@@ -36,9 +36,10 @@
   (gen-job
     shorted?
     (ordered-map
-      :machine     {:image "ubuntu-2204:current"}
-      :environment {:JAVA_HOME java-home
-                    :JAVA_CMD  (str java-home "/bin/java")}
+      :machine        {:image "ubuntu-2204:current"}
+      :resource_class "large"
+      :environment    {:JAVA_HOME java-home
+                       :JAVA_CMD  (str java-home "/bin/java")}
       :steps
       (gen-steps
         shorted?
