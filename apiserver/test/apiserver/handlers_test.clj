@@ -49,7 +49,7 @@
                    (t/testing "passing health check"
                      (let [{:keys [status body]} (h/health-check {:db    db
                                                                   :queue queue})]
-                       (t/is (= status 200))
+                       (t/is (= 200 status))
                        (t/is (= "Yes we can! 🔨 🔨"
                                 (-> body
                                     :message
@@ -58,7 +58,7 @@
                      (lch/close queue)
                      (let [{:keys [status body]} (h/health-check {:db    db
                                                                   :queue queue})]
-                       (t/is (= status 500))
+                       (t/is (= 500 status))
                        (t/is (= "Queue is unreachable"
                                 (-> body
                                     :message

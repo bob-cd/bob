@@ -6,12 +6,12 @@
 
 (ns apiserver.healthcheck
   (:require
-   [failjure.core :as f]
-   [java-http-clj.core :as http]
-   [taoensso.timbre :as log]
-   [xtdb.api :as xt])
+    [failjure.core :as f]
+    [java-http-clj.core :as http]
+    [taoensso.timbre :as log]
+    [xtdb.api :as xt])
   (:import
-   [java.util.concurrent Executors TimeUnit]))
+    [java.util.concurrent Executors TimeUnit]))
 
 (defn queue
   [{:keys [queue]}]
@@ -54,11 +54,14 @@
 
 (defn check
   [opts]
-  (let [results (->> [queue db check-entities]
-                     (pmap #(% opts))
-                     (doall)
-                     (flatten)
-                     (filter f/failed?))]
+  (let [executor (Executors/newVirtualThreadPerTaskExecutor)
+        results  (->> [queue db check-entities]
+                      (map #(fn []
+                              (% opts)))
+                      (.invokeAll executor)
+                      (map #(.get %))
+                      (flatten)
+                      (filter f/failed?))]
     (when (seq results)
       (run! #(log/errorf "Health checks failing: %s" (f/message %)) results)
       (f/fail results))))
