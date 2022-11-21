@@ -38,10 +38,10 @@
                      (navi/routes-from h/handlers))
                  {:data {:coercion     malli/coercion
                          :muuntaja     m/instance
-                         :interceptors [(exception/exception-interceptor)
-                                        (parameters/parameters-interceptor)
+                         :interceptors [(parameters/parameters-interceptor)
                                         (muuntaja/format-negotiate-interceptor)
                                         (muuntaja/format-response-interceptor)
+                                        (exception/exception-interceptor)
                                         (muuntaja/format-request-interceptor)
                                         (coercion/coerce-exceptions-interceptor)
                                         (coercion/coerce-response-interceptor)
