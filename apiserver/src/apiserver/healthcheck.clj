@@ -69,9 +69,10 @@
   [queue database health-check-freq]
   (let [vfactory (.. (Thread/ofVirtual)
                      (name "virtual-thread-" 0)
-                     (factory))]
+                     (factory))
+        executor (Executors/newVirtualThreadPerTaskExecutor)]
     (.scheduleAtFixedRate (Executors/newSingleThreadScheduledExecutor vfactory)
-                          #(check (Executors/newVirtualThreadPerTaskExecutor) {:queue queue :db database})
+                          #(check executor {:queue queue :db database})
                           0
                           health-check-freq
                           TimeUnit/MILLISECONDS)))

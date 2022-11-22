@@ -36,6 +36,7 @@
                     :class-dir    class-dir
                     :ns-compile   '[apiserver.main]
                     :java-cmd     (or (System/getenv "JAVA_CMD") "java")
+                    :java-opts    ["--enable-preview"]
                     :compile-opts {:direct-linking true}})
     (b/uber {:class-dir class-dir
              :uber-file uber-file

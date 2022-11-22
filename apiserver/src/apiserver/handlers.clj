@@ -23,6 +23,8 @@
   (:import
     [java.util.concurrent Executors]))
 
+(def executor (Executors/newVirtualThreadPerTaskExecutor))
+
 (defn respond
   ([content]
    (respond content 202))
@@ -71,7 +73,7 @@
 
 (defn health-check
   [{:keys [db queue]}]
-  (let [check (hc/check (Executors/newVirtualThreadPerTaskExecutor) {:db db :queue queue})]
+  (let [check (hc/check executor {:db db :queue queue})]
     (if (f/failed? check)
       (respond (f/message check) 500)
       (respond "Yes we can! 🔨 🔨" 200))))
