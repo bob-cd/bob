@@ -53,15 +53,14 @@
          (into []))))
 
 (defn check
-  [opts]
-  (let [executor (Executors/newVirtualThreadPerTaskExecutor)
-        results  (->> [queue db check-entities]
-                      (map #(fn []
-                              (% opts)))
-                      (.invokeAll executor)
-                      (map #(.get %))
-                      (flatten)
-                      (filter f/failed?))]
+  [executor opts]
+  (let [results (->> [queue db check-entities]
+                     (map #(fn []
+                             (% opts)))
+                     (.invokeAll executor)
+                     (map #(.get %))
+                     (flatten)
+                     (filter f/failed?))]
     (when (seq results)
       (run! #(log/errorf "Health checks failing: %s" (f/message %)) results)
       (f/fail results))))
@@ -72,7 +71,7 @@
                      (name "virtual-thread-" 0)
                      (factory))]
     (.scheduleAtFixedRate (Executors/newSingleThreadScheduledExecutor vfactory)
-                          #(check {:queue queue :db database})
+                          #(check (Executors/newVirtualThreadPerTaskExecutor) {:queue queue :db database})
                           0
                           health-check-freq
                           TimeUnit/MILLISECONDS)))

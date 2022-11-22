@@ -19,7 +19,9 @@
     [failjure.core :as f]
     [java-http-clj.core :as http]
     [langohr.basic :as lb]
-    [xtdb.api :as xt]))
+    [xtdb.api :as xt])
+  (:import
+    [java.util.concurrent Executors]))
 
 (defn respond
   ([content]
@@ -69,8 +71,7 @@
 
 (defn health-check
   [{:keys [db queue]}]
-  (let [check (hc/check {:db    db
-                         :queue queue})]
+  (let [check (hc/check (Executors/newVirtualThreadPerTaskExecutor) {:db db :queue queue})]
     (if (f/failed? check)
       (respond (f/message check) 500)
       (respond "Yes we can! 🔨 🔨" 200))))
