@@ -14,7 +14,7 @@
   (:import
     [java.io BufferedReader]))
 
-(def api-version "v4.3.0")
+(def api-version "v4.3.1")
 
 (def conn
   {:uri (or (System/getenv "CONTAINER_ENGINE_URL")
