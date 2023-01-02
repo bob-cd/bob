@@ -212,23 +212,23 @@
 (defn pipeline-artifact
   [{{{:keys [group name id store-name artifact-name]} :path} :parameters
     db                                                       :db}]
-  (f/try-all [store    (xt/entity (xt/db db) (keyword "bob.artifact-store" store-name))
+  (f/try-all [store                 (xt/entity (xt/db db) (keyword "bob.artifact-store" store-name))
               _ (when (nil? store)
                   (f/fail {:type :external
                            :msg  (str "Cannot locate artifact store " store-name)}))
-              base-url (if-not (spec/valid? :bob.db/artifact-store store)
-                         (f/fail (str "Invalid artifact-store: " store))
-                         (:url store))
-              url      (cs/join "/" [base-url "bob_artifact" group name id artifact-name])
-              resp     (http/get url {:as :stream})
-              _ (when (>= (:status resp) 400)
+              base-url              (if-not (spec/valid? :bob.db/artifact-store store)
+                                      (f/fail (str "Invalid artifact-store: " store))
+                                      (:url store))
+              url                   (cs/join "/" [base-url "bob_artifact" group name id artifact-name])
+              {:keys [body status]} (http/get url
+                                              {:as    :stream
+                                               :throw false})
+              _ (when (>= status 400)
                   (f/fail {:type :external
-                           :msg  (-> resp
-                                     :body
-                                     slurp)}))]
+                           :msg  (slurp body)}))]
     {:status  200
      :headers {"Content-Type" "application/tar"}
-     :body    (:body resp)}
+     :body    body}
     (f/when-failed [err]
       (case (get (f/message err) :type)
         :external (-> err
