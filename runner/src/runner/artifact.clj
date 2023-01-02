@@ -6,14 +6,14 @@
 
 (ns runner.artifact
   (:require
-   [clojure.spec.alpha :as spec]
-   [clojure.string :as s]
-   [common.schemas]
-   [failjure.core :as f]
-   [java-http-clj.core :as http]
-   [runner.engine :as eng]
-   [taoensso.timbre :as log]
-   [xtdb.api :as xt]))
+    [babashka.http-client :as http]
+    [clojure.spec.alpha :as spec]
+    [clojure.string :as s]
+    [common.schemas]
+    [failjure.core :as f]
+    [runner.engine :as eng]
+    [taoensso.timbre :as log]
+    [xtdb.api :as xt]))
 
 (defn store-url
   [db-client store]
@@ -31,16 +31,13 @@
     (f/try-all [_ (log/debugf "Streaming from container %s on path %s"
                               container-id
                               path)
-                stream     (eng/get-container-archive container-id path)
                 upload-url (s/join "/" [url "bob_artifact" group name run-id artifact-name])
                 _ (log/infof "Uploading artifact %s for pipeline %s run %s to %s"
                              artifact-name
                              name
                              run-id
                              upload-url)
-                _ (http/post upload-url
-                             {:body stream
-                              :as   :input-stream})]
+                _ (http/post upload-url {:body (eng/get-container-archive container-id path)})]
       "Ok"
       (f/when-failed [err]
         (log/errorf "Error in uploading artifact: %s" (f/message err))
@@ -54,6 +51,7 @@
       (f/fail "No such artifact store registered"))))
 
 (comment
+  (require '[clojure.java.io :as io])
+
   (http/post "http://localhost:8001/bob_artifact/dev/test/r-1/tar"
-             {:body (clojure.java.io/input-stream "test/test.tar")
-              :as   :input-stream}))
+             {:body (io/input-stream "test/test.tar")}))

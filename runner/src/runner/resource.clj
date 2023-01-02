@@ -6,30 +6,28 @@
 
 (ns runner.resource
   (:require
-   [clojure.java.io :as io]
-   [clojure.spec.alpha :as spec]
-   [clojure.string :as s]
-   [common.schemas]
-   [failjure.core :as f]
-   [java-http-clj.core :as http]
-   [runner.artifact :as a]
-   [runner.engine :as eng]
-   [taoensso.timbre :as log]
-   [xtdb.api :as xt])
+    [babashka.http-client :as http]
+    [clojure.java.io :as io]
+    [clojure.spec.alpha :as spec]
+    [clojure.string :as s]
+    [common.schemas]
+    [failjure.core :as f]
+    [runner.artifact :as a]
+    [runner.engine :as eng]
+    [taoensso.timbre :as log]
+    [xtdb.api :as xt])
   (:import
-   [java.io BufferedOutputStream File FileOutputStream]
-   [org.kamranzafar.jtar TarInputStream TarOutputStream]))
+    [java.io BufferedOutputStream File FileOutputStream]
+    [org.kamranzafar.jtar TarInputStream TarOutputStream]))
 
 (defn fetch-resource
   "Downloads a resource(tar file) and returns the stream."
   [url]
   (f/try-all [_ (log/infof "Fetching resource from %s" url)
-              {:keys [status body]} (try
-                                      (http/get url {} {:as :input-stream})
-                                      (catch Exception _
-                                        (f/fail (str "Error connecting to " url))))
-              _ (when (>= status 400)
-                  (f/fail (slurp body)))]
+              {:keys [body]} (try
+                               (http/get url {:as :stream})
+                               (catch Exception _
+                                 (f/fail (str "Error connecting to " url))))]
     body
     (f/when-failed [err]
       (log/errorf "Failed to fetch resource: %s" (f/message err))

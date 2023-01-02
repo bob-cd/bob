@@ -6,16 +6,16 @@
 
 (ns runner.pipeline-test
   (:require
-   [clojure.spec.alpha]
-   [clojure.test :refer [deftest is testing]]
-   [common.schemas]
-   [failjure.core :as f]
-   [java-http-clj.core :as http]
-   [runner.engine :as eng]
-   [runner.engine-test :as et]
-   [runner.pipeline :as p]
-   [runner.util :as u]
-   [xtdb.api :as xt]))
+    [babashka.http-client :as http]
+    [clojure.spec.alpha]
+    [clojure.test :refer [deftest is testing]]
+    [common.schemas]
+    [failjure.core :as f]
+    [runner.engine :as eng]
+    [runner.engine-test :as et]
+    [runner.pipeline :as p]
+    [runner.util :as u]
+    [xtdb.api :as xt]))
 
 (def test-image "alpine:latest")
 
