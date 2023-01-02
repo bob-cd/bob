@@ -6,8 +6,8 @@
 
 (ns apiserver.healthcheck
   (:require
+    [babashka.http-client :as http]
     [failjure.core :as f]
-    [java-http-clj.core :as http]
     [taoensso.timbre :as log]
     [xtdb.api :as xt])
   (:import

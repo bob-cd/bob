@@ -6,21 +6,21 @@
 
 (ns apiserver.handlers-test
   (:require
-   [apiserver.handlers :as h]
-   [apiserver.util :as u]
-   [clojure.data.json :as json]
-   [clojure.java.io :as io]
-   [clojure.spec.alpha]
-   [clojure.test :as t]
-   [common.schemas]
-   [failjure.core :as f]
-   [java-http-clj.core :as http]
-   [langohr.basic :as lb]
-   [langohr.channel :as lch]
-   [langohr.queue :as lq]
-   [xtdb.api :as xt])
+    [apiserver.handlers :as h]
+    [apiserver.util :as u]
+    [babashka.http-client :as http]
+    [clojure.data.json :as json]
+    [clojure.java.io :as io]
+    [clojure.spec.alpha]
+    [clojure.test :as t]
+    [common.schemas]
+    [failjure.core :as f]
+    [langohr.basic :as lb]
+    [langohr.channel :as lch]
+    [langohr.queue :as lq]
+    [xtdb.api :as xt])
   (:import
-   [java.time Instant]))
+    [java.time Instant]))
 
 (t/deftest helpers-test
   (t/testing "default response"
@@ -249,8 +249,7 @@
                             :name  "local"
                             :url   "http://localhost:8001"}]]))
                      (http/post "http://localhost:8001/bob_artifact/dev/test/a-run-id/file"
-                                {:as   :input-stream
-                                 :body (io/input-stream "test/test.tar")})
+                                {:body (io/input-stream "test/test.tar")})
                      (let [{:keys [status headers]}
                            (h/pipeline-artifact {:db         db
                                                  :parameters {:path {:group         "dev"

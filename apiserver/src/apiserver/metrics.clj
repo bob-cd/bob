@@ -6,15 +6,13 @@
 
 (ns apiserver.metrics
   (:require
+    [babashka.http-client :as http]
     [clojure.data.json :as json]
     [failjure.core :as f]
     [iapetos.core :as prometheus]
     [iapetos.export :as export]
-    [java-http-clj.core :as http]
     [langohr.queue :as lq]
-    [xtdb.api :as xt])
-  (:import
-    [java.util Base64]))
+    [xtdb.api :as xt]))
 
 (def registry
   (-> (prometheus/collector-registry)
@@ -50,15 +48,11 @@
     (f/when-failed [err]
       err)))
 
-(defn basic-auth
-  [username password]
-  (str "Basic " (.encodeToString (Base64/getEncoder) (.getBytes (str username ":" password)))))
-
 (defn job-queues
   [{:keys [api-url username password]}]
   (let [data (-> (str api-url "/queues/%2F")
-                 (http/get {:headers {"Authorization" (basic-auth username password)
-                                      "Content-Type"  "application/json"}})
+                 (http/get {:basic-auth [username password]
+                            :headers    {"Content-Type" "application/json"}})
                  (:body)
                  (json/read-str {:key-fn keyword}))]
     (->> data

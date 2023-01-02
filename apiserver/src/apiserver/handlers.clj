@@ -9,6 +9,7 @@
     [apiserver.cctray :as cctray]
     [apiserver.healthcheck :as hc]
     [apiserver.metrics :as metrics]
+    [babashka.http-client :as http]
     [clojure.data.json :as json]
     [clojure.instant :as ins]
     [clojure.java.io :as io]
@@ -17,7 +18,6 @@
     [clojure.string :as cs]
     [common.schemas]
     [failjure.core :as f]
-    [java-http-clj.core :as http]
     [langohr.basic :as lb]
     [xtdb.api :as xt])
   (:import
@@ -220,7 +220,7 @@
                          (f/fail (str "Invalid artifact-store: " store))
                          (:url store))
               url      (cs/join "/" [base-url "bob_artifact" group name id artifact-name])
-              resp     (http/get url {:follow-redirects true} {:as :input-stream})
+              resp     (http/get url {:as :stream})
               _ (when (>= (:status resp) 400)
                   (f/fail {:type :external
                            :msg  (-> resp
@@ -385,6 +385,6 @@
 
 (comment
   (-> "http://localhost:8001/bob_artifact/dev/test/r-1/test.tar"
-      (http/get {:follow-redirects true} {:as :input-stream})
+      (http/get {:as :stream})
       :body
       slurp))

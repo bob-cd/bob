@@ -6,17 +6,17 @@
 
 (ns runner.pipeline
   (:require
-   [clojure.spec.alpha :as spec]
-   [common.errors :as errors]
-   [common.schemas]
-   [failjure.core :as f]
-   [runner.artifact :as a]
-   [runner.engine :as eng]
-   [runner.resource :as r]
-   [taoensso.timbre :as log]
-   [xtdb.api :as xt])
+    [clojure.spec.alpha :as spec]
+    [common.errors :as errors]
+    [common.schemas]
+    [failjure.core :as f]
+    [runner.artifact :as a]
+    [runner.engine :as eng]
+    [runner.resource :as r]
+    [taoensso.timbre :as log]
+    [xtdb.api :as xt])
   (:import
-   [java.time Instant]))
+    [java.time Instant]))
 
 (defonce ^:private node-state
          (atom {:images-for-gc {}
