@@ -61,12 +61,12 @@ tar -zxf jdk.tar.gz -C %s --strip-components=1"
 sudo bash linux-install.sh")
          {:restore_cache {:keys "bob-v1-"}}
          (run "Prep all deps" "bb prep")
+         (run "Run all tests" "bb test")
          {:save_cache
           {:key
            "bob-v1-{{ checksum \"apiserver/deps.edn\" }}-{{ checksum \"entities/deps.edn\" }}-{{ checksum \"runner/deps.edn\" }}-{{ checksum \"common/deps.edn\" }}"
            :paths ["~/.m2"
                    "~/.gitlibs"]}}
-         (run "Run all tests" "bb test")
          (run "Build executables" "bb compile")
          (run "Create multi-platform capabale buildx builder"
               "docker run --privileged --rm tonistiigi/binfmt --install all
