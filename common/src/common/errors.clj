@@ -18,4 +18,4 @@
               "bob.errors"
               (json/write-str {:message message} :key-fn #(subs (str %) 1))
               {:content-type "application/json"
-               :type         "message/error"}))
+               :type "message/error"}))

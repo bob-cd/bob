@@ -6,20 +6,20 @@
 
 (ns common.system
   (:require
-    [aero.core :as aero]
-    [clojure.java.io :as io]
-    [failjure.core :as f]
-    [integrant.core :as ig]
-    [langohr.channel :as lch]
-    [langohr.consumers :as lc]
-    [langohr.core :as rmq]
-    [langohr.exchange :as le]
-    [langohr.queue :as lq]
-    [taoensso.timbre :as log]
-    [xtdb.api :as xt])
+   [aero.core :as aero]
+   [clojure.java.io :as io]
+   [failjure.core :as f]
+   [integrant.core :as ig]
+   [langohr.channel :as lch]
+   [langohr.consumers :as lc]
+   [langohr.core :as rmq]
+   [langohr.exchange :as le]
+   [langohr.queue :as lq]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt])
   (:import
-    [java.net ConnectException]
-    [xtdb.api IXtdb]))
+   [java.net ConnectException]
+   [xtdb.api IXtdb]))
 
 (def config
   (-> "bob/common.edn"
@@ -33,7 +33,7 @@
    (if (= n 0)
      (throw (ConnectException. "Cannot connect to system"))
      (let [res (f/try*
-                 (conn-fn))]
+                (conn-fn))]
        (if (f/failed? res)
          (do
            (log/warnf "Connection failed with %s, retrying %d" (f/message res) n)
@@ -50,14 +50,14 @@
   [_ {:keys [url user password]}]
   (log/info "Connecting to DB")
   (try-connect
-    #(xt/start-node {:xtdb.jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
-                                                 :db-spec {:jdbcUrl  url
-                                                           :user     user
-                                                           :password password}}
-                     :xtdb/tx-log               {:xtdb/module     'xtdb.jdbc/->tx-log
-                                                 :connection-pool :xtdb.jdbc/connection-pool}
-                     :xtdb/document-store       {:xtdb/module     'xtdb.jdbc/->document-store
-                                                 :connection-pool :xtdb.jdbc/connection-pool}})))
+   #(xt/start-node {:xtdb.jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
+                                                :db-spec {:jdbcUrl url
+                                                          :user user
+                                                          :password password}}
+                    :xtdb/tx-log {:xtdb/module 'xtdb.jdbc/->tx-log
+                                  :connection-pool :xtdb.jdbc/connection-pool}
+                    :xtdb/document-store {:xtdb/module 'xtdb.jdbc/->document-store
+                                          :connection-pool :xtdb.jdbc/connection-pool}})))
 
 (defmethod ig/halt-key!
   :bob/storage
@@ -72,12 +72,12 @@
 (defmethod ig/init-key
   :bob/queue
   [_ {:keys [url user password conf api-url]}]
-  (let [conn-opts {:uri      url
+  (let [conn-opts {:uri url
                    :username user
                    :password password
-                   :api-url  api-url}
-        conn      (try-connect #(rmq/connect conn-opts))
-        chan      (lch/open conn)]
+                   :api-url api-url}
+        conn (try-connect #(rmq/connect conn-opts))
+        chan (lch/open conn)]
     (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
     (doseq [[ex props] (:exchanges conf)]
       (log/infof "Declared exchange %s" ex)
