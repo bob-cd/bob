@@ -27,9 +27,7 @@
   [{:keys [name url]}]
   (f/try-all [{status :status} (http/get (str url "/ping") {:throw false})]
     (if (>= status 400)
-      (f/fail (format "Error checking %s at %s"
-                      name
-                      url))
+      (f/fail (format "Error checking %s at %s" name url))
       "Ok")
     (f/when-failed [_]
       (f/fail (format "Error checking %s at %s" name url)))))
@@ -49,8 +47,7 @@
 (defn check
   [executor opts]
   (let [results (->> [queue db check-entities]
-                     (map #(fn []
-                             (% opts)))
+                     (map #(fn [] (% opts)))
                      (.invokeAll executor)
                      (map #(.get %))
                      (flatten)
