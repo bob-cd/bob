@@ -18,9 +18,9 @@
                             data
                             [[::xt/put
                               {:xt/id (keyword (str "bob.artifact-store/" (:name data)))
-                               :type  :artifact-store
-                               :url   (:url data)
-                               :name  (:name data)}]]
+                               :type :artifact-store
+                               :url (:url data)
+                               :name (:name data)}]]
                             "artifact-store"))
 
 (defn un-register-artifact-store

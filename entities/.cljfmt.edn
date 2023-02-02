@@ -1,4 +1,1 @@
-{:remove-multiple-non-indenting-spaces? true
- :sort-ns-references? true
- :indents {try-all [[:block 1]]
-           when-failed [[:inner 0]]}}
+../.cljfmt.edn
