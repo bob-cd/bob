@@ -27,11 +27,11 @@
 (defn wait-for
   [conf]
   (doseq [[service url] conf]
-    (let [uri   (URI. url)
+    (let [uri (URI. url)
           logic (case (.getScheme uri)
                   "http" #(let [{status :status} @(http/get url)]
                             (when-not (= status 200)
                               (throw (Exception. "Not ready."))))
-                  "tcp"  #(doto (Socket. (.getHost uri) (.getPort uri))
-                            (.close)))]
+                  "tcp" #(doto (Socket. (.getHost uri) (.getPort uri))
+                           (.close)))]
       (retry service logic 1000 400 50))))

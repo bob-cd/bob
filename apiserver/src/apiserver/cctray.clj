@@ -12,15 +12,15 @@
 
 (defn make-project
   [{:keys [group name status completed]
-    :as   data}]
+    :as data}]
   (let [last-build-status (case status
                             (:passed :running) "Success"
-                            :failed            "Failure"
-                            :stopped           "Exception"
+                            :failed "Failure"
+                            :stopped "Exception"
                             "Unknown")
-        last-build-label  (-> data
-                              :xt/id
-                              clojure.core/name)]
+        last-build-label (-> data
+                             :xt/id
+                             clojure.core/name)]
     [[:name
       (format "%s:%s"
               group
@@ -37,7 +37,7 @@
 (defn generate-report
   [db]
   (f/try-all [statuses (xt/q (xt/db db)
-                             '{:find  [(pull run [:group :name :status :completed :xt/id])]
+                             '{:find [(pull run [:group :name :status :completed :xt/id])]
                                :where [[pipeline :type :pipeline]
                                        [pipeline :group group]
                                        [pipeline :name name]

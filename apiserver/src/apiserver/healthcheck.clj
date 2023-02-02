@@ -6,12 +6,12 @@
 
 (ns apiserver.healthcheck
   (:require
-    [babashka.http-client :as http]
-    [failjure.core :as f]
-    [taoensso.timbre :as log]
-    [xtdb.api :as xt])
+   [babashka.http-client :as http]
+   [failjure.core :as f]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt])
   (:import
-    [java.util.concurrent Executors TimeUnit]))
+   [java.util.concurrent Executors TimeUnit]))
 
 (defn queue
   [{:keys [queue]}]
@@ -32,20 +32,14 @@
                       url))
       "Ok")
     (f/when-failed [_]
-      (f/fail (format "Error checking %s at %s"
-                      name
-                      url)))))
+      (f/fail (format "Error checking %s at %s" name url)))))
 
 (defn check-entities
   [{db :db}]
-  (let
-    [result
-     (xt/q
-       (xt/db db)
-       '{:find  [(pull entity [:name :url])]
-         :where [(or
-                   [entity :type :artifact-store]
-                   [entity :type :resource-provider])]})]
+  (let [result (xt/q (xt/db db)
+                     '{:find [(pull entity [:name :url])]
+                       :where [(or [entity :type :artifact-store]
+                                   [entity :type :resource-provider])]})]
     (->> result
          (map first)
          (map check-entity)

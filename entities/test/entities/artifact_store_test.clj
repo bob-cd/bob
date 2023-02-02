@@ -19,18 +19,18 @@
     (testing "creation"
       (u/with-system (fn [db queue-chan]
                        (let [artifact-store {:name "s3"
-                                             :url  "my.store.com"}
-                             create-res     (artifact-store/register-artifact-store db queue-chan artifact-store)
+                                             :url "my.store.com"}
+                             create-res (artifact-store/register-artifact-store db queue-chan artifact-store)
                              _ (Thread/sleep 1000)
-                             effect         (xt/entity (xt/db db) id)]
+                             effect (xt/entity (xt/db db) id)]
                          (is (= "Ok" create-res))
                          (is (= id (:xt/id effect)))
                          (u/spec-assert :bob.db/artifact-store effect)))))
     (testing "deletion"
       (u/with-system (fn [db queue-chan]
                        (let [artifact-store {:name "s3"}
-                             delete-res     (artifact-store/un-register-artifact-store db queue-chan artifact-store)
+                             delete-res (artifact-store/un-register-artifact-store db queue-chan artifact-store)
                              _ (Thread/sleep 1000)
-                             effect         (xt/entity (xt/db db) id)]
+                             effect (xt/entity (xt/db db) id)]
                          (is (= "Ok" delete-res))
                          (is (nil? effect))))))))

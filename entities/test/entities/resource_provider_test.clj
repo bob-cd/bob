@@ -20,10 +20,10 @@
       (u/with-system
         (fn [db queue-chan]
           (let [resource-provider {:name "github"
-                                   :url  "my.resource.com"}
-                create-res        (resource-provider/register-resource-provider db queue-chan resource-provider)
+                                   :url "my.resource.com"}
+                create-res (resource-provider/register-resource-provider db queue-chan resource-provider)
                 _ (Thread/sleep 1000)
-                effect            (xt/entity (xt/db db) id)]
+                effect (xt/entity (xt/db db) id)]
             (is (= "Ok" create-res))
             (is (= id (:xt/id effect)))
             (u/spec-assert :bob.db/resource-provider effect)))))
@@ -31,8 +31,8 @@
       (u/with-system
         (fn [db queue-chan]
           (let [resource-provider {:name "github"}
-                delete-res        (resource-provider/un-register-resource-provider db queue-chan resource-provider)
+                delete-res (resource-provider/un-register-resource-provider db queue-chan resource-provider)
                 _ (Thread/sleep 1000)
-                effect            (xt/entity (xt/db db) id)]
+                effect (xt/entity (xt/db db) id)]
             (is (= "Ok" delete-res))
             (is (nil? effect))))))))

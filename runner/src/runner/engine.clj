@@ -6,13 +6,13 @@
 
 (ns runner.engine
   (:require
-    [clojure.java.io :as io]
-    [clojure.string :as s]
-    [contajners.core :as c]
-    [failjure.core :as f]
-    [taoensso.timbre :as log])
+   [clojure.java.io :as io]
+   [clojure.string :as s]
+   [contajners.core :as c]
+   [failjure.core :as f]
+   [taoensso.timbre :as log])
   (:import
-    [java.io BufferedReader]))
+   [java.io BufferedReader]))
 
 (def api-version "v4.3.1")
 
@@ -21,22 +21,22 @@
             "http://localhost:8080")})
 
 (def images
-  (c/client {:engine   :podman
+  (c/client {:engine :podman
              :category :libpod/images
-             :conn     conn
-             :version  api-version}))
+             :conn conn
+             :version api-version}))
 
 (def containers
-  (c/client {:engine   :podman
+  (c/client {:engine :podman
              :category :libpod/containers
-             :conn     conn
-             :version  api-version}))
+             :conn conn
+             :version api-version}))
 
 (def commit
-  (c/client {:engine   :podman
+  (c/client {:engine :podman
              :category :libpod/commit
-             :conn     conn
-             :version  api-version}))
+             :conn conn
+             :version api-version}))
 
 (defn sh-tokenize
   "Tokenizes a shell command given as a string into the command and its args.
@@ -47,27 +47,27 @@
   Output: [sh, -c, while sleep 1; do echo \"${RANDOM}\"; done]"
   [command]
   (let [[escaped? current-arg args state]
-        (loop [cmd         command
-               escaped?    false
-               state       :no-token
+        (loop [cmd command
+               escaped? false
+               state :no-token
                current-arg ""
-               args        []]
+               args []]
           (if (or (nil? cmd) (zero? (count cmd)))
             [escaped? current-arg args state]
             (let [char ^Character (first cmd)]
               (if escaped?
                 (recur (rest cmd) false state (str current-arg char) args)
                 (case state
-                  :single-quote       (if (= char \')
-                                        (recur (rest cmd) escaped? :normal current-arg args)
-                                        (recur (rest cmd) escaped? state (str current-arg char) args))
-                  :double-quote       (case char
-                                        \" (recur (rest cmd) escaped? :normal current-arg args)
-                                        \\ (let [next (second cmd)]
-                                             (if (or (= next \") (= next \\))
-                                               (recur (drop 2 cmd) escaped? state (str current-arg next) args)
-                                               (recur (drop 2 cmd) escaped? state (str current-arg char next) args)))
-                                        (recur (rest cmd) escaped? state (str current-arg char) args))
+                  :single-quote (if (= char \')
+                                  (recur (rest cmd) escaped? :normal current-arg args)
+                                  (recur (rest cmd) escaped? state (str current-arg char) args))
+                  :double-quote (case char
+                                  \" (recur (rest cmd) escaped? :normal current-arg args)
+                                  \\ (let [next (second cmd)]
+                                       (if (or (= next \") (= next \\))
+                                         (recur (drop 2 cmd) escaped? state (str current-arg next) args)
+                                         (recur (drop 2 cmd) escaped? state (str current-arg char next) args)))
+                                  (recur (rest cmd) escaped? state (str current-arg char) args))
                   (:no-token :normal) (case char
                                         \\ (recur (rest cmd) true :normal current-arg args)
                                         \' (recur (rest cmd) escaped? :single-quote current-arg args)
@@ -93,18 +93,18 @@
   [image]
   (log/debugf "Pulling image %s" image)
   (f/try*
-    (c/invoke images
-              {:op               :ImagePullLibpod
-               :params           {:reference image}
-               :throw-exceptions true})
-    image))
+   (c/invoke images
+             {:op :ImagePullLibpod
+              :params {:reference image}
+              :throw-exceptions true})
+   image))
 
 (defn delete-image
   "Idempotently deletes an image along with any untagged parent images
   that were referenced by that image by its full name or id."
   [image]
   (c/invoke images
-            {:op     :ImageDeleteLibpod
+            {:op :ImageDeleteLibpod
              :params {:name image}})
   image)
 
@@ -118,8 +118,8 @@
   ([image]
    (f/try-all [_ (log/debugf "Creating a container from %s" image)
                result (c/invoke containers
-                                {:op               :ContainerCreateLibpod
-                                 :data             {:image image}
+                                {:op :ContainerCreateLibpod
+                                 :data {:image image}
                                  :throw-exceptions true})]
      (:Id result)
      (f/when-failed [err]
@@ -130,21 +130,21 @@
   ([image {:keys [needs_resource cmd]} evars]
    (f/try-all [working-dir (some->> needs_resource
                                     (str "/root/"))
-               command     (sh-tokenize cmd)
+               command (sh-tokenize cmd)
                _ (log/debugf "Creating new container with: image: %s cmd: %s evars: %s working-dir: %s"
                              image
                              command
                              evars
                              working-dir)
-               result      (c/invoke
-                             containers
-                             {:op               :ContainerCreateLibpod
-                              :data             {:image        image
-                                                 :command      command
-                                                 :env          evars
-                                                 :work_dir     working-dir
-                                                 :cgroups_mode "disabled"} ; unprivileged
-                              :throw-exceptions true})]
+               result (c/invoke
+                       containers
+                       {:op :ContainerCreateLibpod
+                        :data {:image image
+                               :command command
+                               :env evars
+                               :work_dir working-dir
+                               :cgroups_mode "disabled"} ; unprivileged
+                        :throw-exceptions true})]
      (:Id result)
      (f/when-failed [err]
        (log/errorf "Could not create container: %s" (f/message err))
@@ -154,8 +154,8 @@
   "Idempotently and forcefully removes container by id."
   [id]
   (c/invoke containers
-            {:op     :ContainerDeleteLibpod
-             :params {:name  id
+            {:op :ContainerDeleteLibpod
+             :params {:name id
                       :force true}})
   id)
 
@@ -163,8 +163,8 @@
   "Returns the container info by id."
   [id]
   (f/try-all [result (c/invoke containers
-                               {:op               :ContainerInspectLibpod
-                                :params           {:name id}
+                               {:op :ContainerInspectLibpod
+                                :params {:name id}
                                 :throw-exceptions true})]
     result
     (f/when-failed [err]
@@ -175,7 +175,7 @@
   "Returns the status of a container"
   [id]
   (f/try-all [{{running? :Running exit-code :ExitCode} :State} (inspect-container id)]
-    {:running?  running?
+    {:running? running?
      :exit-code exit-code}
     (f/when-failed [err]
       (log/errorf "Could not fetch container status: %s" (f/message err))
@@ -187,14 +187,14 @@
    as soon as they arrive."
   [id reaction-fn]
   (f/try-all [log-stream (c/invoke containers
-                                   {:op               :ContainerLogsLibpod
-                                    :params           {:name   id
-                                                       :follow (-> id
-                                                                   status-of
-                                                                   :running?)
-                                                       :stdout true
-                                                       :stderr true}
-                                    :as               :stream
+                                   {:op :ContainerLogsLibpod
+                                    :params {:name id
+                                             :follow (-> id
+                                                         status-of
+                                                         :running?)
+                                             :stdout true
+                                             :stderr true}
+                                    :as :stream
                                     :throw-exceptions true})]
     (future
       (with-open [rdr (io/reader log-stream)]
@@ -218,14 +218,14 @@
   [id logging-fn]
   (f/try-all [_ (log/debugf "Starting container %s" id)
               _ (c/invoke containers
-                          {:op               :ContainerStartLibpod
-                           :params           {:name id}
+                          {:op :ContainerStartLibpod
+                           :params {:name id}
                            :throw-exceptions true})
               _ (log/debugf "Attaching to container %s for logs" id)
               _ (react-to-log-line id logging-fn)
               status (c/invoke containers
-                               {:op               :ContainerWaitLibpod
-                                :params           {:name id}
+                               {:op :ContainerWaitLibpod
+                                :params {:name id}
                                 :throw-exceptions true})]
     (if (zero? status)
       id
@@ -242,7 +242,7 @@
   "Idempotently kills a running container using SIGKILL by id."
   [id]
   (c/invoke containers
-            {:op     :ContainerKillLibpod
+            {:op :ContainerKillLibpod
              :params {:name id}})
   id)
 
@@ -258,8 +258,8 @@
                         (assoc params :changes (str "CMD=" cmd))
                         params)
                result (c/invoke commit
-                                {:op               :ImageCommitLibpod
-                                 :params           params
+                                {:op :ImageCommitLibpod
+                                 :params params
                                  :throw-exceptions true})]
      (:Id result)
      (f/when-failed [err]
@@ -274,13 +274,13 @@
    Returns a Failure if failed."
   [id archive-input-stream path]
   (let [result (f/try*
-                 (with-open [xin archive-input-stream]
-                   (c/invoke containers
-                             {:op               :PutContainerArchiveLibpod
-                              :params           {:name id
-                                                 :path path}
-                              :data             xin
-                              :throw-exceptions true})))]
+                (with-open [xin archive-input-stream]
+                  (c/invoke containers
+                            {:op :PutContainerArchiveLibpod
+                             :params {:name id
+                                      :path path}
+                             :data xin
+                             :throw-exceptions true})))]
     (when (f/failed? result)
       (log/errorf "Could not put archive in container: %s" result)
       result)))
@@ -289,10 +289,10 @@
   "Returns a tar stream of a path in the container by id."
   [id path]
   (f/try-all [result (c/invoke containers
-                               {:op               :ContainerArchiveLibpod
-                                :params           {:name id
-                                                   :path path}
-                                :as               :stream
+                               {:op :ContainerArchiveLibpod
+                                :params {:name id
+                                         :path path}
+                                :as :stream
                                 :throw-exceptions true})]
     result
     (f/when-failed [err]
@@ -303,8 +303,8 @@
   "Returns the list of running containers"
   []
   (f/try*
-    (c/invoke containers
-              {:op :ContainerListLibpod})))
+   (c/invoke containers
+             {:op :ContainerListLibpod})))
 
 (comment
   (sh-tokenize "sh -c 'echo ${k1}'")

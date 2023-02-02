@@ -6,37 +6,37 @@
 
 (ns apiserver.metrics
   (:require
-    [babashka.http-client :as http]
-    [clojure.data.json :as json]
-    [failjure.core :as f]
-    [iapetos.core :as prometheus]
-    [iapetos.export :as export]
-    [langohr.queue :as lq]
-    [xtdb.api :as xt]))
+   [babashka.http-client :as http]
+   [clojure.data.json :as json]
+   [failjure.core :as f]
+   [iapetos.core :as prometheus]
+   [iapetos.export :as export]
+   [langohr.queue :as lq]
+   [xtdb.api :as xt]))
 
 (def registry
   (-> (prometheus/collector-registry)
       (prometheus/register
-        (prometheus/gauge :bob/queued-jobs {:description "Number of queued jobs"})
-        (prometheus/gauge :bob/queued-entities {:description "Number of queued entity changes to be applied"})
-        (prometheus/gauge :bob/errors {:description "Number of errors"})
-        (prometheus/gauge :bob/running-jobs {:description "Number of jobs currently running"})
-        (prometheus/gauge :bob/initializing-jobs {:description "Number of jobs currently initializing"})
-        (prometheus/gauge :bob/failed-jobs {:description "Number of failed jobs"})
-        (prometheus/gauge :bob/passed-jobs {:description "Number of passed jobs"})
-        (prometheus/gauge :bob/stopped-jobs {:description "Number of stopped jobs"}))))
+       (prometheus/gauge :bob/queued-jobs {:description "Number of queued jobs"})
+       (prometheus/gauge :bob/queued-entities {:description "Number of queued entity changes to be applied"})
+       (prometheus/gauge :bob/errors {:description "Number of errors"})
+       (prometheus/gauge :bob/running-jobs {:description "Number of jobs currently running"})
+       (prometheus/gauge :bob/initializing-jobs {:description "Number of jobs currently initializing"})
+       (prometheus/gauge :bob/failed-jobs {:description "Number of failed jobs"})
+       (prometheus/gauge :bob/passed-jobs {:description "Number of passed jobs"})
+       (prometheus/gauge :bob/stopped-jobs {:description "Number of stopped jobs"}))))
 
 (def status-count-map
-  {:running      :bob/running-jobs
+  {:running :bob/running-jobs
    :initializing :bob/initializing-jobs
-   :failed       :bob/failed-jobs
-   :passed       :bob/passed-jobs
-   :stopped      :bob/stopped-jobs})
+   :failed :bob/failed-jobs
+   :passed :bob/passed-jobs
+   :stopped :bob/stopped-jobs})
 
 (defn count-statuses
   [db]
   (f/try-all [result (xt/q (xt/db db)
-                           '{:find  [(pull run [:status])]
+                           '{:find [(pull run [:status])]
                              :where [[run :type :pipeline-run]]})
               counts (->> result
                           (map first)
@@ -52,7 +52,7 @@
   [{:keys [api-url username password]}]
   (let [data (-> (str api-url "/queues/%2F")
                  (http/get {:basic-auth [username password]
-                            :headers    {"Content-Type" "application/json"}})
+                            :headers {"Content-Type" "application/json"}})
                  (:body)
                  (json/read-str {:key-fn keyword}))]
     (->> data
@@ -76,6 +76,4 @@
       err)))
 
 (comment
-  (basic-auth "guest" "guest")
-
   (job-queues {:api-url "http://localhost:15672" :username "guest" :password "guest"}))

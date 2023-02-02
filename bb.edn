@@ -4,70 +4,70 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-{:tasks {:init           (do
-                           (def apiserver-dir "apiserver")
-                           (def entities-dir "entities")
-                           (def runner-dir "runner")
+{:tasks {:init (do
+                 (def apiserver-dir "apiserver")
+                 (def entities-dir "entities")
+                 (def runner-dir "runner")
 
-                           (def prep-task "bb prep")
-                           (def compile-task "bb compile")
-                           (def test-task "bb test")
-                           (def image-task "bb image")
-                           (def push-task "bb push")
-                           (def clean-task "bb clean"))
+                 (def prep-task "bb prep")
+                 (def compile-task "bb compile")
+                 (def test-task "bb test")
+                 (def image-task "bb image")
+                 (def push-task "bb push")
+                 (def clean-task "bb clean"))
 
-         apiserver       {:doc  "Builds the apiserver"
-                          :task (shell {:dir apiserver-dir} compile-task)}
-         apiserver-prep  {:doc "Prepares the deps of the apiserver"
-                          :task (shell {:dir apiserver-dir} prep-task)}
-         test-apiserver  {:doc  "Runs tests for the apiserver"
-                          :task (shell {:dir apiserver-dir} test-task)}
-         image-apiserver {:doc  "Make a docker image of the apiserver"
+         apiserver {:doc "Builds the apiserver"
+                    :task (shell {:dir apiserver-dir} compile-task)}
+         apiserver-prep {:doc "Prepares the deps of the apiserver"
+                         :task (shell {:dir apiserver-dir} prep-task)}
+         test-apiserver {:doc "Runs tests for the apiserver"
+                         :task (shell {:dir apiserver-dir} test-task)}
+         image-apiserver {:doc "Make a docker image of the apiserver"
                           :task (shell {:dir apiserver-dir} image-task)}
-         push-apiserver  {:doc  "Push the docker image of the apiserver"
-                          :task (shell {:dir apiserver-dir} push-task)}
+         push-apiserver {:doc "Push the docker image of the apiserver"
+                         :task (shell {:dir apiserver-dir} push-task)}
 
-         entities        {:doc  "Builds the entities service"
-                          :task (shell {:dir entities-dir} compile-task)}
-         entities-prep   {:doc "Prepares the deps of the entities service"
-                          :task (shell {:dir entities-dir} prep-task)}
-         test-entities   {:doc  "Runs tests for the entities service"
-                          :task (shell {:dir entities-dir} test-task)}
-         image-entities  {:doc  "Make a docker image of the entities service"
-                          :task (shell {:dir entities-dir} image-task)}
-         push-entities   {:doc  "Push the docker image of the entities service"
-                          :task (shell {:dir entities-dir} push-task)}
+         entities {:doc "Builds the entities service"
+                   :task (shell {:dir entities-dir} compile-task)}
+         entities-prep {:doc "Prepares the deps of the entities service"
+                        :task (shell {:dir entities-dir} prep-task)}
+         test-entities {:doc "Runs tests for the entities service"
+                        :task (shell {:dir entities-dir} test-task)}
+         image-entities {:doc "Make a docker image of the entities service"
+                         :task (shell {:dir entities-dir} image-task)}
+         push-entities {:doc "Push the docker image of the entities service"
+                        :task (shell {:dir entities-dir} push-task)}
 
-         runner          {:doc  "Builds the runner"
-                          :task (shell {:dir runner-dir} compile-task)}
-         runner-prep     {:doc "Prepares the deps of runner"
-                          :task (shell {:dir runner-dir} prep-task)}
-         test-runner     {:doc  "Runs tests for runner"
-                          :task (shell {:dir runner-dir} test-task)}
-         image-runner    {:doc  "Make a docker image of runner"
-                          :task (shell {:dir runner-dir} image-task)}
-         push-runner     {:doc  "Push the docker image of runner"
-                          :task (shell {:dir runner-dir} push-task)}
+         runner {:doc "Builds the runner"
+                 :task (shell {:dir runner-dir} compile-task)}
+         runner-prep {:doc "Prepares the deps of runner"
+                      :task (shell {:dir runner-dir} prep-task)}
+         test-runner {:doc "Runs tests for runner"
+                      :task (shell {:dir runner-dir} test-task)}
+         image-runner {:doc "Make a docker image of runner"
+                       :task (shell {:dir runner-dir} image-task)}
+         push-runner {:doc "Push the docker image of runner"
+                      :task (shell {:dir runner-dir} push-task)}
 
-         prep            {:doc "Prepares the deps"
-                          :task (run '-prep)}
-         -prep           {:depends [apiserver-prep entities-prep runner-prep]}
+         prep {:doc "Prepares the deps"
+               :task (run '-prep)}
+         -prep {:depends [apiserver-prep entities-prep runner-prep]}
 
-         compile         {:doc  "Compile all services"
-                          :task (run '-compile {:parallel true})}
-         -compile        {:depends [apiserver entities runner]}
+         compile {:doc "Compile all services"
+                  :task (run '-compile {:parallel true})}
+         -compile {:depends [apiserver entities runner]}
 
          ; TODO: Run in parallel with namespaced resources
-         test            {:doc  "Run tests for all services"
-                          :task (run '-test)}
-         -test           {:depends [test-apiserver test-entities test-runner]}
+         test {:doc "Run tests for all services"
+               :task (run '-test)}
+         -test {:depends [test-apiserver test-entities test-runner]}
 
-         image           {:doc  "Build docker images for all services"
-                          :task (run '-image)}
-         -image          {:depends [image-apiserver image-entities image-runner]}
+         image {:doc "Build docker images for all services"
+                :task (run '-image)}
+         -image {:depends [image-apiserver image-entities image-runner]}
 
-         clean           {:doc  "Clean up"
-                          :task (do
-                                  (shell {:dir apiserver-dir} clean-task)
-                                  (shell {:dir entities-dir} clean-task)
-                                  (shell {:dir runner-dir} clean-task))}}}
+         clean {:doc "Clean up"
+                :task (do
+                        (shell {:dir apiserver-dir} clean-task)
+                        (shell {:dir entities-dir} clean-task)
+                        (shell {:dir runner-dir} clean-task))}}}

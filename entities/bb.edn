@@ -5,23 +5,23 @@
 ; https://opensource.org/licenses/MIT.
 
 {:paths ["../tasks"]
- :tasks {:requires    ([wait :as w])
-         docker-clean {:doc  "Cleans up cluster containers"
+ :tasks {:requires ([wait :as w])
+         docker-clean {:doc "Cleans up cluster containers"
                        :task (do
                                (shell {:continue true} "docker kill bob-test-storage bob-test-queue")
                                (shell {:continue true} "docker rm bob-test-storage bob-test-queue")
                                (shell {:continue true} "docker network rm bob-net")
                                (shell {:continue true} "docker volume prune -f"))}
-         prep         {:doc "Prepares the deps"
-                       :task (do (shell "clojure -P -A:build")
-                                 (shell "clojure -P -M -A:test")
-                                 (shell "clojure -P"))}
-         test         {:doc  "Sets up the cluster and runs tests"
-                       :task (do
-                               (try
-                                 (run 'docker-clean)
-                                 (shell {:continue true} "docker network create bob-net")
-                                 (shell "docker run
+         prep {:doc "Prepares the deps"
+               :task (do (shell "clojure -P -A:build")
+                         (shell "clojure -P -M -A:test")
+                         (shell "clojure -P"))}
+         test {:doc "Sets up the cluster and runs tests"
+               :task (do
+                       (try
+                         (run 'docker-clean)
+                         (shell {:continue true} "docker network create bob-net")
+                         (shell "docker run
                                    -d
                                    --name bob-test-storage
                                    -p 5433:5432
@@ -30,24 +30,24 @@
                                    -e POSTGRES_PASSWORD=bob
                                    --network bob-net
                                    postgres:alpine")
-                                 (shell "docker run
+                         (shell "docker run
                                    -d
                                    --name bob-test-queue
                                    -p 5673:5672
                                    --network bob-net
                                    rabbitmq:3-alpine")
-                                 (println "Waiting for cluster readiness.")
-                                 (w/wait-for {"postgres" "tcp://127.0.0.1:5433"
-                                              "rabbitmq" "tcp://127.0.0.1:5673"})
-                                 (shell "clojure -M:test")
-                                 (finally
-                                   (run 'docker-clean))))}
-         compile      {:doc  "Builds the compiled artifact"
-                       :task (shell "clojure -T:build uber")}
-         image        {:doc  "Builds the docker image"
-                       :task (shell "docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/bob-cd/entities -f Containerfile .")}
-         clean        {:doc  "Cleans up"
-                       :task (do
-                               (shell "clojure -T:build clean")
-                               (shell "rm -rf .cpcache")
-                               (shell {:continue true} "docker rmi ghcr.io/bob-cd/entities"))}}}
+                         (println "Waiting for cluster readiness.")
+                         (w/wait-for {"postgres" "tcp://127.0.0.1:5433"
+                                      "rabbitmq" "tcp://127.0.0.1:5673"})
+                         (shell "clojure -M:test")
+                         (finally
+                           (run 'docker-clean))))}
+         compile {:doc "Builds the compiled artifact"
+                  :task (shell "clojure -T:build uber")}
+         image {:doc "Builds the docker image"
+                :task (shell "docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/bob-cd/entities -f Containerfile .")}
+         clean {:doc "Cleans up"
+                :task (do
+                        (shell "clojure -T:build clean")
+                        (shell "rm -rf .cpcache")
+                        (shell {:continue true} "docker rmi ghcr.io/bob-cd/entities"))}}}

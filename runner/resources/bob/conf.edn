@@ -4,10 +4,10 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-{:common              #include "bob/common.edn"
- :bob/storage         #ref [:common :bob/storage-conn]
+{:common #include "bob/common.edn"
+ :bob/storage #ref [:common :bob/storage-conn]
  :runner/queue-config {:database #ig/ref :bob/storage}
- :bob/queue           {:url      #ref [:common :bob/queue-conn :url]
-                       :user     #ref [:common :bob/queue-conn :user]
-                       :password #ref [:common :bob/queue-conn :password]
-                       :conf     #ig/ref :runner/queue-config}}
+ :bob/queue {:url #ref [:common :bob/queue-conn :url]
+             :user #ref [:common :bob/queue-conn :user]
+             :password #ref [:common :bob/queue-conn :password]
+             :conf #ig/ref :runner/queue-config}}

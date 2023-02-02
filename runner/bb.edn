@@ -5,23 +5,23 @@
 ; https://opensource.org/licenses/MIT.
 
 {:paths ["../tasks"]
- :tasks {:requires    ([wait :as w])
-         docker-clean {:doc  "Cleans up cluster containers"
+ :tasks {:requires ([wait :as w])
+         docker-clean {:doc "Cleans up cluster containers"
                        :task (do
                                (shell {:continue true} "docker kill bob-test-storage bob-test-queue resource-git artifact-local podman")
                                (shell {:continue true} "docker rm bob-test-storage bob-test-queue resource-git artifact-local podman")
                                (shell {:continue true} "docker network rm bob-net")
                                (shell {:continue true} "docker volume prune -f"))}
-         prep         {:doc "Prepares the deps"
-                       :task (do (shell "clojure -P -A:build")
-                                 (shell "clojure -P -M -A:test")
-                                 (shell "clojure -P"))}
-         test         {:doc  "Sets up the cluster and runs tests"
-                       :task (do
-                               (try
-                                 (run 'docker-clean)
-                                 (shell {:continue true} "docker network create bob-net")
-                                 (shell "docker run
+         prep {:doc "Prepares the deps"
+               :task (do (shell "clojure -P -A:build")
+                         (shell "clojure -P -M -A:test")
+                         (shell "clojure -P"))}
+         test {:doc "Sets up the cluster and runs tests"
+               :task (do
+                       (try
+                         (run 'docker-clean)
+                         (shell {:continue true} "docker network create bob-net")
+                         (shell "docker run
                                    -d
                                    --name podman
                                    --device /dev/fuse
@@ -33,7 +33,7 @@
                                    -p 8080:8080
                                    docker.io/mgoltzsche/podman:minimal
                                    podman system service -t 0 tcp://0.0.0.0:8080")
-                                 (shell "docker run
+                         (shell "docker run
                                    -d
                                    --name bob-test-storage
                                    -p 5433:5432
@@ -42,39 +42,39 @@
                                    -e POSTGRES_PASSWORD=bob
                                    --network bob-net
                                    postgres:alpine")
-                                 (shell "docker run
+                         (shell "docker run
                                    -d
                                    --name bob-test-queue
                                    -p 5673:5672
                                    --network bob-net
                                    rabbitmq:3-alpine")
-                                 (shell "docker run
+                         (shell "docker run
                                    -d
                                    --name resource-git
                                    -p 8000:8000
                                    --network bob-net
                                    ghcr.io/bob-cd/resource-git")
-                                 (shell "docker run
+                         (shell "docker run
                                    -d
                                    --name artifact-local
                                    -p 8001:8001
                                    --network bob-net
                                    ghcr.io/bob-cd/artifact-local")
-                                 (println "Waiting for cluster readiness.")
-                                 (w/wait-for {"podman"         "http://localhost:8080/v4.0.0/libpod/_ping"
-                                              "resource-git"   "http://localhost:8000/ping"
-                                              "artifact-store" "http://localhost:8001/ping"
-                                              "postgres"       "tcp://127.0.0.1:5433"
-                                              "rabbitmq"       "tcp://127.0.0.1:5673"})
-                                 (shell "clojure -M:test")
-                                 (finally
-                                   (run 'docker-clean))))}
-         compile      {:doc  "Builds the compiled aritfact"
-                       :task (shell "clojure -T:build uber")}
-         image        {:doc  "Builds the docker images"
-                       :task (shell "docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/bob-cd/runner -f Containerfile .")}
-         clean        {:doc  "Cleans up"
-                       :task (do
-                               (shell "clojure -T:build clean")
-                               (shell "rm -rf .cpcache runner.jar")
-                               (shell {:continue true} "docker rmi ghcr.io/bob-cd/runner"))}}}
+                         (println "Waiting for cluster readiness.")
+                         (w/wait-for {"podman" "http://localhost:8080/v4.0.0/libpod/_ping"
+                                      "resource-git" "http://localhost:8000/ping"
+                                      "artifact-store" "http://localhost:8001/ping"
+                                      "postgres" "tcp://127.0.0.1:5433"
+                                      "rabbitmq" "tcp://127.0.0.1:5673"})
+                         (shell "clojure -M:test")
+                         (finally
+                           (run 'docker-clean))))}
+         compile {:doc "Builds the compiled aritfact"
+                  :task (shell "clojure -T:build uber")}
+         image {:doc "Builds the docker images"
+                :task (shell "docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/bob-cd/runner -f Containerfile .")}
+         clean {:doc "Cleans up"
+                :task (do
+                        (shell "clojure -T:build clean")
+                        (shell "rm -rf .cpcache runner.jar")
+                        (shell {:continue true} "docker rmi ghcr.io/bob-cd/runner"))}}}

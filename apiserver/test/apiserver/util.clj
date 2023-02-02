@@ -23,29 +23,29 @@
 
 (defn with-system
   [test-fn]
-  (let [config {:bob/storage {:url      "jdbc:postgresql://localhost:5433/bob-test"
-                              :user     "bob"
+  (let [config {:bob/storage {:url "jdbc:postgresql://localhost:5433/bob-test"
+                              :user "bob"
                               :password "bob"}
-                :bob/queue   {:conf     (-> queue-conf
-                                            (update :queues
-                                                    assoc
-                                                    "bob.container.jobs"
-                                                    {:exclusive   false
-                                                     :auto-delete false
-                                                     :durable     true})
-                                            (update :bindings
-                                                    assoc
-                                                    "bob.container.jobs"
-                                                    "bob.direct"))
-                              :url      "amqp://localhost:5673"
-                              :user     "guest"
-                              :password "guest"}}
-        ds     (jdbc/get-datasource {:dbtype   "postgresql"
-                                     :dbname   "bob-test"
-                                     :user     "bob"
-                                     :password "bob"
-                                     :host     "localhost"
-                                     :port     5433})
+                :bob/queue {:conf (-> queue-conf
+                                      (update :queues
+                                              assoc
+                                              "bob.container.jobs"
+                                              {:exclusive false
+                                               :auto-delete false
+                                               :durable true})
+                                      (update :bindings
+                                              assoc
+                                              "bob.container.jobs"
+                                              "bob.direct"))
+                            :url "amqp://localhost:5673"
+                            :user "guest"
+                            :password "guest"}}
+        ds (jdbc/get-datasource {:dbtype "postgresql"
+                                 :dbname "bob-test"
+                                 :user "bob"
+                                 :password "bob"
+                                 :host "localhost"
+                                 :port 5433})
         system (ig/init config)]
     (test-fn (system :bob/storage)
              (-> system

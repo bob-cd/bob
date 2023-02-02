@@ -5,6 +5,6 @@
 ; https://opensource.org/licenses/MIT.
 
 #kaocha/v1
- {:color?     true
-  :reporter   [kaocha.report/documentation]
+ {:color? true
+  :reporter [kaocha.report/documentation]
   :fail-fast? true}

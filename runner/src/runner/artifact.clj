@@ -6,14 +6,14 @@
 
 (ns runner.artifact
   (:require
-    [babashka.http-client :as http]
-    [clojure.spec.alpha :as spec]
-    [clojure.string :as s]
-    [common.schemas]
-    [failjure.core :as f]
-    [runner.engine :as eng]
-    [taoensso.timbre :as log]
-    [xtdb.api :as xt]))
+   [babashka.http-client :as http]
+   [clojure.spec.alpha :as spec]
+   [clojure.string :as s]
+   [common.schemas]
+   [failjure.core :as f]
+   [runner.engine :as eng]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt]))
 
 (defn store-url
   [db-client store]
@@ -42,12 +42,12 @@
       (f/when-failed [err]
         (log/errorf "Error in uploading artifact: %s" (f/message err))
         (f/try*
-          (eng/delete-container container-id))
+         (eng/delete-container container-id))
         err))
     (do
       (log/error "Error locating Artifact Store")
       (f/try*
-        (eng/delete-container container-id))
+       (eng/delete-container container-id))
       (f/fail "No such artifact store registered"))))
 
 (comment

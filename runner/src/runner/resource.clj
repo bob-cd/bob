@@ -6,19 +6,19 @@
 
 (ns runner.resource
   (:require
-    [babashka.http-client :as http]
-    [clojure.java.io :as io]
-    [clojure.spec.alpha :as spec]
-    [clojure.string :as s]
-    [common.schemas]
-    [failjure.core :as f]
-    [runner.artifact :as a]
-    [runner.engine :as eng]
-    [taoensso.timbre :as log]
-    [xtdb.api :as xt])
+   [babashka.http-client :as http]
+   [clojure.java.io :as io]
+   [clojure.spec.alpha :as spec]
+   [clojure.string :as s]
+   [common.schemas]
+   [failjure.core :as f]
+   [runner.artifact :as a]
+   [runner.engine :as eng]
+   [taoensso.timbre :as log]
+   [xtdb.api :as xt])
   (:import
-    [java.io BufferedOutputStream File FileOutputStream]
-    [org.kamranzafar.jtar TarInputStream TarOutputStream]))
+   [java.io BufferedOutputStream File FileOutputStream]
+   [org.kamranzafar.jtar TarInputStream TarOutputStream]))
 
 (defn fetch-resource
   "Downloads a resource(tar file) and returns the stream."
@@ -38,7 +38,7 @@
 
   Returns the path to the final archive."
   [in-stream prefix]
-  (let [archive    (File/createTempFile "resource" ".tar")
+  (let [archive (File/createTempFile "resource" ".tar")
         out-stream (-> archive
                        FileOutputStream.
                        BufferedOutputStream.
@@ -73,16 +73,16 @@
                                                (xt/entity (xt/db db-client)))
                      _ (when-not (spec/valid? :bob.db/resource-provider rp)
                          (throw (Exception. (str "Invalid resource provider: " rp))))
-                     query                (s/join "&"
-                                                  (map #(format "%s=%s"
-                                                                (clojure.core/name (key %))
-                                                                (val %))
-                                                       params))]
+                     query (s/join "&"
+                                   (map #(format "%s=%s"
+                                                 (clojure.core/name (key %))
+                                                 (val %))
+                                        params))]
                  (format "%s/bob_resource?%s"
                          url
                          query))
-    "internal" (let [base-url                    (a/store-url db-client provider)
-                     resource-name               name
+    "internal" (let [base-url (a/store-url db-client provider)
+                     resource-name name
                      {:keys [group name run_id]} params]
                  (format "%s/bob_artifact/%s/%s/%s/%s"
                          base-url
@@ -103,11 +103,11 @@
   - Deletes the temp folder."
   [resource-stream image cmd resource-name]
   (f/try-all [_ (log/debug "Patching tar stream for container mounting")
-              archive-path      (-> resource-stream
-                                    TarInputStream.
-                                    (prefix-dir-on-tar! resource-name))
+              archive-path (-> resource-stream
+                               TarInputStream.
+                               (prefix-dir-on-tar! resource-name))
               _ (log/debug "Creating temp container for resource mount")
-              container-id      (eng/create-container image)
+              container-id (eng/create-container image)
               _ (log/debug "Copying resources to container")
               _ (eng/put-container-archive container-id (io/input-stream archive-path) "/root")
               _ (-> archive-path
@@ -135,7 +135,7 @@
   - Copies over the contents to the home dir inside the container.
   - Returns the id or the error."
   [db-client resource image]
-  (f/try-all [resource-name   (:name resource)
+  (f/try-all [resource-name (:name resource)
               _ (when (not (valid-resource-provider? db-client resource))
                   (f/fail (str "Invalid external resources, possibly not registered "
                                resource-name)))
@@ -154,41 +154,4 @@
       TarInputStream.
       (prefix-dir-on-tar! "source"))
 
-  (initial-image-of (fetch-resource "http://localhost:8000/test.tar") "busybox:musl" nil "source")
-
-  (require '[runner.system :as sys])
-
-  (def db-client
-    (-> sys/system
-        :database
-        sys/db-client))
-
-  (xt/submit-tx db-client
-                [[::xt/put
-                  {:xt/id :bob.resource-provider/git
-                   :type  :resource-provider
-                   :name  "git"
-                   :url   "http://localhost:8000"}]])
-
-  (valid-resource-provider? db-client {:provider "git"})
-
-  (url-of db-client
-          {:name     "source"
-           :type     "external"
-           :provider "git"
-           :params   {:repo   "a-repo"
-                      :branch "a-branch"}})
-
-  (s/join "&"
-          (map #(format "%s=%s"
-                        (name (key %))
-                        (val %))
-               {:repo "a-repo" :branch "a-branch"}))
-
-  (mounted-image-from db-client
-                      {:name     "source"
-                       :type     "external"
-                       :provider "git"
-                       :params   {:repo   "a-repo"
-                                  :branch "a-branch"}}
-                      "busybox:musl"))
+  (initial-image-of (fetch-resource "http://localhost:8000/test.tar") "busybox:musl" nil "source"))

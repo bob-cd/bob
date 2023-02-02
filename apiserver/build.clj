@@ -16,25 +16,25 @@
 
 (defn uber
   [_]
-  (let [basis     (b/create-basis {:project "deps.edn"})
+  (let [basis (b/create-basis {:project "deps.edn"})
         class-dir "target/classes"
-        src-dirs  ["src"]]
+        src-dirs ["src"]]
     (clean nil)
     (b/write-pom {:class-dir class-dir
-                  :lib       'bob/apiserver
-                  :version   "0.1.0"
-                  :basis     basis
-                  :src-dirs  src-dirs})
-    (b/copy-dir {:src-dirs   (conj src-dirs "resources")
+                  :lib 'bob/apiserver
+                  :version "0.1.0"
+                  :basis basis
+                  :src-dirs src-dirs})
+    (b/copy-dir {:src-dirs (conj src-dirs "resources")
                  :target-dir class-dir})
-    (b/compile-clj {:basis        basis
-                    :src-dirs     src-dirs
-                    :class-dir    class-dir
-                    :ns-compile   '[apiserver.main]
-                    :java-cmd     (or (System/getenv "JAVA_CMD") "java")
-                    :java-opts    ["--enable-preview"]
+    (b/compile-clj {:basis basis
+                    :src-dirs src-dirs
+                    :class-dir class-dir
+                    :ns-compile '[apiserver.main]
+                    :java-cmd (or (System/getenv "JAVA_CMD") "java")
+                    :java-opts ["--enable-preview"]
                     :compile-opts {:direct-linking true}})
     (b/uber {:class-dir class-dir
              :uber-file uber-file
-             :basis     basis
-             :main      'apiserver.main})))
+             :basis basis
+             :main 'apiserver.main})))

@@ -6,16 +6,16 @@
 
 (ns runner.pipeline-test
   (:require
-    [babashka.http-client :as http]
-    [clojure.spec.alpha]
-    [clojure.test :refer [deftest is testing]]
-    [common.schemas]
-    [failjure.core :as f]
-    [runner.engine :as eng]
-    [runner.engine-test :as et]
-    [runner.pipeline :as p]
-    [runner.util :as u]
-    [xtdb.api :as xt]))
+   [babashka.http-client :as http]
+   [clojure.spec.alpha]
+   [clojure.test :refer [deftest is testing]]
+   [common.schemas]
+   [failjure.core :as f]
+   [runner.engine :as eng]
+   [runner.engine-test :as et]
+   [runner.pipeline :as p]
+   [runner.util :as u]
+   [xtdb.api :as xt]))
 
 (def test-image "alpine:latest")
 
@@ -26,7 +26,7 @@
                      (Thread/sleep 1000)
                      (u/spec-assert :bob.db/log-line
                                     (-> (xt/db db)
-                                        (xt/q '{:find  [(pull log [:type :run-id :line])]
+                                        (xt/q '{:find [(pull log [:type :run-id :line])]
                                                 :where [[log :run-id "r-a-run-id"]]})
                                         ffirst)))
 
@@ -35,7 +35,7 @@
                      (Thread/sleep 1000)
                      (u/spec-assert :bob.db/log-line-event
                                     (-> (xt/db db)
-                                        (xt/q '{:find  [(pull log [:type :run-id :line])]
+                                        (xt/q '{:find [(pull log [:type :run-id :line])]
                                                 :where [[log :run-id "r-another-run-id"]]})
                                         ffirst))))))
 
@@ -60,27 +60,27 @@
                                   (xt/submit-tx db
                                                 [[::xt/put
                                                   {:xt/id :bob.resource-provider/git
-                                                   :type  :resource-provider
-                                                   :url   "http://localhost:8000"
-                                                   :name  "git"}]]))
+                                                   :type :resource-provider
+                                                   :url "http://localhost:8000"
+                                                   :name "git"}]]))
                      (xt/await-tx db
                                   (xt/submit-tx db
                                                 [[::xt/put
-                                                  {:xt/id     :bob.pipeline.test/test
-                                                   :type      :pipeline
-                                                   :group     "test"
-                                                   :name      "test"
-                                                   :steps     []
-                                                   :vars      {}
-                                                   :resources [{:name     "source"
-                                                                :type     "external"
+                                                  {:xt/id :bob.pipeline.test/test
+                                                   :type :pipeline
+                                                   :group "test"
+                                                   :name "test"
+                                                   :steps []
+                                                   :vars {}
+                                                   :resources [{:name "source"
+                                                                :type "external"
                                                                 :provider "git"
-                                                                :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                           :branch "main"}}]
-                                                   :image     test-image}]]))
+                                                                :params {:repo "https://github.com/bob-cd/bob"
+                                                                         :branch "main"}}]
+                                                   :image test-image}]]))
                      (let [image (p/resourceful-step db
                                                      {:needs_resource "source"
-                                                      :cmd            "ls"}
+                                                      :cmd "ls"}
                                                      "test"
                                                      "test"
                                                      test-image
@@ -93,7 +93,7 @@
                    (testing "unsuccessful resource provisioning of a step"
                      (is (f/failed? (p/resourceful-step db
                                                         {:needs_resource "source"
-                                                         :cmd            "ls"}
+                                                         :cmd "ls"}
                                                         "test"
                                                         "test"
                                                         test-image
@@ -111,15 +111,15 @@
   (testing "successful simple step execution"
     (eng/pull-image test-image)
     (u/with-system (fn [db _]
-                     (let [initial-state {:image     test-image
-                                          :mounted   #{}
-                                          :run-id    "r-a-simple-run-id"
+                     (let [initial-state {:image test-image
+                                          :mounted #{}
+                                          :run-id "r-a-simple-run-id"
                                           :db-client db
-                                          :env       {}
-                                          :group     "test"
-                                          :name      "test"}
-                           step          {:cmd "ls"}
-                           final-state   (p/exec-step initial-state step)]
+                                          :env {}
+                                          :group "test"
+                                          :name "test"}
+                           step {:cmd "ls"}
+                           final-state (p/exec-step initial-state step)]
                        (is (not (f/failed? final-state)))
                        (is (not= test-image (:image final-state)))
                        (is (empty? (:mounted final-state))))
@@ -132,34 +132,34 @@
                                   (xt/submit-tx db
                                                 [[::xt/put
                                                   {:xt/id :bob.resource-provider/git
-                                                   :type  :resource-provider
-                                                   :name  "git"
-                                                   :url   "http://localhost:8000"}]]))
+                                                   :type :resource-provider
+                                                   :name "git"
+                                                   :url "http://localhost:8000"}]]))
                      (xt/await-tx db
                                   (xt/submit-tx db
                                                 [[::xt/put
-                                                  {:xt/id     :bob.pipeline.test/test
-                                                   :type      :pipeline
-                                                   :group     "test"
-                                                   :name      "test"
-                                                   :steps     []
-                                                   :vars      {}
-                                                   :resources [{:name     "source"
-                                                                :type     "external"
+                                                  {:xt/id :bob.pipeline.test/test
+                                                   :type :pipeline
+                                                   :group "test"
+                                                   :name "test"
+                                                   :steps []
+                                                   :vars {}
+                                                   :resources [{:name "source"
+                                                                :type "external"
                                                                 :provider "git"
-                                                                :params   {:repo   "https://github.com/bob-cd/bob"
-                                                                           :branch "main"}}]
-                                                   :image     test-image}]]))
-                     (let [initial-state {:image     test-image
-                                          :mounted   #{}
-                                          :run-id    "r-a-resource-run-id"
+                                                                :params {:repo "https://github.com/bob-cd/bob"
+                                                                         :branch "main"}}]
+                                                   :image test-image}]]))
+                     (let [initial-state {:image test-image
+                                          :mounted #{}
+                                          :run-id "r-a-resource-run-id"
                                           :db-client db
-                                          :env       {}
-                                          :group     "test"
-                                          :name      "test"}
-                           step          {:cmd            "ls"
-                                          :needs_resource "source"}
-                           final-state   (p/exec-step initial-state step)]
+                                          :env {}
+                                          :group "test"
+                                          :name "test"}
+                           step {:cmd "ls"
+                                 :needs_resource "source"}
+                           final-state (p/exec-step initial-state step)]
                        (is (not (f/failed? final-state)))
                        (is (contains? (:mounted final-state) "source")))
                      (p/gc-images "a-resource-run-id"))))
@@ -172,21 +172,21 @@
                      (xt/submit-tx db
                                    [[::xt/put
                                      {:xt/id :bob.artifact-store/local
-                                      :type  :artifact-store
-                                      :name  "local"
-                                      :url   "http://localhost:8001"}]]))
-        (let [initial-state {:image     test-image
-                             :mounted   #{}
-                             :run-id    "r-a-artifact-run-id"
+                                      :type :artifact-store
+                                      :name "local"
+                                      :url "http://localhost:8001"}]]))
+        (let [initial-state {:image test-image
+                             :mounted #{}
+                             :run-id "r-a-artifact-run-id"
                              :db-client db
-                             :env       {}
-                             :group     "test"
-                             :name      "test"}
-              step          {:cmd               "touch text.txt"
-                             :produces_artifact {:path  "text.txt"
-                                                 :name  "text"
-                                                 :store "local"}}
-              final-state   (p/exec-step initial-state step)]
+                             :env {}
+                             :group "test"
+                             :name "test"}
+              step {:cmd "touch text.txt"
+                    :produces_artifact {:path "text.txt"
+                                        :name "text"
+                                        :store "local"}}
+              final-state (p/exec-step initial-state step)]
           (is (not (f/failed? final-state)))
           (is (empty? (:mounted final-state)))
           (is (= 200
@@ -201,45 +201,45 @@
                      (xt/submit-tx db
                                    [[::xt/put
                                      {:xt/id :bob.resource-provider/git
-                                      :type  :resource-provider
-                                      :name  "git"
-                                      :url   "http://localhost:8000"}]]))
+                                      :type :resource-provider
+                                      :name "git"
+                                      :url "http://localhost:8000"}]]))
 
         (xt/await-tx db
                      (xt/submit-tx db
                                    [[::xt/put
                                      {:xt/id :bob.artifact-store/local
-                                      :type  :artifact-store
-                                      :name  "local"
-                                      :url   "http://localhost:8001"}]]))
+                                      :type :artifact-store
+                                      :name "local"
+                                      :url "http://localhost:8001"}]]))
         (xt/await-tx db
                      (xt/submit-tx db
                                    [[::xt/put
-                                     {:xt/id     :bob.pipeline.test/test
-                                      :type      :pipeline
-                                      :group     "test"
-                                      :name      "test"
-                                      :steps     []
-                                      :vars      {}
-                                      :resources [{:name     "source"
-                                                   :type     "external"
+                                     {:xt/id :bob.pipeline.test/test
+                                      :type :pipeline
+                                      :group "test"
+                                      :name "test"
+                                      :steps []
+                                      :vars {}
+                                      :resources [{:name "source"
+                                                   :type "external"
                                                    :provider "git"
-                                                   :params   {:repo   "https://github.com/bob-cd/bob"
-                                                              :branch "main"}}]
-                                      :image     test-image}]]))
-        (let [initial-state {:image     test-image
-                             :mounted   #{}
-                             :run-id    "r-a-full-run-id"
+                                                   :params {:repo "https://github.com/bob-cd/bob"
+                                                            :branch "main"}}]
+                                      :image test-image}]]))
+        (let [initial-state {:image test-image
+                             :mounted #{}
+                             :run-id "r-a-full-run-id"
                              :db-client db
-                             :env       {}
-                             :group     "test"
-                             :name      "test"}
-              step          {:needs_resource    "source"
-                             :cmd               "ls"
-                             :produces_artifact {:path  "README.md"
-                                                 :name  "text"
-                                                 :store "local"}}
-              final-state   (p/exec-step initial-state step)]
+                             :env {}
+                             :group "test"
+                             :name "test"}
+              step {:needs_resource "source"
+                    :cmd "ls"
+                    :produces_artifact {:path "README.md"
+                                        :name "text"
+                                        :store "local"}}
+              final-state (p/exec-step initial-state step)]
           (is (not (f/failed? final-state)))
           (is (contains? (:mounted final-state) "source"))
           (is (= 200
@@ -252,15 +252,15 @@
 
   (testing "wrong command step failure"
     (u/with-system (fn [db _]
-                     (let [initial-state {:image     test-image
-                                          :mounted   #{}
-                                          :run-id    "r-a-simple-run-id"
+                     (let [initial-state {:image test-image
+                                          :mounted #{}
+                                          :run-id "r-a-simple-run-id"
                                           :db-client db
-                                          :env       {}
-                                          :group     "test"
-                                          :name      "test"}
-                           step          {:cmd "this-bombs"}
-                           final-state   (p/exec-step initial-state step)]
+                                          :env {}
+                                          :group "test"
+                                          :name "test"}
+                           step {:cmd "this-bombs"}
+                           final-state (p/exec-step initial-state step)]
                        (is (f/failed? final-state)))
                      (p/gc-images "a-simple-run-id")))))
 
@@ -271,21 +271,21 @@
                                   (xt/submit-tx db
                                                 [[::xt/put
                                                   {:xt/id :bob.pipeline.test/test
-                                                   :type  :pipeline
+                                                   :type :pipeline
                                                    :group "test"
-                                                   :name  "test"
+                                                   :name "test"
                                                    :steps [{:cmd "echo hello"} {:cmd "sh -c \"echo ${k1}\""}]
-                                                   :vars  {:k1 "v1"}
+                                                   :vars {:k1 "v1"}
                                                    :image test-image}]]))
-                     (let [result   @(p/start db
-                                       queue
-                                       {:group  "test"
-                                        :name   "test"
-                                        :run_id "r-a-run-id"})
-                           history  (xt/entity-history (xt/db db)
-                                                       (keyword (str "bob.pipeline.run/" result))
-                                                       :desc
-                                                       {:with-docs? true})
+                     (let [result @(p/start db
+                                            queue
+                                            {:group "test"
+                                             :name "test"
+                                             :run_id "r-a-run-id"})
+                           history (xt/entity-history (xt/db db)
+                                                      (keyword (str "bob.pipeline.run/" result))
+                                                      :desc
+                                                      {:with-docs? true})
                            run-info (xt/entity (xt/db db) (keyword (str "bob.pipeline.run/" result)))
                            statuses (->> history
                                          (map ::xt/doc)
@@ -301,23 +301,23 @@
                                   (xt/submit-tx db
                                                 [[::xt/put
                                                   {:xt/id :bob.pipeline.test/test
-                                                   :type  :pipeline
+                                                   :type :pipeline
                                                    :group "test"
-                                                   :name  "test"
+                                                   :name "test"
                                                    :steps [{:cmd "echo hello"} {:cmd "this-bombs"}]
-                                                   :vars  {:k1 "v1"}
+                                                   :vars {:k1 "v1"}
                                                    :image test-image}]]))
-                     (let [result   @(p/start db
-                                       queue
-                                       {:group  "test"
-                                        :name   "test"
-                                        :run_id "r-a-run-id"})
-                           id       (f/message result)
+                     (let [result @(p/start db
+                                            queue
+                                            {:group "test"
+                                             :name "test"
+                                             :run_id "r-a-run-id"})
+                           id (f/message result)
                            run-info (xt/entity (xt/db db) (keyword (str "bob.pipeline.run/" id)))
-                           history  (xt/entity-history (xt/db db)
-                                                       (keyword (str "bob.pipeline.run/" id))
-                                                       :desc
-                                                       {:with-docs? true})
+                           history (xt/entity-history (xt/db db)
+                                                      (keyword (str "bob.pipeline.run/" id))
+                                                      :desc
+                                                      {:with-docs? true})
                            statuses (->> history
                                          (map ::xt/doc)
                                          (map :status)
@@ -335,28 +335,28 @@
                      (xt/submit-tx db
                                    [[::xt/put
                                      {:xt/id :bob.pipeline.test/stop-test
-                                      :type  :pipeline
+                                      :type :pipeline
                                       :group "test"
-                                      :name  "stop-test"
+                                      :name "stop-test"
                                       :steps [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
-                                      :vars  {}
+                                      :vars {}
                                       :image test-image}]]))
         (let [_ (p/start db
-                  queue
-                  {:group  "test"
-                   :name   "stop-test"
-                   :run_id "r-a-stop-id"})
+                         queue
+                         {:group "test"
+                          :name "stop-test"
+                          :run_id "r-a-stop-id"})
               _ (Thread/sleep 5000) ;; Longer, possibly flaky wait
               _ (p/stop db
-                  queue
-                  {:group  "test"
-                   :name   "stop-test"
-                   :run_id "r-a-stop-id"})
+                        queue
+                        {:group "test"
+                         :name "stop-test"
+                         :run_id "r-a-stop-id"})
               run-info (xt/entity (xt/db db) :bob.pipeline.run/r-a-stop-id)
-              history  (xt/entity-history (xt/db db)
-                                          :bob.pipeline.run/r-a-stop-id
-                                          :desc
-                                          {:with-docs? true})
+              history (xt/entity-history (xt/db db)
+                                         :bob.pipeline.run/r-a-stop-id
+                                         :desc
+                                         {:with-docs? true})
               statuses (->> history
                             (map ::xt/doc)
                             (map :status)

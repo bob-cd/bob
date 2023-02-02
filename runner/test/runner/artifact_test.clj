@@ -6,13 +6,13 @@
 
 (ns runner.artifact-test
   (:require
-    [babashka.http-client :as http]
-    [clojure.test :refer [deftest is testing]]
-    [failjure.core :as f]
-    [runner.artifact :as a]
-    [runner.engine :as eng]
-    [runner.util :as u]
-    [xtdb.api :as xt]))
+   [babashka.http-client :as http]
+   [clojure.test :refer [deftest is testing]]
+   [failjure.core :as f]
+   [runner.artifact :as a]
+   [runner.engine :as eng]
+   [runner.util :as u]
+   [xtdb.api :as xt]))
 
 (deftest upload-artifact-test
   (eng/pull-image "busybox:musl")
@@ -23,9 +23,9 @@
                      (xt/submit-tx db
                                    [[::xt/put
                                      {:xt/id :bob.artifact-store/local
-                                      :type  :artifact-store
-                                      :url   "http://localhost:8001"
-                                      :name  "local"}]]))
+                                      :type :artifact-store
+                                      :url "http://localhost:8001"
+                                      :name "local"}]]))
 
         (testing "successful artifact upload"
           (is (= "Ok"

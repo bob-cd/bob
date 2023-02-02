@@ -18,7 +18,7 @@
   []
   (map :Id
        (c/invoke e/containers
-                 {:op     :ContainerListLibpod
+                 {:op :ContainerListLibpod
                   :params {:all true}})))
 
 (defn image-ls
@@ -28,7 +28,7 @@
 (defn start
   [id]
   (c/invoke e/containers
-            {:op     :ContainerStartLibpod
+            {:op :ContainerStartLibpod
              :params {:name id}}))
 
 ;; tests
@@ -56,7 +56,7 @@
   (let [_ (e/pull-image image)
         id (e/create-container image {:cmd "ls"})]
     (testing "success"
-      (let [image-id  (e/commit-container id "pwd")
+      (let [image-id (e/commit-container id "pwd")
             new-image (->> (image-ls)
                            (map :Id)
                            (filter #{image-id})
@@ -80,15 +80,15 @@
 (deftest ^:integration create-container
   (e/pull-image image)
   (testing "success: image"
-    (let [id          (e/create-container image)
+    (let [id (e/create-container image)
           expected-id (first (ps-a))]
       (is (= expected-id id))
       (e/delete-container id)))
   (testing "success: image and evars"
-    (let [id                           (e/create-container image
-                                                           {:cmd            "ls"
-                                                            :needs_resource "src"}
-                                                           {:k1 "v1"})
+    (let [id (e/create-container image
+                                 {:cmd "ls"
+                                  :needs_resource "src"}
+                                 {:k1 "v1"})
           {:keys [Env Cmd WorkingDir]} (-> (e/inspect-container id)
                                            :Config
                                            (select-keys [:Env :Cmd :WorkingDir]))]
@@ -104,11 +104,11 @@
 (deftest ^:integration status-of
   (e/pull-image image)
   (testing "success"
-    (let [id     (e/create-container image {:cmd "ls"})
+    (let [id (e/create-container image {:cmd "ls"})
           _ (start id)
           _ (Thread/sleep 2000)
           status (e/status-of id)]
-      (is (= {:running?  false
+      (is (= {:running? false
               :exit-code 0}
              status))
       (e/delete-container id)))
@@ -119,7 +119,7 @@
 (deftest ^:integration react-to-log-line
   (e/pull-image image)
   (testing "success"
-    (let [id    (e/create-container image {:cmd "sh -c 'for i in `seq 1 5`; do echo $i; done'"})
+    (let [id (e/create-container image {:cmd "sh -c 'for i in `seq 1 5`; do echo $i; done'"})
           _ (start id)
           _ (Thread/sleep 2000)
           lines (atom [])
@@ -134,12 +134,12 @@
 (deftest ^:integration start-container
   (e/pull-image image)
   (testing "success: normal exit"
-    (let [id        (e/create-container image {:cmd "sh -c 'sleep 2; ls'"})
+    (let [id (e/create-container image {:cmd "sh -c 'sleep 2; ls'"})
           result-id (e/start-container id println)]
       (is (= id result-id))
       (e/delete-container id)))
   (testing "success: abnormal exit"
-    (let [id     (e/create-container image {:cmd "sh -c 'sleep 2; exit 1'"})
+    (let [id (e/create-container image {:cmd "sh -c 'sleep 2; exit 1'"})
           result (e/start-container id println)]
       (is (f/failed? result))
       (is (= (format "Container %s exited with non-zero status 1" id) (f/message result)))
@@ -151,7 +151,7 @@
 (deftest ^:integration kill-container
   (e/pull-image image)
   (testing "success"
-    (let [id     (e/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
+    (let [id (e/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
           _ (future (e/start-container id #(println %)))
           _ (Thread/sleep 2000)
           _ (e/kill-container id)
@@ -163,7 +163,7 @@
 (deftest ^:integration delete-container
   (e/pull-image image)
   (testing "success"
-    (let [id     (e/create-container image)
+    (let [id (e/create-container image)
           _ (e/delete-container id)
           result (some #{id} (ps-a))]
       (is (nil? result))))
@@ -207,10 +207,10 @@
   (e/pull-image image)
   (testing "success"
     (let [containers-before (e/container-ls)
-          id                (e/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
+          id (e/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
           _ (future (e/start-container id #(println %)))
           _ (Thread/sleep 1000)
-          containers-after  (e/container-ls)]
+          containers-after (e/container-ls)]
       (is (= 1 (- (count containers-after) (count containers-before))))
       (e/kill-container id)
       (e/delete-container id)))

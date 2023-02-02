@@ -18,9 +18,9 @@
                             data
                             [[::xt/put
                               {:xt/id (keyword (str "bob.resource-provider/" (:name data)))
-                               :type  :resource-provider
-                               :url   (:url data)
-                               :name  (:name data)}]]
+                               :type :resource-provider
+                               :url (:url data)
+                               :name (:name data)}]]
                             "resource-provider"))
 
 (defn un-register-resource-provider

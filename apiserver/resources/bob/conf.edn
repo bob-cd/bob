@@ -4,20 +4,20 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-{:common        #include "bob/common.edn"
- :bob/storage   #ref [:common :bob/storage-conn]
- :bob/queue     {:url      #ref [:common :bob/queue-conn :url]
-                 :user     #ref [:common :bob/queue-conn :user]
-                 :password #ref [:common :bob/queue-conn :password]
-                 :api-url  #or [#env BOB_QUEUE_API_URL "http://localhost:15672/api"]
-                 :conf     {:exchanges #ref [:common :bob/exchanges]
-                            :queues    #merge [#ref [:common :bob/queues]
-                                               {"bob.entities" {:exclusive   false
-                                                                :auto-delete false
-                                                                :durable     true}}]
-                            :bindings {"bob.entities" "bob.direct"}}}
- :bob/apiserver {:host              #or [#env BOB_API_HOST "0.0.0.0"]
-                 :port              #long #or [#env BOB_API_PORT 7777]
+{:common #include "bob/common.edn"
+ :bob/storage #ref [:common :bob/storage-conn]
+ :bob/queue {:url #ref [:common :bob/queue-conn :url]
+             :user #ref [:common :bob/queue-conn :user]
+             :password #ref [:common :bob/queue-conn :password]
+             :api-url #or [#env BOB_QUEUE_API_URL "http://localhost:15672/api"]
+             :conf {:exchanges #ref [:common :bob/exchanges]
+                    :queues #merge [#ref [:common :bob/queues]
+                                    {"bob.entities" {:exclusive false
+                                                     :auto-delete false
+                                                     :durable true}}]
+                    :bindings {"bob.entities" "bob.direct"}}}
+ :bob/apiserver {:host #or [#env BOB_API_HOST "0.0.0.0"]
+                 :port #long #or [#env BOB_API_PORT 7777]
                  :health-check-freq #long #or [#env BOB_HEALTH_CHECK_FREQ 60000]
-                 :database          #ig/ref :bob/storage
-                 :queue             #ig/ref :bob/queue}}
+                 :database #ig/ref :bob/storage
+                 :queue #ig/ref :bob/queue}}
