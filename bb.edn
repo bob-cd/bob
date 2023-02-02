@@ -16,6 +16,11 @@
                  (def push-task "bb push")
                  (def clean-task "bb clean"))
 
+         bump-deps {:doc "Upgrade all deps using antq"
+                    :task (doseq [d [apiserver-dir entities-dir runner-dir]]
+                            (println (str "Checking in " d))
+                            (shell {:dir d} "clojure -Sdeps '{:deps {com.github.liquidz/antq {:mvn/version \"RELEASE\"}}}' -M -m antq.core"))}
+
          apiserver {:doc "Builds the apiserver"
                     :task (shell {:dir apiserver-dir} compile-task)}
          apiserver-prep {:doc "Prepares the deps of the apiserver"
