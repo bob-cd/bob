@@ -84,7 +84,11 @@
       (le/declare chan ex (:type props) (select-keys props [:durable])))
     (doseq [[queue props] (:queues conf)]
       (log/infof "Declared queue %s" queue)
-      (lq/declare chan queue (assoc props :arguments {"x-queue-type" "quorum"})))
+      (lq/declare chan queue (into {:auto-delete false
+                                    :durable true
+                                    :exclusive false
+                                    :arguments {"x-queue-type" "quorum"}}
+                                   props)))
     (doseq [[queue ex] (:bindings conf)]
       (log/infof "Bound %s -> %s"
                  queue

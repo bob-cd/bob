@@ -28,12 +28,8 @@
   [_ {:keys [database]}]
   {:exchanges {"bob.direct" {:type "direct"
                              :durable true}}
-   :queues {"bob.errors" {:exclusive false
-                          :auto-delete false
-                          :durable true}
-            "bob.entities" {:exclusive false
-                            :auto-delete false
-                            :durable true}}
+   :queues {"bob.errors" {}
+            "bob.entities" {}}
    :bindings {"bob.entities" "bob.direct"}
    :subscriptions {"bob.entities" (partial d/queue-msg-subscriber database routes)}})
 

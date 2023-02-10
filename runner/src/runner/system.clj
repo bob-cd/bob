@@ -27,15 +27,11 @@
                                :durable true}
                  "bob.fanout" {:type "fanout"
                                :durable true}}
-     :queues {jobs-queue {:exclusive false
-                          :auto-delete false
-                          :durable true}
-              "bob.errors" {:exclusive false
-                            :auto-delete false
-                            :durable true}
-              broadcast-queue {:exclusive true
-                               :auto-delete true
-                               :durable true}}
+     :queues {jobs-queue {}
+              "bob.errors" {}
+              broadcast-queue {:arguments {}
+                               :exclusive true
+                               :auto-delete true}}
      :bindings {jobs-queue "bob.direct"
                 broadcast-queue "bob.fanout"}
      :subscriptions {jobs-queue subscriber
