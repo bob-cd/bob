@@ -67,6 +67,7 @@
 
 (defn queue-get
   [chan queue]
+  (Thread/sleep 1000) ; quorum queues need a bit of time
   (let [[metadata payload] (lb/get chan queue true)]
     {:type (:type metadata)
      :data (json/read-str (String. payload "UTF-8") :key-fn keyword)}))
