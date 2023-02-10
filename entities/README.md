@@ -40,7 +40,7 @@ Following the [diagram](https://github.com/bob-cd/bob/issues/70#issuecomment-611
 
 ### Ways of connecting Entities to the cluster
 - To build an uberjar run `bb compile` to obtain an `entities.jar`. Running `java -jar entities.jar` should connect to it all nicely.
-- To run directly without building a JAR, run `clj -M -m entities.main` from this dir.
+- To run directly without building a JAR, run `clojure -J--enable-preview -M -m entities.main` from this dir.
 
 ## Setting up the dev environment with the REPL
 - This uses [Integrant](https://github.com/weavejester/integrant) to manage state across the app.
