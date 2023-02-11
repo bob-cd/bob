@@ -12,9 +12,7 @@
              :api-url #or [#env BOB_QUEUE_API_URL "http://localhost:15672/api"]
              :conf {:exchanges #ref [:common :bob/exchanges]
                     :queues #merge [#ref [:common :bob/queues]
-                                    {"bob.entities" {:exclusive false
-                                                     :auto-delete false
-                                                     :durable true}}]
+                                    {"bob.entities" {}}]
                     :bindings {"bob.entities" "bob.direct"}}}
  :bob/apiserver {:host #or [#env BOB_API_HOST "0.0.0.0"]
                  :port #long #or [#env BOB_API_PORT 7777]

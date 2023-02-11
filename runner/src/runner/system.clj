@@ -23,15 +23,11 @@
   (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
         subscriber (partial d/queue-msg-subscriber database routes)
         jobs-queue "bob.container.jobs"]
-    {:exchanges {"bob.direct" {:type "direct"
-                               :durable true}
-                 "bob.fanout" {:type "fanout"
-                               :durable true}}
-     :queues {jobs-queue {}
-              "bob.errors" {}
-              broadcast-queue {:arguments {}
-                               :exclusive true
-                               :auto-delete true}}
+    {:queues {jobs-queue {}
+               "bob.errors" {}
+               broadcast-queue {:arguments {}
+                                :exclusive true
+                                :auto-delete true}}
      :bindings {jobs-queue "bob.direct"
                 broadcast-queue "bob.fanout"}
      :subscriptions {jobs-queue subscriber
@@ -50,9 +46,7 @@
 
 (defn stop
   []
-  (alter-var-root #'system
-                  #(when %
-                     (ig/halt! %))))
+  (alter-var-root #'system #(when % (ig/halt! %))))
 
 (defn reset
   []

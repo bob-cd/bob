@@ -80,17 +80,17 @@
         chan (lch/open conn)]
     (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
     (doseq [[ex props] (:exchanges conf)]
-      (log/infof "Declared exchange %s" ex)
+      (log/infof "Declaring exchange %s" ex)
       (le/declare chan ex (:type props) (select-keys props [:durable])))
     (doseq [[queue props] (:queues conf)]
-      (log/infof "Declared queue %s" queue)
-      (lq/declare chan queue (into {:auto-delete false
-                                    :durable true
-                                    :exclusive false
-                                    :arguments {"x-queue-type" "quorum"}}
-                                   props)))
+      (log/infof "Declaring queue %s" queue)
+      (lq/declare chan queue (merge {:auto-delete false
+                                     :durable true
+                                     :exclusive false
+                                     :arguments {"x-queue-type" "quorum"}}
+                                    props)))
     (doseq [[queue ex] (:bindings conf)]
-      (log/infof "Bound %s -> %s"
+      (log/infof "Binding %s -> %s"
                  queue
                  ex)
       (lq/bind chan
@@ -100,7 +100,7 @@
                  {}
                  {:routing-key queue})))
     (doseq [[queue subscriber] (:subscriptions conf)]
-      (log/infof "Subscribed to %s" queue)
+      (log/infof "Subscribing to %s" queue)
       (lc/subscribe chan queue subscriber {:auto-ack true}))
     {:conn conn :chan chan :conn-opts conn-opts}))
 

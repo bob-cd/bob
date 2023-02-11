@@ -26,12 +26,11 @@
 (defmethod ig/init-key
   :entities/queue-config
   [_ {:keys [database]}]
-  {:exchanges {"bob.direct" {:type "direct"
-                             :durable true}}
-   :queues {"bob.errors" {}
-            "bob.entities" {}}
-   :bindings {"bob.entities" "bob.direct"}
-   :subscriptions {"bob.entities" (partial d/queue-msg-subscriber database routes)}})
+  (let [entities-queue "bob.entities"]
+    {:queues {"bob.errors" {}
+              entities-queue {}}
+     :bindings {entities-queue "bob.direct"}
+     :subscriptions {entities-queue (partial d/queue-msg-subscriber database routes)}}))
 
 (defonce system nil)
 
@@ -46,9 +45,7 @@
 
 (defn stop
   []
-  (alter-var-root #'system
-                  #(when %
-                     (ig/halt! %))))
+  (alter-var-root #'system #(when % (ig/halt! %))))
 
 (defn reset
   []

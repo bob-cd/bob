@@ -49,9 +49,7 @@
 
 (defn stop
   []
-  (alter-var-root #'system
-                  #(when %
-                     (ig/halt! %))))
+  (alter-var-root #'system #(when % (ig/halt! %))))
 
 (defn reset
   []

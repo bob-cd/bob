@@ -11,7 +11,7 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.test :as t]
-   [common.system]
+   [common.system :as cs]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]))
 
@@ -23,23 +23,14 @@
 
 (defn with-system
   [test-fn]
-  (let [config {:bob/storage {:url "jdbc:postgresql://localhost:5433/bob-test"
-                              :user "bob"
-                              :password "bob"}
-                :bob/queue {:conf (-> queue-conf
-                                      (update :queues
-                                              assoc
-                                              "bob.container.jobs"
-                                              {:exclusive false
-                                               :auto-delete false
-                                               :durable true})
-                                      (update :bindings
-                                              assoc
-                                              "bob.container.jobs"
-                                              "bob.direct"))
-                            :url "amqp://localhost:5673"
-                            :user "guest"
-                            :password "guest"}}
+  (let [config (-> "bob/conf.edn"
+                   (io/resource)
+                   (aero/read-config {:resolver cs/resource-resolver})
+                   (dissoc :common)
+                   (assoc-in [:bob/storage :url] "jdbc:postgresql://localhost:5433/bob-test")
+                   (assoc-in [:bob/queue :url] "amqp://localhost:5673")
+                   (update-in [:bob/queue :conf :queues] assoc "bob.container.jobs" {})
+                   (update-in [:bob/queue :conf :bindings] assoc "bob.container.jobs" "bob.direct"))
         ds (jdbc/get-datasource {:dbtype "postgresql"
                                  :dbname "bob-test"
                                  :user "bob"
