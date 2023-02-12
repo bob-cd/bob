@@ -10,12 +10,10 @@
  :bob/queue-conn {:url #or [#env BOB_QUEUE_URL "amqp://localhost:5672"]
                   :user #or [#env BOB_QUEUE_USER "guest"]
                   :password #or [#env BOB_QUEUE_PASSWORD "guest"]}
- :bob/exchanges {"bob.direct" {:type "direct"
-                               :durable true}
-                 "bob.fanout" {:type "fanout"
-                               :durable true}}
- :bob/queues {"bob.errors" {:exclusive false
-                            :auto-delete false
-                            :durable true}}
+ :bob/queue-conf {:exchanges {"bob.direct" {:type "direct"
+                                            :durable true}
+                              "bob.fanout" {:type "fanout"
+                                            :durable true}}
+                  :queues {"bob.errors" {}}}
  :bob/connection-retry-attempts #long #or [#env BOB_CONNECTION_RETRY_ATTEMPTS 10]
  :bob/connection-retry-delay #long #or [#env BOB_CONNECTION_RETRY_DELAY 2000]}

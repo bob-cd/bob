@@ -15,12 +15,6 @@
    [integrant.core :as ig]
    [next.jdbc :as jdbc]))
 
-(def queue-conf
-  (-> "bob/conf.edn"
-      (io/resource)
-      (aero/read-config)
-      (get-in [:bob/queue :conf])))
-
 (defn with-system
   [test-fn]
   (let [config (-> "bob/conf.edn"

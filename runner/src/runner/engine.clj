@@ -302,9 +302,7 @@
 (defn container-ls
   "Returns the list of running containers"
   []
-  (f/try*
-   (c/invoke containers
-             {:op :ContainerListLibpod})))
+  (f/try* (c/invoke containers {:op :ContainerListLibpod})))
 
 (comment
   (sh-tokenize "sh -c 'echo ${k1}'")

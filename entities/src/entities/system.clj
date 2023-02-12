@@ -25,13 +25,13 @@
 
 (defmethod ig/init-key
   :entities/queue-config
-  [_ {:keys [database exchanges]}]
-  (let [entities-queue "bob.entities"
-        conf {:queues {"bob.errors" {}
-                       entities-queue {}}
-              :bindings {entities-queue "bob.direct"}
-              :subscriptions {entities-queue (partial d/queue-msg-subscriber database routes)}}]
-    (assoc conf :exchanges exchanges)))
+  [_ {:keys [database queue]}]
+  (let [entities-queue "bob.entities"]
+    (merge-with merge
+                queue
+                {:queues {entities-queue {}}
+                 :bindings {entities-queue "bob.direct"}
+                 :subscriptions {entities-queue (partial d/queue-msg-subscriber database routes)}})))
 
 (defonce system nil)
 
