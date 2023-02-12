@@ -19,19 +19,20 @@
 
 (defmethod ig/init-key
   :runner/queue-config
-  [_ {:keys [database]}]
+  [_ {:keys [database exchanges]}]
   (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
         subscriber (partial d/queue-msg-subscriber database routes)
-        jobs-queue "bob.container.jobs"]
-    {:queues {jobs-queue {}
-               "bob.errors" {}
-               broadcast-queue {:arguments {}
-                                :exclusive true
-                                :auto-delete true}}
-     :bindings {jobs-queue "bob.direct"
-                broadcast-queue "bob.fanout"}
-     :subscriptions {jobs-queue subscriber
-                     broadcast-queue subscriber}}))
+        jobs-queue "bob.container.jobs"
+        conf {:queues {jobs-queue {}
+                       "bob.errors" {}
+                       broadcast-queue {:arguments {}
+                                        :exclusive true
+                                        :auto-delete true}}
+              :bindings {jobs-queue "bob.direct"
+                         broadcast-queue "bob.fanout"}
+              :subscriptions {jobs-queue subscriber
+                              broadcast-queue subscriber}}]
+    (assoc conf :exchanges exchanges)))
 
 (defonce system nil)
 

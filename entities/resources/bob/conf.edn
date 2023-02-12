@@ -6,9 +6,9 @@
 
 {:common #include "bob/common.edn"
  :bob/storage #ref [:common :bob/storage-conn]
- :entities/queue-config {:database #ig/ref :bob/storage}
+ :entities/queue-config {:database #ig/ref :bob/storage
+                         :exchanges #ref [:common :bob/exchanges]}
  :bob/queue {:url #ref [:common :bob/queue-conn :url]
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
-             :conf #merge [{:exchanges #ref [:common :bob/exchanges]}
-                           #ig/ref :entities/queue-config]}}
+             :conf #ig/ref :entities/queue-config}}
