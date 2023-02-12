@@ -5,7 +5,7 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns wait
-  (:require [org.httpkit.client :as http])
+  (:require [babashka.http-client :as http])
   (:import [java.net Socket URI]))
 
 (defn retry
@@ -29,9 +29,7 @@
   (doseq [[service url] conf]
     (let [uri (URI. url)
           logic (case (.getScheme uri)
-                  "http" #(let [{status :status} @(http/get url)]
-                            (when-not (= status 200)
-                              (throw (Exception. "Not ready."))))
+                  "http" #(http/get url)
                   "tcp" #(doto (Socket. (.getHost uri) (.getPort uri))
                            (.close)))]
-      (retry service logic 1000 400 50))))
+      (retry service logic 1000 200 20))))

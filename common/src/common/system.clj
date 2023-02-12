@@ -90,9 +90,7 @@
                                      :arguments {"x-queue-type" "quorum"}}
                                     props)))
     (doseq [[queue ex] (:bindings conf)]
-      (log/infof "Binding %s -> %s"
-                 queue
-                 ex)
+      (log/infof "Binding %s -> %s" queue ex)
       (lq/bind chan
                queue
                ex
