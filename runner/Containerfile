@@ -17,7 +17,7 @@ RUN jlink \
     --output jlinked
 
 # Optional TODO: check if unprivileged https://github.com/mgoltzsche/podman-static works
-FROM quay.io/podman/stable:v4.3.1
+FROM quay.io/podman/stable:v4.4.1
 
 COPY --from=jdk /jlinked jdk
 COPY runner.jar .
