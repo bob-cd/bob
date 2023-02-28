@@ -10,7 +10,7 @@
         com.novemberain/langohr {:mvn/version "5.4.0"}
         integrant/integrant {:mvn/version "0.8.0"}
         aero/aero {:mvn/version "1.1.6"}
-        com.taoensso/timbre {:mvn/version "6.0.4"}
+        com.taoensso/timbre {:mvn/version "6.1.0"}
         com.xtdb/xtdb-core {:mvn/version "1.23.0"}
         com.xtdb/xtdb-jdbc {:mvn/version "1.23.0"}
         org.postgresql/postgresql {:mvn/version "42.5.4"}

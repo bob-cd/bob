@@ -11,7 +11,7 @@
    [clojure.java.io :as io]
    [common.system :as cs]
    [integrant.core :as ig]
-   [ring.adapter.jetty :as jetty]
+   [ring.adapter.jetty9 :as jetty]
    [taoensso.timbre :as log])
   (:import
    [org.eclipse.jetty.server Server]))
@@ -24,7 +24,8 @@
                                 {:host host
                                  :port port
                                  :join? false
-                                 :async? true
+                                 :h2c? true
+                                 :h2? true
                                  :send-server-version? false
                                  :send-date-header? false})]
     (log/infof "Listening on %d" port)
