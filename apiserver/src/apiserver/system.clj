@@ -14,7 +14,9 @@
    [ring.adapter.jetty9 :as jetty]
    [taoensso.timbre :as log])
   (:import
-   [org.eclipse.jetty.server Server]))
+   [java.util.concurrent Executors]
+   [org.eclipse.jetty.server Server]
+   [org.eclipse.jetty.util.thread ExecutorThreadPool]))
 
 (defmethod ig/init-key
   :bob/apiserver
@@ -26,6 +28,9 @@
                                  :join? false
                                  :h2c? true
                                  :h2? true
+                                 ; TODO: Remove with https://github.com/sunng87/ring-jetty9-adapter/issues/82
+                                 :thread-pool (doto (ExecutorThreadPool.)
+                                                (.setVirtualThreadsExecutor (Executors/newVirtualThreadPerTaskExecutor)))
                                  :send-server-version? false
                                  :send-date-header? false})]
     (log/infof "Listening on %d" port)
