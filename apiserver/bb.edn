@@ -6,7 +6,6 @@
 
 {:paths ["../tasks"]
  :tasks {:requires ([tasks :as t])
-         :init (def engine (t/container-engine))
          cclean {:doc "Cleans up cluster containers"
                  :task (do
                          (t/scrun "kill bob-test-storage bob-test-queue artifact-local")
@@ -19,8 +18,8 @@
                          (shell "clojure -P"))}
          test {:doc "Sets up the cluster and runs tests"
                :task (do
-                       (run 'cclean)
                        (try
+                         (run 'cclean)
                          (t/scrun "network create bob-net")
                          (t/scrun "run -d --name bob-test-storage -p 5433:5432 -e POSTGRES_DB=bob-test -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob --network bob-net postgres:alpine")
                          (t/scrun "run -d --name bob-test-queue -p 5673:5672 --network bob-net rabbitmq:3-alpine")
