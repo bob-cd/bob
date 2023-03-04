@@ -39,10 +39,13 @@
               :bob.pipeline.artifact/path
               :bob.pipeline.artifact/store]))
 
+(spec/def :bob.pipeline.step/vars map?)
+
 (spec/def :bob.pipeline/step
   (spec/keys :req-un [:bob.pipeline.step/cmd]
              :opt-un [:bob.pipeline.step/needs_resource
-                      :bob.pipeline.step/produces_artifact]))
+                      :bob.pipeline.step/produces_artifact
+                      :bob.pipeline.step/vars]))
 
 (spec/def :bob.pipeline/steps (spec/coll-of :bob.pipeline/step))
 

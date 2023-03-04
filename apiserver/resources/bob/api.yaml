@@ -1098,6 +1098,10 @@ components:
           type: string
           description: Unique name of the registered store
 
+    Vars:
+      type: object
+      description: The key-value pairs of environment variables
+
     Step:
       type: object
       required:
@@ -1111,6 +1115,8 @@ components:
           description: Name of the resource to mount before execution
         produces_artifact:
           $ref: "#/components/schemas/Artifact"
+        vars:
+          $ref: "#/components/schemas/Vars"
 
     Pipeline:
       type: object
@@ -1127,8 +1133,7 @@ components:
           type: string
           description: The image to use, e.g. a docker or os image
         vars:
-          type: object
-          description: The key-value pairs of environment variables
+          $ref: "#/components/schemas/Vars"
         resources:
           type: array
           items:

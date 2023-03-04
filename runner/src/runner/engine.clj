@@ -127,21 +127,21 @@
        err)))
   ([image step]
    (create-container image step {}))
-  ([image {:keys [needs_resource cmd]} evars]
-   (f/try-all [working-dir (some->> needs_resource
-                                    (str "/root/"))
+  ([image {:keys [needs_resource cmd vars]} pipeline-vars]
+   (f/try-all [working-dir (some->> needs_resource (str "/root/"))
                command (sh-tokenize cmd)
+               env (merge pipeline-vars vars)
                _ (log/debugf "Creating new container with: image: %s cmd: %s evars: %s working-dir: %s"
                              image
                              command
-                             evars
+                             env
                              working-dir)
                result (c/invoke
                        containers
                        {:op :ContainerCreateLibpod
                         :data {:image image
                                :command command
-                               :env evars
+                               :env env
                                :work_dir working-dir
                                :cgroups_mode "disabled"} ; unprivileged
                         :throw-exceptions true})]

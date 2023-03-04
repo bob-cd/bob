@@ -8,6 +8,7 @@
   (:require
    [babashka.http-client :as http]
    [clojure.spec.alpha]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [common.schemas]
    [failjure.core :as f]
@@ -274,14 +275,29 @@
                                                    :type :pipeline
                                                    :group "test"
                                                    :name "test"
-                                                   :steps [{:cmd "echo hello"} {:cmd "sh -c \"echo ${k1}\""}]
+                                                   :steps [{:cmd "echo hello"}
+                                                           {:cmd "sh -c 'echo \"ENV: ${k1}\"'"}
+                                                           {:cmd "sh -c 'echo \"ENV: ${k1} ${k2}\"'"
+                                                            :vars {:k1 "v2" :k2 "v3"}}]
                                                    :vars {:k1 "v1"}
                                                    :image test-image}]]))
-                     (let [result @(p/start db
+                     (let [run-id "r-a-run-id"
+                           result @(p/start db
                                             queue
                                             {:group "test"
                                              :name "test"
-                                             :run_id "r-a-run-id"})
+                                             :run_id run-id})
+                           lines (->> (xt/q (xt/db db)
+                                            {:find '[(pull log [:line]) time]
+                                             :where [['log :type :log-line]
+                                                     ['log :time 'time]
+                                                     ['log :run-id run-id]]
+                                             :order-by [['time :asc]]
+                                             :limit 100
+                                             :offset 0})
+                                      (map first)
+                                      (map :line)
+                                      (filter #(str/includes? % "ENV:")))
                            history (xt/entity-history (xt/db db)
                                                       (keyword (str "bob.pipeline.run/" result))
                                                       :desc
@@ -293,6 +309,7 @@
                        (is (= [:passed :running :initializing]
                               statuses))
                        (is (not (f/failed? result)))
+                       (is (= ["ENV: v1" "ENV: v2 v3"] lines))
                        (u/spec-assert :bob.db/run run-info)))))
 
   (testing "failed pipeline run"
