@@ -7,8 +7,8 @@
 (ns entities.main
   (:require
    [clojure.repl :as repl]
-   [entities.system :as system]
-   [clojure.tools.logging :as log])
+   [clojure.tools.logging :as log]
+   [entities.system :as system])
   (:gen-class))
 
 (defn shutdown!

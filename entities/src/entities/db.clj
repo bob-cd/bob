@@ -7,10 +7,10 @@
 (ns entities.db
   (:require
    [clojure.spec.alpha :as spec]
+   [clojure.tools.logging :as log]
    [common.errors :as err]
    [common.schemas]
    [failjure.core :as f]
-   [clojure.tools.logging :as log]
    [xtdb.api :as xt]))
 
 (defn validate-and-transact

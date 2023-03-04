@@ -6,9 +6,9 @@
 
 (ns entities.pipeline
   (:require
+   [clojure.tools.logging :as log]
    [entities.db :as db]
    [failjure.core :as f]
-   [clojure.tools.logging :as log]
    [xtdb.api :as xt]))
 
 (defn create

@@ -7,8 +7,8 @@
 (ns runner.main
   (:require
    [clojure.repl :as repl]
-   [runner.system :as system]
-   [clojure.tools.logging :as log])
+   [clojure.tools.logging :as log]
+   [runner.system :as system])
   (:import
    [java.util.concurrent Executors])
   (:gen-class))

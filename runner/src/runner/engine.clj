@@ -8,9 +8,9 @@
   (:require
    [clojure.java.io :as io]
    [clojure.string :as s]
+   [clojure.tools.logging :as log]
    [contajners.core :as c]
-   [failjure.core :as f]
-   [clojure.tools.logging :as log])
+   [failjure.core :as f])
   (:import
    [java.io BufferedReader]))
 

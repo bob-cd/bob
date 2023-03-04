@@ -10,11 +10,11 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as spec]
    [clojure.string :as s]
+   [clojure.tools.logging :as log]
    [common.schemas]
    [failjure.core :as f]
    [runner.artifact :as a]
    [runner.engine :as eng]
-   [clojure.tools.logging :as log]
    [xtdb.api :as xt])
   (:import
    [java.io BufferedOutputStream File FileOutputStream]

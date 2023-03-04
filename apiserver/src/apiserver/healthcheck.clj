@@ -7,8 +7,8 @@
 (ns apiserver.healthcheck
   (:require
    [babashka.http-client :as http]
-   [failjure.core :as f]
    [clojure.tools.logging :as log]
+   [failjure.core :as f]
    [xtdb.api :as xt])
   (:import
    [java.util.concurrent Executors TimeUnit]))

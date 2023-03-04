@@ -9,10 +9,10 @@
    [aero.core :as aero]
    [apiserver.server :as s]
    [clojure.java.io :as io]
+   [clojure.tools.logging :as log]
    [common.system :as cs]
    [integrant.core :as ig]
-   [ring.adapter.jetty9 :as jetty]
-   [clojure.tools.logging :as log])
+   [ring.adapter.jetty9 :as jetty])
   (:import
    [java.util.concurrent Executors]
    [org.eclipse.jetty.server Server]
@@ -29,7 +29,7 @@
                                  :h2c? true
                                  :h2? true
                                  ; TODO: Remove with https://github.com/sunng87/ring-jetty9-adapter/issues/82
-                                 :thread-pool (doto (ExecutorThreadPool.)
+                                 :thread-pool (doto (ExecutorThreadPool. (Integer/MAX_VALUE))
                                                 (.setVirtualThreadsExecutor (Executors/newVirtualThreadPerTaskExecutor)))
                                  :send-server-version? false
                                  :send-date-header? false})]

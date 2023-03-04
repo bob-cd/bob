@@ -7,13 +7,13 @@
 (ns runner.pipeline
   (:require
    [clojure.spec.alpha :as spec]
+   [clojure.tools.logging :as log]
    [common.errors :as errors]
    [common.schemas]
    [failjure.core :as f]
    [runner.artifact :as a]
    [runner.engine :as eng]
    [runner.resource :as r]
-   [clojure.tools.logging :as log]
    [xtdb.api :as xt])
   (:import
    [java.time Instant]))

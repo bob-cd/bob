@@ -9,10 +9,10 @@
    [babashka.http-client :as http]
    [clojure.spec.alpha :as spec]
    [clojure.string :as s]
+   [clojure.tools.logging :as log]
    [common.schemas]
    [failjure.core :as f]
    [runner.engine :as eng]
-   [clojure.tools.logging :as log]
    [xtdb.api :as xt]))
 
 (defn store-url
