@@ -8,7 +8,7 @@
   (:require
    [clojure.repl :as repl]
    [runner.system :as system]
-   [taoensso.timbre :as log])
+   [clojure.tools.logging :as log])
   (:import
    [java.util.concurrent Executors])
   (:gen-class))

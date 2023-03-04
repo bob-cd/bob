@@ -8,7 +8,7 @@
   (:require
    [clojure.data.json :as json]
    [langohr.basic :as lb]
-   [taoensso.timbre :as log]))
+   [clojure.tools.logging :as log]))
 
 (defn publish-error
   [chan message]

@@ -15,7 +15,7 @@
    [langohr.core :as rmq]
    [langohr.exchange :as le]
    [langohr.queue :as lq]
-   [taoensso.timbre :as log]
+   [clojure.tools.logging :as log]
    [xtdb.api :as xt])
   (:import
    [java.net ConnectException]

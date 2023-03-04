@@ -12,7 +12,7 @@
    [common.schemas]
    [failjure.core :as f]
    [runner.engine :as eng]
-   [taoensso.timbre :as log]
+   [clojure.tools.logging :as log]
    [xtdb.api :as xt]))
 
 (defn store-url

@@ -10,7 +10,7 @@
    [common.errors :as err]
    [common.schemas]
    [failjure.core :as f]
-   [taoensso.timbre :as log]
+   [clojure.tools.logging :as log]
    [xtdb.api :as xt]))
 
 (defn validate-and-transact

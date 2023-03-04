@@ -6,15 +6,15 @@
 
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
-        com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
+        ch.qos.logback/logback-classic {:mvn/version "1.4.5"}
         common/common {:local/root "../common"}
-        com.taoensso/timbre {:mvn/version "6.1.0"}
         com.xtdb/xtdb-core {:mvn/version "1.23.0"}
         failjure/failjure {:mvn/version "2.2.0"}
         integrant/integrant {:mvn/version "0.8.0"}
         io.github.lispyclouds/contajners {:git/sha "71660ec1b8ca40b6af5eae612b4264c7dad7f6a5"}
         org.babashka/http-client {:mvn/version "0.1.6"}
         org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/tools.logging {:mvn/version "1.2.4"}
         org.kamranzafar/jtar {:mvn/version "2.3"}}
  :aliases {:test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.80.1274"}
                                org.clojure/test.check {:mvn/version "1.1.1"}

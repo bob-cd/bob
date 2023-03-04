@@ -10,7 +10,7 @@
    [clojure.string :as s]
    [contajners.core :as c]
    [failjure.core :as f]
-   [taoensso.timbre :as log])
+   [clojure.tools.logging :as log])
   (:import
    [java.io BufferedReader]))
 

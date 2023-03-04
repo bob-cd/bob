@@ -8,7 +8,7 @@
   (:require
    [clojure.repl :as repl]
    [entities.system :as system]
-   [taoensso.timbre :as log])
+   [clojure.tools.logging :as log])
   (:gen-class))
 
 (defn shutdown!

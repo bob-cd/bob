@@ -12,7 +12,7 @@
    [common.system :as cs]
    [integrant.core :as ig]
    [ring.adapter.jetty9 :as jetty]
-   [taoensso.timbre :as log])
+   [clojure.tools.logging :as log])
   (:import
    [java.util.concurrent Executors]
    [org.eclipse.jetty.server Server]

@@ -13,7 +13,7 @@
    [runner.artifact :as a]
    [runner.engine :as eng]
    [runner.resource :as r]
-   [taoensso.timbre :as log]
+   [clojure.tools.logging :as log]
    [xtdb.api :as xt])
   (:import
    [java.time Instant]))
@@ -47,9 +47,7 @@
            :images-for-gc
            assoc
            run-id
-           (if (nil? new-images)
-             (list image)
-             new-images))))
+           (or new-images (list image)))))
 
 (defn gc-images
   "garbage-collect images by run-id."

@@ -8,7 +8,7 @@
   (:require
    [entities.db :as db]
    [failjure.core :as f]
-   [taoensso.timbre :as log]
+   [clojure.tools.logging :as log]
    [xtdb.api :as xt]))
 
 (defn create

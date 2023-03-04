@@ -9,7 +9,7 @@
    [clojure.data.json :as json]
    [common.errors :as err]
    [failjure.core :as f]
-   [taoensso.timbre :as log]))
+   [clojure.tools.logging :as log]))
 
 (defn queue-msg-subscriber
   [db-client routes chan meta-data payload]

@@ -8,7 +8,7 @@
   (:require
    [babashka.http-client :as http]
    [failjure.core :as f]
-   [taoensso.timbre :as log]
+   [clojure.tools.logging :as log]
    [xtdb.api :as xt])
   (:import
    [java.util.concurrent Executors TimeUnit]))
