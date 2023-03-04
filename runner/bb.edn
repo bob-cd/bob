@@ -5,13 +5,13 @@
 ; https://opensource.org/licenses/MIT.
 
 {:paths ["../tasks"]
- :tasks {:requires ([wait :as w])
-         docker-clean {:doc "Cleans up cluster containers"
-                       :task (do
-                               (shell {:continue true} "docker kill bob-test-storage bob-test-queue resource-git artifact-local podman")
-                               (shell {:continue true} "docker rm bob-test-storage bob-test-queue resource-git artifact-local podman")
-                               (shell {:continue true} "docker network rm bob-net")
-                               (shell {:continue true} "docker volume prune -f"))}
+ :tasks {:requires ([tasks :as t])
+         cclean {:doc "Cleans up cluster containers"
+                 :task (do
+                         (t/scrun "kill bob-test-storage bob-test-queue resource-git artifact-local podman")
+                         (t/scrun "rm bob-test-storage bob-test-queue resource-git artifact-local podman")
+                         (t/scrun "network rm bob-net")
+                         (t/scrun "volume prune -f"))}
          prep {:doc "Prepares the deps"
                :task (do (shell "clojure -P -A:build")
                          (shell "clojure -P -M -A:test")
@@ -19,56 +19,22 @@
          test {:doc "Sets up the cluster and runs tests"
                :task (do
                        (try
-                         (run 'docker-clean)
-                         (shell {:continue true} "docker network create bob-net")
-                         (shell "docker run
-                                   -d
-                                   --name podman
-                                   --device /dev/fuse
-                                   --security-opt seccomp=unconfined
-                                   --security-opt apparmor=unconfined
-                                   --security-opt label=disable
-                                   --cap-add sys_admin
-                                   --cap-add mknod
-                                   -p 8080:8080
-                                   docker.io/mgoltzsche/podman:minimal
-                                   podman system service -t 0 tcp://0.0.0.0:8080")
-                         (shell "docker run
-                                   -d
-                                   --name bob-test-storage
-                                   -p 5433:5432
-                                   -e POSTGRES_DB=bob-test
-                                   -e POSTGRES_USER=bob
-                                   -e POSTGRES_PASSWORD=bob
-                                   --network bob-net
-                                   postgres:alpine")
-                         (shell "docker run
-                                   -d
-                                   --name bob-test-queue
-                                   -p 5673:5672
-                                   --network bob-net
-                                   rabbitmq:3-alpine")
-                         (shell "docker run
-                                   -d
-                                   --name resource-git
-                                   -p 8000:8000
-                                   --network bob-net
-                                   ghcr.io/bob-cd/resource-git")
-                         (shell "docker run
-                                   -d
-                                   --name artifact-local
-                                   -p 8001:8001
-                                   --network bob-net
-                                   ghcr.io/bob-cd/artifact-local")
+                         (run 'cclean)
+                         (t/scrun "network create bob-net")
+                         (t/crun "run -d --name podman --device /dev/fuse --security-opt seccomp=unconfined --security-opt apparmor=unconfined --security-opt label=disable --cap-add sys_admin --cap-add mknod -p 8080:8080 docker.io/mgoltzsche/podman:minimal podman system service -t 0 tcp://0.0.0.0:8080")
+                         (t/crun "run -d --name bob-test-storage -p 5433:5432 -e POSTGRES_DB=bob-test -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob --network bob-net postgres:alpine")
+                         (t/crun "run -d --name bob-test-queue -p 5673:5672 --network bob-net rabbitmq:3-alpine")
+                         (t/crun "run -d --name resource-git -p 8000:8000 --network bob-net ghcr.io/bob-cd/resource-git")
+                         (t/crun "run -d --name artifact-local -p 8001:8001 --network bob-net ghcr.io/bob-cd/artifact-local")
                          (println "Waiting for cluster readiness.")
-                         (w/wait-for {"podman" "http://localhost:8080/v4.0.0/libpod/_ping"
+                         (t/wait-for {"podman" "http://localhost:8080/v4.0.0/libpod/_ping"
                                       "resource-git" "http://localhost:8000/ping"
                                       "artifact-store" "http://localhost:8001/ping"
                                       "postgres" "tcp://127.0.0.1:5433"
                                       "rabbitmq" "tcp://127.0.0.1:5673"})
                          (shell "clojure -M:test")
                          (finally
-                           (run 'docker-clean))))}
+                           (run 'cclean))))}
          compile {:doc "Builds the compiled aritfact"
                   :task (shell "clojure -T:build uber")}
          image {:doc "Builds the docker images"
@@ -77,4 +43,4 @@
                 :task (do
                         (shell "clojure -T:build clean")
                         (shell "rm -rf .cpcache runner.jar")
-                        (shell {:continue true} "docker rmi ghcr.io/bob-cd/runner"))}}}
+                        (t/scrun "rmi ghcr.io/bob-cd/runner"))}}}
