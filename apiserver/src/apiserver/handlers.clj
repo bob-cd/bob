@@ -7,6 +7,9 @@
 (ns apiserver.handlers
   (:require
    [apiserver.cctray :as cctray]
+   [apiserver.entities.artifact-store :as artifact-store]
+   [apiserver.entities.pipeline :as pipeline]
+   [apiserver.entities.resource-provider :as resource-provider]
    [apiserver.healthcheck :as hc]
    [apiserver.metrics :as metrics]
    [babashka.http-client :as http]
@@ -93,19 +96,15 @@
   [{{{:keys [group name]} :path
      pipeline :body}
     :parameters
-    queue :queue}]
-  (exec #(publish queue
-                  "pipeline/create"
-                  "bob.direct"
-                  "bob.entities"
-                  (-> pipeline
-                      (assoc :group group)
-                      (assoc :name name)))))
+    db :db}]
+  (f/try-all [_ (pipeline/create db (assoc pipeline :group group :name name))]
+    (respond "Ok" 200)
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
 
 (defn pipeline-delete
   [{{pipeline-info :path} :parameters
-    db :db
-    queue :queue}]
+    db :db}]
   (f/try-all [{:keys [group name]} pipeline-info
               runs (get-runs db group name)
               running (->> runs
@@ -116,11 +115,8 @@
       (respond {:runs running
                 :error "Pipeline has active runs. Wait for them to finish or stop them."}
                422)
-      (exec #(publish queue
-                      "pipeline/delete"
-                      "bob.direct"
-                      "bob.entities"
-                      pipeline-info)))
+      (do (pipeline/delete db pipeline-info)
+          (respond "Ok" 200)))
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -261,21 +257,19 @@
   [{{{:keys [name]} :path
      resource-provider :body}
     :parameters
-    queue :queue}]
-  (exec #(publish queue
-                  "resource-provider/create"
-                  "bob.direct"
-                  "bob.entities"
-                  (assoc resource-provider :name name))))
+    db :db}]
+  (f/try-all [_ (resource-provider/create db (assoc resource-provider :name name))]
+    (respond "Ok")
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
 
 (defn resource-provider-delete
   [{{{:keys [name]} :path} :parameters
-    queue :queue}]
-  (exec #(publish queue
-                  "resource-provider/delete"
-                  "bob.direct"
-                  "bob.entities"
-                  {:name name})))
+    db :db}]
+  (f/try-all [_ (resource-provider/delete db name)]
+    (respond "Ok")
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
 
 (defn resource-provider-list
   [{db :db}]
@@ -288,23 +282,21 @@
 
 (defn artifact-store-create
   [{{{:keys [name]} :path
-     resource-provider :body}
+     artifact-store :body}
     :parameters
-    queue :queue}]
-  (exec #(publish queue
-                  "artifact-store/create"
-                  "bob.direct"
-                  "bob.entities"
-                  (assoc resource-provider :name name))))
+    db :db}]
+  (f/try-all [_ (artifact-store/create db (assoc artifact-store :name name))]
+    (respond "Ok")
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
 
 (defn artifact-store-delete
   [{{{:keys [name]} :path} :parameters
-    queue :queue}]
-  (exec #(publish queue
-                  "artifact-store/delete"
-                  "bob.direct"
-                  "bob.entities"
-                  {:name name})))
+    db :db}]
+  (f/try-all [_ (artifact-store/delete db name)]
+    (respond "Ok")
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
 
 (defn artifact-store-list
   [{db :db}]

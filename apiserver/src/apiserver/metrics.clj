@@ -18,7 +18,6 @@
   (-> (prometheus/collector-registry)
       (prometheus/register
        (prometheus/gauge :bob/queued-jobs {:description "Number of queued jobs"})
-       (prometheus/gauge :bob/queued-entities {:description "Number of queued entity changes to be applied"})
        (prometheus/gauge :bob/errors {:description "Number of errors"})
        (prometheus/gauge :bob/running-jobs {:description "Number of jobs currently running"})
        (prometheus/gauge :bob/initializing-jobs {:description "Number of jobs currently initializing"})
@@ -64,9 +63,6 @@
   (f/try-all [_ (->> (job-queues queue-conn-opts)
                      (map #(lq/message-count queue %))
                      (run! #(prometheus/set (registry :bob/queued-jobs) %)))
-              _ (->> "bob.entities"
-                     (lq/message-count queue)
-                     (prometheus/set (registry :bob/queued-entities)))
               _ (->> "bob.errors"
                      (lq/message-count queue)
                      (prometheus/set (registry :bob/errors)))

@@ -72,21 +72,65 @@
     {:type (:type metadata)
      :data (json/read-str (String. payload "UTF-8") :key-fn keyword)}))
 
+(t/deftest pipeline-entities-test
+  (u/with-system
+    (fn [db _]
+      (let [pipeline-id :bob.pipeline.test/test
+            run-id :bob.pipeline.run/r-a-run
+            log-id :bob.pipeline.log/l-a-log]
+        (t/testing "creation"
+          (let [pipeline {:group "test"
+                          :name "test"
+                          :steps [{:cmd "echo hello"}
+                                  {:needs_resource "source"
+                                   :cmd "ls"}
+                                  {:cmd "touch test"
+                                   :produces_artifact {:name "file"
+                                                       :path "test"
+                                                       :store "s3"}}]
+                          :vars {:k1 "v1"
+                                 :k2 "v2"}
+                          :resources [{:name "source"
+                                       :type "external"
+                                       :provider "git"
+                                       :params {:repo "https://github.com/bob-cd/bob"
+                                                :branch "main"}}
+                                      {:name "source2"
+                                       :type "external"
+                                       :provider "git"
+                                       :params {:repo "https://github.com/lispyclouds/contajners"
+                                                :branch "main"}}]
+                          :image "busybox:musl"}
+                _ (h/pipeline-create {:parameters {:path {:group "test" :name "test"}
+                                                   :body pipeline}
+                                      :db db})
+                effect (xt/entity (xt/db db) pipeline-id)]
+            (t/is (= pipeline-id (:xt/id effect)))
+            (u/spec-assert :bob.db/pipeline effect)))
+        (t/testing "deletion"
+          (xt/await-tx
+           db
+           (xt/submit-tx db
+                         [[::xt/put
+                           {:xt/id run-id
+                            :type :pipeline-run
+                            :group "test"
+                            :name "test"}]
+                          [::xt/put
+                           {:xt/id log-id
+                            :type :log-line
+                            :run-id run-id}]]))
+          (let [_ (h/pipeline-delete {:parameters {:path {:group "test" :name "test"}}
+                                      :db db})
+                pipeline-effect (xt/entity (xt/db db) pipeline-id)
+                run-effect (xt/entity (xt/db db) run-id)
+                log-effect (xt/entity (xt/db db) log-id)]
+            (t/is (nil? pipeline-effect))
+            (t/is (nil? run-effect))
+            (t/is (nil? log-effect))))))))
+
 (t/deftest pipeline-direct-tests
   (u/with-system (fn [db queue]
-                   (t/testing "pipeline creation"
-                     (h/pipeline-create {:parameters {:path {:group "dev"
-                                                             :name "test"}
-                                                      :body {:image "test image"
-                                                             :steps []}}
-                                         :queue queue})
-                     (u/spec-assert :bob.command/pipeline-create (queue-get queue "bob.entities")))
-                   (t/testing "pipeline deletion"
-                     (h/pipeline-delete {:parameters {:path {:group "dev"
-                                                             :name "test"}}
-                                         :db db
-                                         :queue queue})
-                     (u/spec-assert :bob.command/pipeline-delete (queue-get queue "bob.entities")))
                    (t/testing "invalid pipeline deletion with active runs"
                      (xt/await-tx
                       db
@@ -140,7 +184,7 @@
                        (t/is (= "Pipeline is paused. Unpause it first." (:message body))))))))
 
 (t/deftest pipeline-fanout-tests
-  (u/with-system (fn [db queue]
+  (u/with-system (fn [_db queue]
                    (lq/declare queue
                                "bob.tests"
                                {:exclusive true
@@ -352,17 +396,25 @@
                                     :body
                                     :message))))))))
 
+(t/deftest resource-provider-entities-test
+  (u/with-system
+    (fn [db _]
+      (let [id :bob.resource-provider/github]
+        (t/testing "creation"
+          (let [_ (h/resource-provider-create {:parameters {:path {:name "github"}
+                                                            :body {:url "my-resource.com"}}
+                                               :db db})
+                effect (xt/entity (xt/db db) id)]
+            (t/is (= id (:xt/id effect)))
+            (u/spec-assert :bob.db/resource-provider effect)))
+        (t/testing "deletion"
+          (let [_ (h/resource-provider-delete {:parameters {:path {:name "github"}}
+                                               :db db})
+                effect (xt/entity (xt/db db) id)]
+            (t/is (nil? effect))))))))
+
 (t/deftest resource-provider-test
-  (u/with-system (fn [db queue]
-                   (t/testing "resource-provider registration"
-                     (h/resource-provider-create {:parameters {:path {:name "git"}
-                                                               :body {:url "http://localhost:8000"}}
-                                                  :queue queue})
-                     (u/spec-assert :bob.command/resource-provider-create (queue-get queue "bob.entities")))
-                   (t/testing "resource-provider de-registration"
-                     (h/resource-provider-delete {:parameters {:path {:name "git"}}
-                                                  :queue queue})
-                     (u/spec-assert :bob.command/resource-provider-delete (queue-get queue "bob.entities")))
+  (u/with-system (fn [db _]
                    (t/testing "resource-provider listing"
                      (xt/await-tx
                       db
@@ -385,17 +437,25 @@
                                   :body
                                   :message)))))))
 
+(t/deftest artifact-entities-test
+  (u/with-system
+    (fn [db _]
+      (let [id :bob.artifact-store/s3]
+        (t/testing "creation"
+          (let [_ (h/artifact-store-create {:parameters {:path {:name "s3"}
+                                                         :body {:url "my-store.com"}}
+                                            :db db})
+                effect (xt/entity (xt/db db) id)]
+            (t/is (= id (:xt/id effect)))
+            (u/spec-assert :bob.db/artifact-store effect)))
+        (t/testing "deletion"
+          (let [_ (h/artifact-store-delete {:parameters {:path {:name "s3"}}
+                                            :db db})
+                effect (xt/entity (xt/db db) id)]
+            (t/is (nil? effect))))))))
+
 (t/deftest artifact-store-test
-  (u/with-system (fn [db queue]
-                   (t/testing "artifact-store registration"
-                     (h/artifact-store-create {:parameters {:path {:name "s3"}
-                                                            :body {:url "http://localhost:8000"}}
-                                               :queue queue})
-                     (u/spec-assert :bob.command/artifact-store-create (queue-get queue "bob.entities")))
-                   (t/testing "artifact-store de-registration"
-                     (h/artifact-store-delete {:parameters {:path {:name "s3"}}
-                                               :queue queue})
-                     (u/spec-assert :bob.command/artifact-store-delete (queue-get queue "bob.entities")))
+  (u/with-system (fn [db _]
                    (t/testing "artifact-store listing"
                      (xt/await-tx
                       db

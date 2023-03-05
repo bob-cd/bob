@@ -20,9 +20,8 @@ Bob's API (accessible entirely through HTTP) enables a core set of CI/CD feature
   - Resource: Things (like source code or artifacts) consumed by Pipelines
   - Artifact: Something produced by a Pipeline
 
-The core of Bob is composed of 3 main services:
+The core of Bob is composed of the core services:
 - [API server](/apiserver)
-- [Entities](/entities)
 - [Runner](/runner)
 
 All of these services live, breathe, and deploy from their own section of this mono-repo. Post-deployment, they are coordinated via a central persistent queue. Read more about Bob's [Architecture](https://bob-cd.github.io/pages/architecture.html).
