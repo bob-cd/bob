@@ -169,15 +169,6 @@
 
 (spec/def :bob.artifact-store/name :bob.pipeline.artifact/store)
 
-(spec/def :bob.command.artifact-store-delete/data
-  (spec/keys :req-un
-             [:bob.artifact-store/name]))
-
-(spec/def :bob.command/artifact-store-delete
-  (spec/keys :req-un
-             [:bob.command.artifact-store-delete/type
-              :bob.command.artifact-store-delete/data]))
-
 (spec/def :bob.db.artifact-store/type #{:artifact-store})
 
 (spec/def :bob.db/artifact-store
