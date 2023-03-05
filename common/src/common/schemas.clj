@@ -112,27 +112,6 @@
               :bob.pipeline.run/run-id
               :bob.pipeline.run.log-line/line]))
 
-(spec/def :bob.command.pipeline-create/type #{"pipeline/create"})
-
-(spec/def :bob.command.pipeline-create/data :bob/pipeline)
-
-(spec/def :bob.command/pipeline-create
-  (spec/keys :req-un
-             [:bob.command.pipeline-create/type
-              :bob.command.pipeline-create/data]))
-
-(spec/def :bob.command.pipeline-delete/type #{"pipeline/delete"})
-
-(spec/def :bob.command.pipeline-delete/data
-  (spec/keys :req-un
-             [:bob.pipeline/group
-              :bob.pipeline/name]))
-
-(spec/def :bob.command/pipeline-delete
-  (spec/keys :req-un
-             [:bob.command.pipeline-delete/type
-              :bob.command.pipeline-delete/data]))
-
 (spec/def :bob.command.pipeline-start/type #{"pipeline/start"})
 
 (spec/def :bob.command.pipeline-start/run_id :bob.pipeline.run/run-id)
@@ -186,48 +165,7 @@
              [:bob.command.pipeline-unpause/type
               :bob.command.pipeline-unpause/data]))
 
-(spec/def :bob.command.resource-provider-create/type #{"resource-provider/create"})
-
 (spec/def :bob.resource-provider/name :bob.pipeline.resource-provider/name)
-
-(spec/def :bob.command.resource-provider-create/data
-  (spec/keys :req-un
-             [:bob.resource-provider/name
-              :bob.resource-provider/url]))
-
-(spec/def :bob.command/resource-provider-create
-  (spec/keys :req-un
-             [:bob.command.resource-provider-create/type
-              :bob.command.resource-provider-create/data]))
-
-(spec/def :bob.command.resource-provider-delete/type #{"resource-provider/delete"})
-
-(spec/def :bob.resource-provider/name :bob.pipeline.resource-provider/name)
-
-(spec/def :bob.command.resource-provider-delete/data
-  (spec/keys :req-un
-             [:bob.resource-provider/name]))
-
-(spec/def :bob.command/resource-provider-delete
-  (spec/keys :req-un
-             [:bob.command.resource-provider-delete/type
-              :bob.command.resource-provider-delete/data]))
-
-(spec/def :bob.command.artifact-store-create/type #{"artifact-store/create"})
-
-(spec/def :bob.artifact-store/name :bob.pipeline.artifact/store)
-
-(spec/def :bob.command.artifact-store-create/data
-  (spec/keys :req-un
-             [:bob.artifact-store/name
-              :bob.artifact-store/url]))
-
-(spec/def :bob.command/artifact-store-create
-  (spec/keys :req-un
-             [:bob.command.artifact-store-create/type
-              :bob.command.artifact-store-create/data]))
-
-(spec/def :bob.command.artifact-store-delete/type #{"artifact-store/delete"})
 
 (spec/def :bob.artifact-store/name :bob.pipeline.artifact/store)
 

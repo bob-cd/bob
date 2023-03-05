@@ -64,7 +64,7 @@
       (run "Run all tests" "bb test")
       {:save_cache
        {:key
-        "bob-v1-{{ checksum \"apiserver/deps.edn\" }}-{{ checksum \"entities/deps.edn\" }}-{{ checksum \"runner/deps.edn\" }}-{{ checksum \"common/deps.edn\" }}"
+        "bob-v1-{{ checksum \"apiserver/deps.edn\" }}-{{ checksum \"runner/deps.edn\" }}-{{ checksum \"common/deps.edn\" }}"
         :paths ["~/.m2"
                 "~/.gitlibs"]}}
       (run "Build executables" "bb compile")
