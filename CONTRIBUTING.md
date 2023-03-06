@@ -2,6 +2,10 @@
 
 Bob follows the The **[Collective Code Construction Contract (C4)](https://rfc.zeromq.org/spec:42/C4/).**
 
+## Developing Bob
+
+Checkout the [dev guide](doc/dev.md)!
+
 ## Code style guide
 
 The majority of Bob is written in Clojure and follows the [community style guide](https://guide.clojure.style/).
