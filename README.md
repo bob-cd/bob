@@ -20,7 +20,7 @@ Bob's API (accessible entirely through HTTP) enables a core set of CI/CD feature
   - Resource: Things (like source code or artifacts) consumed by Pipelines
   - Artifact: Something produced by a Pipeline
 
-The core of Bob is composed of the core services:
+The following services form the core cluster:
 - [API server](/apiserver)
 - [Runner](/runner)
 
