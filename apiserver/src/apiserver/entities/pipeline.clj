@@ -14,6 +14,7 @@
   "Creates a pipeline using the supplied data."
   [db-client data]
   (let [id (keyword (format "bob.pipeline.%s/%s" (:group data) (:name data)))]
+    (log/infof "Creating pipeline %s with id %s" data id)
     (xt/await-tx
      db-client
      (xt/submit-tx db-client [[::xt/put (assoc data :xt/id id :type :pipeline)]]))))

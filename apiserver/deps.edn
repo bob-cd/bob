@@ -9,7 +9,7 @@
         ch.qos.logback/logback-classic {:mvn/version "1.4.5"}
         clj-commons/iapetos {:mvn/version "0.1.13"}
         common/common {:local/root "../common"}
-        com.xtdb/xtdb-core {:mvn/version "1.23.0"}
+        com.xtdb/xtdb-core {:mvn/version "1.23.1"}
         failjure/failjure {:mvn/version "2.2.0"}
         info.sunng/ring-jetty9-adapter {:mvn/version "0.18.5"}
         integrant/integrant {:mvn/version "0.8.0"}
@@ -31,5 +31,5 @@
                                org.clojure/test.check {:mvn/version "1.1.1"}}
                   :main-opts ["-m" "kaocha.runner"]
                   :jvm-opts ["--enable-preview"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.3" :git/sha "e537cd1"}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.4" :git/sha "76b78fe"}}
                    :ns-default build}}}

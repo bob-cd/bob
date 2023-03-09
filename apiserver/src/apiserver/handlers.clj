@@ -7,9 +7,8 @@
 (ns apiserver.handlers
   (:require
    [apiserver.cctray :as cctray]
-   [apiserver.entities.artifact-store :as artifact-store]
+   [apiserver.entities.externals :as externals]
    [apiserver.entities.pipeline :as pipeline]
-   [apiserver.entities.resource-provider :as resource-provider]
    [apiserver.healthcheck :as hc]
    [apiserver.metrics :as metrics]
    [babashka.http-client :as http]
@@ -258,7 +257,7 @@
      resource-provider :body}
     :parameters
     db :db}]
-  (f/try-all [_ (resource-provider/create db (assoc resource-provider :name name))]
+  (f/try-all [_ (externals/create db "resource-provider" (assoc resource-provider :name name))]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -266,7 +265,7 @@
 (defn resource-provider-delete
   [{{{:keys [name]} :path} :parameters
     db :db}]
-  (f/try-all [_ (resource-provider/delete db name)]
+  (f/try-all [_ (externals/delete db "resource-provider" name)]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -285,7 +284,7 @@
      artifact-store :body}
     :parameters
     db :db}]
-  (f/try-all [_ (artifact-store/create db (assoc artifact-store :name name))]
+  (f/try-all [_ (externals/create db "artifact-store" (assoc artifact-store :name name))]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -293,7 +292,7 @@
 (defn artifact-store-delete
   [{{{:keys [name]} :path} :parameters
     db :db}]
-  (f/try-all [_ (artifact-store/delete db name)]
+  (f/try-all [_ (externals/delete db "artifact-store" name)]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
