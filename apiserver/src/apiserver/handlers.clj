@@ -325,7 +325,7 @@
   (f/try-all [[_ result] (lb/get queue "bob.errors" true)
               response (if (nil? result)
                          "No more errors"
-                         result)]
+                         (-> result slurp (json/read-str :key-fn keyword) :message))]
     (respond response 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
