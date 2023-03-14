@@ -14,6 +14,10 @@
                                             :durable true}
                               "bob.fanout" {:type "fanout"
                                             :durable true}}
-                  :queues {"bob.errors" {}}}
+                  :queues {"bob.errors" {}
+                           "bob.events" {}}}
+ :bob/stream-conf {:name #or [#env BOB_STREAM_NAME "bob.stream"]
+                   :url #or [#env BOB_STREAM_URL "rabbitmq-stream://guest:guest@localhost:5552/%2f"]
+                   :retention-days #long #or [#env BOB_STREAM_RETENTION_DAYS 7]}
  :bob/connection-retry-attempts #long #or [#env BOB_CONNECTION_RETRY_ATTEMPTS 10]
  :bob/connection-retry-delay #long #or [#env BOB_CONNECTION_RETRY_DELAY 2000]}

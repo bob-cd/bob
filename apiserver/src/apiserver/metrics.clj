@@ -66,6 +66,9 @@
               _ (->> "bob.errors"
                      (lq/message-count queue)
                      (prometheus/set (registry :bob/errors)))
+              _ (->> "bob.events"
+                     (lq/message-count queue)
+                     (prometheus/set (registry :bob/events)))
               _ (count-statuses db)]
     (export/text-format registry)
     (f/when-failed [err]

@@ -22,14 +22,15 @@
    [reitit.ring :as ring]))
 
 (defn system-interceptor
-  [db queue queue-conn-opts]
+  [db queue queue-conn-opts stream-env]
   {:enter #(-> %
                (assoc-in [:request :db] db)
                (assoc-in [:request :queue] queue)
-               (assoc-in [:request :queue-conn-opts] queue-conn-opts))})
+               (assoc-in [:request :queue-conn-opts] queue-conn-opts)
+               (assoc-in [:request :stream] stream-env))})
 
 (defn server
-  [database queue queue-conn-opts health-check-freq]
+  [database queue queue-conn-opts health-check-freq stream]
   (hc/schedule queue database health-check-freq)
   (http/ring-handler
    (http/router (-> "bob/api.yaml"
@@ -46,7 +47,7 @@
                                        (coercion/coerce-exceptions-interceptor)
                                        (coercion/coerce-response-interceptor)
                                        (coercion/coerce-request-interceptor)
-                                       (system-interceptor database queue queue-conn-opts)]}})
+                                       (system-interceptor database queue queue-conn-opts stream)]}})
    (ring/routes
     (ring/create-default-handler
      {:not-found (constantly {:status 404

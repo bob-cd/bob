@@ -14,6 +14,7 @@
    [runner.artifact :as a]
    [runner.engine :as eng]
    [runner.resource :as r]
+   [runner.events :as ev]
    [xtdb.api :as xt])
   (:import
    [java.time Instant]))
@@ -23,8 +24,8 @@
          :runs {}}))
 
 (defn log->db
-  [db-client run-id line]
-  (xt/submit-tx db-client
+  [database run-id line]
+  (xt/submit-tx database
                 [[::xt/put
                   {:xt/id (keyword (str "bob.pipeline.log/l-" (random-uuid)))
                    :type :log-line
@@ -33,8 +34,8 @@
                    :line line}]]))
 
 (defn log-event
-  [db-client run-id line]
-  (log->db db-client run-id (str "[bob] " line)))
+  [database run-id line]
+  (log->db database run-id (str "[bob] " line)))
 
 (defn mark-image-for-gc
   [image run-id]
@@ -58,12 +59,20 @@
 
 (defn resourceful-step
   "Create a resource mounted image for a step if it needs it."
-  [db-client step group name image run-id]
+  [{:keys [database producer]}
+   {:keys [group name image run-id]}
+   step]
   (if-let [resource (:needs_resource step)]
-    (f/try-all [_ (log-event db-client
+    (f/try-all [_ (ev/publish producer
+                              {:run-id run-id
+                               :type :resource
+                               :event :fetch
+                               :group group
+                               :name name})
+                _ (log-event database
                              run-id
                              (str "Fetching and mounting resource " resource))
-                pipeline (xt/entity (xt/db db-client)
+                pipeline (xt/entity (xt/db database)
                                     (keyword (format "bob.pipeline.%s/%s"
                                                      group
                                                      name)))
@@ -73,7 +82,7 @@
                                    :resources
                                    (filter #(= resource (:name %)))
                                    first)]
-      (r/mounted-image-from db-client
+      (r/mounted-image-from database
                             resource-info
                             image)
       (f/when-failed [err]
@@ -101,24 +110,19 @@
   {:image     current-image-id
    :mounted   set-of-mounted-resources
    :run-id    run-id
-   :db-client db-client
    :env       env-vars
    :group     pipeline-group
    :name      pipeline-name}
   or a Failure shorting the reduce.
 
   Returns the final build state or a Failure."
-  [{:keys [db-client image run-id env group name]
-    :as build-state} step]
+  [{:keys [database producer] :as config}
+   {:keys [image run-id env group name] :as build-state}
+   step]
   (if (f/failed? build-state)
     (reduced build-state)
     (f/try-all [image (if (mount-needed? build-state step)
-                        (resourceful-step db-client
-                                          step
-                                          group
-                                          name
-                                          image
-                                          run-id)
+                        (resourceful-step config build-state step)
                         image)
                 _ (mark-image-for-gc image run-id)
                 id (eng/create-container image step env)
@@ -129,16 +133,21 @@
                          assoc
                          :container-id
                          id)
-                _ (let [result (eng/start-container id #(log->db db-client run-id %))]
+                _ (let [result (eng/start-container id #(log->db database run-id %))]
                     (when (f/failed? result)
                       (log/debugf "Removing failed container %s" id)
                       (clean-up-container id run-id))
                     result)
                 _ (when-let [artifact (:produces_artifact step)]
-                    (log-event db-client
+                    (log-event database
                                run-id
                                (str "Uploading artifact " artifact))
-                    (a/upload-artifact db-client
+                    (ev/publish producer {:run-id run-id
+                                          :type :artifact
+                                          :event :upload
+                                          :group group
+                                          :name name})
+                    (a/upload-artifact database
                                        group
                                        name
                                        run-id
@@ -166,8 +175,8 @@
         err))))
 
 (defn run-info-of
-  [db-client run-id]
-  (f/try-all [run-info (xt/entity (xt/db db-client) (keyword (str "bob.pipeline.run/" run-id)))
+  [database run-id]
+  (f/try-all [run-info (xt/entity (xt/db database) (keyword (str "bob.pipeline.run/" run-id)))
               _ (when-not (spec/valid? :bob.db/run run-info)
                   (f/fail (str "Invalid run: " run-info)))]
     run-info
@@ -183,8 +192,8 @@
          run-id))
 
 (defn- start*
-  [db-client queue-chan group name run-id run-info run-db-id]
-  (f/try-all [pipeline (xt/entity (xt/db db-client)
+  [{:keys [database producer] :as config} queue-chan group name run-id run-info run-db-id]
+  (f/try-all [pipeline (xt/entity (xt/db database)
                                   (keyword (format "bob.pipeline.%s/%s"
                                                    group
                                                    name)))
@@ -196,61 +205,86 @@
                                   name)))
               {:keys [image steps vars]} pipeline
               _ (log/infof "Starting new run: %s" run-id)
-              _ (xt/await-tx db-client
-                             (xt/submit-tx db-client
+              _ (ev/publish producer {:run-id run-id
+                                      :type :pipeline
+                                      :event :starting
+                                      :group group
+                                      :name name})
+              _ (xt/await-tx database
+                             (xt/submit-tx database
                                            [[::xt/put
                                              (assoc run-info
                                                     :status :initializing
                                                     :initiated-at (Instant/now))]]))
-              _ (log-event db-client run-id (str "Pulling image " image))
+              _ (ev/publish producer {:run-id run-id
+                                      :type :pipeline
+                                      :event :pull
+                                      :group group
+                                      :name name})
               _ (eng/pull-image image)
-              _ (xt/await-tx db-client
-                             (xt/submit-tx db-client
+              _ (xt/await-tx database
+                             (xt/submit-tx database
                                            [[::xt/put
-                                             (assoc (run-info-of db-client run-id)
+                                             (assoc (run-info-of database run-id)
                                                     :status :initialized
                                                     :initialized-at (Instant/now))]]))
               _ (mark-image-for-gc image run-id)
               build-state {:image image
                            :mounted #{}
                            :run-id run-id
-                           :db-client db-client
+                           :queue-chan queue-chan
                            :env vars
                            :group group
                            :name name}
-              _ (xt/await-tx db-client
-                             (xt/submit-tx db-client
+              _ (xt/await-tx database
+                             (xt/submit-tx database
                                            [[::xt/put
-                                             (assoc (run-info-of db-client run-id)
+                                             (assoc (run-info-of database run-id)
                                                     :status :running
                                                     :started-at (Instant/now))]]))
-              _ (reduce exec-step build-state steps) ;; This is WHOLE of Bob!
+              _ (ev/publish producer {:run-id run-id
+                                      :type :pipeline
+                                      :event :running
+                                      :group group
+                                      :name name})
+              _ (reduce #(exec-step config %1 %2) build-state steps) ;; This is WHOLE of Bob!
               _ (gc-images run-id)
               _ (clean-up-run run-id)
-              _ (xt/await-tx db-client
-                             (xt/submit-tx db-client
+              _ (xt/await-tx database
+                             (xt/submit-tx database
                                            [[::xt/put
-                                             (assoc (run-info-of db-client run-id)
+                                             (assoc (run-info-of database run-id)
                                                     :status :passed
                                                     :completed-at (Instant/now))]]))
               _ (log/infof "Run successful %s" run-id)
-              _ (log-event db-client run-id "Run successful")]
+              _ (log-event database run-id "Run successful")
+              _ (ev/publish producer {:run-id run-id
+                                      :type :pipeline
+                                      :event :successful
+                                      :group group
+                                      :name name})]
     run-id
     (f/when-failed [err]
-      (let [{:keys [status] :as run} (xt/entity (xt/db db-client) run-db-id)
+      (let [{:keys [status] :as run} (xt/entity (xt/db database) run-db-id)
             error (f/message err)]
         (when (and (spec/valid? :bob.db/run run)
                    (not= status :stopped))
           (log/infof "Marking run %s as failed with reason: %s"
                      run-id
                      error)
-          (log-event db-client run-id (str "Run failed: %s" error))
+          (log-event database run-id (str "Run failed: %s" error))
+          (ev/publish producer {:run-id run-id
+                                :type :pipeline
+                                :event :failed
+                                :error error
+                                :group group
+                                :name name})
           (xt/await-tx
-           db-client
+           database
            (xt/submit-tx
-            db-client
+            database
             [[::xt/put
-              (assoc (run-info-of db-client run-id) :status :failed :completed-at (Instant/now))]]))))
+              (assoc (run-info-of database run-id) :status :failed :completed-at (Instant/now))]]))))
       (gc-images run-id)
       (clean-up-run run-id)
       (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
@@ -258,7 +292,7 @@
 
 (defn start
   "Attempts to asynchronously start a pipeline by group and name."
-  [db-client queue-chan {:keys [group name run-id] :as data}]
+  [config queue-chan {:keys [group name run-id] :as data}]
   (if-not (spec/valid? :bob.command.pipeline-start/data data)
     (errors/publish-error queue-chan (str "Invalid pipeline start command: " data))
     (let [run-db-id (keyword (str "bob.pipeline.run/" run-id))
@@ -266,7 +300,7 @@
                     :type :pipeline-run
                     :group group
                     :name name}
-          run-ref (future (start* db-client queue-chan group name run-id run-info run-db-id))]
+          run-ref (future (start* config queue-chan group name run-id run-info run-db-id))]
       (swap! node-state
              update-in
              [:runs run-id]
@@ -280,7 +314,7 @@
 
   Sets the :status in Db to :stopped and kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
-  [db-client queue-chan {:keys [group name run-id] :as data}]
+  [{:keys [database producer]} queue-chan {:keys [group name run-id] :as data}]
   (if-not (spec/valid? :bob.command.pipeline-stop/data data)
     (errors/publish-error queue-chan (str "Invalid pipeline stop command: " data))
     (when-let [run (get-in @node-state [:runs run-id])]
@@ -288,11 +322,16 @@
                  run-id
                  group
                  name)
-      (xt/await-tx db-client
+      (xt/await-tx database
                    (xt/submit-tx
-                    db-client
+                    database
                     [[::xt/put
-                      (assoc (run-info-of db-client run-id) :status :stopped :completed-at (Instant/now))]]))
+                      (assoc (run-info-of database run-id) :status :stopped :completed-at (Instant/now))]]))
+      (ev/publish producer {:run-id run-id
+                            :type :pipeline
+                            :event :stopped
+                            :group group
+                            :name name})
       (when-let [container (:container-id run)]
         (eng/kill-container container)
         (eng/delete-container container)
@@ -316,11 +355,13 @@
 
   @node-state
 
-  (require '[common.system :as sys])
+  (require '[runner.system :as sys])
+  (def database (:bob/storage sys/system))
+  (def queue-chan (get-in sys/system [:bob/queue :chan]))
+  (def producer (:runner/event-producer sys/system))
+  (def run-id "r-60a0d2e8-ec6e-4004-8136-978f4e042f25")
 
-  (def db-client (sys/db))
-
-  (xt/submit-tx db-client
+  (xt/submit-tx database
                 [[::xt/put
                   {:xt/id :bob.pipeline.test/test
                    :group "test"
@@ -335,73 +376,90 @@
                                 :provider "git"
                                 :params {:repo "https://github.com/bob-cd/bob"
                                          :branch "main"}}]
+                   :type :pipeline
                    :image "busybox:musl"}]])
 
-  (xt/entity (xt/db db-client) :bob.pipeline.test/test)
+  (xt/entity (xt/db database) :bob.pipeline.test/test)
 
-  (xt/submit-tx db-client
+  (xt/submit-tx database
                 [[::xt/put
                   {:xt/id :bob.resource-provider/git
-                   :url "http://localhost:8000"}]])
+                   :url "http://localhost:8000"
+                   :type :resource-provider
+                   :name "git"}]])
 
-  (xt/entity (xt/db db-client) :bob.resource-provider/git)
+  (xt/entity (xt/db database) :bob.resource-provider/git)
 
-  (resourceful-step db-client
+  (resourceful-step {:database database
+                     :producer producer}
+                    {:group "test"
+                     :name "test"
+                     :run-id "a-run-id"}
                     {:needs_resource "source"
-                     :cmd "ls"}
-                    "test" "test"
-                    "busybox:musl" "a-run-id")
+                     :image "busybox:musl"
+                     :cmd "ls"})
 
-  (xt/submit-tx db-client
+  (xt/submit-tx database
                 [[::xt/put
                   {:xt/id :bob.artifact-store/local
                    :url "http://localhost:8001"}]])
 
-  (xt/entity (xt/db db-client) :bob.artifact-store/local)
+  (xt/entity (xt/db database) :bob.artifact-store/local)
 
-  (exec-step {:image "busybox:musl"
+  (exec-step {:database database
+              :producer producer}
+             {:image "docker.io/busybox:musl"
               :mounted #{}
               :run-id "a-run-id"
-              :db-client db-client
               :env {:type "yes"}
               :group "test"
-              :name "test"}
+              :name "test"
+              :type :pipeline}
              {:needs_resource "source"
               :cmd "ls"
               :produces_artifact {:path "README.md"
                                   :name "readme"
                                   :store "local"}})
 
-  (start db-client
-         nil
-         {:group "test"
-          :name "test"})
+  (def my-start (start {:database database
+                        :producer producer}
+                       queue-chan
+                       {:group "test"
+                        :name "test"
+                        :run-id run-id}))
 
-  (xt/q (xt/db db-client)
+  (def my-stop (stop {:database database
+                      :producer producer}
+                     queue-chan
+                     {:group "test"
+                      :name "test"
+                      :run-id run-id}))
+
+  (xt/q (xt/db database)
         '{:find [(pull log [:line])]
-          :where [[log :type :log-line] [log :run-id "r-60a0d2e8-ec6e-4004-8136-978f4e042f25"]]})
+          :where [[log :type :log-line] [log :run-id run-id]]})
 
-  (->> (xt/q (xt/db db-client)
+  (->> (xt/q (xt/db database)
              '{:find [(pull run [:xt/id])]
                :where [[run :type :pipeline-run]]})
        first
        (map :xt/id)
        (map name))
 
-  (xt/submit-tx db-client
+  (xt/submit-tx database
                 [[::xt/put
                   {:xt/id :bob.pipeline.test/stop-test
                    :steps [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
                    :image "busybox:musl"}]])
 
-  (xt/entity (xt/db db-client) :bob.pipeline.test/stop-test)
+  (xt/entity (xt/db database) :bob.pipeline.test/stop-test)
 
-  (start db-client
-         nil
+  (start database
+         queue-chan
          {:group "test"
           :name "stop-test"})
 
-  (stop db-client
+  (stop database
         nil
         {:group "test"
          :name "stop-test"

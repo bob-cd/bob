@@ -948,6 +948,33 @@ paths:
                   value:
                     message: "<Some Error>"
 
+  "/events":
+    get:
+      operationId: GetEvents
+      summary: Streams events of last seven days and continuing
+      description: Streams events of last seven days and continuing
+      tags:
+        - observability
+
+      responses:
+        "200":
+          description: Successful fetch
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+        default:
+          description: Failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "<Some Error>"
+
   "/metrics":
     get:
       operationId: GetMetrics

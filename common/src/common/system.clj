@@ -19,7 +19,9 @@
    [xtdb.api :as xt])
   (:import
    [java.net ConnectException]
-   [xtdb.api IXtdb]))
+   [java.time Duration]
+   [xtdb.api IXtdb]
+   [com.rabbitmq.stream Environment StreamException]))
 
 (def config
   (-> "bob/common.edn"
@@ -108,6 +110,29 @@
   (log/info "Disconnecting Queue")
   (when-not (rmq/open? conn)
     (rmq/close conn)))
+
+(defmethod ig/init-key
+  :bob/stream-env
+  [_ {:keys [url name retention-days]}]
+  (log/info "Setting up environment for RabbitMQ stream" {:url url
+                                                          :name name
+                                                          :retention-days retention-days})
+  (let [stream-env (.. Environment builder (uri url) build)]
+    (try
+      (.. stream-env
+          streamCreator
+          (maxAge (Duration/ofDays retention-days))
+          (stream name)
+          create)
+      (catch StreamException _
+        (log/debug "Stream already exists")))
+    stream-env))
+
+(defmethod ig/halt-key!
+  :bob/stream-env
+  [_ stream-env]
+  (log/info "Tearing down environment for RabbitMQ stream")
+  (.close stream-env))
 
 (defmethod aero/reader
   'ig/ref
