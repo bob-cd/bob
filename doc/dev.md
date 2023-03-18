@@ -20,6 +20,28 @@ The following are the recommended steps:
   - If working on the apiserver, you can start the rest of the cluster with `docker-compose up storage queue artifact resource runner` and develop.
 - Its also recommended to use this partial cluster setup to try running the service you just developed as well: `clojure -J--enable-preview -M -m apiserver.main`.
 
+#### _Running_ the Runner
+
+When developing the Runner, its a bit different as it needs Podman to be available and it looks for it on `http://localhost:8080` by default.
+`CONTAINER_ENGINE_URL` can be set to change this.
+
+As above, before starting up the Runner with `clojure -J--enable-preview -M -m runner.main`, make sure podman is running with:
+```shell
+docker run \
+--rm \
+--name podman \
+--device /dev/fuse \
+--security-opt seccomp=unconfined \
+--security-opt apparmor=unconfined \
+--security-opt label=disable \
+--cap-add sys_admin \
+--cap-add mknod \
+-p 8080:8080 \
+quay.io/podman/stable:v4.4.2 \
+podman system service -t 0 tcp://0.0.0.0:8080
+
+```
+
 ### Running tests
 
 Again, due to the clustered setup, tests are a bit complex. However care has been taken to abstract it all away using [Babashka tasks](https://book.babashka.org/#tasks).

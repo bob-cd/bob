@@ -25,6 +25,7 @@ This provides a general enough, isolated and ephemeral execution environment. Ea
 | BOB_QUEUE_PASSWORD            | guest                                |
 | BOB_CONNECTION_RETRY_ATTEMPTS | 10                                   |
 | BOB_CONNECTION_RETRY_DELAY    | 2000                                 |
+| CONTAINER_ENGINE_URL          | http://localhost:8080                |
 
 ## Building and Running
 
