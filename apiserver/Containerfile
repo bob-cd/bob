@@ -4,20 +4,8 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM azul/zulu-openjdk-alpine:19 AS jdk
+FROM azul/zulu-openjdk-alpine:20-jre-headless
 
-RUN jlink \
-    --compress=2 \
-    --module-path jmods \
-    --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http \
-    --strip-java-debug-attributes \
-    --no-man-pages \
-    --no-header-files \
-    --output jlinked
-
-FROM alpine:latest
-
-COPY --from=jdk /jlinked jdk
 COPY apiserver.jar .
 
-ENTRYPOINT ["/jdk/bin/java", "--enable-preview", "-jar", "apiserver.jar"]
+ENTRYPOINT ["java", "--enable-preview", "-jar", "apiserver.jar"]

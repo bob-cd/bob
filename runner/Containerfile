@@ -4,9 +4,8 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM eclipse-temurin:19-jdk AS jdk
+FROM azul/zulu-openjdk:20 AS jdk
 
-# should be --strip-java-debug-attributes on alpine
 RUN jlink \
     --compress=2 \
     --module-path jmods \

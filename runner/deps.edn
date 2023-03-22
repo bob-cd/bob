@@ -12,7 +12,7 @@
         failjure/failjure {:mvn/version "2.2.0"}
         integrant/integrant {:mvn/version "0.8.0"}
         io.github.lispyclouds/contajners {:git/sha "71660ec1b8ca40b6af5eae612b4264c7dad7f6a5"}
-        org.babashka/http-client {:mvn/version "0.1.6"}
+        org.babashka/http-client {:mvn/version "0.1.8"}
         org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/tools.logging {:mvn/version "1.2.4"}
         org.kamranzafar/jtar {:mvn/version "2.3"}}
