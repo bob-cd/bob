@@ -306,6 +306,9 @@
                            statuses (->> history
                                          (map ::xt/doc)
                                          (map :status))]
+                       (is (inst? (:initialized run-info)))
+                       (is (inst? (:started run-info)))
+                       (is (inst? (:completed run-info)))
                        (is (= [:passed :running :initializing]
                               statuses))
                        (is (not (f/failed? result)))
@@ -340,7 +343,11 @@
                                          (map :status)
                                          (into #{}))]
                        (u/spec-assert :bob.db/run run-info)
+                       (is (inst? (:initialized run-info)))
+                       (is (inst? (:started run-info)))
+                       (is (inst? (:completed run-info)))
                        (is (f/failed? result))
+                       (is (contains? statuses :initializing))
                        (is (contains? statuses :running))
                        (is (contains? statuses :failed)))))))
 
@@ -379,6 +386,10 @@
                             (map :status)
                             (into #{}))]
           (u/spec-assert :bob.db/run run-info)
+          (is (inst? (:initialized run-info)))
+          (is (inst? (:started run-info)))
+          (is (inst? (:completed run-info)))
           (is (not (contains? statuses :failed)))
+          (is (contains? statuses :initializing))
           (is (contains? statuses :running))
           (is (contains? statuses :stopped)))))))
