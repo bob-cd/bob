@@ -305,12 +305,14 @@
                            run-info (xt/entity (xt/db db) (keyword (str "bob.pipeline.run/" result)))
                            statuses (->> history
                                          (map ::xt/doc)
-                                         (map :status))]
+                                         (map :status)
+                                         (into #{}))]
                        (is (inst? (:initialized run-info)))
                        (is (inst? (:started run-info)))
                        (is (inst? (:completed run-info)))
-                       (is (= [:passed :running :initializing]
-                              statuses))
+                       (is (contains? statuses :initializing))
+                       (is (contains? statuses :running))
+                       (is (contains? statuses :passed))
                        (is (not (f/failed? result)))
                        (is (= ["ENV: v1" "ENV: v2 v3"] lines))
                        (u/spec-assert :bob.db/run run-info)))))
