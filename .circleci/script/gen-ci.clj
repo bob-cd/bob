@@ -7,8 +7,7 @@
 (require
  '[babashka.process :as p]
  '[clj-yaml.core :as yaml]
- '[clojure.string :as str]
- '[flatland.ordered.map :refer [ordered-map]])
+ '[clojure.string :as str])
 
 (defn run
   [cmd-name cmd]
@@ -35,8 +34,7 @@
   [shorted?]
   (gen-job
    shorted?
-   (ordered-map
-    :machine {:image "ubuntu-2204:current"}
+   {:machine {:image "ubuntu-2204:current"}
     :resource_class "large"
     :environment {:JAVA_HOME java-home
                   :JAVA_CMD (str java-home "/bin/java")}
@@ -66,21 +64,52 @@
        {:key
         "bob-v1-{{ checksum \"apiserver/deps.edn\" }}-{{ checksum \"runner/deps.edn\" }}-{{ checksum \"common/deps.edn\" }}"
         :paths ["~/.m2"
-                "~/.gitlibs"]}}
+                "~/.gitlibs"]}}])}))
+
+(defn deploy
+  [shorted?]
+  (gen-job
+   shorted?
+   {:machine {:image "ubuntu-2204:current"}
+    :resource_class "large"
+    :environment {:JAVA_HOME java-home
+                  :JAVA_CMD (str java-home "/bin/java")}
+    :steps
+    (gen-steps
+     shorted?
+     [:checkout
+      (run "Git clean slate" "rm -rf ~/.gitconfig")
+      (run "Setup Babashka"
+           "curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
+           sudo bash install")
+      (run
+       "Setup Java"
+       (format
+        "wget -O jdk.tar.gz https://download.oracle.com/java/19/latest/jdk-19_linux-x64_bin.tar.gz
+        mkdir %s
+        tar -zxf jdk.tar.gz -C %s --strip-components=1"
+        java-home
+        java-home))
+      (run "Setup Clojure"
+           "curl -sLO https://download.clojure.org/install/linux-install.sh
+           sudo bash linux-install.sh")
+      {:restore_cache {:keys "bob-v1-"}}
       (run "Build executables" "bb compile")
       (run "Create multi-platform capabale buildx builder"
            "docker run --privileged --rm tonistiigi/binfmt --install all
            docker buildx create --use")
       (run "Docker login" "echo ${GHCR_TOKEN} | docker login ghcr.io --username lispyclouds --password-stdin")
-      (run "Build and publish images" "bb image")]))))
+      (run "Build and publish images" "bb image")])}))
 
 (defn make-config
   [shorted?]
-  (ordered-map
-   :version 2.1
-   :jobs (ordered-map
-          :build
-          (build shorted?))))
+  {:version 2.1
+   :jobs {:build (build shorted?)
+          :deploy (deploy shorted?)}
+   :workflows {:version 2
+               :ci {:jobs ["build"
+                           {:deploy {:filters {:branches {:only "main"}}
+                                     :requires ["build"]}}]}}})
 
 (def skip-config
   {:skip-if-only [#".*.md$"
