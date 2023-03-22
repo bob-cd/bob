@@ -94,6 +94,7 @@
            "curl -sLO https://download.clojure.org/install/linux-install.sh
            sudo bash linux-install.sh")
       {:restore_cache {:keys "bob-v1-"}}
+      (run "Prep all deps" "bb prep")
       (run "Build executables" "bb compile")
       (run "Create multi-platform capabale buildx builder"
            "docker run --privileged --rm tonistiigi/binfmt --install all
