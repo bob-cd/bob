@@ -87,10 +87,6 @@
 
 (spec/def :bob/artifact-store (spec/keys :req-un [:bob.artifact-store/url]))
 
-(spec/def :bob.pipeline.run/started inst?) ;; DEPRECATED
-
-(spec/def :bob.pipeline.run/completed inst?) ;; DEPRECATED
-
 (spec/def :bob.pipeline.run/initiated-at inst?)
 
 (spec/def :bob.pipeline.run/initialized-at inst?)
@@ -110,9 +106,7 @@
              :opt-un [:bob.pipeline.run/initiated-at
                       :bob.pipeline.run/initialized-at
                       :bob.pipeline.run/started-at
-                      :bob.pipeline.run/completed-at
-                      :bob.pipeline.run/started
-                      :bob.pipeline.run/completed]))
+                      :bob.pipeline.run/completed-at]))
 
 (spec/def :bob.pipeline.run.log-line/time inst?)
 
