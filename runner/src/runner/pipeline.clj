@@ -207,7 +207,7 @@
               _ (xt/await-tx db-client
                              (xt/submit-tx db-client
                                            [[::xt/put
-                                             (assoc run-info
+                                             (assoc (run-info-of db-client run-id)
                                                     :status :initialized
                                                     :initialized-at (Instant/now))]]))
               _ (mark-image-for-gc image run-id)
