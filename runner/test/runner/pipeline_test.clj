@@ -305,9 +305,16 @@
                            run-info (xt/entity (xt/db db) (keyword (str "bob.pipeline.run/" result)))
                            statuses (->> history
                                          (map ::xt/doc)
-                                         (map :status))]
-                       (is (= [:passed :running :initializing]
-                              statuses))
+                                         (map :status)
+                                         (into #{}))]
+                       (is (inst? (:initiated-at run-info)))
+                       (is (inst? (:initialized-at run-info)))
+                       (is (inst? (:started-at run-info)))
+                       (is (inst? (:completed-at run-info)))
+                       (is (contains? statuses :initializing))
+                       (is (contains? statuses :initialized))
+                       (is (contains? statuses :running))
+                       (is (contains? statuses :passed))
                        (is (not (f/failed? result)))
                        (is (= ["ENV: v1" "ENV: v2 v3"] lines))
                        (u/spec-assert :bob.db/run run-info)))))
@@ -340,7 +347,13 @@
                                          (map :status)
                                          (into #{}))]
                        (u/spec-assert :bob.db/run run-info)
+                       (is (inst? (:initiated-at run-info)))
+                       (is (inst? (:initialized-at run-info)))
+                       (is (inst? (:started-at run-info)))
+                       (is (inst? (:completed-at run-info)))
                        (is (f/failed? result))
+                       (is (contains? statuses :initializing))
+                       (is (contains? statuses :initialized))
                        (is (contains? statuses :running))
                        (is (contains? statuses :failed)))))))
 
@@ -379,6 +392,12 @@
                             (map :status)
                             (into #{}))]
           (u/spec-assert :bob.db/run run-info)
+          (is (inst? (:initiated-at run-info)))
+          (is (inst? (:initialized-at run-info)))
+          (is (inst? (:started-at run-info)))
+          (is (inst? (:completed-at run-info)))
           (is (not (contains? statuses :failed)))
+          (is (contains? statuses :initializing))
+          (is (contains? statuses :initialized))
           (is (contains? statuses :running))
           (is (contains? statuses :stopped)))))))

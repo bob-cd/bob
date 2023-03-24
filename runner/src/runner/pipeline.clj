@@ -201,9 +201,15 @@
                                            [[::xt/put
                                              (assoc run-info
                                                     :status :initializing
-                                                    :started (Instant/now))]]))
+                                                    :initiated-at (Instant/now))]]))
               _ (log-event db-client run-id (str "Pulling image " image))
               _ (eng/pull-image image)
+              _ (xt/await-tx db-client
+                             (xt/submit-tx db-client
+                                           [[::xt/put
+                                             (assoc (run-info-of db-client run-id)
+                                                    :status :initialized
+                                                    :initialized-at (Instant/now))]]))
               _ (mark-image-for-gc image run-id)
               build-state {:image image
                            :mounted #{}
@@ -216,8 +222,8 @@
                              (xt/submit-tx db-client
                                            [[::xt/put
                                              (assoc (run-info-of db-client run-id)
-                                                    :status
-                                                    :running)]]))
+                                                    :status :running
+                                                    :started-at (Instant/now))]]))
               _ (reduce exec-step build-state steps) ;; This is WHOLE of Bob!
               _ (gc-images run-id)
               _ (clean-up-run run-id)
@@ -226,7 +232,7 @@
                                            [[::xt/put
                                              (assoc (run-info-of db-client run-id)
                                                     :status :passed
-                                                    :completed (Instant/now))]]))
+                                                    :completed-at (Instant/now))]]))
               _ (log/infof "Run successful %s" run-id)
               _ (log-event db-client run-id "Run successful")]
     run-id
@@ -244,7 +250,7 @@
            (xt/submit-tx
             db-client
             [[::xt/put
-              (assoc (run-info-of db-client run-id) :status :failed :completed (Instant/now))]]))))
+              (assoc (run-info-of db-client run-id) :status :failed :completed-at (Instant/now))]]))))
       (gc-images run-id)
       (clean-up-run run-id)
       (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
@@ -286,7 +292,7 @@
                    (xt/submit-tx
                     db-client
                     [[::xt/put
-                      (assoc (run-info-of db-client run_id) :status :stopped :completed (Instant/now))]]))
+                      (assoc (run-info-of db-client run_id) :status :stopped :completed-at (Instant/now))]]))
       (when-let [container (:container-id run)]
         (eng/kill-container container)
         (eng/delete-container container)
