@@ -51,3 +51,18 @@ If developing the runner for instance:
 - Make sure either docker or podman is setup.
 - Run `bb test` from that dir.
 - This brings up all the rest of the cluster and runs the tests in that context and cleans up afterwards.
+
+#### End to end (E2E) testing (or the lack of it)
+
+The codebase used to have a full E2E suite which brought up a full cluster and performed all the operations from the API and asserted the effects.
+
+However, in practice it was observed the tests were quite flaky and the amount of time spent in running them and the value they provided wasn't worth it. Hence the follwoing pattern is followed now:
+
+- Have a shared set of [specs](https://github.com/bob-cd/bob/blob/main/common/src/common/schemas.clj) which:
+  - Defines all the boudaries of each of the services.
+  - Defines all the shape of the data in shared places like the DB and the Queue.
+  - During normal operation, whenever a call to a shared place is made by any service, the data retreived is verified with the spec.
+  - All the unit/intergration tests use these shared specs to verify the effects of calls into the shared places.
+- This in effect, has the similar guarantees as the E2E tests apart from things like network/hardware failures.
+- This is a much more consistent ahd reliable method to not only to run the cluster but to test it as well.
+- When specs are stored and consumed centrally, it offers a much higher guarantee of maintainence and reliabilty of making a cross functional change.
