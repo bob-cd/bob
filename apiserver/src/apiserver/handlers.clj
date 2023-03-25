@@ -133,7 +133,7 @@
                       "pipeline/start"
                       "bob.direct"
                       (format "bob.%s.jobs" (or (:runner/type metadata) "container"))
-                      (assoc pipeline-info :run_id id))
+                      (assoc pipeline-info :run-id id))
             id))
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -145,7 +145,7 @@
                   "pipeline/stop"
                   "bob.fanout"
                   ""
-                  (s/rename-keys pipeline-info {:id :run_id}))))
+                  (s/rename-keys pipeline-info {:id :run-id}))))
 
 (defn pipeline-pause-unpause
   [pause?
@@ -198,8 +198,8 @@
   (f/try-all [runs (get-runs db group name)
               response (->> runs
                             (map #(dissoc % :group :name :type))
-                            (map #(s/rename-keys % {:xt/id :run_id}))
-                            (map #(update % :run_id clojure.core/name)))]
+                            (map #(s/rename-keys % {:xt/id :run-id}))
+                            (map #(update % :run-id clojure.core/name)))]
     (respond response 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))

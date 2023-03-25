@@ -120,12 +120,12 @@
 
 (spec/def :bob.command.pipeline-start/type #{"pipeline/start"})
 
-(spec/def :bob.command.pipeline-start/run_id :bob.pipeline.run/run-id)
+(spec/def :bob.command.pipeline-start/run-id :bob.pipeline.run/run-id)
 
 (spec/def :bob.command.pipeline-start/data
   (spec/keys :req-un [:bob.pipeline/group
                       :bob.pipeline/name
-                      :bob.command.pipeline-start/run_id]))
+                      :bob.command.pipeline-start/run-id]))
 
 (spec/def :bob.command/pipeline-start
   (spec/keys :req-un
@@ -134,13 +134,13 @@
 
 (spec/def :bob.command.pipeline-stop/type #{"pipeline/stop"})
 
-(spec/def :bob.command.pipeline-stop.data/run_id :bob.pipeline.run/run-id)
+(spec/def :bob.command.pipeline-stop.data/run-id :bob.pipeline.run/run-id)
 
 (spec/def :bob.command.pipeline-stop/data
   (spec/keys :req-un
              [:bob.pipeline/group
               :bob.pipeline/name
-              :bob.command.pipeline-stop.data/run_id]))
+              :bob.command.pipeline-stop.data/run-id]))
 
 (spec/def :bob.command/pipeline-stop
   (spec/keys :req-un

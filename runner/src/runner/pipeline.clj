@@ -258,46 +258,46 @@
 
 (defn start
   "Attempts to asynchronously start a pipeline by group and name."
-  [db-client queue-chan {:keys [group name run_id] :as data}]
+  [db-client queue-chan {:keys [group name run-id] :as data}]
   (if-not (spec/valid? :bob.command.pipeline-start/data data)
     (errors/publish-error queue-chan (str "Invalid pipeline start command: " data))
-    (let [run-db-id (keyword (str "bob.pipeline.run/" run_id))
+    (let [run-db-id (keyword (str "bob.pipeline.run/" run-id))
           run-info {:xt/id run-db-id
                     :type :pipeline-run
                     :group group
                     :name name}
-          run-ref (future (start* db-client queue-chan group name run_id run-info run-db-id))]
+          run-ref (future (start* db-client queue-chan group name run-id run-info run-db-id))]
       (swap! node-state
              update-in
-             [:runs run_id]
+             [:runs run-id]
              assoc
              :ref
              run-ref)
       run-ref)))
 
 (defn stop
-  "Idempotently stops a pipeline by group, name and run_id
+  "Idempotently stops a pipeline by group, name and run-id
 
   Sets the :status in Db to :stopped and kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
-  [db-client queue-chan {:keys [group name run_id] :as data}]
+  [db-client queue-chan {:keys [group name run-id] :as data}]
   (if-not (spec/valid? :bob.command.pipeline-stop/data data)
     (errors/publish-error queue-chan (str "Invalid pipeline stop command: " data))
-    (when-let [run (get-in @node-state [:runs run_id])]
+    (when-let [run (get-in @node-state [:runs run-id])]
       (log/infof "Stopping run %s for pipeline %s %s"
-                 run_id
+                 run-id
                  group
                  name)
       (xt/await-tx db-client
                    (xt/submit-tx
                     db-client
                     [[::xt/put
-                      (assoc (run-info-of db-client run_id) :status :stopped :completed-at (Instant/now))]]))
+                      (assoc (run-info-of db-client run-id) :status :stopped :completed-at (Instant/now))]]))
       (when-let [container (:container-id run)]
         (eng/kill-container container)
         (eng/delete-container container)
-        (gc-images run_id))
-      (when-let [run (get-in @node-state [:runs run_id :ref])]
+        (gc-images run-id))
+      (when-let [run (get-in @node-state [:runs run-id :ref])]
         (when-not (future-done? run)
           (future-cancel run))))))
 
@@ -405,4 +405,4 @@
         nil
         {:group "test"
          :name "stop-test"
-         :run_id "r-ff185a8a-b6a6-48df-8630-650b025cafad"}))
+         :run-id "r-ff185a8a-b6a6-48df-8630-650b025cafad"}))

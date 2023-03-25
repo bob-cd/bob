@@ -87,7 +87,7 @@
                                        :type     "internal"
                                        :params   {:group  "dev"
                                                   :name   "test"
-                                                  :run_id "a-run-id"}}))))
+                                                  :run-id "a-run-id"}}))))
                    (xt/await-tx db
                                 (xt/submit-tx db
                                               [[::xt/delete :bob.resource-provider/git]])))))

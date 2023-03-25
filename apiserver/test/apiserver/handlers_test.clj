@@ -388,9 +388,9 @@
                      (let [resp (h/pipeline-runs-list {:db db
                                                        :parameters {:path {:group "dev"
                                                                            :name "test"}}})]
-                       (t/is (= [{:run_id "r-1"
+                       (t/is (= [{:run-id "r-1"
                                   :status :passed}
-                                 {:run_id "r-2"
+                                 {:run-id "r-2"
                                   :status :failed}]
                                 (-> resp
                                     :body

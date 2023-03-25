@@ -83,12 +83,12 @@
                          query))
     "internal" (let [base-url (a/store-url db-client provider)
                      resource-name name
-                     {:keys [group name run_id]} params]
+                     {:keys [group name run-id]} params]
                  (format "%s/bob_artifact/%s/%s/%s/%s"
                          base-url
                          group
                          name
-                         run_id
+                         run-id
                          resource-name))))
 
 (defn initial-image-of

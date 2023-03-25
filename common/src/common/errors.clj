@@ -7,8 +7,8 @@
 (ns common.errors
   (:require
    [clojure.data.json :as json]
-   [langohr.basic :as lb]
-   [clojure.tools.logging :as log]))
+   [clojure.tools.logging :as log]
+   [langohr.basic :as lb]))
 
 (defn publish-error
   [chan message]

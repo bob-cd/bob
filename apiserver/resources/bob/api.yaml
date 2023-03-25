@@ -651,9 +651,9 @@ paths:
                 success:
                   value:
                     message:
-                      - run_id: r-a-passed-id
+                      - run-id: r-a-passed-id
                         status: passed
-                      - run_id: r-a-failed-id
+                      - run-id: r-a-failed-id
                         status: failed
         default:
           description: Failed listing of pipeline runs
@@ -1181,10 +1181,10 @@ components:
           items:
             type: object
             required:
-              - run_id
+              - run-id
               - status
             properties:
-              run_id:
+              run-id:
                 type: string
               status:
                 type: string

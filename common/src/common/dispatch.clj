@@ -7,9 +7,9 @@
 (ns common.dispatch
   (:require
    [clojure.data.json :as json]
+   [clojure.tools.logging :as log]
    [common.errors :as err]
-   [failjure.core :as f]
-   [clojure.tools.logging :as log]))
+   [failjure.core :as f]))
 
 (defn queue-msg-subscriber
   [db-client routes chan meta-data payload]

@@ -8,6 +8,7 @@
   (:require
    [aero.core :as aero]
    [clojure.java.io :as io]
+   [clojure.tools.logging :as log]
    [failjure.core :as f]
    [integrant.core :as ig]
    [langohr.channel :as lch]
@@ -15,7 +16,6 @@
    [langohr.core :as rmq]
    [langohr.exchange :as le]
    [langohr.queue :as lq]
-   [clojure.tools.logging :as log]
    [xtdb.api :as xt])
   (:import
    [java.net ConnectException]

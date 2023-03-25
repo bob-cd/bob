@@ -286,7 +286,7 @@
                                             queue
                                             {:group "test"
                                              :name "test"
-                                             :run_id run-id})
+                                             :run-id run-id})
                            lines (->> (xt/q (xt/db db)
                                             {:find '[(pull log [:line]) time]
                                              :where [['log :type :log-line]
@@ -335,7 +335,7 @@
                                             queue
                                             {:group "test"
                                              :name "test"
-                                             :run_id "r-a-run-id"})
+                                             :run-id "r-a-run-id"})
                            id (f/message result)
                            run-info (xt/entity (xt/db db) (keyword (str "bob.pipeline.run/" id)))
                            history (xt/entity-history (xt/db db)
@@ -375,13 +375,13 @@
                          queue
                          {:group "test"
                           :name "stop-test"
-                          :run_id "r-a-stop-id"})
+                          :run-id "r-a-stop-id"})
               _ (Thread/sleep 5000) ;; Longer, possibly flaky wait
               _ (p/stop db
                         queue
                         {:group "test"
                          :name "stop-test"
-                         :run_id "r-a-stop-id"})
+                         :run-id "r-a-stop-id"})
               run-info (xt/entity (xt/db db) :bob.pipeline.run/r-a-stop-id)
               history (xt/entity-history (xt/db db)
                                          :bob.pipeline.run/r-a-stop-id
