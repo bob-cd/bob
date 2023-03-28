@@ -49,8 +49,19 @@ Again, due to the clustered setup, tests are a bit complex. However care has bee
 If developing the runner for instance:
 
 - Make sure either docker or podman is setup.
-- Run `bb test` from that dir.
 - This brings up all the rest of the cluster and runs the tests in that context and cleans up afterwards.
+
+Run tests:
+
+```bash
+$ bb test
+```
+
+Run a single test:
+
+```bash
+$ bb test --focus runner.pipeline-test/pipeline-starts
+```
 
 #### End to end (E2E) testing (or the lack of it)
 

@@ -27,7 +27,7 @@
                        (t/wait-for {"artifact-store" "http://localhost:8001/ping"
                                     "postgres" "tcp://127.0.0.1:5433"
                                     "rabbitmq" "tcp://127.0.0.1:5673"})
-                       (shell "clojure -M:test")
+                       (apply shell "clojure -M:test" *command-line-args*)
                        (finally (run 'cclean)))}
          compile {:doc "Builds the compiled artifact"
                   :task (shell "clojure -T:build uber")}
