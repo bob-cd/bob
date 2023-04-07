@@ -49,7 +49,7 @@
       (run
        "Setup Java"
        (format
-        "wget -O jdk.tar.gz https://download.oracle.com/java/19/latest/jdk-19_linux-x64_bin.tar.gz
+        "wget -O jdk.tar.gz https://download.oracle.com/java/20/latest/jdk-20_linux-x64_bin.tar.gz
         mkdir %s
         tar -zxf jdk.tar.gz -C %s --strip-components=1"
         java-home

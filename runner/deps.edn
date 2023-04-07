@@ -11,14 +11,14 @@
         com.xtdb/xtdb-core {:mvn/version "1.23.1"}
         failjure/failjure {:mvn/version "2.2.0"}
         integrant/integrant {:mvn/version "0.8.0"}
-        io.github.lispyclouds/contajners {:git/sha "622644e9b8fb0f6b4b320817ad46f7daf044e1e8"}
+        io.github.lispyclouds/contajners {:git/sha "ad4ffbb5f1972de9815c00f4c6d59b70101ec0a5"}
         org.babashka/http-client {:mvn/version "0.1.8"}
         org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/tools.logging {:mvn/version "1.2.4"}
         org.kamranzafar/jtar {:mvn/version "2.3"}}
- :aliases {:test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.80.1274"}
+ :aliases {:test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.82.1306"}
                                org.clojure/test.check {:mvn/version "1.1.1"}
-                               com.github.seancorfield/next.jdbc {:mvn/version "1.3.862"}}
+                               com.github.seancorfield/next.jdbc {:mvn/version "1.3.865"}}
                   :main-opts ["-m" "kaocha.runner"]
                   :jvm-opts ["--enable-preview"]}
            :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.4" :git/sha "76b78fe"}}
