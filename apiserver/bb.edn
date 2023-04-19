@@ -29,6 +29,8 @@
                                     "rabbitmq" "tcp://127.0.0.1:5673"})
                        (apply shell "clojure -M:test" *command-line-args*)
                        (finally (run 'cclean)))}
+         repl {:doc "Start a REPL"
+               :task (clojure "-M:test:repl")}
          compile {:doc "Builds the compiled artifact"
                   :task (shell "clojure -T:build uber")}
          image {:doc "Build and push the docker image"

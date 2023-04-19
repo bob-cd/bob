@@ -14,7 +14,7 @@ This is a standard clojure deps.edn based project and has been successfully work
 The following are the recommended steps:
 
 - Make sure the [clojure-lsp](https://clojure-lsp.io/) setup is done.
-- If working on one of the projects, treat that as the root dir and start your REPL there.
+- If working on one of the projects, treat that as the root dir and start your REPL there using `bb repl`.
 - Since this is a distributed system, its nice to have the necessary services around the ones you're working on be up and ready easiy:
   - Using the [docker-compose setup](https://github.com/bob-cd/bob-deploy/blob/main/docker-compose.yml) is a easy way.
   - If working on the apiserver, you can start the rest of the cluster with `docker-compose up storage queue artifact resource runner` and develop.
