@@ -30,6 +30,29 @@
 
 (def java-home "/tmp/jdk")
 
+(def java-download-url "https://download.oracle.com/java/20/latest/jdk-20_linux-x64_bin.tar.gz")
+
+(def common-steps
+  [:checkout
+   (run "Git clean slate" "rm -rf ~/.gitconfig")
+   (run "Setup Babashka"
+        "curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
+        sudo bash install")
+   (run
+    "Setup Java"
+    (format
+     "wget -O jdk.tar.gz %s
+     mkdir %s
+     tar -zxf jdk.tar.gz -C %s --strip-components=1"
+     java-download-url
+     java-home
+     java-home))
+   (run "Setup Clojure"
+        "curl -sLO https://download.clojure.org/install/linux-install.sh
+        sudo bash linux-install.sh")
+   {:restore_cache {:keys "bob-v1-"}}
+   (run "Prep all deps" "bb prep")])
+
 (defn build
   [shorted?]
   (gen-job
@@ -41,30 +64,14 @@
     :steps
     (gen-steps
      shorted?
-     [:checkout
-      (run "Git clean slate" "rm -rf ~/.gitconfig")
-      (run "Setup Babashka"
-           "curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
-           sudo bash install")
-      (run
-       "Setup Java"
-       (format
-        "wget -O jdk.tar.gz https://download.oracle.com/java/20/latest/jdk-20_linux-x64_bin.tar.gz
-        mkdir %s
-        tar -zxf jdk.tar.gz -C %s --strip-components=1"
-        java-home
-        java-home))
-      (run "Setup Clojure"
-           "curl -sLO https://download.clojure.org/install/linux-install.sh
-           sudo bash linux-install.sh")
-      {:restore_cache {:keys "bob-v1-"}}
-      (run "Prep all deps" "bb prep")
-      (run "Run all tests" "bb test")
-      {:save_cache
-       {:key
-        "bob-v1-{{ checksum \"apiserver/deps.edn\" }}-{{ checksum \"runner/deps.edn\" }}-{{ checksum \"common/deps.edn\" }}"
-        :paths ["~/.m2"
-                "~/.gitlibs"]}}])}))
+     (concat
+      common-steps
+      [(run "Run all tests" "bb test")
+       {:save_cache
+        {:key
+         "bob-v1-{{ checksum \"apiserver/deps.edn\" }}-{{ checksum \"runner/deps.edn\" }}-{{ checksum \"common/deps.edn\" }}"
+         :paths ["~/.m2"
+                 "~/.gitlibs"]}}]))}))
 
 (defn deploy
   [shorted?]
@@ -77,30 +84,14 @@
     :steps
     (gen-steps
      shorted?
-     [:checkout
-      (run "Git clean slate" "rm -rf ~/.gitconfig")
-      (run "Setup Babashka"
-           "curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install
-           sudo bash install")
-      (run
-       "Setup Java"
-       (format
-        "wget -O jdk.tar.gz https://download.oracle.com/java/19/latest/jdk-19_linux-x64_bin.tar.gz
-        mkdir %s
-        tar -zxf jdk.tar.gz -C %s --strip-components=1"
-        java-home
-        java-home))
-      (run "Setup Clojure"
-           "curl -sLO https://download.clojure.org/install/linux-install.sh
-           sudo bash linux-install.sh")
-      {:restore_cache {:keys "bob-v1-"}}
-      (run "Prep all deps" "bb prep")
-      (run "Build executables" "bb compile")
-      (run "Create multi-platform capabale buildx builder"
-           "docker run --privileged --rm tonistiigi/binfmt --install all
+     (concat
+      common-steps
+      [(run "Build executables" "bb compile")
+       (run "Create multi-platform capabale buildx builder"
+            "docker run --privileged --rm tonistiigi/binfmt --install all
            docker buildx create --use")
-      (run "Docker login" "echo ${GHCR_TOKEN} | docker login ghcr.io --username lispyclouds --password-stdin")
-      (run "Build and publish images" "bb image")])}))
+       (run "Docker login" "echo ${GHCR_TOKEN} | docker login ghcr.io --username lispyclouds --password-stdin")
+       (run "Build and publish images" "bb image")]))}))
 
 (defn make-config
   [shorted?]
