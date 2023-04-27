@@ -7,15 +7,14 @@
 {:paths ["../tasks"]
  :tasks {:requires ([tasks :as t])
          cclean {:doc "Cleans up cluster containers"
-                 :task (do
-                         (t/scrun "kill bob-test-storage bob-test-queue artifact-local")
-                         (t/scrun "rm bob-test-storage bob-test-queue artifact-local")
-                         (t/scrun "network rm bob-net")
-                         (t/scrun "volume prune -f"))}
+                 :task (do (t/scrun "kill bob-test-storage bob-test-queue artifact-local")
+                           (t/scrun "rm bob-test-storage bob-test-queue artifact-local")
+                           (t/scrun "network rm bob-net")
+                           (t/scrun "volume prune -f"))}
          prep {:doc "Prepares the deps"
-               :task (do (shell "clojure -P -A:build")
-                         (shell "clojure -P -M -A:test")
-                         (shell "clojure -P"))}
+               :task (do (clojure "-P" "-A:build")
+                         (clojure "-P" "-M" "-A:test")
+                         (clojure "-P"))}
          test {:doc "Sets up the cluster and runs tests"
                :task (try
                        (run 'cclean)
@@ -31,12 +30,11 @@
                        (finally (run 'cclean)))}
          repl {:doc "Start a REPL"
                :task (clojure "-M:test:repl")}
-         compile {:doc "Builds the compiled artifact"
-                  :task (shell "clojure -T:build uber")}
+         compile {:doc "Builds the compiled aritfact"
+                  :task (clojure "-T:build" "uber")}
          image {:doc "Build and push the docker image"
                 :task (shell "docker buildx build --push --platform linux/amd64,linux/arm64 -t ghcr.io/bob-cd/apiserver -f Containerfile .")}
          clean {:doc "Cleans up"
-                :task (do
-                        (shell "clojure -T:build clean")
-                        (shell "rm -rf .cpcache")
-                        (t/scrun "rmi ghcr.io/bob-cd/apiserver"))}}}
+                :task (do (clojure "-T:build" "clean")
+                          (shell "rm -rf .cpcache")
+                          (t/scrun "rmi ghcr.io/bob-cd/apiserver"))}}}
