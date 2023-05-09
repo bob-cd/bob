@@ -30,7 +30,7 @@
   ([conn-fn]
    (try-connect conn-fn (:bob/connection-retry-attempts config)))
   ([conn-fn n]
-   (if (= n 0)
+   (if (zero? n)
      (throw (ConnectException. "Cannot connect to system"))
      (let [res (f/try*
                 (conn-fn))]

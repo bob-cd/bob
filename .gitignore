@@ -7,5 +7,4 @@
 .cpcache
 .nrepl-port
 target/
-.clj-kondo/
-!.clj-kondo/config.edn
+.clj-kondo
