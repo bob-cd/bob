@@ -315,7 +315,7 @@
                        (u/spec-assert :bob.db/run run-info)))))
 
   (testing "failed pipeline run"
-    (u/with-system (fn [database queue]
+    (u/with-system (fn [database queue _]
                      (xt/await-tx database
                                   (xt/submit-tx database
                                                 [[::xt/put
@@ -355,7 +355,7 @@
 (deftest ^:integration pipeline-stop
   (testing "stopping a pipeline run"
     (u/with-system
-      (fn [database queue]
+      (fn [database queue _]
         (xt/await-tx database
                      (xt/submit-tx database
                                    [[::xt/put
