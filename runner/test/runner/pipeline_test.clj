@@ -355,7 +355,7 @@
 (deftest ^:integration pipeline-stop
   (testing "stopping a pipeline run"
     (u/with-system
-      (fn [database queue _]
+      (fn [database queue producer]
         (xt/await-tx database
                      (xt/submit-tx database
                                    [[::xt/put
@@ -366,13 +366,15 @@
                                       :steps [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
                                       :vars {}
                                       :image test-image}]]))
-        (let [_ (p/start {:database database}
+        (let [_ (p/start {:database database
+                          :producer producer}
                          queue
                          {:group "test"
                           :name "stop-test"
                           :run-id "r-a-stop-id"})
               _ (Thread/sleep 5000) ;; Longer, possibly flaky wait
-              _ (p/stop {:database database}
+              _ (p/stop {:database database
+                         :producer producer}
                         queue
                         {:group "test"
                          :name "stop-test"
