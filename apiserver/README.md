@@ -27,7 +27,7 @@ This is intended as the coherent gateway for the Bob cluster having the schema c
 | BOB_HEALTH_CHECK_FREQ         | 60000                                             |
 | BOB_CONNECTION_RETRY_ATTEMPTS | 10                                                |
 | BOB_CONNECTION_RETRY_DELAY    | 2000                                              |
-| BOB_STREAM_NAME               | bob.stream                                        |
+| BOB_STREAM_NAME               | bob.event-stream                                  |
 | BOB_STREAM_URL                | rabbitmq-stream://guest:guest@localhost:5552/%2f" |
 | BOB_STREAM_RETENTION_DAYS     | 7                                                 |
 
@@ -43,7 +43,7 @@ This is intended as the coherent gateway for the Bob cluster having the schema c
 
 ### Using Docker to easily boot up a local cluster
 - Install Docker 18+ and start it up
-- Run `docker run -it --name bob-queue -p 5672:5672 -p 15672:15672 -p 5552:5552 rabbitmq:3-management-alpine` to run the latest management enabled RabbitMQ instance on port `5672`, the streams interface on port `5552` and the admin control on port `15672`. The default credentials are `guest:guest`.
+- Run `docker run -it --name bob-queue -p 5672:5672 -p 15672:15672 -p 5552:5552  -e RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS='-rabbitmq_stream advertised_host localhost' --entrypoint sh rabbitmq:management-alpine -c 'rabbitmq-plugins enable --offline rabbitmq_stream && rabbitmq-server'` to run the latest management enabled RabbitMQ instance on port `5672`, the streams interface on port `5552` and the admin control on port `15672`. The default credentials are `guest:guest`.
 - Run `docker exec bob-queue rabbitmq-plugins enable rabbitmq_stream` to enable the stream plugin on the RabbitMQ instance.
 - Run `docker run --rm -it --name bob-storage -p 5432:5432 -e POSTGRES_DB=bob -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob postgres:alpine` to run the latest PostgreSQL instance on port `5432`.
 

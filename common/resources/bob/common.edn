@@ -16,7 +16,7 @@
                                             :durable true}}
                   :queues {"bob.errors" {}
                            "bob.events" {}}}
- :bob/stream-conf {:name #or [#env BOB_STREAM_NAME "bob.stream"]
+ :bob/stream-conf {:name #or [#env BOB_STREAM_NAME "bob.event-stream"]
                    :url #or [#env BOB_STREAM_URL "rabbitmq-stream://guest:guest@localhost:5552/%2f"]
                    :retention-days #long #or [#env BOB_STREAM_RETENTION_DAYS 7]}
  :bob/connection-retry-attempts #long #or [#env BOB_CONNECTION_RETRY_ATTEMPTS 10]
