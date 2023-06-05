@@ -262,7 +262,7 @@
 
 (deftest ^:integration pipeline-starts
   (testing "successful pipeline run"
-    (u/with-system (fn [database queue]
+    (u/with-system (fn [database queue producer]
                      (xt/await-tx database
                                   (xt/submit-tx database
                                                 [[::xt/put
@@ -277,7 +277,8 @@
                                                    :vars {:k1 "v1"}
                                                    :image test-image}]]))
                      (let [run-id "r-a-run-id"
-                           result @(p/start {:database database}
+                           result @(p/start {:database database
+                                             :producer producer}
                                             queue
                                             {:group "test"
                                              :name "test"
@@ -315,7 +316,7 @@
                        (u/spec-assert :bob.db/run run-info)))))
 
   (testing "failed pipeline run"
-    (u/with-system (fn [database queue _]
+    (u/with-system (fn [database queue producer]
                      (xt/await-tx database
                                   (xt/submit-tx database
                                                 [[::xt/put
@@ -326,7 +327,8 @@
                                                    :steps [{:cmd "echo hello"} {:cmd "this-bombs"}]
                                                    :vars {:k1 "v1"}
                                                    :image test-image}]]))
-                     (let [result @(p/start {:database database}
+                     (let [result @(p/start {:database database
+                                             :producer producer}
                                             queue
                                             {:group "test"
                                              :name "test"
