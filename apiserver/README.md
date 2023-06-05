@@ -7,26 +7,29 @@ This is intended as the coherent gateway for the Bob cluster having the schema c
 ## How does this work
 - This is implemented in Clojure/JVM
 - Implements a [spec-first](https://www.atlassian.com/blog/technology/spec-first-api-development) REST API with this OpenAPI 3.0+ [schema](/apiserver/src/main/resources/bob/api.yaml)
-- Uses [RabbitMQ](https://www.rabbitmq.com/) to send the requests from the API
+- Uses [RabbitMQ](https://www.rabbitmq.com/) to send the requests from the API and receive events from the runner via RabbitMQs streams interface
 - Uses [XTDB](https://xtdb.com) backed by [PostgreSQL](https://www.postgresql.org/) for reading the cluster state
 
 ## Configuration
 [Aero](https://github.com/juxt/aero) is used and therefore several variables can be set by specifying them as environment variables. Possible variables are:
 
-| Environment variables         | defaults                             |
-|-------------------------------|--------------------------------------|
-| BOB_STORAGE_URL               | jdbc:postgresql://localhost:5432/bob |
-| BOB_STORAGE_USER              | bob                                  |
-| BOB_STORAGE_PASSWORD          | bob                                  |
-| BOB_QUEUE_URL                 | amqp://localhost:5672                |
-| BOB_QUEUE_USER                | guest                                |
-| BOB_QUEUE_PASSWORD            | guest                                |
-| BOB_QUEUE_API_URL             | http://localhost:15672/api           |
-| BOB_API_HOST                  | 0.0.0.0                              |
-| BOB_API_PORT                  | 7777                                 |
-| BOB_HEALTH_CHECK_FREQ         | 60000                                |
-| BOB_CONNECTION_RETRY_ATTEMPTS | 10                                   |
-| BOB_CONNECTION_RETRY_DELAY    | 2000                                 |
+| Environment variables         | defaults                                          |
+|-------------------------------|---------------------------------------------------|
+| BOB_STORAGE_URL               | jdbc:postgresql://localhost:5432/bob              |
+| BOB_STORAGE_USER              | bob                                               |
+| BOB_STORAGE_PASSWORD          | bob                                               |
+| BOB_QUEUE_URL                 | amqp://localhost:5672                             |
+| BOB_QUEUE_USER                | guest                                             |
+| BOB_QUEUE_PASSWORD            | guest                                             |
+| BOB_QUEUE_API_URL             | http://localhost:15672/api                        |
+| BOB_API_HOST                  | 0.0.0.0                                           |
+| BOB_API_PORT                  | 7777                                              |
+| BOB_HEALTH_CHECK_FREQ         | 60000                                             |
+| BOB_CONNECTION_RETRY_ATTEMPTS | 10                                                |
+| BOB_CONNECTION_RETRY_DELAY    | 2000                                              |
+| BOB_STREAM_NAME               | bob.event-stream                                  |
+| BOB_STREAM_URL                | rabbitmq-stream://guest:guest@localhost:5552/%2f" |
+| BOB_STREAM_RETENTION_DAYS     | 7                                                 |
 
 ## Building and Running
 
@@ -40,7 +43,8 @@ This is intended as the coherent gateway for the Bob cluster having the schema c
 
 ### Using Docker to easily boot up a local cluster
 - Install Docker 18+ and start it up
-- Run `docker run -it --name bob-queue -p 5672:5672 -p 15672:15672 rabbitmq:3-management-alpine` to run the latest management enabled RabbitMQ instance on port `5672` and the admin control on port `15672`. The default credentials are `guest:guest`.
+- Run `docker run -it --name bob-queue -p 5672:5672 -p 15672:15672 -p 5552:5552  -e RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS='-rabbitmq_stream advertised_host localhost' --entrypoint sh rabbitmq:management-alpine -c 'rabbitmq-plugins enable --offline rabbitmq_stream && rabbitmq-server'` to run the latest management enabled RabbitMQ instance on port `5672`, the streams interface on port `5552` and the admin control on port `15672`. The default credentials are `guest:guest`.
+- Run `docker exec bob-queue rabbitmq-plugins enable rabbitmq_stream` to enable the stream plugin on the RabbitMQ instance.
 - Run `docker run --rm -it --name bob-storage -p 5432:5432 -e POSTGRES_DB=bob -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob postgres:alpine` to run the latest PostgreSQL instance on port `5432`.
 
 ### Ways of connecting APIServer to the cluster

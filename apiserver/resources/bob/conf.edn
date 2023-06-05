@@ -12,8 +12,13 @@
              :api-url #or [#env BOB_QUEUE_API_URL "http://localhost:15672/api"]
              :conf {:exchanges #ref [:common :bob/queue-conf :exchanges]
                     :queues #ref [:common :bob/queue-conf :queues]}}
+ :bob/stream-env {:url #ref [:common :bob/stream-conf :url]
+                  :name #ref [:common :bob/stream-conf :name]
+                  :retention-days #ref [:common :bob/stream-conf :retention-days]}
  :bob/apiserver {:host #or [#env BOB_API_HOST "0.0.0.0"]
                  :port #long #or [#env BOB_API_PORT 7777]
                  :health-check-freq #long #or [#env BOB_HEALTH_CHECK_FREQ 60000]
                  :database #ig/ref :bob/storage
-                 :queue #ig/ref :bob/queue}}
+                 :queue #ig/ref :bob/queue
+                 :stream {:name #ref [:common :bob/stream-conf :name]
+                          :environment #ig/ref :bob/stream-env}}}

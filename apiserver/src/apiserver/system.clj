@@ -20,9 +20,9 @@
 
 (defmethod ig/init-key
   :bob/apiserver
-  [_ {:keys [host port health-check-freq database queue]}]
+  [_ {:keys [host port health-check-freq database queue stream]}]
   (log/info "Starting APIServer")
-  (let [server (jetty/run-jetty (s/server database (:chan queue) (:conn-opts queue) health-check-freq)
+  (let [server (jetty/run-jetty (s/server database (:chan queue) (:conn-opts queue) health-check-freq stream)
                                 {:host host
                                  :port port
                                  :join? false

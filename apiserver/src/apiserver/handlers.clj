@@ -11,6 +11,7 @@
    [apiserver.entities.pipeline :as pipeline]
    [apiserver.healthcheck :as hc]
    [apiserver.metrics :as metrics]
+   [apiserver.events :as ev]
    [babashka.http-client :as http]
    [clojure.data.json :as json]
    [clojure.instant :as ins]
@@ -371,6 +372,7 @@
    "ArtifactStoreList" artifact-store-list
    "Query" query
    "GetError" errors
+   "GetEvents" ev/events-handler
    "GetMetrics" metrics
    "CCTray" cctray})
 

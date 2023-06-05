@@ -20,12 +20,13 @@
                        (run 'cclean)
                        (t/scrun "network create bob-net")
                        (t/crun "run -d --name bob-test-storage -p 5433:5432 -e POSTGRES_DB=bob-test -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob --network bob-net postgres:alpine")
-                       (t/crun "run -d --name bob-test-queue -p 5673:5672 --network bob-net rabbitmq:3-alpine")
+                       (t/crun "run -d --name bob-test-queue -p 5673:5672 -p 5552:5552 --network bob-net -e RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS='-rabbitmq_stream advertised_host localhost' --entrypoint sh rabbitmq:management-alpine -c 'rabbitmq-plugins enable --offline rabbitmq_stream && rabbitmq-server'")
                        (t/crun "run -d --name artifact-local -p 8001:8001 --network bob-net ghcr.io/bob-cd/artifact-local")
                        (println "Waiting for cluster readiness.")
                        (t/wait-for {"artifact-store" "http://localhost:8001/ping"
                                     "postgres" "tcp://127.0.0.1:5433"
                                     "rabbitmq" "tcp://127.0.0.1:5673"})
+                       (t/crun "exec bob-test-queue rabbitmq-plugins enable rabbitmq_stream")
                        (apply shell "clojure -M:test" *command-line-args*)
                        (finally (run 'cclean)))}
          repl {:doc "Start a REPL"
