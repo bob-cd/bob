@@ -13,8 +13,8 @@
    [failjure.core :as f]
    [runner.artifact :as a]
    [runner.engine :as eng]
-   [runner.resource :as r]
    [runner.events :as ev]
+   [runner.resource :as r]
    [xtdb.api :as xt])
   (:import
    [java.time Instant]))

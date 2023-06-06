@@ -951,8 +951,8 @@ paths:
   "/events":
     get:
       operationId: GetEvents
-      summary: Streams events of last seven days and continuing
-      description: Streams events of last seven days and continuing
+      summary: Stream real-time events from the cluster via SSE
+      description: Stream real-time events from the cluster. Stores upto 7 days by default and starts streaming from the beginning via SSE
       tags:
         - observability
 

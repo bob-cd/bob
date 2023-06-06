@@ -21,16 +21,16 @@
 (deftest ^:integration resource-fetch-test
   (testing "successful resource fetch"
     (is (instance?
-          java.io.InputStream
-          (r/fetch-resource
-            "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"))))
+         java.io.InputStream
+         (r/fetch-resource
+          "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"))))
   (testing "unsuccessful resource fetch"
     (is (f/failed? (r/fetch-resource "http://invalid-url")))))
 
 (deftest ^:integration tar-prefix-test
-  (let [url   "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"
-        tar   (r/fetch-resource url)
-        path  (r/prefix-dir-on-tar! (TarInputStream. tar) "source")
+  (let [url "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"
+        tar (r/fetch-resource url)
+        path (r/prefix-dir-on-tar! (TarInputStream. tar) "source")
         entry (-> path
                   io/input-stream
                   TarInputStream.
@@ -44,9 +44,9 @@
                                 (xt/submit-tx database
                                               [[::xt/put
                                                 {:xt/id :bob.resource-provider/git
-                                                 :type  :resource-provider
-                                                 :name  "git"
-                                                 :url   "http://localhost:8000"}]]))
+                                                 :type :resource-provider
+                                                 :name "git"
+                                                 :url "http://localhost:8000"}]]))
                    (testing "valid resource provider"
                      (is (r/valid-resource-provider? database {:provider "git"})))
                    (testing "invalid resource provider"
@@ -61,33 +61,33 @@
                                 (xt/submit-tx database
                                               [[::xt/put
                                                 {:xt/id :bob.resource-provider/git
-                                                 :type  :resource-provider
-                                                 :name  "git"
-                                                 :url   "http://localhost:8000"}]]))
+                                                 :type :resource-provider
+                                                 :name "git"
+                                                 :url "http://localhost:8000"}]]))
                    (xt/await-tx database
                                 (xt/submit-tx database
                                               [[::xt/put
                                                 {:xt/id :bob.artifact-store/local
-                                                 :type  :artifact-store
-                                                 :name  "local"
-                                                 :url   "http://localhost:8001"}]]))
+                                                 :type :artifact-store
+                                                 :name "local"
+                                                 :url "http://localhost:8001"}]]))
                    (testing "generate url for an external resource"
                      (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
                             (r/url-of database
-                                      {:name     "source"
+                                      {:name "source"
                                        :provider "git"
-                                       :type     "external"
-                                       :params   {:repo   "a-repo"
-                                                  :branch "a-branch"}}))))
+                                       :type "external"
+                                       :params {:repo "a-repo"
+                                                :branch "a-branch"}}))))
                    (testing "generate url for an internal resource"
                      (is (= "http://localhost:8001/bob_artifact/dev/test/a-run-id/jar"
                             (r/url-of database
-                                      {:name     "jar"
+                                      {:name "jar"
                                        :provider "local"
-                                       :type     "internal"
-                                       :params   {:group  "dev"
-                                                  :name   "test"
-                                                  :run-id "a-run-id"}}))))
+                                       :type "internal"
+                                       :params {:group "dev"
+                                                :name "test"
+                                                :run-id "a-run-id"}}))))
                    (xt/await-tx database
                                 (xt/submit-tx database
                                               [[::xt/delete :bob.resource-provider/git]])))))
@@ -95,9 +95,9 @@
 (deftest ^:integration initial-image-test
   (eng/pull-image "busybox:musl")
   (testing "successful image creation"
-    (let [url    "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"
+    (let [url "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main"
           stream (r/fetch-resource url)
-          image  (r/initial-image-of stream "busybox:musl" nil "source")
+          image (r/initial-image-of stream "busybox:musl" nil "source")
           images (->> (c/invoke eng/images {:op :ImageListLibpod})
                       (map :Id))]
       (is (some #{image} images))
@@ -112,18 +112,18 @@
                                 (xt/submit-tx database
                                               [[::xt/put
                                                 {:xt/id :bob.resource-provider/git
-                                                 :type  :resource-provider
-                                                 :name  "git"
-                                                 :url   "http://localhost:8000"}]]))
+                                                 :type :resource-provider
+                                                 :name "git"
+                                                 :url "http://localhost:8000"}]]))
                    (eng/pull-image "busybox:musl")
                    (testing "successful mount"
-                     (let [image  (r/mounted-image-from database
-                                                        {:name     "source"
-                                                         :type     "external"
-                                                         :provider "git"
-                                                         :params   {:repo   "https://github.com/lispyclouds/bob-example"
-                                                                    :branch "main"}}
-                                                        "busybox:musl")
+                     (let [image (r/mounted-image-from database
+                                                       {:name "source"
+                                                        :type "external"
+                                                        :provider "git"
+                                                        :params {:repo "https://github.com/lispyclouds/bob-example"
+                                                                 :branch "main"}}
+                                                       "busybox:musl")
                            images (->> (c/invoke eng/images {:op :ImageListLibpod})
                                        (map :Id))]
                        (is (some #{image} images))
@@ -133,7 +133,7 @@
                                                   [[::xt/delete :bob.resource-provider/git]]))))
                    (testing "unsuccessful mount"
                      (is (f/failed? (r/mounted-image-from database
-                                                          {:name     "source"
+                                                          {:name "source"
                                                            :provider "invalid"}
                                                           "invalid"))))
                    (eng/delete-image "busybox:musl"))))

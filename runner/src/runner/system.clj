@@ -13,7 +13,8 @@
    [common.system :as cs]
    [integrant.core :as ig]
    [runner.pipeline :as p])
-  (:import [com.rabbitmq.stream.impl StreamEnvironment StreamProducer]))
+  (:import
+   [com.rabbitmq.stream.impl StreamEnvironment StreamProducer]))
 
 (def ^:private routes
   {"pipeline/start" p/start

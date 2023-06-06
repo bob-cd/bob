@@ -1,7 +1,7 @@
 (ns apiserver.events
   (:require
-   [clojure.java.io :as io]
    [clojure.data.json :as json]
+   [clojure.java.io :as io]
    [ring.core.protocols :as p])
   (:import
    [com.rabbitmq.stream MessageHandler OffsetSpecification]))

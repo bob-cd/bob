@@ -1,9 +1,11 @@
 (ns runner.events
-  (:require [clojure.data.json :as json]
-            [clojure.tools.logging :as log])
-  (:import [com.rabbitmq.stream ConfirmationHandler]
-           [com.rabbitmq.stream.impl StreamProducer]
-           [java.time Instant]))
+  (:require
+   [clojure.data.json :as json]
+   [clojure.tools.logging :as log])
+  (:import
+   [com.rabbitmq.stream ConfirmationHandler]
+   [com.rabbitmq.stream.impl StreamProducer]
+   [java.time Instant]))
 
 (defn publish
   [^StreamProducer producer content]

@@ -18,10 +18,10 @@
    [langohr.queue :as lq]
    [xtdb.api :as xt])
   (:import
+   [com.rabbitmq.stream Environment StreamException]
    [java.net ConnectException]
    [java.time Duration]
-   [xtdb.api IXtdb]
-   [com.rabbitmq.stream Environment StreamException]))
+   [xtdb.api IXtdb]))
 
 (def config
   (-> "bob/common.edn"
