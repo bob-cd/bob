@@ -45,7 +45,7 @@
   (.. stream-env
       producerBuilder
       (stream stream-name)
-      (name "bob-producer")
+      (name "bob-container-runner")
       build))
 
 (defmethod ig/halt-key!

@@ -29,7 +29,7 @@
                                                                           (assoc :timestamp creation-time)
                                                                           json/write-str
                                                                           ;; SSE format: data: foo\n\n
-                                                                          (#(str "data: " % "\n\n")))]
+                                                                          (format "data: %s\n\n"))]
                                                           (doto w
                                                             (.write out-str)
                                                             (.flush)))
