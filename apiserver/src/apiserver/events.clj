@@ -27,11 +27,9 @@
                                                                           String.
                                                                           json/read-str
                                                                           (assoc :timestamp creation-time)
-                                                                          json/write-str
-                                                                          ;; SSE format: data: foo\n\n
-                                                                          (format "data: %s\n\n"))]
+                                                                          json/write-str)]
                                                           (doto w
-                                                            (.write out-str)
+                                                            (.write (str "data: " out-str "\n\n")) ;; SSE format: data: foo\n\n
                                                             (.flush)))
                                                         (catch Exception _
                                                           (println "client disconnected")
