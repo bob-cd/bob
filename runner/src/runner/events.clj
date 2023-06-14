@@ -13,9 +13,11 @@
                     messageBuilder
                     properties
                     (contentType "application/json")
-                    (creationTime (.toEpochMilli (Instant/now)))
                     messageBuilder
-                    (addData (.getBytes (json/write-str content)))
+                    (addData (-> content
+                                 (assoc :timestamp (.toEpochMilli (Instant/now)))
+                                 json/write-str
+                                 .getBytes))
                     build)]
     (.send producer
            payload

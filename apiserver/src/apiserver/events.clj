@@ -1,6 +1,5 @@
 (ns apiserver.events
   (:require
-   [clojure.data.json :as json]
    [clojure.java.io :as io]
    [ring.core.protocols :as p])
   (:import
@@ -22,15 +21,9 @@
                                   (messageHandler (reify MessageHandler
                                                     (handle [_ _ message]
                                                       (try
-                                                        (let [creation-time (.getCreationTime (.getProperties message))
-                                                              out-str (-> (.getBodyAsBinary message)
-                                                                          String.
-                                                                          json/read-str
-                                                                          (assoc :timestamp creation-time)
-                                                                          json/write-str)]
-                                                          (doto w
-                                                            (.write (str "data: " out-str "\n\n")) ;; SSE format: data: foo\n\n
-                                                            (.flush)))
+                                                        (doto w
+                                                          (.write (str "data: " (String. (.getBodyAsBinary message)) "\n\n")) ;; SSE format: data: foo\n\n
+                                                          (.flush))
                                                         (catch Exception _
                                                           (println "client disconnected")
                                                           (deliver complete :done)))))) ;; unblock
