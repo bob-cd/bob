@@ -17,7 +17,7 @@
 
 (defn store-url
   [db-client store]
-  (f/try-all [store (xt/entity (xt/db db-client) (keyword (str "bob.artifact-store/" store)))
+  (f/try-all [store (xt/entity (xt/db db-client) (keyword "bob.artifact-store" store))
               _ (when-not (spec/valid? :bob.db/artifact-store store)
                   (f/fail "Invalid artifact store: " store))]
     (:url store)

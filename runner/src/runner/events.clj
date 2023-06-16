@@ -24,8 +24,9 @@
            (reify ConfirmationHandler
              (handle [_ status]
                (when-not (.isConfirmed status)
-                 (log/warn "Could not send message to stream" {:message (.getMessage status)
-                                                               :code (.getCode status)})))))))
+                 (log/warn "Could not send message to stream"
+                           {:message (.getMessage status)
+                            :code (.getCode status)})))))))
 
 (comment
   (import '[com.rabbitmq.stream OffsetSpecification ConfirmationHandler Environment MessageHandler])

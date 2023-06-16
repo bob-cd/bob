@@ -61,7 +61,7 @@
 (defn valid-resource-provider?
   "Checks if the resource is registered."
   [db-client resource]
-  (some? (xt/entity (xt/db db-client) (keyword (str "bob.resource-provider/" (:provider resource))))))
+  (some? (xt/entity (xt/db db-client) (keyword "bob.resource-provider" (:provider resource)))))
 
 (defn url-of
   "Generates a URL for the resource fetch of a pipeline."

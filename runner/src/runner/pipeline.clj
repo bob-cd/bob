@@ -85,8 +85,7 @@
       (r/mounted-image-from database
                             resource-info
                             image)
-      (f/when-failed [err]
-        err))
+      (f/when-failed [err] err))
     image))
 
 (defn mount-needed?
@@ -176,7 +175,7 @@
 
 (defn run-info-of
   [database run-id]
-  (f/try-all [run-info (xt/entity (xt/db database) (keyword (str "bob.pipeline.run/" run-id)))
+  (f/try-all [run-info (xt/entity (xt/db database) (keyword "bob.pipeline.run" run-id))
               _ (when-not (spec/valid? :bob.db/run run-info)
                   (f/fail (str "Invalid run: " run-info)))]
     run-info
@@ -295,7 +294,7 @@
   [config queue-chan {:keys [group name run-id] :as data}]
   (if-not (spec/valid? :bob.command.pipeline-start/data data)
     (errors/publish-error queue-chan (str "Invalid pipeline start command: " data))
-    (let [run-db-id (keyword (str "bob.pipeline.run/" run-id))
+    (let [run-db-id (keyword "bob.pipeline.run" run-id)
           run-info {:xt/id run-db-id
                     :type :pipeline-run
                     :group group

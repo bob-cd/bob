@@ -295,10 +295,10 @@
                                       (map :line)
                                       (filter #(str/includes? % "ENV:")))
                            history (xt/entity-history (xt/db database)
-                                                      (keyword (str "bob.pipeline.run/" result))
+                                                      (keyword "bob.pipeline.run" result)
                                                       :desc
                                                       {:with-docs? true})
-                           run-info (xt/entity (xt/db database) (keyword (str "bob.pipeline.run/" result)))
+                           run-info (xt/entity (xt/db database) (keyword "bob.pipeline.run" result))
                            statuses (->> history
                                          (map ::xt/doc)
                                          (map :status)
@@ -334,9 +334,9 @@
                                              :name "test"
                                              :run-id "r-a-run-id"})
                            id (f/message result)
-                           run-info (xt/entity (xt/db database) (keyword (str "bob.pipeline.run/" id)))
+                           run-info (xt/entity (xt/db database) (keyword "bob.pipeline.run" id))
                            history (xt/entity-history (xt/db database)
-                                                      (keyword (str "bob.pipeline.run/" id))
+                                                      (keyword "bob.pipeline.run" id)
                                                       :desc
                                                       {:with-docs? true})
                            statuses (->> history

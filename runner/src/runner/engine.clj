@@ -10,9 +10,7 @@
    [clojure.string :as s]
    [clojure.tools.logging :as log]
    [contajners.core :as c]
-   [failjure.core :as f])
-  (:import
-   [java.io BufferedReader]))
+   [failjure.core :as f]))
 
 (def api-version "v4.5.1")
 
@@ -197,13 +195,13 @@
                                     :as :stream
                                     :throw-exceptions true})]
     (future
-      (with-open [rdr (io/reader log-stream)]
-        (loop [r (BufferedReader. rdr)]
+      (with-open [r (io/reader log-stream)]
+        (loop []
           (when-let [line (.readLine r)]
             (-> line
                 (s/replace-first #"^\W+" "")
                 (reaction-fn))
-            (recur r)))))
+            (recur)))))
     (f/when-failed [err]
       (log/errorf "Error following log line: %s" err)
       err)))

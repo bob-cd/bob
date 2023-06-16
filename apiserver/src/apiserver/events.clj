@@ -18,15 +18,16 @@
                                   consumerBuilder
                                   (stream name)
                                   (offset (OffsetSpecification/first))
-                                  (messageHandler (reify MessageHandler
-                                                    (handle [_ _ message]
-                                                      (try
-                                                        (doto w
-                                                          (.write (str "data: " (String. (.getBodyAsBinary message)) "\n\n")) ;; SSE format: data: foo\n\n
-                                                          (.flush))
-                                                        (catch Exception _
-                                                          (println "client disconnected")
-                                                          (deliver complete :done)))))) ;; unblock
+                                  (messageHandler
+                                   (reify MessageHandler
+                                     (handle [_ _ message]
+                                       (try
+                                         (doto w
+                                           (.write (str "data: " (String. (.getBodyAsBinary message)) "\n\n")) ;; SSE format: data: foo\n\n
+                                           (.flush))
+                                         (catch Exception _
+                                           (println "client disconnected")
+                                           (deliver complete :done)))))) ;; unblock
                                   build)]
                  @complete ;; block til done
                  (.close consumer)
