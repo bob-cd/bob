@@ -73,9 +73,7 @@
                              run-id
                              (str "Fetching and mounting resource " resource))
                 pipeline (xt/entity (xt/db database)
-                                    (keyword (format "bob.pipeline.%s/%s"
-                                                     group
-                                                     name)))
+                                    (keyword (format "bob.pipeline.%s/%s" group name)))
                 _ (when-not (spec/valid? :bob.db/pipeline pipeline)
                     (f/fail "Invalid pipeline: " pipeline))
                 resource-info (->> pipeline
@@ -106,12 +104,12 @@
   "Reducer function to excute a step from the previous build state.
 
   Build state:
-  {:image     current-image-id
-   :mounted   set-of-mounted-resources
-   :run-id    run-id
-   :env       env-vars
-   :group     pipeline-group
-   :name      pipeline-name}
+  {:image current-image-id
+   :mounted set-of-mounted-resources
+   :run-id run-id
+   :env env-vars
+   :group pipeline-group
+   :name pipeline-name}
   or a Failure shorting the reduce.
 
   Returns the final build state or a Failure."
@@ -193,9 +191,7 @@
 (defn- start*
   [{:keys [database producer] :as config} queue-chan group name run-id run-info run-db-id]
   (f/try-all [pipeline (xt/entity (xt/db database)
-                                  (keyword (format "bob.pipeline.%s/%s"
-                                                   group
-                                                   name)))
+                                  (keyword (format "bob.pipeline.%s/%s" group name)))
               _ (when-not (spec/valid? :bob.db/pipeline pipeline)
                   (f/fail (str "Invalid pipeline in DB: " pipeline)))
               _ (when-not pipeline

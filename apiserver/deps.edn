@@ -26,7 +26,7 @@
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha8"}
         org.clojure/tools.logging {:mvn/version "1.2.4"}}
- :aliases {:test {:extra-deps {com.github.seancorfield/next.jdbc {:mvn/version "1.3.874"}
+ :aliases {:test {:extra-deps {com.github.seancorfield/next.jdbc {:mvn/version "1.3.883"}
                                lambdaisland/kaocha {:mvn/version "1.85.1342"}
                                org.clojure/test.check {:mvn/version "1.1.1"}}
                   :extra-paths ["test"]

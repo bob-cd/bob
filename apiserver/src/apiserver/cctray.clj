@@ -11,8 +11,7 @@
    [xtdb.api :as xt]))
 
 (defn make-project
-  [{:keys [group name status completed]
-    :as data}]
+  [{:keys [group name status completed] :as data}]
   (let [last-build-status (case status
                             (:passed :running) "Success"
                             :failed "Failure"
@@ -21,14 +20,8 @@
         last-build-label (-> data
                              :xt/id
                              clojure.core/name)]
-    [[:name
-      (format "%s:%s"
-              group
-              name)]
-     [:activity
-      (if (= status :running)
-        "Running"
-        "Sleeping")]
+    [[:name (format "%s:%s" group name)]
+     [:activity (if (= status :running) "Running" "Sleeping")]
      [:lastBuildStatus last-build-status]
      [:lastBuildLabel last-build-label]
      [:lastBuildTime completed]
@@ -44,8 +37,9 @@
                                        [run :type :pipeline-run]
                                        [run :group group]
                                        [run :name name]]})]
-    (-> [:Projects (map make-project statuses)]
+    (-> [:Projects (->> statuses
+                        (map first)
+                        (mapcat make-project))]
         xml/sexp-as-element
         xml/emit-str)
-    (f/when-failed [err]
-      err)))
+    (f/when-failed [err] err)))
