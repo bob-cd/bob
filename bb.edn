@@ -13,7 +13,8 @@
                  (def test-task "bb test")
                  (def image-task "bb image")
                  (def push-task "bb push")
-                 (def clean-task "bb clean"))
+                 (def clean-task "bb clean")
+                 (def antq-task "clojure -Sdeps '{:deps {com.github.liquidz/antq {:mvn/version \"RELEASE\"}} :aliases {:s {:override-deps {org.yaml/snakeyaml {:mvn/version \"1.33\"}}}}}' -As -M -m antq.core outdated --upgrade"))
 
          apiserver {:doc "Builds the apiserver"
                     :task (shell {:dir apiserver-dir} compile-task)}
@@ -57,4 +58,11 @@
          clean {:doc "Clean up"
                 :task (do
                         (shell {:dir apiserver-dir} clean-task)
-                        (shell {:dir runner-dir} clean-task))}}}
+                        (shell {:dir runner-dir} clean-task))}
+
+         antq {:doc "Upgrade deps"
+               :task (do
+                       (println "Checking:" apiserver-dir)
+                       (shell {:dir apiserver-dir} antq-task)
+                       (println "Checking:" runner-dir)
+                       (shell {:dir runner-dir} antq-task))}}}
