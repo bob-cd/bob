@@ -60,8 +60,7 @@
   ([task]
    (exec task "Ok"))
   ([task response]
-   (let [result (f/try*
-                 (task))]
+   (let [result (f/try* (task))]
      (if (f/failed? result)
        (respond (f/message result) 500)
        (respond response)))))

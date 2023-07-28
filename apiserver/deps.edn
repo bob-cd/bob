@@ -9,9 +9,9 @@
         ch.qos.logback/logback-classic {:mvn/version "1.4.8"}
         clj-commons/iapetos {:mvn/version "0.1.13"}
         common/common {:local/root "../common"}
-        com.xtdb/xtdb-core {:mvn/version "1.23.3"}
+        com.xtdb/xtdb-core {:mvn/version "1.24.0"}
         failjure/failjure {:mvn/version "2.3.0"}
-        info.sunng/ring-jetty9-adapter {:mvn/version "0.22.0"}
+        info.sunng/ring-jetty9-adapter {:mvn/version "0.22.1"}
         integrant/integrant {:mvn/version "0.8.1"}
         metosin/muuntaja {:mvn/version "0.6.8"}
         metosin/reitit-core {:mvn/version "0.6.0"}
