@@ -8,7 +8,7 @@
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.4.11"}
         common/common {:local/root "../common"}
-        com.xtdb/xtdb-core {:mvn/version "1.24.0"}
+        com.xtdb/xtdb-core {:mvn/version "1.24.1"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.8.1"}
         io.github.lispyclouds/contajners {:git/sha "866e8b6b119597e8f71efd0794dcfd33b0087da5"}
