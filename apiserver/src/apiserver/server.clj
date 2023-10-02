@@ -4,7 +4,6 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-;; TODO: Throw all of this away when https://github.com/juxt/apex can be used.
 (ns apiserver.server
   (:require
    [apiserver.handlers :as h]
