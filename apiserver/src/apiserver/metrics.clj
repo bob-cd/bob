@@ -9,28 +9,18 @@
    [babashka.http-client :as http]
    [clojure.data.json :as json]
    [failjure.core :as f]
-   [iapetos.core :as prometheus]
-   [iapetos.export :as export]
    [langohr.queue :as lq]
+   [prometheus.core :as prom]
    [xtdb.api :as xt]))
 
-(def registry
-  (-> (prometheus/collector-registry)
-      (prometheus/register
-       (prometheus/gauge :bob/queued-jobs {:description "Number of queued jobs"})
-       (prometheus/gauge :bob/errors {:description "Number of errors"})
-       (prometheus/gauge :bob/running-jobs {:description "Number of jobs currently running"})
-       (prometheus/gauge :bob/initializing-jobs {:description "Number of jobs currently initializing"})
-       (prometheus/gauge :bob/failed-jobs {:description "Number of failed jobs"})
-       (prometheus/gauge :bob/passed-jobs {:description "Number of passed jobs"})
-       (prometheus/gauge :bob/stopped-jobs {:description "Number of stopped jobs"}))))
+(def registry (prom/new-registry))
 
 (def status-count-map
-  {:running :bob/running-jobs
-   :initializing :bob/initializing-jobs
-   :failed :bob/failed-jobs
-   :passed :bob/passed-jobs
-   :stopped :bob/stopped-jobs})
+  {:running :bob_running_jobs
+   :initializing :bob_initializing_jobs
+   :failed :bob_failed_jobs
+   :passed :bob_passed_jobs
+   :stopped :bob_stopped_jobs})
 
 (defn count-statuses
   [db]
@@ -43,9 +33,8 @@
                           (frequencies))]
     (doseq [[status count] counts]
       (when-let [metric (status-count-map status)]
-        (prometheus/set (registry metric) count)))
-    (f/when-failed [err]
-      err)))
+        (prom/gauge registry metric {} count)))
+    (f/when-failed [err] err)))
 
 (defn job-queues
   [{:keys [api-url username password]}]
@@ -62,12 +51,12 @@
   [queue db queue-conn-opts]
   (f/try-all [_ (->> (job-queues queue-conn-opts)
                      (map #(lq/message-count queue %))
-                     (run! #(prometheus/set (registry :bob/queued-jobs) %)))
+                     (run! #(prom/gauge registry :bob_queued_jobs {} %)))
               _ (->> "bob.errors"
                      (lq/message-count queue)
-                     (prometheus/set (registry :bob/errors)))
+                     (prom/gauge registry :bob_errors {}))
               _ (count-statuses db)]
-    (export/text-format registry)
+    (prom/serialize registry)
     (f/when-failed [err]
       err)))
 

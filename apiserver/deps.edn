@@ -7,12 +7,12 @@
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.4.11"}
-        clj-commons/iapetos {:mvn/version "0.1.13"}
         common/common {:local/root "../common"}
         com.xtdb/xtdb-core {:mvn/version "1.24.1"}
         failjure/failjure {:mvn/version "2.3.0"}
         info.sunng/ring-jetty9-adapter {:mvn/version "0.22.2"} ;; TODO: https://github.com/sunng87/ring-jetty9-adapter/issues/113
         integrant/integrant {:mvn/version "0.8.1"}
+        io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
         metosin/muuntaja {:mvn/version "0.6.8"}
         metosin/reitit-core {:mvn/version "0.6.0"}
         metosin/reitit-http {:mvn/version "0.6.0"}
