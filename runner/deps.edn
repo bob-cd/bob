@@ -11,7 +11,7 @@
         com.xtdb/xtdb-core {:mvn/version "1.24.1"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.8.1"}
-        io.github.lispyclouds/contajners {:git/sha "2799006e4a2cd9c965e99c74a1de68ca2d66ca3a"}
+        io.github.lispyclouds/contajners {:git/sha "1b1804b5fe5e4c79c819254ba0b958e929503e28"}
         org.babashka/http-client {:mvn/version "0.4.15"}
         org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/tools.logging {:mvn/version "1.2.4"}
