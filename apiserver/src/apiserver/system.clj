@@ -12,37 +12,24 @@
    [clojure.tools.logging :as log]
    [common.system :as cs]
    [integrant.core :as ig]
-   [ring.adapter.jetty9 :as jetty])
-  (:import
-   [java.util.concurrent Executors]
-   [org.eclipse.jetty.server Server]
-   [org.eclipse.jetty.util.thread ExecutorThreadPool]))
+   [s-exp.mina :as m]))
 
 (defmethod ig/init-key
   :bob/apiserver
   [_ {:keys [host port health-check-freq database queue stream]}]
   (log/info "Starting APIServer")
-  (let [server (jetty/run-jetty (s/server database (:chan queue) (:conn-opts queue) health-check-freq stream)
-                                {:host host
-                                 :port port
-                                 :join? false
-                                 :h2c? true
-                                 :h2? true
-                                 :send-server-version? false
-                                 :send-date-header? false
-                                 ;; TODO: https://github.com/sunng87/ring-jetty9-adapter/issues/113
-                                 ;; :virtual-threads? true
-                                 ;; :max-threads (Integer/MAX_VALUE)
-                                 :thread-pool (doto (ExecutorThreadPool. (Integer/MAX_VALUE))
-                                                (.setVirtualThreadsExecutor (Executors/newVirtualThreadPerTaskExecutor)))})]
+  ;; See: https://github.com/mpenet/mina/issues/11
+  (let [server (m/start! (s/server database (:chan queue) (:conn-opts queue) health-check-freq stream)
+                         {:host host
+                          :port port})]
     (log/infof "Listening on %d" port)
     server))
 
 (defmethod ig/halt-key!
   :bob/apiserver
-  [_ ^Server server]
+  [_ server]
   (log/info "Stopping APIServer")
-  (.stop server))
+  (m/stop! server))
 
 (defonce system nil)
 
