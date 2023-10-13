@@ -7,12 +7,13 @@
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.4.11"}
-        common/common {:local/root "../common"}
-        com.xtdb/xtdb-core {:mvn/version "1.24.1"}
-        failjure/failjure {:mvn/version "2.3.0"}
         com.s-exp/mina {:mvn/version "0.1.23"}
+        com.xtdb/xtdb-core {:mvn/version "1.24.1"}
+        common/common {:local/root "../common"}
+        failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.8.1"}
         io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
+        io.github.lispyclouds/navi {:git/sha "da0fb17b10fe7dec2e1f2332473710f0343540c8"}
         metosin/muuntaja {:mvn/version "0.6.8"}
         metosin/reitit-core {:mvn/version "0.6.0"}
         metosin/reitit-http {:mvn/version "0.6.0"}
@@ -21,7 +22,6 @@
         metosin/reitit-ring {:mvn/version "0.6.0"}
         metosin/reitit-sieppari {:mvn/version "0.6.0"}
         org.babashka/http-client {:mvn/version "0.4.15"}
-        org.clojars.lispyclouds/navi {:mvn/version "0.0.4"}
         org.clojure/clojure {:mvn/version "1.11.1"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha8"}

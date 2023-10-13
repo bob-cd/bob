@@ -25,7 +25,7 @@
 (defn count-statuses
   [db]
   (f/try-all [result (xt/q (xt/db db)
-                           '{:find [(pull run [:status])]
+                           '{:find [(pull run [:status :xt/id])]
                              :where [[run :type :pipeline-run]]})
               counts (->> result
                           (map first)
@@ -57,8 +57,7 @@
                      (prom/gauge registry :bob_errors {}))
               _ (count-statuses db)]
     (prom/serialize registry)
-    (f/when-failed [err]
-      err)))
+    (f/when-failed [err] err)))
 
 (comment
   (job-queues {:api-url "http://localhost:15672" :username "guest" :password "guest"}))
