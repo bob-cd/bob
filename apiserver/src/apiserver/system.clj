@@ -12,16 +12,16 @@
    [clojure.tools.logging :as log]
    [common.system :as cs]
    [integrant.core :as ig]
-   [s-exp.mina :as m]))
+   [s-exp.hirundo :as srv]))
 
 (defmethod ig/init-key
   :bob/apiserver
   [_ {:keys [host port health-check-freq database queue stream]}]
   (log/info "Starting APIServer")
-  ;; See: https://github.com/mpenet/mina/issues/11
-  (let [server (m/start! (s/server database (:chan queue) (:conn-opts queue) health-check-freq stream)
-                         {:host host
-                          :port port})]
+  ;; See: https://github.com/mpenet/hirundo/issues/11
+  (let [server (srv/start! (s/server database (:chan queue) (:conn-opts queue) health-check-freq stream)
+                           {:host host
+                            :port port})]
     (log/infof "Listening on %d" port)
     server))
 
@@ -29,7 +29,7 @@
   :bob/apiserver
   [_ server]
   (log/info "Stopping APIServer")
-  (m/stop! server))
+  (srv/stop! server))
 
 (defonce system nil)
 
