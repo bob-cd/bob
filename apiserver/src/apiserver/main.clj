@@ -7,19 +7,18 @@
 (ns apiserver.main
   (:require
    [apiserver.system :as system]
-   [clojure.repl :as repl]
    [clojure.tools.logging :as log])
   (:gen-class))
 
 (defn shutdown!
-  [& _]
+  []
   (log/info "Received SIGINT, Shutting down ...")
   (system/stop)
   (shutdown-agents)
-  (log/info "Shutdown complete.")
-  (System/exit 0))
+  (log/info "Shutdown complete."))
 
 (defn -main
   [& _]
-  (repl/set-break-handler! shutdown!)
+  (.addShutdownHook (Runtime/getRuntime)
+                    (.unstarted (Thread/ofVirtual) shutdown!))
   (system/start))
