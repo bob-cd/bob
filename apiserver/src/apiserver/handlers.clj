@@ -9,7 +9,6 @@
    [apiserver.cctray :as cctray]
    [apiserver.entities.externals :as externals]
    [apiserver.entities.pipeline :as pipeline]
-   [apiserver.events :as ev]
    [apiserver.healthcheck :as hc]
    [apiserver.metrics :as metrics]
    [babashka.http-client :as http]
@@ -22,8 +21,10 @@
    [common.schemas]
    [failjure.core :as f]
    [langohr.basic :as lb]
+   [ring.core.protocols :as p]
    [xtdb.api :as xt])
   (:import
+   [com.rabbitmq.stream MessageHandler OffsetSpecification]
    [java.util.concurrent Executors]))
 
 (def executor (Executors/newVirtualThreadPerTaskExecutor))
@@ -329,6 +330,34 @@
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
+(defn events
+  [{{:keys [environment name]} :stream}]
+  {:status 200
+   :headers {"content-type" "text/event-stream"
+             "transfer-encoding" "chunked"}
+   :body (reify p/StreamableResponseBody
+           (write-body-to-stream [_ _ output-stream]
+             (with-open [w (io/writer output-stream)]
+               (let [complete (promise)
+                     consumer (.. environment
+                                  consumerBuilder
+                                  (stream name)
+                                  (offset (OffsetSpecification/first))
+                                  (messageHandler
+                                   (reify MessageHandler
+                                     (handle [_ _ message]
+                                       (try
+                                         (doto w
+                                           (.write (str "data: " (String. (.getBodyAsBinary message)) "\n\n")) ;; SSE format: data: foo\n\n
+                                           (.flush))
+                                         (catch Exception _
+                                           (println "client disconnected")
+                                           (deliver complete :done)))))) ;; unblock
+                                  build)]
+                 @complete ;; block til done
+                 (.close consumer)
+                 (.close output-stream)))))})
+
 (defn metrics
   [{queue :queue
     db :db
@@ -371,7 +400,7 @@
    "ArtifactStoreList" artifact-store-list
    "Query" query
    "GetError" errors
-   "GetEvents" ev/events-handler
+   "GetEvents" events
    "GetMetrics" metrics
    "CCTray" cctray})
 
