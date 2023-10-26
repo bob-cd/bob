@@ -18,9 +18,11 @@
   :bob/apiserver
   [_ {:keys [host port health-check-freq database queue stream]}]
   (log/info "Starting APIServer")
-  ;; See: https://github.com/mpenet/hirundo/issues/11
-  (let [server (srv/start! (s/server database (:chan queue) (:conn-opts queue) health-check-freq stream)
-                           {:host host
+  (let [server (srv/start! {:http-handler (s/server database
+                                                    (:chan queue)
+                                                    (:conn-opts queue)
+                                                    health-check-freq stream)
+                            :host host
                             :port port})]
     (log/infof "Listening on %d" port)
     server))
