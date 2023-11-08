@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y binutils
 
 # should be --strip-java-debug-attributes on alpine
 RUN jlink \
-    --compress=2 \
+    --compress zip-9 \
     --module-path jmods \
     --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http \
     --strip-debug \

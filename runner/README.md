@@ -1,8 +1,6 @@
 # Runner
 
-Following the [diagram](https://github.com/bob-cd/bob/issues/70#issuecomment-611661635), this is the service that is responsible for performing the **starting, stopping, pausing and streaming logs** of [Pipelines](https://bob-cd.github.io/pages/concepts/pipeline.html).
-
-This provides a general enough, isolated and ephemeral execution environment. Each pipeline must begin with a starting image and the steps are applied in order on that image to reach the final state.
+This provides a general enough, containerised and ephemeral execution environment: [Pipeline](https://bob-cd.github.io/pages/concepts/pipeline.html) lifecycle and streaming of logs. Each pipeline begins with an initial container image and the steps are applied in order on that image to reach the final state. Multiple isolated pipeline runs could be done concurrently on a single runner.
 
 **This is guaranteed to be [rootless](https://www.zend.com/blog/rootless-containers); ideal for usage in cloud native environments.**
 
@@ -15,20 +13,20 @@ This provides a general enough, isolated and ephemeral execution environment. Ea
 ## Configuration
 [Aero](https://github.com/juxt/aero) is used and therefore several variables can be set by specifying them as environment variables. Possible variables are:
 
-| Environment variables         | defaults                                          |
-|-------------------------------|---------------------------------------------------|
-| BOB_STORAGE_URL               | jdbc:postgresql://localhost:5432/bob              |
-| BOB_STORAGE_USER              | bob                                               |
-| BOB_STORAGE_PASSWORD          | bob                                               |
-| BOB_QUEUE_URL                 | amqp://localhost:5672                             |
-| BOB_QUEUE_USER                | guest                                             |
-| BOB_QUEUE_PASSWORD            | guest                                             |
-| BOB_CONNECTION_RETRY_ATTEMPTS | 10                                                |
-| BOB_CONNECTION_RETRY_DELAY    | 2000                                              |
-| BOB_STREAM_NAME               | bob.event-stream                                  |
-| BOB_STREAM_URL                | rabbitmq-stream://guest:guest@localhost:5552/%2f" |
-| BOB_STREAM_RETENTION_DAYS     | 7                                                 |
-| CONTAINER_ENGINE_URL          | http://localhost:8080                             |
+| Environment variables         | defaults                                         |
+|-------------------------------|--------------------------------------------------|
+| BOB_STORAGE_URL               | jdbc:postgresql://localhost:5432/bob             |
+| BOB_STORAGE_USER              | bob                                              |
+| BOB_STORAGE_PASSWORD          | bob                                              |
+| BOB_QUEUE_URL                 | amqp://localhost:5672                            |
+| BOB_QUEUE_USER                | guest                                            |
+| BOB_QUEUE_PASSWORD            | guest                                            |
+| BOB_CONNECTION_RETRY_ATTEMPTS | 10                                               |
+| BOB_CONNECTION_RETRY_DELAY    | 2000                                             |
+| BOB_STREAM_NAME               | bob.event-stream                                 |
+| BOB_STREAM_URL                | rabbitmq-stream://guest:guest@localhost:5552/%2f |
+| BOB_STREAM_RETENTION_DAYS     | 7                                                |
+| CONTAINER_ENGINE_URL          | http://localhost:8080                            |
 
 ## Building and Running
 
@@ -46,7 +44,7 @@ This provides a general enough, isolated and ephemeral execution environment. Ea
 - Run `docker run --rm -it --name bob-storage -p 5432:5432 -e POSTGRES_DB=bob -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob postgres:alpine` to run the latest PostgreSQL instance on port `5432`.
 
 ### Ways of connecting Runner to the cluster
-- To build an uberjar run `bb compile` to obtain a `runner.jar`. Running `java -jar runner.jar` should connect to it all nicely.
+- To build an uberjar run `bb compile` to obtain a `runner.jar`. Running `java --enable-preview -jar runner.jar` should connect to it.
 - To run directly without building a JAR, run `clojure -J--enable-preview -M -m runner.main` from this dir.
 
 ## Setting up the dev environment with the REPL
