@@ -13,7 +13,7 @@
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.8.1"}
         io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
-        io.github.lispyclouds/navi {:git/sha "da0fb17b10fe7dec2e1f2332473710f0343540c8"}
+        io.github.lispyclouds/navi {:git/sha "a8199a6921274432f5595e6197a5c386de568243"}
         metosin/muuntaja {:mvn/version "0.6.8"}
         metosin/reitit-core {:mvn/version "0.6.0"}
         metosin/reitit-http {:mvn/version "0.6.0"}

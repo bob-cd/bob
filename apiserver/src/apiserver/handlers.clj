@@ -18,6 +18,7 @@
    [clojure.set :as s]
    [clojure.spec.alpha :as spec]
    [clojure.string :as cs]
+   [clojure.tools.logging :as log]
    [common.schemas]
    [failjure.core :as f]
    [langohr.basic :as lb]
@@ -351,7 +352,7 @@
                                            (.write (str "data: " (String. (.getBodyAsBinary message)) "\n\n")) ;; SSE format: data: foo\n\n
                                            (.flush))
                                          (catch Exception _
-                                           (println "client disconnected")
+                                           (log/info "Event streaming client disconnected")
                                            (deliver complete :done)))))) ;; unblock
                                   build)]
                  @complete ;; block til done

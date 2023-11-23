@@ -6,19 +6,18 @@
 
 > What [CI/CD](https://en.wikipedia.org/wiki/CI/CD) should've been.
 
-Most CI/CD tools are too opinionated and do too much. Bob follows the UNIX philosophy of doing one thing and doing it well, and the emacs/LISP like philosophy of small core with external extensibility, and strives for [simpler, decomposed and hence more composable and unbundled design](https://www.youtube.com/watch?v=MCZ3YgeEUPg). For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
+Most CI/CD tools are too opinionated and do too much. Bob follows the UNIX philosophy of doing one thing and doing it well, and the EMacs/LISP like philosophy of small core with external extensibility, and strives for [simpler, decomposed and hence more composable and unbundled design](https://www.youtube.com/watch?v=MCZ3YgeEUPg). For more information, see [Why Bob](https://bob-cd.github.io/pages/why-bob.html)
 
 ## Getting Started
 To build and run your pipelines, check out the [Getting Started](https://bob-cd.github.io/pages/getting-started.html) guide.
 
-## Internals
-
+## Overview
 Bob's API (accessible entirely through HTTP) enables a core set of CI/CD features. The following are the only concepts that Bob is opinionated about:
-  - Step: Direct commands (like a shell command, `pytest`, etc)
-  - Pipeline: Ordered series of steps
-  - Environment: Key-Value pair associated with either Steps and/or Pipelines
-  - Resource: Things (like source code or artifacts) consumed by Pipelines
-  - Artifact: Something produced by a Pipeline
+- Step: Direct commands (like a shell command, `pytest`, etc)
+- Pipeline: Ordered series of steps
+- Environment: Key-Value pair associated with either Steps and/or Pipelines
+- Resource: Things (like source code or artifacts) consumed by Pipelines
+- Artifact: Something produced by a Pipeline
 
 The following services form the core cluster:
 - [API server](/apiserver)
