@@ -8,11 +8,11 @@
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.4.14"}
         com.rabbitmq/stream-client {:mvn/version "0.14.0"}
-        com.xtdb/xtdb-core {:mvn/version "1.24.1"}
+        com.xtdb/xtdb-core {:mvn/version "1.24.3"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.8.1"}
-        io.github.lispyclouds/contajners {:git/sha "d426fae7375ede0cdcfad19eec116c622b64df46"}
+        io.github.lispyclouds/contajners {:git/sha "032606cd55725fd657515340c1cd82ac2fe535ce"}
         org.babashka/http-client {:mvn/version "0.4.15"}
         org.clojure/clojure {:mvn/version "1.12.0-alpha5"}
         org.clojure/data.json {:mvn/version "2.4.0"}
