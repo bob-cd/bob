@@ -7,7 +7,7 @@
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.4.14"}
-        com.s-exp/hirundo {:mvn/version "0.1.27"}
+        com.s-exp/hirundo {:mvn/version "0.1.29"}
         com.xtdb/xtdb-core {:mvn/version "1.24.3"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
@@ -23,10 +23,10 @@
         metosin/reitit-sieppari {:mvn/version "0.6.0"}
         org.babashka/http-client {:mvn/version "0.4.15"}
         org.clojure/clojure {:mvn/version "1.12.0-alpha5"}
-        org.clojure/data.json {:mvn/version "2.4.0"}
+        org.clojure/data.json {:mvn/version "2.5.0"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha8"}
         org.clojure/tools.logging {:mvn/version "1.2.4"}}
- :aliases {:test {:extra-deps {com.github.seancorfield/next.jdbc {:mvn/version "1.3.894"}
+ :aliases {:test {:extra-deps {com.github.seancorfield/next.jdbc {:mvn/version "1.3.909"}
                                lambdaisland/kaocha {:mvn/version "1.87.1366"}
                                org.clojure/test.check {:mvn/version "1.1.1"}}
                   :extra-paths ["test"]
