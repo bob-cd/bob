@@ -12,7 +12,7 @@
    [contajners.core :as c]
    [failjure.core :as f]))
 
-(def api-version "v4.8.2")
+(def api-version "v4.8.3")
 
 (def conn
   {:uri (or (System/getenv "CONTAINER_ENGINE_URL")
