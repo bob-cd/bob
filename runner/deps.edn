@@ -14,7 +14,7 @@
         integrant/integrant {:mvn/version "0.8.1"}
         io.github.lispyclouds/contajners {:git/sha "c1f157371bff7644a8a6cc87dad7687ff7fe3244"}
         org.babashka/http-client {:mvn/version "0.4.16"}
-        org.clojure/clojure {:mvn/version "1.11.1"} ; TODO: Bump to 1.12+ with https://github.com/xtdb/xtdb/issues/3169
+        org.clojure/clojure {:mvn/version "1.11.2"} ; TODO: Bump to 1.12+ with https://github.com/xtdb/xtdb/issues/3169
         org.clojure/data.json {:mvn/version "2.5.0"}
         org.clojure/tools.logging {:mvn/version "1.3.0"}
         org.kamranzafar/jtar {:mvn/version "2.3"}}
@@ -28,5 +28,5 @@
                                cider/cider-nrepl {:mvn/version "RELEASE"}}
                   :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]
                   :jvm-opts ["--enable-preview"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.6" :git/sha "8e78bcc"}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.0" :git/sha "3a2c484"}}
                    :ns-default build}}}
