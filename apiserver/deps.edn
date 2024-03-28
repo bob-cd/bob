@@ -7,14 +7,14 @@
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.5.3"}
-        com.s-exp/hirundo {:mvn/version "0.1.33"}
+        com.s-exp/hirundo {:mvn/version "0.1.34"}
         com.xtdb/xtdb-core {:mvn/version "1.24.3"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.8.1"}
         io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
         io.github.lispyclouds/navi {:git/sha "a8199a6921274432f5595e6197a5c386de568243"}
-        metosin/muuntaja {:mvn/version "0.6.8"}
+        metosin/muuntaja {:mvn/version "0.6.10"}
         metosin/reitit-core {:mvn/version "0.6.0"}
         metosin/reitit-http {:mvn/version "0.6.0"}
         metosin/reitit-interceptors {:mvn/version "0.6.0"}
@@ -26,8 +26,8 @@
         org.clojure/data.json {:mvn/version "2.5.0"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha9"}
         org.clojure/tools.logging {:mvn/version "1.3.0"}}
- :aliases {:test {:extra-deps {com.github.seancorfield/next.jdbc {:mvn/version "1.3.909"}
-                               lambdaisland/kaocha {:mvn/version "1.87.1366"}
+ :aliases {:test {:extra-deps {com.github.seancorfield/next.jdbc {:mvn/version "1.3.925"}
+                               lambdaisland/kaocha {:mvn/version "1.88.1376"}
                                org.clojure/test.check {:mvn/version "1.1.1"}}
                   :extra-paths ["test"]
                   :main-opts ["-m" "kaocha.runner"]

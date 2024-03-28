@@ -4,7 +4,7 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM docker.io/azul/zulu-openjdk:21 AS jdk
+FROM docker.io/azul/zulu-openjdk:22 AS jdk
 
 RUN apt-get update && apt-get install -y binutils
 
