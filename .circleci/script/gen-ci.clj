@@ -30,7 +30,7 @@
 
 (def java-home "/tmp/jdk")
 
-(def java-download-url "https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz")
+(def java-download-url "https://download.oracle.com/java/22/latest/jdk-22_linux-x64_bin.tar.gz")
 
 (def common-steps
   [:checkout
