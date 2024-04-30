@@ -202,16 +202,3 @@
   (testing "failure"
     (is (f/failed? (e/inspect-container "invalid-id"))))
   (e/delete-image image))
-
-(deftest ^:integration list-running-containers
-  (e/pull-image image)
-  (testing "success"
-    (let [containers-before (e/container-ls)
-          id (e/create-container image {:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"})
-          _ (future (e/start-container id #(println %)))
-          _ (Thread/sleep 1000)
-          containers-after (e/container-ls)]
-      (is (= 1 (- (count containers-after) (count containers-before))))
-      (e/kill-container id)
-      (e/delete-container id)))
-  (e/delete-image image))

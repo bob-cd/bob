@@ -11,12 +11,10 @@
    [clojure.tools.logging :as log]
    [common.dispatch :as d]
    [common.system :as cs]
-   [failjure.core :as f]
    [integrant.core :as ig]
    [runner.pipeline :as p])
   (:import
-   [com.rabbitmq.stream.impl StreamEnvironment StreamProducer]
-   [java.net ConnectException]))
+   [com.rabbitmq.stream.impl StreamEnvironment StreamProducer]))
 
 (def ^:private routes
   {"pipeline/start" p/start
@@ -27,18 +25,6 @@
       (io/resource)
       (aero/read-config {:resolver cs/resource-resolver})
       (dissoc :common)))
-
-(defn retry
-  [attempts ^Long delay conn-fn]
-  (if (zero? attempts)
-    (throw (ConnectException. "Cannot establish stream connection"))
-    (let [res (f/try* (conn-fn))]
-      (if (f/failed? res)
-        (do
-          (log/warnf "Stream connection failed with %s, retrying %d" (f/message res) attempts)
-          (Thread/sleep delay)
-          (recur conn-fn (dec attempts) delay))
-        res))))
 
 (defmethod ig/init-key
   :runner/queue-config
@@ -60,11 +46,9 @@
 
 (defmethod ig/init-key
   :runner/event-producer
-  [_ {:keys [^StreamEnvironment stream-env ^String stream-name retry-attempts retry-delay]}]
+  [_ {:keys [^StreamEnvironment stream-env ^String stream-name]}]
   (log/info "Setting up producer for RabbitMQ stream")
-  (retry
-   retry-attempts
-   retry-delay
+  (cs/try-connect
    #(.. stream-env
         producerBuilder
         (stream stream-name)

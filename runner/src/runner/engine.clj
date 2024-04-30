@@ -297,11 +297,6 @@
       (log/errorf "Error fetching container archive: %s" err)
       err)))
 
-(defn container-ls
-  "Returns the list of running containers"
-  []
-  (f/try* (c/invoke containers {:op :ContainerListLibpod})))
-
 (comment
   (sh-tokenize "sh -c 'echo ${k1}'")
 
@@ -345,8 +340,6 @@
                          "/roor")
 
   (get-container-archive "fb674e" "/root/test")
-
-  (container-ls)
 
   (-> (pull-image "docker.io/library/busybox:musl")
       (create-container {:cmd "sh -c 'sleep 5; ls'"})

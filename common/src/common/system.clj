@@ -39,7 +39,7 @@
        (if (f/failed? res)
          (do
            (log/warnf "Connection failed with %s, retrying %d" (f/message res) n)
-           (Thread/sleep (:bob/connection-retry-delay config))
+           (Thread/sleep ^Long (:bob/connection-retry-delay config))
            (recur conn-fn (dec n)))
          res)))))
 
@@ -117,16 +117,17 @@
   (log/info "Setting up environment for RabbitMQ stream" {:url url
                                                           :name name
                                                           :retention-days retention-days})
-  (let [stream-env (.. Environment builder (uri url) build)]
-    (try
-      (.. stream-env
-          streamCreator
-          (maxAge (Duration/ofDays retention-days))
-          (stream name)
-          create)
-      (catch StreamException _
-        (log/debug "Stream already exists")))
-    stream-env))
+  (try-connect
+   #(let [stream-env (.. Environment builder (uri url) build)]
+      (try
+        (.. stream-env
+            streamCreator
+            (maxAge (Duration/ofDays retention-days))
+            (stream name)
+            create)
+        (catch StreamException _
+          (log/debug "Stream already exists")))
+      stream-env)))
 
 (defmethod ig/halt-key!
   :bob/stream-env
