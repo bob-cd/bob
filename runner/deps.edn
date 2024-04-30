@@ -11,7 +11,7 @@
         com.xtdb/xtdb-core {:mvn/version "1.24.3"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
-        integrant/integrant {:mvn/version "0.8.1"}
+        integrant/integrant {:mvn/version "0.9.0"}
         io.github.lispyclouds/contajners {:git/sha "c148493d7f94385aed8030595e35605add29952b"}
         org.babashka/http-client {:mvn/version "0.4.19"}
         org.clojure/clojure {:mvn/version "1.11.3"} ; TODO: Bump to 1.12+ with https://github.com/xtdb/xtdb/issues/3169
@@ -28,5 +28,5 @@
                                cider/cider-nrepl {:mvn/version "RELEASE"}}
                   :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]
                   :jvm-opts ["--enable-preview"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.0" :git/sha "3a2c484"}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.1" :git/sha "5e3b8f3"}}
                    :ns-default build}}}
