@@ -21,7 +21,8 @@
   (let [server (srv/start! {:http-handler (s/server database
                                                     (:chan queue)
                                                     (:conn-opts queue)
-                                                    health-check-freq stream)
+                                                    health-check-freq
+                                                    stream)
                             :host host
                             :port port})]
     (log/infof "Listening on %d" port)

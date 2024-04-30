@@ -11,14 +11,34 @@
    [clojure.tools.logging :as log]
    [common.dispatch :as d]
    [common.system :as cs]
+   [failjure.core :as f]
    [integrant.core :as ig]
    [runner.pipeline :as p])
   (:import
-   [com.rabbitmq.stream.impl StreamEnvironment StreamProducer]))
+   [com.rabbitmq.stream.impl StreamEnvironment StreamProducer]
+   [java.net ConnectException]))
 
 (def ^:private routes
   {"pipeline/start" p/start
    "pipeline/stop" p/stop})
+
+(def config
+  (-> "bob/conf.edn"
+      (io/resource)
+      (aero/read-config {:resolver cs/resource-resolver})
+      (dissoc :common)))
+
+(defn retry
+  [attempts ^Long delay conn-fn]
+  (if (zero? attempts)
+    (throw (ConnectException. "Cannot establish stream connection"))
+    (let [res (f/try* (conn-fn))]
+      (if (f/failed? res)
+        (do
+          (log/warnf "Stream connection failed with %s, retrying %d" (f/message res) attempts)
+          (Thread/sleep delay)
+          (recur conn-fn (dec attempts) delay))
+        res))))
 
 (defmethod ig/init-key
   :runner/queue-config
@@ -40,13 +60,16 @@
 
 (defmethod ig/init-key
   :runner/event-producer
-  [_ {:keys [^StreamEnvironment stream-env ^String stream-name]}]
+  [_ {:keys [^StreamEnvironment stream-env ^String stream-name retry-attempts retry-delay]}]
   (log/info "Setting up producer for RabbitMQ stream")
-  (.. stream-env
-      producerBuilder
-      (stream stream-name)
-      (name "bob-container-runner")
-      build))
+  (retry
+   retry-attempts
+   retry-delay
+   #(.. stream-env
+        producerBuilder
+        (stream stream-name)
+        (name "bob-container-runner")
+        build)))
 
 (defmethod ig/halt-key!
   :runner/event-producer
@@ -59,11 +82,7 @@
 (defn start
   []
   (alter-var-root #'system
-                  (constantly (-> "bob/conf.edn"
-                                  (io/resource)
-                                  (aero/read-config {:resolver cs/resource-resolver})
-                                  (dissoc :common)
-                                  (ig/init)))))
+                  (constantly (ig/init config))))
 
 (defn stop
   []

@@ -10,7 +10,9 @@
                   :name #ref [:common :bob/stream-conf :name]
                   :retention-days #ref [:common :bob/stream-conf :retention-days]}
  :runner/event-producer {:stream-name #ref [:common :bob/stream-conf :name]
-                         :stream-env #ig/ref :bob/stream-env}
+                         :stream-env #ig/ref :bob/stream-env
+                         :retry-attempts #ref [:common :bob/connection-retry-attempts]
+                         :retry-delay #ref [:common :bob/connection-retry-delay]}
  :runner/queue-config {:database #ig/ref :bob/storage
                        :queue #ref [:common :bob/queue-conf]
                        :producer #ig/ref :runner/event-producer}
