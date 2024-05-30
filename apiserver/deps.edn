@@ -7,11 +7,11 @@
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.5.6"}
-        com.s-exp/hirundo {:mvn/version "0.1.35"}
+        com.s-exp/hirundo {:mvn/version "0.1.36"}
         com.xtdb/xtdb-core {:mvn/version "1.24.3"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
-        integrant/integrant {:mvn/version "0.9.0"}
+        integrant/integrant {:mvn/version "0.10.0"}
         io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
         io.github.lispyclouds/navi {:git/sha "7ad64ac64712f725b6d1e4cc11387c42dfeb1168"}
         metosin/muuntaja {:mvn/version "0.6.10"}
@@ -26,8 +26,8 @@
         org.clojure/data.json {:mvn/version "2.5.0"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha9"}
         org.clojure/tools.logging {:mvn/version "1.3.0"}}
- :aliases {:test {:extra-deps {com.github.seancorfield/next.jdbc {:mvn/version "1.3.925"}
-                               lambdaisland/kaocha {:mvn/version "1.88.1376"}
+ :aliases {:test {:extra-deps {com.github.seancorfield/next.jdbc {:mvn/version "1.3.939"}
+                               lambdaisland/kaocha {:mvn/version "1.91.1392"}
                                org.clojure/test.check {:mvn/version "1.1.1"}}
                   :extra-paths ["test"]
                   :main-opts ["-m" "kaocha.runner"]
