@@ -12,7 +12,7 @@
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.10.0"}
-        io.github.lispyclouds/contajners {:git/sha "e9b4de74846cfa57c00e30bb54abcefec1a56764"}
+        io.github.lispyclouds/contajners {:git/sha "61f650e51934523b9b5a7cba76365c373b24ea2b"}
         org.babashka/http-client {:mvn/version "0.4.19"}
         org.clojure/clojure {:mvn/version "1.11.3"} ; TODO: Bump to 1.12+ with https://github.com/xtdb/xtdb/issues/3169
         org.clojure/data.json {:mvn/version "2.5.0"}
