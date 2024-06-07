@@ -7,7 +7,7 @@
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.5.6"}
-        com.s-exp/hirundo {:mvn/version "0.1.36"}
+        com.s-exp/hirundo {:mvn/version "0.1.37"}
         com.xtdb/xtdb-core {:mvn/version "1.24.3"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
