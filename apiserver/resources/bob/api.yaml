@@ -59,6 +59,9 @@ paths:
       description: Runs all cluster health checks and reports the status
       tags:
         - cluster
+      x-cli:
+        name: ping
+        group: cluster
 
       responses:
         "200":
@@ -91,7 +94,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-create
+        name: create
+        group: pipeline
 
       parameters:
         - name: group
@@ -165,7 +169,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-delete
+        name: delete
+        group: pipeline
 
       parameters:
         - name: group
@@ -215,7 +220,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-start
+        name: start
+        group: pipeline
 
       parameters:
         - name: group
@@ -274,7 +280,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-stop
+        name: stop
+        group: pipeline
 
       parameters:
         - name: group
@@ -316,7 +323,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-pause
+        name: pause
+        group: pipeline
 
       parameters:
         - name: group
@@ -352,7 +360,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-unpause
+        name: unpause
+        group: pipeline
 
       parameters:
         - name: group
@@ -388,7 +397,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-logs
+        name: logs
+        group: pipeline
 
       parameters:
         - name: id
@@ -446,7 +456,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-status
+        name: status
+        group: pipeline
 
       parameters:
         - name: id
@@ -506,7 +517,8 @@ paths:
         - pipeline
         - artifact
       x-cli:
-        name: pa-fetch
+        name: fetch-artifact
+        group: pipeline
 
       parameters:
         - name: group
@@ -567,7 +579,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-list
+        name: list
+        group: pipeline
 
       parameters:
         - name: group
@@ -624,7 +637,8 @@ paths:
       tags:
         - pipeline
       x-cli:
-        name: p-runs
+        name: runs
+        group: pipeline
 
       parameters:
         - name: group
@@ -674,7 +688,8 @@ paths:
       tags:
         - resource
       x-cli:
-        name: rp-create
+        name: create
+        group: resource-provider
 
       parameters:
         - name: name
@@ -724,7 +739,8 @@ paths:
       tags:
         - resource
       x-cli:
-        name: rp-create
+        name: delete
+        group: resource-provider
 
       parameters:
         - name: name
@@ -754,7 +770,8 @@ paths:
       tags:
         - resource
       x-cli:
-        name: rp-list
+        name: list
+        group: resource-provider
 
       responses:
         "200":
@@ -778,7 +795,8 @@ paths:
       tags:
         - artifact
       x-cli:
-        name: as-create
+        name: create
+        group: artifact-store
 
       parameters:
         - name: name
@@ -828,7 +846,8 @@ paths:
       tags:
         - artifact
       x-cli:
-        name: as-delete
+        name: delete
+        group: artifact-store
 
       parameters:
         - name: name
@@ -858,7 +877,8 @@ paths:
       tags:
         - artifact
       x-cli:
-        name: as-list
+        name: list
+        group: artifact-store
 
       responses:
         "200":
@@ -881,6 +901,9 @@ paths:
       description: Runs a direct xt datalog read query on the DB, useful for arbitrary analytics and point in time queries
       tags:
         - analytics
+      x-cli:
+        name: run
+        group: query
 
       parameters:
         - name: q
@@ -924,6 +947,8 @@ paths:
       description: Fetches the next available error from the errors queue, this is a destructive read
       tags:
         - observability
+      x-cli:
+        disabled: true
 
       responses:
         "200":
@@ -955,6 +980,9 @@ paths:
       description: Stream real-time events from the cluster. Stores upto 7 days by default and starts streaming from the beginning via SSE
       tags:
         - observability
+      x-cli:
+        name: stream
+        group: events
 
       responses:
         "200":
@@ -982,6 +1010,8 @@ paths:
       description: Emits the Prometheus compatible metrics for the entire cluster
       tags:
         - observability
+      x-cli:
+        disabled: true
 
       responses:
         "200":
@@ -1012,6 +1042,8 @@ paths:
       description: Generates a CCTray XML report, useful for observability tooling like CCMenu
       tags:
         - observability
+      x-cli:
+        disabled: true
 
       responses:
         "200":
