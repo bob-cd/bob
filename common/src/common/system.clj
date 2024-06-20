@@ -16,12 +16,13 @@
    [langohr.core :as rmq]
    [langohr.exchange :as le]
    [langohr.queue :as lq]
-   [xtdb.api :as xt])
+   [xtdb.api :as xt]
+   [xtdb.client :as xtc])
   (:import
    [com.rabbitmq.stream Environment StreamException]
    [java.net ConnectException]
    [java.time Duration]
-   [xtdb.api IXtdb]))
+   [xtdb.client.impl XtdbClient]))
 
 (def config
   (-> "bob/common.edn"
@@ -49,21 +50,15 @@
 
 (defmethod ig/init-key
   :bob/storage
-  [_ {:keys [url user password]}]
+  [_ {:keys [url]}]
   (log/info "Connecting to DB")
-  (try-connect
-   #(xt/start-node {:xtdb.jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
-                                                :db-spec {:jdbcUrl url
-                                                          :user user
-                                                          :password password}}
-                    :xtdb/tx-log {:xtdb/module 'xtdb.jdbc/->tx-log
-                                  :connection-pool :xtdb.jdbc/connection-pool}
-                    :xtdb/document-store {:xtdb/module 'xtdb.jdbc/->document-store
-                                          :connection-pool :xtdb.jdbc/connection-pool}})))
+  (try-connect #(let [node (xtc/start-client url)]
+                  (xt/status node)
+                  node)))
 
 (defmethod ig/halt-key!
   :bob/storage
-  [_ ^IXtdb node]
+  [_ ^XtdbClient node]
   (log/info "Disconnecting DB")
   (.close node))
 

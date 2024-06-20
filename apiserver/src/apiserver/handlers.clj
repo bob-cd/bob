@@ -46,17 +46,21 @@
               {:content-type "application/json"
                :type msg-type}))
 
+(defn get-by-id
+  [db table id]
+  (-> (from ~table [{:xt/id ~id} *])
+      (xt/template)
+      (xt/q db)
+      (first)))
+
 (defn pipeline-data
   [db group name]
-  (f/try-all [data (xt/entity
-                    (xt/db db)
-                    (keyword (str "bob.pipeline." group) name))
+  (f/try-all [data (get-by-id db :pipelines (keyword (str "bob.pipeline." group) name))
               _ (when (and (some? data)
                            (not (spec/valid? :bob.db/pipeline data)))
                   (f/fail (str "Invalid pipeline: " data)))]
     data
-    (f/when-failed [err]
-      err)))
+    (f/when-failed [err] err)))
 
 (defn exec
   ([task]
@@ -84,14 +88,10 @@
 
 (defn get-runs
   [db group name]
-  (f/try-all [result (xt/q (xt/db db)
-                           {:find ['(pull run [*])]
-                            :where [['run :type :pipeline-run]
-                                    ['run :group group]
-                                    ['run :name name]]})]
-    (map first result)
-    (f/when-failed [err]
-      err)))
+  (f/try-all [result (xt/q db '(from :pipeline-runs [{:group $group :name $name} *])
+                           {:args {:group group :name name}})]
+    result
+    (f/when-failed [err] err)))
 
 (defn pipeline-create
   [{{{:keys [group name]} :path
@@ -157,7 +157,7 @@
               changed (if pause?
                         (assoc data :paused true)
                         (dissoc data :paused))
-              _ (xt/await-tx db (xt/submit-tx db [[::xt/put changed]]))]
+              _ (xt/execute-tx db [[:put-docs :pipelines changed]])]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -165,17 +165,12 @@
 (defn pipeline-logs
   [{{{:keys [id offset lines]} :path} :parameters
     db :db}]
-  (f/try-all [result (xt/q (xt/db db)
-                           {:find '[(pull log [:line]) time]
-                            :where [['log :type :log-line]
-                                    ['log :time 'time]
-                                    ['log :run-id id]]
-                            :order-by [['time :asc]]
-                            :limit lines
-                            :offset offset})
-              response (->> result
-                            (map first)
-                            (map :line))]
+  (f/try-all [query (xt/template (-> (from :log-lines [{:time time :run-id ~id} line time])
+                                     (order-by {:val time :dir :asc})
+                                     (limit ~lines)
+                                     (offset ~offset)))
+              result (xt/q db query)
+              response (map :line result)]
     (respond response 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -183,7 +178,7 @@
 (defn pipeline-status
   [{{{:keys [id]} :path} :parameters
     db :db}]
-  (f/try-all [run (xt/entity (xt/db db) (keyword "bob.pipeline.run" id))
+  (f/try-all [run (get-by-id db :pipeline-runs (keyword "bob.pipeline.run" id))
               status (if (and (some? run)
                               (not (spec/valid? :bob.db/run run)))
                        (f/fail (str "Invalid run: " run))
@@ -209,7 +204,7 @@
 (defn pipeline-artifact
   [{{{:keys [group name id store-name artifact-name]} :path} :parameters
     db :db}]
-  (f/try-all [store (xt/entity (xt/db db) (keyword "bob.artifact-store" store-name))
+  (f/try-all [store (get-by-id db :artifact-stores (keyword "bob.artifact-store" store-name))
               _ (when (nil? store)
                   (f/fail {:type :external
                            :msg (str "Cannot locate artifact store " store-name)}))
@@ -234,23 +229,23 @@
                       (respond 400))
         (respond (f/message err) 500)))))
 
-;; TODO: Better way hopefully?
 (defn pipeline-list
-  [{{{:keys [group name status]
-      :as query}
+  [{{{:keys [group name status]}
      :query}
     :parameters
     db :db}]
-  (f/try-all [base-query '{:find [(pull pipeline [:steps :vars :resources :image :group :name :paused])]
-                           :where [[pipeline :type :pipeline]]}
-              clauses {:group [['pipeline :group group]]
-                       :name [['pipeline :name name]]
-                       :status [['run :type :pipeline-run]
-                                ['run :status status]]}
-              filters (mapcat #(get clauses (key %)) query)
-              result (xt/q (xt/db db)
-                           (update-in base-query [:where] into filters))]
-    (respond (map first result) 200)
+  (f/try-all [filters (if group
+                        {:group group}
+                        {})
+              filters (if name
+                        (assoc filters :name name)
+                        filters)
+              query (xt/template
+                     (-> (unify (from :pipelines [~filters steps vars resources image group name paused])
+                                ~(when status (xt/template (from :pipeline-runs [{:status ~status}]))))
+                         (return steps vars resources image group name paused)))
+              result (xt/q db query)]
+    (respond result 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
