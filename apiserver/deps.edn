@@ -7,7 +7,7 @@
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.5.6"}
-        com.s-exp/hirundo {:mvn/version "0.1.37"}
+        com.s-exp/hirundo {:mvn/version "0.1.38"}
         com.xtdb/xtdb-core {:mvn/version "1.24.4"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
@@ -21,7 +21,7 @@
         metosin/reitit-malli {:mvn/version "0.7.1"}
         metosin/reitit-ring {:mvn/version "0.7.1"}
         metosin/reitit-sieppari {:mvn/version "0.7.1"}
-        org.babashka/http-client {:mvn/version "0.4.19"}
+        org.babashka/http-client {:mvn/version "0.4.20"}
         org.clojure/clojure {:mvn/version "1.12.0-rc1"}
         org.clojure/data.json {:mvn/version "2.5.0"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha9"}
