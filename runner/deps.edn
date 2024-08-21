@@ -6,13 +6,13 @@
 
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.6"}
-        com.rabbitmq/stream-client {:mvn/version "0.16.0"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.7"}
+        com.rabbitmq/stream-client {:mvn/version "0.17.0"}
         com.xtdb/xtdb-core {:mvn/version "1.24.4"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.10.0"}
-        io.github.lispyclouds/contajners {:git/sha "0806ec02c82dfb40074c2dfe8b938793cdf75afa"}
+        io.github.lispyclouds/contajners {:git/sha "2b17f7f40136a0fd0153b199c76496ee0841b397"}
         org.babashka/http-client {:mvn/version "0.4.20"}
         org.clojure/clojure {:mvn/version "1.12.0-rc1"}
         org.clojure/data.json {:mvn/version "2.5.0"}
