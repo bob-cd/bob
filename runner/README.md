@@ -32,7 +32,7 @@ This provides a general enough, containerised and ephemeral execution environmen
 
 ### Requirements, min versions, latest recommended.
 - JDK 19+
-- RabbitMQ 3.8+
+- RabbitMQ 3.8+ with the [management-plugin](https://www.rabbitmq.com/docs/management)
 - PostgreSQL 11+
 - Clojure [tools.deps](https://clojure.org/guides/getting_started)
 - [Babashka](https://github.com/babashka/babashka#installation)
