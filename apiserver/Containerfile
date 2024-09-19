@@ -4,7 +4,7 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM docker.io/bellsoft/liberica-openjdk-alpine-musl:22
+FROM docker.io/bellsoft/liberica-openjdk-alpine-musl:23
 
 COPY apiserver.jar .
 
