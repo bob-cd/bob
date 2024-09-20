@@ -1220,15 +1220,7 @@ components:
         message:
           type: array
           items:
-            type: object
-            required:
-              - name
-              - data
-            properties:
-              name:
-                type: string
-              data:
-                $ref: "#/components/schemas/Pipeline"
+            $ref: "#/components/schemas/Pipeline"
 
     PipelineRunsResponse:
       type: object
