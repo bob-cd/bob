@@ -37,11 +37,11 @@
   "Adds a prefix to the tar entry paths to make a directory.
 
   Returns the path to the final archive."
-  [in-stream prefix]
+  [^TarInputStream in-stream prefix]
   (let [archive (File/createTempFile "resource" ".tar")
         out-stream (-> archive
-                       FileOutputStream.
-                       BufferedOutputStream.
+                       FileOutputStream/new
+                       BufferedOutputStream/new
                        TarOutputStream.)]
     (loop [entry (.getNextEntry in-stream)]
       (when entry
@@ -110,8 +110,8 @@
               container-id (eng/create-container image)
               _ (log/debug "Copying resources to container")
               _ (eng/put-container-archive container-id (io/input-stream archive-path) "/root")
-              _ (-> archive-path
-                    File.
+              _ (-> ^String archive-path
+                    File/new
                     .delete)
               _ (log/debug "Committing resourceful container")
               provisioned-image (eng/commit-container container-id cmd)
@@ -146,6 +146,8 @@
       err)))
 
 (comment
+  (set! *warn-on-reflection* true)
+
   (fetch-resource "http://localhost:8000/bob_resource?repo=https://github.com/lispyclouds/bob-example&branch=main")
 
   (http/get "http://localhost:8000/ping")

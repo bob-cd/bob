@@ -80,7 +80,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SimpleResponse"
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SimpleResponse"
               examples:
                 unhealthy:
                   value:

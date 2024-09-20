@@ -29,6 +29,8 @@
                             :code (.getCode status)})))))))
 
 (comment
+  (set! *warn-on-reflection* true)
+
   (import '[com.rabbitmq.stream OffsetSpecification ConfirmationHandler Environment MessageHandler])
 
   (def stream "bob.stream")

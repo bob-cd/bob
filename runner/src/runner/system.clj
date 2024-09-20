@@ -57,9 +57,9 @@
 
 (defmethod ig/halt-key!
   :runner/event-producer
-  [_ ^StreamProducer producer]
+  [_ producer]
   (log/info "Tearing down producer for RabbitMQ stream")
-  (.close producer))
+  (StreamProducer/.close producer))
 
 (defonce system nil)
 
@@ -78,4 +78,6 @@
   (start))
 
 (comment
+  (set! *warn-on-reflection* true)
+
   (reset))

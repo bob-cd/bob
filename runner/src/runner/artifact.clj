@@ -51,6 +51,8 @@
       (f/fail "No such artifact store registered"))))
 
 (comment
+  (set! *warn-on-reflection* true)
+
   (require '[clojure.java.io :as io])
 
   (http/post "http://localhost:8001/bob_artifact/dev/test/r-1/tar"

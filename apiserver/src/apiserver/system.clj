@@ -55,6 +55,8 @@
   (start))
 
 (comment
+  (set! *warn-on-reflection* true)
+
   (aero/read-config (io/resource "bob/conf.edn"))
 
   (reset))

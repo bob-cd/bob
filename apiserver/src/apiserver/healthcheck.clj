@@ -11,11 +11,16 @@
    [failjure.core :as f]
    [xtdb.api :as xt])
   (:import
-   [java.util.concurrent Executors TimeUnit]))
+   [com.rabbitmq.client Channel]
+   [java.util.concurrent
+    ExecutorService
+    Executors
+    Future
+    TimeUnit]))
 
 (defn queue
   [{:keys [queue]}]
-  (when (not (.isOpen queue))
+  (when (not (Channel/.isOpen queue))
     (f/fail "Queue is unreachable")))
 
 (defn db
@@ -48,8 +53,8 @@
   [executor opts]
   (let [results (->> [queue db check-entities]
                      (map #(fn [] (% opts)))
-                     (.invokeAll executor)
-                     (map #(.get %))
+                     (ExecutorService/.invokeAll executor)
+                     (map Future/.get)
                      (flatten)
                      (filter f/failed?))]
     (when (seq results)
@@ -69,6 +74,8 @@
                           TimeUnit/MILLISECONDS)))
 
 (comment
+  (set! *warn-on-reflection* true)
+
   (->> (into (list {:name "a1" :url "https://httpbin.org/get"})
              (list {:name "r1" :url "http://localhost:8000/ping"}))
        (map check-entity)))

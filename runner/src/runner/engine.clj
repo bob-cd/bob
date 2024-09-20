@@ -10,7 +10,9 @@
    [clojure.string :as s]
    [clojure.tools.logging :as log]
    [contajners.core :as c]
-   [failjure.core :as f]))
+   [failjure.core :as f])
+  (:import
+   [java.io BufferedReader InputStream]))
 
 (def api-version "v5.2.2")
 
@@ -197,7 +199,7 @@
     (future
       (with-open [r (io/reader log-stream)]
         (loop []
-          (when-let [line (.readLine r)]
+          (when-let [line (BufferedReader/.readLine r)]
             (-> line
                 (s/replace-first #"^\W+" "")
                 (reaction-fn))
@@ -270,7 +272,7 @@
    into the path of the container by id.
 
    Returns a Failure if failed."
-  [id archive-input-stream path]
+  [id ^InputStream archive-input-stream path]
   (let [result (f/try*
                 (with-open [xin archive-input-stream]
                   (c/invoke containers
@@ -298,6 +300,8 @@
       err)))
 
 (comment
+  (set! *warn-on-reflection* true)
+
   (sh-tokenize "sh -c 'echo ${k1}'")
 
   (c/categories :podman api-version)

@@ -12,10 +12,10 @@
    [failjure.core :as f]))
 
 (defn queue-msg-subscriber
-  [config routes chan meta-data payload]
-  (let [msg (f/try* (json/read-str (String. payload "UTF-8") :key-fn keyword))]
+  [config routes chan meta-data ^byte/1 payload]
+  (let [msg (f/try* (json/read-str (String/new payload "UTF-8") :key-fn keyword))]
     (if (f/failed? msg)
-      (err/publish-error chan (format "Could not parse '%s' as json" (String. payload "UTF-8")))
+      (err/publish-error chan (format "Could not parse '%s' as json" (String/new payload "UTF-8")))
       (do
         (log/infof "payload %s, meta: %s"
                    msg
@@ -25,3 +25,6 @@
                                    routes)]
           (routed-fn config chan msg)
           (err/publish-error chan (format "Could not route message: %s" msg)))))))
+
+(comment
+  (set! *warn-on-reflection* true))

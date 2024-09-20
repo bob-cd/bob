@@ -25,7 +25,8 @@
    [ring.core.protocols :as p]
    [xtdb.api :as xt])
   (:import
-   [com.rabbitmq.stream MessageHandler OffsetSpecification]
+   [com.rabbitmq.stream Environment MessageHandler OffsetSpecification]
+   [java.io OutputStream]
    [java.util.concurrent Executors]))
 
 (def executor (Executors/newVirtualThreadPerTaskExecutor))
@@ -232,7 +233,7 @@
                       f/message
                       :msg
                       (respond 400))
-        (respond (f/message err) 500)))))
+        (respond (str err) 500)))))
 
 ;; TODO: Better way hopefully?
 (defn pipeline-list
@@ -332,7 +333,7 @@
       (respond (f/message err) 500))))
 
 (defn events
-  [{{:keys [environment name]} :stream}]
+  [{{:keys [^Environment environment name]} :stream}]
   {:status 200
    :headers {"content-type" "text/event-stream"
              "transfer-encoding" "chunked"}
@@ -357,7 +358,7 @@
                                   build)]
                  @complete ;; block til done
                  (.close consumer)
-                 (.close output-stream)))))})
+                 (OutputStream/.close output-stream)))))})
 
 (defn metrics
   [{queue :queue
@@ -406,6 +407,8 @@
    "CCTray" cctray})
 
 (comment
+  (set! *warn-on-reflection* true)
+
   (-> "http://localhost:8001/bob_artifact/dev/test/r-1/test.tar"
       (http/get {:as :stream})
       :body

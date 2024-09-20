@@ -336,6 +336,8 @@
           (future-cancel run))))))
 
 (comment
+  (set! *warn-on-reflection* true)
+
   (reset! node-state
           {:images-for-gc {:run-id-1 (list "rabbitmq:3-alpine" "postgres:alpine")}
            :runs {}})

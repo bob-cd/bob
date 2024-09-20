@@ -63,9 +63,9 @@
 
 (defmethod ig/halt-key!
   :bob/storage
-  [_ ^IXtdb node]
+  [_ node]
   (log/info "Disconnecting DB")
-  (.close node))
+  (IXtdb/.close node))
 
 (defn fanout?
   [conf ex]
@@ -133,9 +133,12 @@
   :bob/stream-env
   [_ stream-env]
   (log/info "Tearing down environment for RabbitMQ stream")
-  (.close stream-env))
+  (Environment/.close stream-env))
 
 (defmethod aero/reader
   'ig/ref
   [_ _ value]
   (ig/ref value))
+
+(comment
+  (set! *warn-on-reflection* true))
