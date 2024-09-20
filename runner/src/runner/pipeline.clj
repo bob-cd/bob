@@ -267,7 +267,7 @@
           (log/infof "Marking run %s as failed with reason: %s"
                      run-id
                      error)
-          (log-event database run-id (str "Run failed: %s" error))
+          (log-event database run-id (str "Run failed: " error))
           (ev/publish producer {:run-id run-id
                                 :type :pipeline
                                 :event :failed

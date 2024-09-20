@@ -1231,23 +1231,13 @@ components:
           type: array
           items:
             type: object
-            required:
-              - run-id
-              - status
-            properties:
-              run-id:
-                type: string
-              status:
-                type: string
 
     StatusResponse:
-      type: string
-      enum:
-        - initializing
-        - running
-        - passed
-        - failed
-        - stopped
+      type: object
+      required:
+        - message
+      properties:
+        $ref: "#/components/schemas/SimpleResponse"
 
     ResourceProvidersResponse:
       type: object
@@ -1255,7 +1245,9 @@ components:
         - message
       properties:
         message:
-          $ref: "#/components/schemas/StringList"
+          type: array
+          items:
+            type: object
 
     ResourceProviderAttributes:
       type: object
@@ -1281,4 +1273,6 @@ components:
         - message
       properties:
         message:
-          $ref: "#/components/schemas/StringList"
+          type: array
+          items:
+            type: object
