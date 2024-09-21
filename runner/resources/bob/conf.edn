@@ -17,4 +17,9 @@
  :bob/queue {:url #ref [:common :bob/queue-conn :url]
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
-             :conf #ig/ref :runner/queue-config}}
+             :conf #ig/ref :runner/queue-config}
+ :bob/runner-heartbeat {:queue {:api-url #ref [:common :bob/queue-api-url]
+                                :username #ref [:common :bob/queue-conn :user]
+                                :password #ref [:common :bob/queue-conn :password]}
+                        :db #ig/ref :bob/storage
+                        :freq #ref [:common :bob/health-check-freq]}}

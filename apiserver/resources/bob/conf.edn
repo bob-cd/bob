@@ -9,7 +9,7 @@
  :bob/queue {:url #ref [:common :bob/queue-conn :url]
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
-             :api-url #or [#env BOB_QUEUE_API_URL "http://localhost:15672/api"]
+             :api-url #ref [:common :bob/queue-api-url]
              :conf {:exchanges #ref [:common :bob/queue-conf :exchanges]
                     :queues #ref [:common :bob/queue-conf :queues]}}
  :bob/stream-env {:url #ref [:common :bob/stream-conf :url]
@@ -21,7 +21,7 @@
                  :queue #ig/ref :bob/queue
                  :stream {:name #ref [:common :bob/stream-conf :name]
                           :environment #ig/ref :bob/stream-env}}
- :bob/apiserver-heartbeat {:queue {:api-url #ref [:bob/queue :api-url]
+ :bob/apiserver-heartbeat {:queue {:api-url #ref [:common :bob/queue-api-url]
                                    :username #ref [:common :bob/queue-conn :user]
                                    :password #ref [:common :bob/queue-conn :password]}
                            :db #ig/ref :bob/storage

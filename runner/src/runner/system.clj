@@ -10,11 +10,13 @@
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
    [common.dispatch :as d]
+   [common.heartbeat :as hb]
    [common.system :as cs]
    [integrant.core :as ig]
    [runner.pipeline :as p])
   (:import
-   [com.rabbitmq.stream.impl StreamEnvironment StreamProducer]))
+   [com.rabbitmq.stream.impl StreamEnvironment StreamProducer]
+   [java.util.concurrent Future]))
 
 (def ^:private routes
   {"pipeline/start" p/start
@@ -60,6 +62,18 @@
   [_ producer]
   (log/info "Tearing down producer for RabbitMQ stream")
   (StreamProducer/.close producer))
+
+(defmethod ig/init-key
+  :bob/runner-heartbeat
+  [_ {:keys [queue db freq]}]
+  (hb/schedule #(hb/beat-it db queue :bob/node-type :runner)
+               "heartbeat"
+               freq))
+
+(defmethod ig/halt-key!
+  :bob/runner-heartbeat
+  [_ task]
+  (Future/.cancel task true))
 
 (defonce system nil)
 
