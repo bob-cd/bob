@@ -380,6 +380,13 @@
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
+(defn cluster-info
+  [{db :db}]
+  (f/try-all [info (get (xt/entity (xt/db db) :bob.cluster/info) :data {})]
+    (respond info)
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
 (def handlers
   {"GetApiSpec" api-spec
    "HealthCheck" health-check
@@ -404,7 +411,8 @@
    "GetError" errors
    "GetEvents" events
    "GetMetrics" metrics
-   "CCTray" cctray})
+   "CCTray" cctray
+   "ClusterInfo" cluster-info})
 
 (comment
   (set! *warn-on-reflection* true)

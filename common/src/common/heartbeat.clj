@@ -13,11 +13,13 @@
    [java.util.concurrent Executors TimeUnit]))
 
 (defn get-node-info
-  []
+  [extras]
   (let [bean ^OperatingSystemMXBean (ManagementFactory/getOperatingSystemMXBean)]
-    {(.getHostAddress (InetAddress/getLocalHost)) {:cpu/load (.getSystemCpuLoad bean)
-                                                   :mem/free (.getFreePhysicalMemorySize bean)
-                                                   :mem/total (.getTotalPhysicalMemorySize bean)}}))
+    {(.getHostAddress (InetAddress/getLocalHost))
+     (merge {:cpu/load (.getSystemCpuLoad bean)
+             :mem/free (.getFreePhysicalMemorySize bean)
+             :mem/total (.getTotalPhysicalMemorySize bean)}
+            extras)}))
 
 (defn get-connections
   [{:keys [api-url username password]}]
@@ -33,7 +35,7 @@
 (defn beat-it
   [db queue-info & {:as extra-data}]
   (f/try-all [id :bob.cluster/info
-              node-info (merge (get-node-info) extra-data)
+              node-info (get-node-info extra-data)
               connections (get-connections queue-info)
               cluster (get (xt/entity (xt/db db) id) :data {})
               connected (set/difference connections (set (keys cluster)))
@@ -60,7 +62,7 @@
 
   (import '[xtdb.api IXtdb])
 
-  (get-node-info)
+  (get-node-info {})
 
   (get-connections {:api-url "http://localhost:15672/api"
                     :username "guest"

@@ -1085,6 +1085,23 @@ paths:
                 unhealthy:
                   value:
                     message: "<Some Error>"
+  "/cluster/info":
+    get:
+      operationId: ClusterInfo
+      summary: Cluster overview
+      description: Shows the current cluster state with connected nodes and resources
+      tags:
+        - observability
+      x-cli:
+        disabled: true
+
+      responses:
+        "200":
+          description: Successful fetch
+          content:
+            application/json:
+              schema:
+                type: object
 
 components:
   schemas:
