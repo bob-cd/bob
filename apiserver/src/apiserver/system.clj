@@ -10,9 +10,12 @@
    [apiserver.server :as s]
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
+   [common.heartbeat :as hb]
    [common.system :as cs]
    [integrant.core :as ig]
-   [s-exp.hirundo :as srv]))
+   [s-exp.hirundo :as srv])
+  (:import
+   [java.util.concurrent Future]))
 
 (defmethod ig/init-key
   :bob/apiserver
@@ -33,6 +36,18 @@
   [_ server]
   (log/info "Stopping APIServer")
   (srv/stop! server))
+
+(defmethod ig/init-key
+  :bob/apiserver-heartbeat
+  [_ {:keys [queue db freq]}]
+  (hb/schedule #(hb/beat-it db queue :bob/node-type :apiserver)
+               "heartbeat"
+               freq))
+
+(defmethod ig/halt-key!
+  :bob/apiserver-heartbeat
+  [_ job]
+  (Future/.cancel job true))
 
 (defonce system nil)
 

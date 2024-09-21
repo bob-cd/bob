@@ -17,8 +17,13 @@
                   :retention-days #ref [:common :bob/stream-conf :retention-days]}
  :bob/apiserver {:host #or [#env BOB_API_HOST "0.0.0.0"]
                  :port #long #or [#env BOB_API_PORT 7777]
-                 :health-check-freq #long #or [#env BOB_HEALTH_CHECK_FREQ 10000]
+                 :health-check-freq #ref [:common :bob/health-check-freq]
                  :database #ig/ref :bob/storage
                  :queue #ig/ref :bob/queue
                  :stream {:name #ref [:common :bob/stream-conf :name]
-                          :environment #ig/ref :bob/stream-env}}}
+                          :environment #ig/ref :bob/stream-env}}
+ :bob/apiserver-heartbeat {:queue {:api-url #ref [:bob/queue :api-url]
+                                   :username #ref [:common :bob/queue-conn :user]
+                                   :password #ref [:common :bob/queue-conn :password]}
+                           :db #ig/ref :bob/storage
+                           :freq #ref [:common :bob/health-check-freq]}}

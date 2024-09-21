@@ -19,4 +19,5 @@
                    :url #or [#env BOB_STREAM_URL "rabbitmq-stream://guest:guest@localhost:5552/%2f"]
                    :retention-days #long #or [#env BOB_STREAM_RETENTION_DAYS 7]}
  :bob/connection-retry-attempts #long #or [#env BOB_CONNECTION_RETRY_ATTEMPTS 10]
- :bob/connection-retry-delay #long #or [#env BOB_CONNECTION_RETRY_DELAY 2000]}
+ :bob/connection-retry-delay #long #or [#env BOB_CONNECTION_RETRY_DELAY 2000]
+ :bob/health-check-freq #long #or [#env BOB_HEALTH_CHECK_FREQ 10000]}

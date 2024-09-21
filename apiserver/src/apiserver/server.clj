@@ -36,9 +36,6 @@
   (hb/schedule #(hc/check (Executors/newVirtualThreadPerTaskExecutor) {:queue queue :db database})
                "healthcheck"
                health-check-freq)
-  (hb/schedule #(hb/beat-it database queue-conn-opts :bob/node-type :apiserver)
-               "heartbeat"
-               health-check-freq)
   (http/ring-handler
    (http/router (-> "bob/api.yaml"
                     io/resource
