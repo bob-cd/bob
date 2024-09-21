@@ -7,6 +7,7 @@
 (ns apiserver.system
   (:require
    [aero.core :as aero]
+   [apiserver.healthcheck :as hc]
    [apiserver.server :as s]
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
@@ -15,16 +16,15 @@
    [integrant.core :as ig]
    [s-exp.hirundo :as srv])
   (:import
-   [java.util.concurrent Future]))
+   [java.util.concurrent Executors Future]))
 
 (defmethod ig/init-key
   :bob/apiserver
-  [_ {:keys [host port health-check-freq database queue stream]}]
+  [_ {:keys [host port database queue stream]}]
   (log/info "Starting APIServer")
   (let [server (srv/start! {:http-handler (s/server database
                                                     (:chan queue)
                                                     (:conn-opts queue)
-                                                    health-check-freq
                                                     stream)
                             :host host
                             :port port})]
@@ -46,8 +46,20 @@
 
 (defmethod ig/halt-key!
   :bob/apiserver-heartbeat
-  [_ job]
-  (Future/.cancel job true))
+  [_ task]
+  (Future/.cancel task true))
+
+(defmethod ig/init-key
+  :bob/apiserver-healthcheck
+  [_ {:keys [queue db freq]}]
+  (hb/schedule #(hc/check (Executors/newVirtualThreadPerTaskExecutor) {:queue (:chan queue) :db db})
+               "healthcheck"
+               freq))
+
+(defmethod ig/halt-key!
+  :bob/apiserver-healthcheck
+  [_ task]
+  (Future/.cancel task true))
 
 (defonce system nil)
 

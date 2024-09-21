@@ -7,9 +7,7 @@
 (ns apiserver.server
   (:require
    [apiserver.handlers :as h]
-   [apiserver.healthcheck :as hc]
    [clojure.java.io :as io]
-   [common.heartbeat :as hb]
    [muuntaja.core :as m]
    [navi.core :as navi]
    [reitit.coercion.malli :as malli]
@@ -19,9 +17,7 @@
    [reitit.http.interceptors.muuntaja :as muuntaja]
    [reitit.http.interceptors.parameters :as parameters]
    [reitit.interceptor.sieppari :as sieppari]
-   [reitit.ring :as ring])
-  (:import
-   [java.util.concurrent Executors]))
+   [reitit.ring :as ring]))
 
 (defn system-interceptor
   [db queue queue-conn-opts stream-env]
@@ -32,10 +28,7 @@
                (assoc-in [:request :stream] stream-env))})
 
 (defn server
-  [database queue queue-conn-opts health-check-freq stream]
-  (hb/schedule #(hc/check (Executors/newVirtualThreadPerTaskExecutor) {:queue queue :db database})
-               "healthcheck"
-               health-check-freq)
+  [database queue queue-conn-opts stream]
   (http/ring-handler
    (http/router (-> "bob/api.yaml"
                     io/resource
