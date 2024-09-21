@@ -12,11 +12,7 @@
    [xtdb.api :as xt])
   (:import
    [com.rabbitmq.client Channel]
-   [java.util.concurrent
-    ExecutorService
-    Executors
-    Future
-    TimeUnit]))
+   [java.util.concurrent ExecutorService Future]))
 
 (defn queue
   [{:keys [queue]}]
@@ -60,18 +56,6 @@
     (when (seq results)
       (run! #(log/errorf "Health checks failing: %s" (f/message %)) results)
       (f/fail results))))
-
-(defn schedule
-  [queue database health-check-freq]
-  (let [vfactory (.. (Thread/ofVirtual)
-                     (name "virtual-thread-" 0)
-                     (factory))
-        executor (Executors/newVirtualThreadPerTaskExecutor)]
-    (.scheduleAtFixedRate (Executors/newSingleThreadScheduledExecutor vfactory)
-                          #(check executor {:queue queue :db database})
-                          0
-                          health-check-freq
-                          TimeUnit/MILLISECONDS)))
 
 (comment
   (set! *warn-on-reflection* true)

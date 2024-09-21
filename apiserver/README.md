@@ -22,7 +22,7 @@ This is the coherent gateway for the Bob cluster having the REST API, schema che
 | BOB_QUEUE_API_URL             | http://localhost:15672/api                       |
 | BOB_API_HOST                  | 0.0.0.0                                          |
 | BOB_API_PORT                  | 7777                                             |
-| BOB_HEALTH_CHECK_FREQ         | 60000                                            |
+| BOB_HEALTH_CHECK_FREQ         | 10000                                            |
 | BOB_CONNECTION_RETRY_ATTEMPTS | 10                                               |
 | BOB_CONNECTION_RETRY_DELAY    | 2000                                             |
 | BOB_STREAM_NAME               | bob.event-stream                                 |
