@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y binutils
 RUN jlink \
     --compress zip-9 \
     --module-path jmods \
-    --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http \
+    --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http,jdk.management \
     --strip-debug \
     --no-man-pages \
     --no-header-files \

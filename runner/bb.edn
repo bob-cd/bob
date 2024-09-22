@@ -33,8 +33,6 @@
                        (t/crun "exec bob-test-queue rabbitmq-plugins enable rabbitmq_stream")
                        (apply shell "clojure -M:test" *command-line-args*)
                        (finally (run 'cclean)))}
-         repl {:doc "Start a REPL"
-               :task (clojure "-M:test:repl")}
          compile {:doc "Builds the compiled aritfact"
                   :task (clojure "-T:build" "uber")}
          image {:doc "Builds the docker images"

@@ -7,7 +7,7 @@
    [failjure.core :as f]
    [xtdb.api :as xt])
   (:import
-   [com.sun.management OperatingSystemMXBean]
+   [com.sun.management OperatingSystemMXBean] ;; TODO: Maybe something other than com.sun.*?
    [java.lang.management ManagementFactory]
    [java.net InetAddress]
    [java.util.concurrent Executors TimeUnit]))
