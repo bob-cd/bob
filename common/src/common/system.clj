@@ -34,8 +34,7 @@
   ([conn-fn n]
    (if (zero? n)
      (throw (ConnectException. "Cannot connect to system"))
-     (let [res (f/try*
-                (conn-fn))]
+     (let [res (f/try* (conn-fn))]
        (if (f/failed? res)
          (do
            (log/warnf "Connection failed with %s, retrying %d" (f/message res) n)
@@ -101,7 +100,7 @@
                  {:routing-key queue})))
     (doseq [[queue subscriber] (:subscriptions conf)]
       (log/infof "Subscribing to %s" queue)
-      (lc/subscribe chan queue subscriber {:auto-ack true}))
+      (lc/subscribe chan queue subscriber))
     {:conn conn :chan chan :conn-opts conn-opts}))
 
 (defmethod ig/halt-key!

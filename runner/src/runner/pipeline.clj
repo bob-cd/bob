@@ -11,6 +11,7 @@
    [common.errors :as errors]
    [common.schemas]
    [failjure.core :as f]
+   [langohr.basic :as lb]
    [runner.artifact :as a]
    [runner.engine :as eng]
    [runner.events :as ev]
@@ -287,7 +288,7 @@
 
 (defn start
   "Attempts to asynchronously start a pipeline by group and name."
-  [config queue-chan {:keys [group name run-id] :as data}]
+  [config queue-chan {:keys [group name run-id] :as data} {:keys [delivery-tag]}]
   (if-not (spec/valid? :bob.command.pipeline-start/data data)
     (errors/publish-error queue-chan (str "Invalid pipeline start command: " data))
     (let [run-db-id (keyword "bob.pipeline.run" run-id)
@@ -302,6 +303,9 @@
              assoc
              :ref
              run-ref)
+      ;; TODO: ack only when it's possible to run this. nack otherwise
+      (when delivery-tag
+        (lb/ack queue-chan delivery-tag))
       run-ref)))
 
 (defn stop
@@ -309,7 +313,7 @@
 
   Sets the :status in Db to :stopped and kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
-  [{:keys [database producer]} queue-chan {:keys [group name run-id] :as data}]
+  [{:keys [database producer]} queue-chan {:keys [group name run-id] :as data} _meta]
   (if-not (spec/valid? :bob.command.pipeline-stop/data data)
     (errors/publish-error queue-chan (str "Invalid pipeline stop command: " data))
     (when-let [run (get-in @node-state [:runs run-id])]
@@ -423,14 +427,16 @@
                        queue-chan
                        {:group "test"
                         :name "test"
-                        :run-id run-id}))
+                        :run-id run-id}
+                       {:delivery-tag 1}))
 
   (def my-stop (stop {:database database
                       :producer producer}
                      queue-chan
                      {:group "test"
                       :name "test"
-                      :run-id run-id}))
+                      :run-id run-id}
+                     {}))
 
   (xt/q (xt/db database)
         '{:find [(pull log [:line])]
@@ -454,10 +460,12 @@
   (start database
          queue-chan
          {:group "test"
-          :name "stop-test"})
+          :name "stop-test"}
+         {:delivery-tag 1})
 
   (stop database
         nil
         {:group "test"
          :name "stop-test"
-         :run-id "r-ff185a8a-b6a6-48df-8630-650b025cafad"}))
+         :run-id "r-ff185a8a-b6a6-48df-8630-650b025cafad"}
+        {}))
