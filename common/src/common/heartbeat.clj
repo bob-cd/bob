@@ -36,15 +36,13 @@
   [db queue-info & {:as extra-data}]
   (f/try-all [id :bob.cluster/info
               node-info (get-node-info extra-data)
-              connections (get-connections queue-info)
               cluster (get (xt/entity (xt/db db) id) :data {})
-              connected (set/difference connections (set (keys cluster)))
-              updated (-> cluster
-                          (select-keys connected)
-                          (merge node-info))]
-    (xt/await-tx db (xt/submit-tx db [[::xt/put {:xt/id id :data updated}]]))
+              cleaned (->> (get-connections queue-info)
+                           (set/difference (set (keys cluster)))
+                           (apply dissoc cluster))]
+    (xt/await-tx db (xt/submit-tx db [[::xt/put {:xt/id id :data (merge cleaned node-info)}]]))
     (f/when-failed [err]
-      (log/errorf "Error sending hearbeat: %s" err))))
+      (log/errorf "Error sending hearbeat to %s: %s" (:api-url queue-info) err))))
 
 (defn schedule
   [the-fn kind freq]
