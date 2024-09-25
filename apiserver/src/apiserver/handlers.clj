@@ -350,7 +350,7 @@
                                      (handle [_ _ message]
                                        (try
                                          (doto w
-                                           (.write (str "data: " (String. (.getBodyAsBinary message)) "\n\n")) ;; SSE format: data: foo\n\n
+                                           (.write (str "data: " (String/new (.getBodyAsBinary message)) "\n\n")) ;; SSE format: data: foo\n\n
                                            (.flush))
                                          (catch Exception _
                                            (log/info "Event streaming client disconnected")

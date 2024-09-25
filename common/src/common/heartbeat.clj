@@ -24,8 +24,7 @@
 (defn get-connections
   [{:keys [api-url username password]}]
   (let [data (-> (str api-url "/connections")
-                 (http-client/get {:basic-auth [username password]
-                                   :headers {"Content-Type" "application/json"}})
+                 (http-client/get {:basic-auth [username password]})
                  (:body)
                  (json/read-str {:key-fn keyword}))]
     (->> data
@@ -36,13 +35,13 @@
   [db queue-info & {:as extra-data}]
   (f/try-all [id :bob.cluster/info
               node-info (get-node-info extra-data)
-              cluster (get (xt/entity (xt/db db) id) :data {})
+              cluster (get (xt/entity (xt/db db) id) :data {}) ;; TODO: Assert the cluster-info spec
               cleaned (->> (get-connections queue-info)
                            (set/difference (set (keys cluster)))
                            (apply dissoc cluster))]
     (xt/await-tx db (xt/submit-tx db [[::xt/put {:xt/id id :data (merge cleaned node-info)}]]))
     (f/when-failed [err]
-      (log/errorf "Error sending hearbeat to %s: %s" (:api-url queue-info) err))))
+      (log/errorf "Error sending heartbeat to %s: %s" (:api-url queue-info) err))))
 
 (defn schedule
   [the-fn kind freq]

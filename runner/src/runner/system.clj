@@ -66,7 +66,7 @@
 (defmethod ig/init-key
   :bob/runner-heartbeat
   [_ {:keys [queue db freq]}]
-  (hb/schedule #(hb/beat-it db queue :bob/node-type :runner)
+  (hb/schedule #(hb/beat-it db queue :bob/node-type :runner/container)
                "heartbeat"
                freq))
 
