@@ -20,7 +20,7 @@
   (:import
    [java.time Instant]))
 
-(defonce ^:private node-state
+(defonce node-state
   (atom {:images-for-gc {}
          :runs {}}))
 
