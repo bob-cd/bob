@@ -22,9 +22,9 @@
             extras)}))
 
 (defn get-connections
-  [{:keys [api-url username password]}]
+  [timeout {:keys [api-url username password]}]
   (let [data (-> (str api-url "/connections")
-                 (http-client/get {:basic-auth [username password]})
+                 (http-client/get {:basic-auth [username password] :timeout timeout})
                  (:body)
                  (json/read-str {:key-fn keyword}))]
     (->> data
@@ -32,11 +32,11 @@
          (into #{}))))
 
 (defn beat-it
-  [db queue-info & {:as extra-data}]
+  [db queue-info timeout & {:as extra-data}]
   (f/try-all [id :bob.cluster/info
               node-info (get-node-info extra-data)
               cluster (get (xt/entity (xt/db db) id) :data {}) ;; TODO: Assert the cluster-info spec
-              cleaned (->> (get-connections queue-info)
+              cleaned (->> (get-connections timeout queue-info)
                            (set/difference (set (keys cluster)))
                            (apply dissoc cluster))]
     (xt/await-tx db (xt/submit-tx db [[::xt/put {:xt/id id :data (merge cleaned node-info)}]]))
