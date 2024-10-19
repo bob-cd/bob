@@ -178,8 +178,7 @@
               _ (when-not (spec/valid? :bob.db/run run-info)
                   (f/fail (str "Invalid run: " run-info)))]
     run-info
-    (f/when-failed [err]
-      err)))
+    (f/when-failed [err] err)))
 
 (defn clean-up-run
   [run-id]
@@ -190,7 +189,7 @@
          run-id))
 
 (defn- start*
-  [{:keys [database producer] :as config} queue-chan group name run-id run-info run-db-id]
+  [{:keys [database producer] :as config} queue-chan group name run-id run-info run-db-id delivery-tag]
   (f/try-all [pipeline (xt/entity (xt/db database)
                                   (keyword (format "bob.pipeline.%s/%s" group name)))
               _ (when-not (spec/valid? :bob.db/pipeline pipeline)
@@ -258,7 +257,9 @@
                                       :type :pipeline
                                       :event :successful
                                       :group group
-                                      :name name})]
+                                      :name name})
+              _ (when delivery-tag
+                  (lb/ack queue-chan delivery-tag))]
     run-id
     (f/when-failed [err]
       (let [{:keys [status] :as run} (xt/entity (xt/db database) run-db-id)
@@ -284,6 +285,8 @@
       (gc-images run-id)
       (clean-up-run run-id)
       (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
+      (when delivery-tag
+        (lb/ack queue-chan delivery-tag))
       (f/fail run-id))))
 
 (defn start
@@ -296,16 +299,14 @@
                     :type :pipeline-run
                     :group group
                     :name name}
-          run-ref (future (start* config queue-chan group name run-id run-info run-db-id))]
+          ;; TODO: nack if current node cannot process this
+          run-ref (future (start* config queue-chan group name run-id run-info run-db-id delivery-tag))]
       (swap! node-state
              update-in
              [:runs run-id]
              assoc
              :ref
              run-ref)
-      ;; TODO: ack only when it's possible to run this. nack otherwise
-      (when delivery-tag
-        (lb/ack queue-chan delivery-tag))
       run-ref)))
 
 (defn stop

@@ -132,6 +132,7 @@
               {:keys [paused]} (pipeline-data db (:group pipeline-info) (:name pipeline-info))]
     (if paused
       (respond "Pipeline is paused. Unpause it first." 422)
+      ;; TODO: set pipeline state to pending?
       (exec #(publish queue
                       "pipeline/start"
                       "bob.direct"
