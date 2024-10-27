@@ -4,22 +4,21 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM docker.io/azul/zulu-openjdk:23 AS jdk
+FROM docker.io/azul/zulu-openjdk-alpine:23 AS jdk
 
-RUN apt-get update && apt-get install -y binutils
-
-# should be --strip-java-debug-attributes on alpine
 RUN jlink \
     --compress zip-9 \
     --module-path jmods \
     --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http,jdk.management \
-    --strip-debug \
+    # for alpine
+    --strip-java-debug-attributes \
+    # for non-alpine
+    #--strip-debug \
     --no-man-pages \
     --no-header-files \
     --output jlinked
 
-# Optional TODO: check if unprivileged https://github.com/mgoltzsche/podman-static works
-FROM quay.io/podman/stable:v5.2.3
+FROM docker.io/mgoltzsche/podman:5.2.4-minimal
 
 COPY --from=jdk /jlinked jdk
 COPY runner.jar .
@@ -27,5 +26,7 @@ RUN echo -e "set -e \n\
 podman system service -t 0 unix:///tmp/pod.sock & \n\
 /jdk/bin/java --enable-preview -jar runner.jar" > entrypoint.sh
 ENV CONTAINER_ENGINE_URL "unix:///tmp/pod.sock"
+
+USER 1000:1000
 
 ENTRYPOINT ["sh", "entrypoint.sh"]
