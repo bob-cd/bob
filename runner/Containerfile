@@ -4,21 +4,26 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM docker.io/azul/zulu-openjdk-alpine:23 AS jdk
+FROM docker.io/azul/zulu-openjdk:23 AS jdk
+# FROM docker.io/azul/zulu-openjdk-alpine:23 AS jdk
+
+# needed only in non-alpine
+RUN apt-get update && apt-get install -y binutils
 
 RUN jlink \
     --compress zip-9 \
     --module-path jmods \
     --add-modules java.base,java.sql,jdk.unsupported,java.naming,java.desktop,java.management,java.net.http,jdk.management \
     # for alpine
-    --strip-java-debug-attributes \
+    # --strip-java-debug-attributes \
     # for non-alpine
-    #--strip-debug \
+    --strip-debug \
     --no-man-pages \
     --no-header-files \
     --output jlinked
 
-FROM docker.io/mgoltzsche/podman:5.2.4-minimal
+FROM quay.io/podman/stable:v5.2.3
+# FROM docker.io/mgoltzsche/podman:5.2.4-minimal
 
 COPY --from=jdk /jlinked jdk
 COPY runner.jar .

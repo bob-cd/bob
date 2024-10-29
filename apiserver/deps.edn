@@ -11,7 +11,7 @@
         com.xtdb/xtdb-core {:mvn/version "1.24.4"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
-        integrant/integrant {:mvn/version "0.13.0"}
+        integrant/integrant {:mvn/version "0.13.1"}
         io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
         io.github.lispyclouds/navi {:git/sha "be415896c1d26f027633d5c2f6947cb803ad002e"}
         metosin/muuntaja {:mvn/version "0.6.10"}
