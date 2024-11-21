@@ -21,7 +21,7 @@
         metosin/reitit-malli {:mvn/version "0.7.2"}
         metosin/reitit-ring {:mvn/version "0.7.2"}
         metosin/reitit-sieppari {:mvn/version "0.7.2"}
-        org.babashka/http-client {:mvn/version "0.4.21"}
+        org.babashka/http-client {:mvn/version "0.4.22"}
         org.clojure/clojure {:mvn/version "1.12.0"}
         org.clojure/data.json {:mvn/version "2.5.0"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha9"}
