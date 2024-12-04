@@ -1261,7 +1261,8 @@ components:
       required:
         - message
       properties:
-        $ref: "#/components/schemas/SimpleResponse"
+        schema:
+          $ref: "#/components/schemas/SimpleResponse"
 
     ResourceProvidersResponse:
       type: object
