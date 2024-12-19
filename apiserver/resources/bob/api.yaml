@@ -41,8 +41,7 @@ paths:
       description: Returns this OpenAPI YAML for external consumption
       tags:
         - api
-      x-cli:
-        disabled: true
+      x-cli-hidden: true
 
       responses:
         "200":
@@ -59,9 +58,8 @@ paths:
       description: Runs all cluster health checks and reports the status
       tags:
         - cluster
-      x-cli:
-        name: ping
-        group: cluster
+      x-cli-name: ping
+      x-cli-group: cluster
 
       responses:
         "200":
@@ -100,9 +98,8 @@ paths:
       description: Submits a new pipeline creation request given the pipeline schema
       tags:
         - pipeline
-      x-cli:
-        name: create
-        group: pipeline
+      x-cli-name: create
+      x-cli-group: pipelines
 
       parameters:
         - name: group
@@ -121,6 +118,7 @@ paths:
       requestBody:
         description: The pipeline schema definition
         required: true
+        x-cli-name: pipeline-spec
         content:
           application/json:
             schema:
@@ -175,9 +173,8 @@ paths:
       description: Submits a pipeline deletion creation request given the pipeline group and name
       tags:
         - pipeline
-      x-cli:
-        name: delete
-        group: pipeline
+      x-cli-name: delete
+      x-cli-group: pipelines
 
       parameters:
         - name: group
@@ -226,9 +223,8 @@ paths:
       description: Submits a new pipeline start request given the pipeline group and name
       tags:
         - pipeline
-      x-cli:
-        name: start
-        group: pipeline
+      x-cli-name: start
+      x-cli-group: pipelines
 
       parameters:
         - name: group
@@ -246,6 +242,7 @@ paths:
 
       requestBody:
         description: Optional metadata map for runners. If provided must include runner/type
+        x-cli-name: pipeline-start-meta
         content:
           application/json:
             schema:
@@ -286,9 +283,8 @@ paths:
       description: Submits a pipeline stop request given the pipeline group, name and run id
       tags:
         - pipeline
-      x-cli:
-        name: stop
-        group: pipeline
+      x-cli-name: stop
+      x-cli-group: pipelines
 
       parameters:
         - name: group
@@ -329,9 +325,8 @@ paths:
       description: Submits a pipeline pause request given the pipeline group and name. It wont be scheduled to run unless unpaused. Pipelines in-flight will complete. NOP if paused already.
       tags:
         - pipeline
-      x-cli:
-        name: pause
-        group: pipeline
+      x-cli-name: pause
+      x-cli-group: pipelines
 
       parameters:
         - name: group
@@ -366,9 +361,8 @@ paths:
       description: Submits a pipeline unpause request given the pipeline group and name. Subsequent start requests will be honoured. NOP if unpaused already.
       tags:
         - pipeline
-      x-cli:
-        name: unpause
-        group: pipeline
+      x-cli-name: unpause
+      x-cli-group: pipelines
 
       parameters:
         - name: group
@@ -403,9 +397,8 @@ paths:
       description: Streams the pipeline logs from the DB given the pipeline run id, offset and lines to fetch
       tags:
         - pipeline
-      x-cli:
-        name: logs
-        group: pipeline
+      x-cli-name: logs
+      x-cli-group: pipelines
 
       parameters:
         - name: id
@@ -462,9 +455,8 @@ paths:
       description: Fetches the pipeline status from the DB given the pipeline run id
       tags:
         - pipeline
-      x-cli:
-        name: status
-        group: pipeline
+      x-cli-name: status
+      x-cli-group: pipelines
 
       parameters:
         - name: id
@@ -523,9 +515,8 @@ paths:
       tags:
         - pipeline
         - artifact
-      x-cli:
-        name: fetch-artifact
-        group: pipeline
+      x-cli-name: fetch-artifact
+      x-cli-group: pipelines
 
       parameters:
         - name: group
@@ -585,9 +576,8 @@ paths:
       description: Fetches all the known pipelines given the pipeline group, name and an optional status
       tags:
         - pipeline
-      x-cli:
-        name: list
-        group: pipeline
+      x-cli-name: list
+      x-cli-group: pipelines
 
       parameters:
         - name: group
@@ -643,9 +633,8 @@ paths:
       description: Lists all known pipeline runs given the group and name
       tags:
         - pipeline
-      x-cli:
-        name: runs
-        group: pipeline
+      x-cli-name: runs
+      x-cli-group: pipelines
 
       parameters:
         - name: group
@@ -694,9 +683,8 @@ paths:
       description: Submits a new resource provider creation request given the name and url
       tags:
         - resource
-      x-cli:
-        name: create
-        group: resource-provider
+      x-cli-name: create
+      x-cli-group: resource-providers
 
       parameters:
         - name: name
@@ -709,6 +697,7 @@ paths:
       requestBody:
         description: The attributes of the resource provider
         required: true
+        x-cli-name: resource-provider-spec
         content:
           application/json:
             schema:
@@ -745,9 +734,8 @@ paths:
       description: Submits a resource provider deletion request given the name
       tags:
         - resource
-      x-cli:
-        name: delete
-        group: resource-provider
+      x-cli-name: delete
+      x-cli-group: resource-providers
 
       parameters:
         - name: name
@@ -776,9 +764,8 @@ paths:
       description: Lists all known resource providers
       tags:
         - resource
-      x-cli:
-        name: list
-        group: resource-provider
+      x-cli-name: list
+      x-cli-group: resource-providers
 
       responses:
         "200":
@@ -801,9 +788,8 @@ paths:
       description: Submits a new artifact store creation request given the name and url
       tags:
         - artifact
-      x-cli:
-        name: create
-        group: artifact-store
+      x-cli-name: create
+      x-cli-group: artifact-stores
 
       parameters:
         - name: name
@@ -816,6 +802,7 @@ paths:
       requestBody:
         description: The attributes of the artifact store
         required: true
+        x-cli-name: artifact-store-spec
         content:
           application/json:
             schema:
@@ -852,9 +839,8 @@ paths:
       description: Submits a artifact store deletion request given the name
       tags:
         - artifact
-      x-cli:
-        name: delete
-        group: artifact-store
+      x-cli-name: delete
+      x-cli-group: artifact-stores
 
       parameters:
         - name: name
@@ -883,9 +869,8 @@ paths:
       description: Lists all known artifact stores
       tags:
         - artifact
-      x-cli:
-        name: list
-        group: artifact-store
+      x-cli-name: list
+      x-cli-group: artifact-stores
 
       responses:
         "200":
@@ -908,9 +893,8 @@ paths:
       description: Runs a direct xt datalog read query on the DB, useful for arbitrary analytics and point in time queries
       tags:
         - analytics
-      x-cli:
-        name: run
-        group: query
+      x-cli-name: run
+      x-cli-group: query
 
       parameters:
         - name: q
@@ -954,8 +938,7 @@ paths:
       description: Fetches the next available error from the errors queue, this is a destructive read
       tags:
         - observability
-      x-cli:
-        disabled: true
+      x-cli-hidden: true
 
       responses:
         "200":
@@ -987,9 +970,8 @@ paths:
       description: Stream real-time events from the cluster. Stores upto 7 days by default and starts streaming from the beginning via SSE
       tags:
         - observability
-      x-cli:
-        name: stream
-        group: events
+      x-cli-name: stream
+      x-cli-group: events
 
       responses:
         "200":
@@ -1017,8 +999,7 @@ paths:
       description: Emits the Prometheus compatible metrics for the entire cluster
       tags:
         - observability
-      x-cli:
-        disabled: true
+      x-cli-ignored: true
 
       responses:
         "200":
@@ -1049,8 +1030,7 @@ paths:
       description: Generates a CCTray XML report, useful for observability tooling like CCMenu
       tags:
         - observability
-      x-cli:
-        disabled: true
+      x-cli-ignored: true
 
       responses:
         "200":
@@ -1092,8 +1072,8 @@ paths:
       description: Shows the current cluster state with connected nodes and resources
       tags:
         - observability
-      x-cli:
-        disabled: true
+      x-cli-name: info
+      x-cli-group: cluster
 
       responses:
         "200":
