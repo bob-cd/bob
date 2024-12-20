@@ -578,6 +578,9 @@ paths:
         - pipeline
       x-cli-name: list
       x-cli-group: pipelines
+      x-cli-aliases:
+        - ls
+        - get
 
       parameters:
         - name: group
@@ -635,6 +638,9 @@ paths:
         - pipeline
       x-cli-name: runs
       x-cli-group: pipelines
+      x-cli-aliases:
+        - ls
+        - get
 
       parameters:
         - name: group
@@ -766,6 +772,9 @@ paths:
         - resource
       x-cli-name: list
       x-cli-group: resource-providers
+      x-cli-aliases:
+        - ls
+        - get
 
       responses:
         "200":
@@ -871,6 +880,9 @@ paths:
         - artifact
       x-cli-name: list
       x-cli-group: artifact-stores
+      x-cli-aliases:
+        - ls
+        - get
 
       responses:
         "200":
