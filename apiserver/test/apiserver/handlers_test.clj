@@ -148,8 +148,7 @@
                           :group "dev"
                           :name "test"
                           :status :passed}]]))
-                     (let [{:keys [status body]} (h/pipeline-delete {:parameters {:path {:group "dev"
-                                                                                         :name "test"}}
+                     (let [{:keys [status body]} (h/pipeline-delete {:parameters {:path {:group "dev" :name "test"}}
                                                                      :db db
                                                                      :queue queue})]
                        (t/is (= 422 status))
@@ -157,11 +156,17 @@
                                  :runs ["r-1"]}
                                 (:message body)))))
                    (t/testing "pipeline start"
-                     (h/pipeline-start {:parameters {:path {:group "dev"
-                                                            :name "test"}}
-                                        :queue queue
-                                        :db db})
-                     (let [msg (queue-get queue "bob.container.jobs")]
+                     (let [pipeline {:group "dev"
+                                     :name "test"
+                                     :steps [{:cmd "echo hello"}]
+                                     :image "busybox:musl"}
+                           _ (h/pipeline-create {:parameters {:path {:group "dev" :name "test"}
+                                                              :body pipeline}
+                                                 :db db})
+                           _ (h/pipeline-start {:parameters {:path {:group "dev" :name "test"}}
+                                                :queue queue
+                                                :db db})
+                           msg (queue-get queue "bob.container.jobs")]
                        (u/spec-assert :bob.command/pipeline-start msg)))
                    (t/testing "starting paused pipeline"
                      (xt/await-tx
