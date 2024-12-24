@@ -56,8 +56,7 @@
                            (not (spec/valid? :bob.db/pipeline data)))
                   (f/fail (str "Invalid pipeline: " data)))]
     data
-    (f/when-failed [err]
-      err)))
+    (f/when-failed [err] err)))
 
 (defn exec
   ([task]
@@ -129,7 +128,10 @@
     db :db
     queue :queue}]
   (f/try-all [id (str "r-" (random-uuid))
-              {:keys [paused]} (pipeline-data db (:group pipeline-info) (:name pipeline-info))]
+              data (pipeline-data db (:group pipeline-info) (:name pipeline-info))
+              _ (when-not data
+                  (f/fail :not-found))
+              {:keys [paused]} data]
     (if paused
       (respond "Pipeline is paused. Unpause it first." 422)
       ;; TODO: set pipeline state to pending?
@@ -140,7 +142,9 @@
                       (assoc pipeline-info :run-id id))
             id))
     (f/when-failed [err]
-      (respond (f/message err) 500))))
+      (if (= :not-found (f/message err))
+        (respond "No such pipeline" 404)
+        (respond (f/message err) 500)))))
 
 (defn pipeline-stop
   [{{pipeline-info :path} :parameters
@@ -156,13 +160,17 @@
    {{{:keys [group name]} :path} :parameters
     db :db}]
   (f/try-all [data (pipeline-data db group name)
+              _ (when-not data
+                  (f/fail :not-found))
               changed (if pause?
                         (assoc data :paused true)
                         (dissoc data :paused))
               _ (xt/await-tx db (xt/submit-tx db [[::xt/put changed]]))]
     (respond "Ok")
     (f/when-failed [err]
-      (respond (f/message err) 500))))
+      (if (= :not-found (f/message err))
+        (respond "No such pipeline" 404)
+        (respond (f/message err) 500)))))
 
 (defn pipeline-logs
   [{{{:keys [id offset lines]} :path} :parameters
