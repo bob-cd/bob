@@ -263,11 +263,9 @@
       (respond (f/message err) 500))))
 
 (defn resource-provider-create
-  [{{{:keys [name]} :path
-     resource-provider :body}
-    :parameters
+  [{{resource-provider :body} :parameters
     db :db}]
-  (f/try-all [_ (externals/create db "resource-provider" (assoc resource-provider :name name))]
+  (f/try-all [_ (externals/create db "resource-provider" resource-provider)]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -290,11 +288,9 @@
       (respond (f/message err) 500))))
 
 (defn artifact-store-create
-  [{{{:keys [name]} :path
-     artifact-store :body}
-    :parameters
+  [{{artifact-store :body} :parameters
     db :db}]
-  (f/try-all [_ (externals/create db "artifact-store" (assoc artifact-store :name name))]
+  (f/try-all [_ (externals/create db "artifact-store" artifact-store)]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))

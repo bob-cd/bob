@@ -163,7 +163,7 @@ paths:
       requestBody:
         description: The pipeline schema definition
         required: true
-        x-cli-name: pipeline-spec
+        x-cli-name: spec
         content:
           application/json:
             schema:
@@ -667,7 +667,33 @@ paths:
                   value:
                     message: "Failed to fetch pipelines <some error message>"
 
-  "/resource-providers/{name}":
+  "/resource-providers":
+    get:
+      operationId: ResourceProviderList
+      summary: Lists all registered resources providers by name
+      description: Lists all known resource providers
+      tags:
+        - resource
+      x-cli-name: list
+      x-cli-group: resource-providers
+      x-cli-aliases:
+        - ls
+        - get
+
+      responses:
+        "200":
+          description: List of resource providers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceProvidersResponse"
+              examples:
+                resource-providers:
+                  value:
+                    message:
+                      - "github-provider"
+                      - "salsa-provider"
+
     post:
       operationId: ResourceProviderCreate
       summary: Creates a resource provider with its name and attributes
@@ -677,18 +703,10 @@ paths:
       x-cli-name: create
       x-cli-group: resource-providers
 
-      parameters:
-        - name: name
-          required: true
-          in: path
-          description: Unique name of the resource provider
-          schema:
-            type: string
-
       requestBody:
         description: The attributes of the resource provider
         required: true
-        x-cli-name: resource-provider-spec
+        x-cli-name: spec
         content:
           application/json:
             schema:
@@ -748,34 +766,33 @@ paths:
                   value:
                     message: "Ok"
 
-  "/resource-providers":
+  "/artifact-stores":
     get:
-      operationId: ResourceProviderList
-      summary: Lists all registered resources providers by name
-      description: Lists all known resource providers
+      operationId: ArtifactStoreList
+      summary: Lists all registered artifact stores by name
+      description: Lists all known artifact stores
       tags:
-        - resource
+        - artifact
       x-cli-name: list
-      x-cli-group: resource-providers
+      x-cli-group: artifact-stores
       x-cli-aliases:
         - ls
         - get
 
       responses:
         "200":
-          description: List of resource providers
+          description: List of artifact stores
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResourceProvidersResponse"
+                $ref: "#/components/schemas/ArtifactStoresResponse"
               examples:
-                resource-providers:
+                artifact-stores:
                   value:
                     message:
-                      - "github-provider"
-                      - "salsa-provider"
+                      - "s3-store"
+                      - "file-store"
 
-  "/artifact-stores/{name}":
     post:
       operationId: ArtifactStoreCreate
       summary: Creates an artifact store with its name and attributes
@@ -785,18 +802,10 @@ paths:
       x-cli-name: create
       x-cli-group: artifact-stores
 
-      parameters:
-        - name: name
-          required: true
-          in: path
-          description: Unique name of the artifact store
-          schema:
-            type: string
-
       requestBody:
         description: The attributes of the artifact store
         required: true
-        x-cli-name: artifact-store-spec
+        x-cli-name: spec
         content:
           application/json:
             schema:
@@ -855,33 +864,6 @@ paths:
                 success:
                   value:
                     message: "Ok"
-
-  "/artifact-stores":
-    get:
-      operationId: ArtifactStoreList
-      summary: Lists all registered artifact stores by name
-      description: Lists all known artifact stores
-      tags:
-        - artifact
-      x-cli-name: list
-      x-cli-group: artifact-stores
-      x-cli-aliases:
-        - ls
-        - get
-
-      responses:
-        "200":
-          description: List of artifact stores
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ArtifactStoresResponse"
-              examples:
-                artifact-stores:
-                  value:
-                    message:
-                      - "s3-store"
-                      - "file-store"
 
   "/query":
     get:
@@ -1262,8 +1244,12 @@ components:
     ResourceProviderAttributes:
       type: object
       required:
+        - name
         - url
       properties:
+        name:
+          type: string
+          description: Unique name of the resource provider
         url:
           type: string
           description: The reachable URL from Bob for the resource provider
@@ -1271,8 +1257,12 @@ components:
     ArtifactStoreAttributes:
       type: object
       required:
+        - name
         - url
       properties:
+        name:
+          type: string
+          description: Unique name of the artifact store
         url:
           type: string
           description: The reachable URL from Bob for the artifact store

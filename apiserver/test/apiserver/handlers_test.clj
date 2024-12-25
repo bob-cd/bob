@@ -404,8 +404,7 @@
     (fn [db _]
       (let [id :bob.resource-provider/github]
         (t/testing "creation"
-          (let [_ (h/resource-provider-create {:parameters {:path {:name "github"}
-                                                            :body {:url "my-resource.com"}}
+          (let [_ (h/resource-provider-create {:parameters {:body {:name "github" :url "my-resource.com"}}
                                                :db db})
                 effect (xt/entity (xt/db db) id)]
             (t/is (= id (:xt/id effect)))
@@ -445,8 +444,7 @@
     (fn [db _]
       (let [id :bob.artifact-store/s3]
         (t/testing "creation"
-          (let [_ (h/artifact-store-create {:parameters {:path {:name "s3"}
-                                                         :body {:url "my-store.com"}}
+          (let [_ (h/artifact-store-create {:parameters {:body {:name "s3" :url "my-store.com"}}
                                             :db db})
                 effect (xt/entity (xt/db db) id)]
             (t/is (= id (:xt/id effect)))
