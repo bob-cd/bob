@@ -101,8 +101,7 @@
                                        :params {:repo "https://github.com/lispyclouds/contajners"
                                                 :branch "main"}}]
                           :image "busybox:musl"}
-                _ (h/pipeline-create {:parameters {:path {:group "test" :name "test"}
-                                                   :body pipeline}
+                _ (h/pipeline-create {:parameters {:body pipeline}
                                       :db db})
                 effect (xt/entity (xt/db db) pipeline-id)]
             (t/is (= pipeline-id (:xt/id effect)))
@@ -160,8 +159,7 @@
                                      :name "test"
                                      :steps [{:cmd "echo hello"}]
                                      :image "busybox:musl"}
-                           _ (h/pipeline-create {:parameters {:path {:group "dev" :name "test"}
-                                                              :body pipeline}
+                           _ (h/pipeline-create {:parameters {:body pipeline}
                                                  :db db})
                            _ (h/pipeline-start {:parameters {:path {:group "dev" :name "test"}}
                                                 :queue queue

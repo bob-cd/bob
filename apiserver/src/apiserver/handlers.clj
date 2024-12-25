@@ -94,11 +94,9 @@
       err)))
 
 (defn pipeline-create
-  [{{{:keys [group name]} :path
-     pipeline :body}
-    :parameters
+  [{{pipeline :body} :parameters
     db :db}]
-  (f/try-all [_ (pipeline/create db (assoc pipeline :group group :name name))]
+  (f/try-all [_ (pipeline/create db pipeline)]
     (respond "Ok" 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))

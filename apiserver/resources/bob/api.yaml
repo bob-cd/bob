@@ -91,7 +91,66 @@ paths:
                   value:
                     message: "Health check failed: Postgres not healthy"
 
-  "/pipelines/groups/{group}/names/{name}":
+  "/pipelines":
+    get:
+      operationId: PipelineList
+      summary: List all pipelines filtered by group, name and status, case sensitive
+      description: Fetches all the known pipelines given the pipeline group, name and an optional status
+      tags:
+        - pipeline
+      x-cli-name: list
+      x-cli-group: pipelines
+      x-cli-aliases:
+        - ls
+        - get
+
+      parameters:
+        - name: group
+          required: false
+          in: query
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: false
+          in: query
+          description: The name of the pipeline
+          schema:
+            type: string
+        - name: status
+          required: false
+          in: query
+          description: The status of the pipeline
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: List of pipelines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelinesResponse"
+              examples:
+                success:
+                  value:
+                    message:
+                      - group: dev
+                        name: test
+                        image: busybox:musl
+                        steps:
+                          - cmd: echo hello
+        default:
+          description: Failed listing of pipelines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Failed to fetch pipelines <some error message>"
+
     post:
       operationId: PipelineCreate
       summary: Creates a new pipeline
@@ -100,20 +159,6 @@ paths:
         - pipeline
       x-cli-name: create
       x-cli-group: pipelines
-
-      parameters:
-        - name: group
-          required: true
-          in: path
-          description: The group of the pipeline
-          schema:
-            type: string
-        - name: name
-          required: true
-          in: path
-          description: The name of the pipeline
-          schema:
-            type: string
 
       requestBody:
         description: The pipeline schema definition
@@ -568,66 +613,6 @@ paths:
                 failure:
                   value:
                     message: "<some error message>"
-
-  "/pipelines":
-    get:
-      operationId: PipelineList
-      summary: List all pipelines filtered by group, name and status, case sensitive
-      description: Fetches all the known pipelines given the pipeline group, name and an optional status
-      tags:
-        - pipeline
-      x-cli-name: list
-      x-cli-group: pipelines
-      x-cli-aliases:
-        - ls
-        - get
-
-      parameters:
-        - name: group
-          required: false
-          in: query
-          description: The group of the pipeline
-          schema:
-            type: string
-        - name: name
-          required: false
-          in: query
-          description: The name of the pipeline
-          schema:
-            type: string
-        - name: status
-          required: false
-          in: query
-          description: The status of the pipeline
-          schema:
-            type: string
-
-      responses:
-        "200":
-          description: List of pipelines
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PipelinesResponse"
-              examples:
-                success:
-                  value:
-                    message:
-                      - group: dev
-                        name: test
-                        image: busybox:musl
-                        steps:
-                          - cmd: echo hello
-        default:
-          description: Failed listing of pipelines
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimpleResponse"
-              examples:
-                failure:
-                  value:
-                    message: "Failed to fetch pipelines <some error message>"
 
   "/pipelines/groups/{group}/names/{name}/runs":
     get:
@@ -1196,9 +1181,17 @@ components:
     Pipeline:
       type: object
       required:
+        - group
+        - name
         - steps
         - image
       properties:
+        group:
+          description: The group of the pipeline
+          type: string
+        name:
+          description: The name of the pipeline
+          type: string
         steps:
           type: array
           items:
