@@ -212,6 +212,8 @@ paths:
                 failure:
                   value:
                     message: "Pipeline creation error: Check params or if its already created"
+
+  "/pipelines/groups/{group}/names/{name}":
     delete:
       operationId: PipelineDelete
       summary: Deletes a pipeline
@@ -745,6 +747,8 @@ paths:
                 failure:
                   value:
                     message: "Resource Provider may already be registered"
+
+  "/resource-providers/{name}":
     delete:
       operationId: ResourceProviderDelete
       summary: Deletes a resource provider by name
@@ -852,6 +856,8 @@ paths:
                 failure:
                   value:
                     message: "Artifact Store may already be registered"
+
+  "/artifact-stores/{name}":
     delete:
       operationId: ArtifactStoreDelete
       summary: Deletes an artifact store by name
@@ -1246,7 +1252,6 @@ components:
       properties:
         schema:
           $ref: "#/components/schemas/SimpleResponse"
-
     ResourceProviderAttributes:
       type: object
       required:
