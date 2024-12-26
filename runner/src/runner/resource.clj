@@ -137,8 +137,7 @@
   [db-client resource image]
   (f/try-all [resource-name (:name resource)
               _ (when (not (valid-resource-provider? db-client resource))
-                  (f/fail (str "Invalid external resources, possibly not registered "
-                               resource-name)))
+                  (f/fail (str "Invalid external resources, possibly not registered " resource-name)))
               resource-stream (fetch-resource (url-of db-client resource))]
     (initial-image-of resource-stream image nil resource-name)
     (f/when-failed [err]

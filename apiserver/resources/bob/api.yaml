@@ -680,6 +680,14 @@ paths:
         - ls
         - get
 
+      parameters:
+        - name: name
+          required: false
+          in: query
+          description: The name of the resource provider
+          schema:
+            type: string
+
       responses:
         "200":
           description: List of resource providers
@@ -778,6 +786,14 @@ paths:
       x-cli-aliases:
         - ls
         - get
+
+      parameters:
+        - name: name
+          required: false
+          in: query
+          description: The name of the artifact store
+          schema:
+            type: string
 
       responses:
         "200":
@@ -1231,16 +1247,6 @@ components:
         schema:
           $ref: "#/components/schemas/SimpleResponse"
 
-    ResourceProvidersResponse:
-      type: object
-      required:
-        - message
-      properties:
-        message:
-          type: array
-          items:
-            type: object
-
     ResourceProviderAttributes:
       type: object
       required:
@@ -1253,6 +1259,16 @@ components:
         url:
           type: string
           description: The reachable URL from Bob for the resource provider
+
+    ResourceProvidersResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResourceProviderAttributes"
 
     ArtifactStoreAttributes:
       type: object
@@ -1275,4 +1291,4 @@ components:
         message:
           type: array
           items:
-            type: object
+            $ref: "#/components/schemas/ArtifactStoreAttributes"

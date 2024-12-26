@@ -279,10 +279,13 @@
       (respond (f/message err) 500))))
 
 (defn resource-provider-list
-  [{db :db}]
+  [{{{:keys [name]} :query}
+    :parameters
+    db :db}]
   (f/try-all [result (xt/q (xt/db db)
-                           '{:find [(pull resource-provider [:name :url])]
-                             :where [[resource-provider :type :resource-provider]]})]
+                           {:find ['(pull resource-provider [:name :url])]
+                            :where [['resource-provider :type :resource-provider]
+                                    ['resource-provider :name name]]})]
     (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -304,10 +307,13 @@
       (respond (f/message err) 500))))
 
 (defn artifact-store-list
-  [{db :db}]
+  [{{{:keys [name]} :query}
+    :parameters
+    db :db}]
   (f/try-all [result (xt/q (xt/db db)
-                           '{:find [(pull artifact-store [:name :url])]
-                             :where [[artifact-store :type :artifact-store]]})]
+                           {:find '[(pull artifact-store [:name :url])]
+                            :where [['artifact-store :type :artifact-store]
+                                    ['artifact-store :name name]]})]
     (respond (map first result) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
