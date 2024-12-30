@@ -980,7 +980,7 @@ paths:
           content:
             text/event-stream:
               schema:
-                type: string
+                $ref: "#/components/schemas/EventsResponse"
 
         default:
           description: Failed
@@ -1297,3 +1297,36 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ArtifactStoreAttributes"
+
+    EventsResponse:
+      type: object
+      required:
+        - at
+        - type
+        - reason
+        - kind
+        - message
+      properties:
+        at:
+          type: number
+          description: The UTC timestamp for the event occurence
+        type:
+          type: string
+          enum:
+            - Normal
+            - Warning
+            - Error
+          description: The type of event denoting lecel
+        reason:
+          type: string
+          description: The reason, generally referring to a state change
+        kind:
+          type: string
+          description: The producer of the event
+          enum:
+            - Pipeline
+            - ResourceProvider
+            - ArtifactStore
+        message:
+          type: string
+          description: The details of the event

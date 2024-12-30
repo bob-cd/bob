@@ -221,3 +221,17 @@
 (spec/def :bob.db/run
   (spec/merge :bob.pipeline/run
               (spec/keys :req-un [:bob.db.run/type])))
+
+(spec/def :bob.cluster.event/at int?)
+(spec/def :bob.cluster.event/type #{"Normal" "Warning" "Error"})
+(spec/def :bob.cluster.event/reason string?)
+(spec/def :bob.cluster.event/kind #{"Pipeline" "ResourceProvider" "ArtifactStore"})
+(spec/def :bob.cluster.event/message string?)
+
+(spec/def :bob.cluster/event
+  (spec/keys :req-un
+             [:bob.cluster.event/at
+              :bob.cluster.event/type
+              :bob.cluster.event/reason
+              :bob.cluster.event/kind
+              :bob.cluster.event/message]))

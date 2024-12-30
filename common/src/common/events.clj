@@ -1,32 +1,43 @@
-(ns runner.events
+; Copyright 2018- Rahul De
+;
+; Use of this source code is governed by an MIT-style
+; license that can be found in the LICENSE file or at
+; https://opensource.org/licenses/MIT.
+
+(ns common.events
   (:require
    [clojure.data.json :as json]
-   [clojure.tools.logging :as log])
+   [clojure.spec.alpha :as spec]
+   [clojure.tools.logging :as log]
+   [common.schemas])
   (:import
    [com.rabbitmq.stream ConfirmationHandler]
    [com.rabbitmq.stream.impl StreamProducer]
    [java.time Instant]))
 
-(defn publish
-  [^StreamProducer producer content]
-  (let [payload (.. producer
-                    messageBuilder
-                    properties
-                    (contentType "application/json")
-                    messageBuilder
-                    (addData (-> content
-                                 (assoc :timestamp (.toEpochMilli (Instant/now)))
-                                 json/write-str
-                                 .getBytes))
-                    build)]
-    (.send producer
-           payload
-           (reify ConfirmationHandler
-             (handle [_ status]
-               (when-not (.isConfirmed status)
-                 (log/warn "Could not send message to stream"
-                           {:message (.getMessage status)
-                            :code (.getCode status)})))))))
+(defn emit
+  [^StreamProducer producer event]
+  (let [timestamped (assoc event :at (.toEpochMilli (Instant/now)))
+        payload (when (spec/valid? :bob.cluster/event timestamped)
+                  (.. producer
+                      messageBuilder
+                      properties
+                      (contentType "application/json")
+                      messageBuilder
+                      (addData (-> timestamped
+                                   json/write-str
+                                   .getBytes))
+                      build))]
+    (if-not payload
+      (log/errorf "Event didn't match expected shape, ignoring %s" timestamped)
+      (.send producer
+             payload
+             (reify ConfirmationHandler
+               (handle [_ status]
+                 (when-not (.isConfirmed status)
+                   (log/warn "Could not send message to stream"
+                             {:message (.getMessage status)
+                              :code (.getCode status)}))))))))
 
 (comment
   (set! *warn-on-reflection* true)
@@ -50,7 +61,7 @@
       (stream stream)
       create)
 
-  (publish producer payload)
+  (emit producer payload)
 
   (def consumer (.. environment
                     consumerBuilder

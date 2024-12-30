@@ -9,12 +9,12 @@
    [clojure.spec.alpha :as spec]
    [clojure.tools.logging :as log]
    [common.errors :as errors]
+   [common.events :as ev]
    [common.schemas]
    [failjure.core :as f]
    [langohr.basic :as lb]
    [runner.artifact :as a]
    [runner.engine :as eng]
-   [runner.events :as ev]
    [runner.resource :as r]
    [xtdb.api :as xt])
   (:import
@@ -64,12 +64,11 @@
    {:keys [group name image run-id]}
    step]
   (if-let [resource (:needs_resource step)]
-    (f/try-all [_ (ev/publish producer
-                              {:run-id run-id
-                               :type :resource
-                               :event :fetch
-                               :group group
-                               :name name})
+    (f/try-all [_ (ev/emit producer
+                           {:type "Normal"
+                            :reason "ResourceFetch"
+                            :kind "Pipeline"
+                            :message (str "Fetching resource for " run-id)})
                 _ (log-event database
                              run-id
                              (str "Fetching and mounting resource " resource))
@@ -140,11 +139,10 @@
                     (log-event database
                                run-id
                                (str "Uploading artifact " artifact))
-                    (ev/publish producer {:run-id run-id
-                                          :type :artifact
-                                          :event :upload
-                                          :group group
-                                          :name name})
+                    (ev/emit producer {:type "Normal"
+                                       :reason "ArtifactUpload"
+                                       :kind "Pipeline"
+                                       :message (str "Uploading artifact for " run-id)})
                     (a/upload-artifact database
                                        group
                                        name
@@ -200,22 +198,20 @@
                                   name)))
               {:keys [image steps vars]} pipeline
               _ (log/infof "Starting new run: %s" run-id)
-              _ (ev/publish producer {:run-id run-id
-                                      :type :pipeline
-                                      :event :starting
-                                      :group group
-                                      :name name})
+              _ (ev/emit producer {:type "Normal"
+                                   :reason "StartPipelineRun"
+                                   :kind "Pipeline"
+                                   :message (format "Starting pipeline %s/%s with id %s" group name run-id)})
               _ (xt/await-tx database
                              (xt/submit-tx database
                                            [[::xt/put
                                              (assoc run-info
                                                     :status :initializing
                                                     :initiated-at (Instant/now))]]))
-              _ (ev/publish producer {:run-id run-id
-                                      :type :pipeline
-                                      :event :pull
-                                      :group group
-                                      :name name})
+              _ (ev/emit producer {:type "Normal"
+                                   :reason "ImagePull"
+                                   :kind "Pipeline"
+                                   :message (format "Pulling image %s for %s" image run-id)})
               _ (eng/pull-image image)
               _ (xt/await-tx database
                              (xt/submit-tx database
@@ -237,11 +233,10 @@
                                              (assoc (run-info-of database run-id)
                                                     :status :running
                                                     :started-at (Instant/now))]]))
-              _ (ev/publish producer {:run-id run-id
-                                      :type :pipeline
-                                      :event :running
-                                      :group group
-                                      :name name})
+              _ (ev/emit producer {:type "Normal"
+                                   :reason "PipelineRunning"
+                                   :kind "Pipeline"
+                                   :message (str "Pipeline now running " run-id)})
               _ (reduce #(exec-step config %1 %2) build-state steps) ;; This is WHOLE of Bob!
               _ (gc-images run-id)
               _ (clean-up-run run-id)
@@ -253,11 +248,10 @@
                                                     :completed-at (Instant/now))]]))
               _ (log/infof "Run successful %s" run-id)
               _ (log-event database run-id "Run successful")
-              _ (ev/publish producer {:run-id run-id
-                                      :type :pipeline
-                                      :event :successful
-                                      :group group
-                                      :name name})
+              _ (ev/emit producer {:type "Normal"
+                                   :reason "PipelineSuccessful"
+                                   :kind "Pipeline"
+                                   :message (str "Pipeline successful " run-id)})
               _ (when delivery-tag
                   (lb/ack queue-chan delivery-tag))]
     run-id
@@ -270,12 +264,10 @@
                      run-id
                      error)
           (log-event database run-id (str "Run failed: " error))
-          (ev/publish producer {:run-id run-id
-                                :type :pipeline
-                                :event :failed
-                                :error error
-                                :group group
-                                :name name})
+          (ev/emit producer {:type "Warning"
+                             :reason "PipelineFailed"
+                             :kind "Pipeline"
+                             :message (format "Pipeline %s failed: %s" run-id error)})
           (xt/await-tx
            database
            (xt/submit-tx
@@ -327,11 +319,10 @@
                     database
                     [[::xt/put
                       (assoc (run-info-of database run-id) :status :stopped :completed-at (Instant/now))]]))
-      (ev/publish producer {:run-id run-id
-                            :type :pipeline
-                            :event :stopped
-                            :group group
-                            :name name})
+      (ev/emit producer {:type "Normal"
+                         :reason "PipelineStopped"
+                         :kind "Pipeline"
+                         :message (str "Pipeline stopped " run-id)})
       (when-let [container (:container-id run)]
         (eng/kill-container container)
         (eng/delete-container container)
