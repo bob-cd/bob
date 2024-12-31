@@ -20,12 +20,12 @@
    [reitit.ring :as ring]))
 
 (defn system-interceptor
-  [db queue queue-conn-opts stream-env]
+  [db queue queue-conn-opts stream]
   {:enter #(-> %
                (assoc-in [:request :db] db)
                (assoc-in [:request :queue] queue)
                (assoc-in [:request :queue-conn-opts] queue-conn-opts)
-               (assoc-in [:request :stream] stream-env))})
+               (assoc-in [:request :stream] stream))})
 
 (defn server
   [database queue queue-conn-opts stream]

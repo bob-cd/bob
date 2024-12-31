@@ -8,14 +8,12 @@
   (:require
    [aero.core :as aero]
    [clojure.java.io :as io]
-   [clojure.tools.logging :as log]
    [common.dispatch :as d]
    [common.heartbeat :as hb]
    [common.system :as cs]
    [integrant.core :as ig]
    [runner.pipeline :as p])
   (:import
-   [com.rabbitmq.stream.impl StreamEnvironment StreamProducer]
    [java.util.concurrent Future]))
 
 (def ^:private routes
@@ -44,23 +42,6 @@
                             broadcast-queue "bob.fanout"}
                  :subscriptions {jobs-queue subscriber
                                  broadcast-queue subscriber}})))
-
-(defmethod ig/init-key
-  :runner/event-producer
-  [_ {:keys [^StreamEnvironment stream-env ^String stream-name]}]
-  (log/info "Setting up producer for RabbitMQ stream")
-  (cs/try-connect
-   #(.. stream-env
-        producerBuilder
-        (stream stream-name)
-        (name "bob-container-runner")
-        build)))
-
-(defmethod ig/halt-key!
-  :runner/event-producer
-  [_ producer]
-  (log/info "Tearing down producer for RabbitMQ stream")
-  (StreamProducer/.close producer))
 
 (defmethod ig/init-key
   :bob/runner-heartbeat
