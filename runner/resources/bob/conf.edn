@@ -6,14 +6,9 @@
 
 {:common #include "bob/common.edn"
  :bob/storage #ref [:common :bob/storage-conn]
- :bob/stream-env {:url #ref [:common :bob/stream-conf :url]
-                  :name #ref [:common :bob/stream-conf :name]
-                  :retention-days #ref [:common :bob/stream-conf :retention-days]}
- :runner/event-producer {:stream-name #ref [:common :bob/stream-conf :name]
-                         :stream-env #ig/ref :bob/stream-env}
  :runner/queue-config {:database #ig/ref :bob/storage
                        :queue #ref [:common :bob/queue-conf]
-                       :producer #ig/ref :runner/event-producer}
+                       :stream #ig/ref :bob/stream}
  :bob/queue {:url #ref [:common :bob/queue-conn :url]
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
@@ -22,4 +17,7 @@
                                 :username #ref [:common :bob/queue-conn :user]
                                 :password #ref [:common :bob/queue-conn :password]}
                         :db #ig/ref :bob/storage
-                        :freq #ref [:common :bob/health-check-freq]}}
+                        :freq #ref [:common :bob/health-check-freq]}
+ :bob/stream {:url #ref [:common :bob/stream-conf :url]
+              :name #ref [:common :bob/stream-conf :name]
+              :retention-days #ref [:common :bob/stream-conf :retention-days]}}

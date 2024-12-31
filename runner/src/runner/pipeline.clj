@@ -60,11 +60,11 @@
 
 (defn resourceful-step
   "Create a resource mounted image for a step if it needs it."
-  [{:keys [database producer]}
+  [{:keys [database stream]}
    {:keys [group name image run-id]}
    step]
   (if-let [resource (:needs_resource step)]
-    (f/try-all [_ (ev/emit producer
+    (f/try-all [_ (ev/emit (:producer stream)
                            {:type "Normal"
                             :reason "ResourceFetch"
                             :kind "Pipeline"
@@ -113,7 +113,7 @@
   or a Failure shorting the reduce.
 
   Returns the final build state or a Failure."
-  [{:keys [database producer] :as config}
+  [{:keys [database stream] :as config}
    {:keys [image run-id env group name] :as build-state}
    step]
   (if (f/failed? build-state)
@@ -139,10 +139,11 @@
                     (log-event database
                                run-id
                                (str "Uploading artifact " artifact))
-                    (ev/emit producer {:type "Normal"
-                                       :reason "ArtifactUpload"
-                                       :kind "Pipeline"
-                                       :message (str "Uploading artifact for " run-id)})
+                    (ev/emit (:producer stream)
+                             {:type "Normal"
+                              :reason "ArtifactUpload"
+                              :kind "Pipeline"
+                              :message (str "Uploading artifact for " run-id)})
                     (a/upload-artifact database
                                        group
                                        name
@@ -187,7 +188,7 @@
          run-id))
 
 (defn- start*
-  [{:keys [database producer] :as config} queue-chan group name run-id run-info run-db-id delivery-tag]
+  [{:keys [database stream] :as config} queue-chan group name run-id run-info run-db-id delivery-tag]
   (f/try-all [pipeline (xt/entity (xt/db database)
                                   (keyword (format "bob.pipeline.%s/%s" group name)))
               _ (when-not (spec/valid? :bob.db/pipeline pipeline)
@@ -198,6 +199,7 @@
                                   name)))
               {:keys [image steps vars]} pipeline
               _ (log/infof "Starting new run: %s" run-id)
+              producer (:producer stream)
               _ (ev/emit producer {:type "Normal"
                                    :reason "StartPipelineRun"
                                    :kind "Pipeline"
@@ -264,10 +266,11 @@
                      run-id
                      error)
           (log-event database run-id (str "Run failed: " error))
-          (ev/emit producer {:type "Warning"
-                             :reason "PipelineFailed"
-                             :kind "Pipeline"
-                             :message (format "Pipeline %s failed: %s" run-id error)})
+          (ev/emit (:producer stream)
+                   {:type "Warning"
+                    :reason "PipelineFailed"
+                    :kind "Pipeline"
+                    :message (format "Pipeline %s failed: %s" run-id error)})
           (xt/await-tx
            database
            (xt/submit-tx
@@ -306,7 +309,7 @@
 
   Sets the :status in Db to :stopped and kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
-  [{:keys [database producer]} queue-chan {:keys [group name run-id] :as data} _meta]
+  [{:keys [database stream]} queue-chan {:keys [group name run-id] :as data} _meta]
   (if-not (spec/valid? :bob.command.pipeline-stop/data data)
     (errors/publish-error queue-chan (str "Invalid pipeline stop command: " data))
     (when-let [run (get-in @node-state [:runs run-id])]
@@ -319,10 +322,11 @@
                     database
                     [[::xt/put
                       (assoc (run-info-of database run-id) :status :stopped :completed-at (Instant/now))]]))
-      (ev/emit producer {:type "Normal"
-                         :reason "PipelineStopped"
-                         :kind "Pipeline"
-                         :message (str "Pipeline stopped " run-id)})
+      (ev/emit (:producer stream)
+               {:type "Normal"
+                :reason "PipelineStopped"
+                :kind "Pipeline"
+                :message (str "Pipeline stopped " run-id)})
       (when-let [container (:container-id run)]
         (eng/kill-container container)
         (eng/delete-container container)
@@ -351,7 +355,7 @@
   (require '[runner.system :as sys])
   (def database (:bob/storage sys/system))
   (def queue-chan (get-in sys/system [:bob/queue :chan]))
-  (def producer (:runner/event-producer sys/system))
+  (def producer (get-in sys/system [:bob/stream :producer]))
   (def run-id "r-60a0d2e8-ec6e-4004-8136-978f4e042f25")
 
   (xt/submit-tx database

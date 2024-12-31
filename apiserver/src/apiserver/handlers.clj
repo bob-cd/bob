@@ -346,7 +346,7 @@
       (respond (f/message err) 500))))
 
 (defn events
-  [{{:keys [^Environment environment name]} :stream}]
+  [{{:keys [^Environment env name]} :stream}]
   {:status 200
    :headers {"content-type" "text/event-stream"
              "transfer-encoding" "chunked"}
@@ -354,7 +354,7 @@
            (write-body-to-stream [_ _ output-stream]
              (with-open [w (io/writer output-stream)]
                (let [complete (promise)
-                     consumer (.. environment
+                     consumer (.. env
                                   consumerBuilder
                                   (stream name)
                                   (offset (OffsetSpecification/first))

@@ -20,12 +20,13 @@
 
 (defmethod ig/init-key
   :bob/apiserver
-  [_ {:keys [host port database queue stream]}]
+  [_ {:keys [host port database queue stream-name stream]}]
   (log/info "Starting APIServer")
   (let [server (srv/start! {:http-handler (s/server database
                                                     (:chan queue)
                                                     (:conn-opts queue)
-                                                    stream)
+                                                    {:name stream-name
+                                                     :env (:env stream)})
                             :host host
                             :port port})]
     (log/infof "Listening on %d" port)

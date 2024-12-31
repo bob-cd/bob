@@ -19,6 +19,7 @@
    [xtdb.api :as xt])
   (:import
    [com.rabbitmq.stream Environment StreamException]
+   [com.rabbitmq.stream.impl StreamProducer]
    [java.net ConnectException]
    [java.time Duration]
    [xtdb.api IXtdb]))
@@ -111,28 +112,32 @@
     (rmq/close conn)))
 
 (defmethod ig/init-key
-  :bob/stream-env
+  :bob/stream
   [_ {:keys [url name retention-days]}]
-  (log/info "Setting up environment for RabbitMQ stream" {:url url
-                                                          :name name
-                                                          :retention-days retention-days})
+  (log/info "Setting up RabbitMQ stream" name)
   (try-connect
-   #(let [stream-env (.. Environment builder (uri url) build)]
+   #(let [env (.. Environment builder (uri url) build)]
       (try
-        (.. stream-env
+        (.. env
             streamCreator
             (maxAge (Duration/ofDays retention-days))
             (stream name)
             create)
         (catch StreamException _
           (log/debug "Stream already exists")))
-      stream-env)))
+      {:env env
+       :producer (.. env
+                     producerBuilder
+                     (stream name)
+                     (name (str (random-uuid))) ;; TODO: Better name
+                     build)})))
 
 (defmethod ig/halt-key!
-  :bob/stream-env
-  [_ stream-env]
-  (log/info "Tearing down environment for RabbitMQ stream")
-  (Environment/.close stream-env))
+  :bob/stream
+  [_ {:keys [env producer]}]
+  (log/info "Tearing down RabbitMQ stream")
+  (StreamProducer/.close producer)
+  (Environment/.close env))
 
 (defmethod aero/reader
   'ig/ref

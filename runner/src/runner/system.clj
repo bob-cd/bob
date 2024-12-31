@@ -30,13 +30,12 @@
 
 (defmethod ig/init-key
   :runner/queue-config
-  [_ {:keys [queue producer] :as config}]
+  [_ {:keys [queue] :as config}]
   (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
         subscriber (partial d/queue-msg-subscriber config routes)
         jobs-queue "bob.container.jobs"]
     (merge-with merge
                 queue
-                {:producer producer}
                 {:queues {jobs-queue {}
                           broadcast-queue {:arguments {}
                                            :exclusive true

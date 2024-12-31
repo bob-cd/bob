@@ -12,15 +12,15 @@
              :api-url #ref [:common :bob/queue-api-url]
              :conf {:exchanges #ref [:common :bob/queue-conf :exchanges]
                     :queues #ref [:common :bob/queue-conf :queues]}}
- :bob/stream-env {:url #ref [:common :bob/stream-conf :url]
-                  :name #ref [:common :bob/stream-conf :name]
-                  :retention-days #ref [:common :bob/stream-conf :retention-days]}
+ :bob/stream {:url #ref [:common :bob/stream-conf :url]
+              :name #ref [:common :bob/stream-conf :name]
+              :retention-days #ref [:common :bob/stream-conf :retention-days]}
  :bob/apiserver {:host #or [#env BOB_API_HOST "0.0.0.0"]
                  :port #long #or [#env BOB_API_PORT 7777]
                  :database #ig/ref :bob/storage
                  :queue #ig/ref :bob/queue
-                 :stream {:name #ref [:common :bob/stream-conf :name]
-                          :environment #ig/ref :bob/stream-env}}
+                 :stream-name #ref [:common :bob/stream-conf :name]
+                 :stream #ig/ref :bob/stream}
  :bob/apiserver-heartbeat {:queue {:api-url #ref [:common :bob/queue-api-url]
                                    :username #ref [:common :bob/queue-conn :user]
                                    :password #ref [:common :bob/queue-conn :password]}
