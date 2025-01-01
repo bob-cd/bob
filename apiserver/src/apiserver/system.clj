@@ -22,11 +22,13 @@
   :bob/apiserver
   [_ {:keys [host port database queue stream-name stream]}]
   (log/info "Starting APIServer")
-  (let [server (srv/start! {:http-handler (s/server database
+  (let [{:keys [env producer]} stream
+        server (srv/start! {:http-handler (s/server database
                                                     (:chan queue)
                                                     (:conn-opts queue)
                                                     {:name stream-name
-                                                     :env (:env stream)})
+                                                     :env env
+                                                     :producer producer})
                             :host host
                             :port port})]
     (log/infof "Listening on %d" port)

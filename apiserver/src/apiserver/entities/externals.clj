@@ -7,26 +7,41 @@
 (ns apiserver.entities.externals
   (:require
    [clojure.tools.logging :as log]
+   [common.events :as ev]
    [xtdb.api :as xt]))
+
+(def id-of
+  {"ResourceProvider" "resource-provider"
+   "ArtifactStore" "artifact-store"})
 
 (defn create
   "Register with an unique name and an url supplied in a map."
-  [db kind {:keys [name url]}]
-  (let [id (keyword (format "bob.%s/%s" kind name))]
+  [db producer kind {:keys [name url]}]
+  (let [id (keyword (format "bob.%s/%s" (id-of kind) name))]
     (log/infof "Creating %s at %s with id %s" kind url id)
     (xt/await-tx
      db
      (xt/submit-tx db
                    [[::xt/put
                      {:xt/id id
-                      :type (keyword kind)
+                      :type (keyword (id-of kind))
                       :url url
-                      :name name}]]))))
+                      :name name}]]))
+    (ev/emit producer
+             {:type "Normal"
+              :kind kind
+              :reason (str kind "Create")
+              :message (str kind " " name " created/updated")})))
 
 (defn delete
   "Unregisters by its name supplied in a map."
-  [db kind id]
-  (log/infof "Deleting %s %s" kind id)
+  [db producer kind name]
+  (log/infof "Deleting %s %s" kind name)
   (xt/await-tx
    db
-   (xt/submit-tx db [[::xt/delete (keyword (format "bob.%s/%s" kind id))]])))
+   (xt/submit-tx db [[::xt/delete (keyword (format "bob.%s/%s" (id-of kind) name))]]))
+  (ev/emit producer
+           {:type "Normal"
+            :kind kind
+            :reason (str kind "Delete")
+            :message (str kind " " name " deleted")}))

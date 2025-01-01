@@ -19,6 +19,7 @@
    [clojure.spec.alpha :as spec]
    [clojure.string :as cs]
    [clojure.tools.logging :as log]
+   [common.events :as ev]
    [common.schemas]
    [failjure.core :as f]
    [langohr.basic :as lb]
@@ -95,15 +96,17 @@
 
 (defn pipeline-create
   [{{pipeline :body} :parameters
-    db :db}]
-  (f/try-all [_ (pipeline/create db pipeline)]
+    db :db
+    stream :stream}]
+  (f/try-all [_ (pipeline/create db stream pipeline)]
     (respond "Ok" 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
 (defn pipeline-delete
   [{{pipeline-info :path} :parameters
-    db :db}]
+    db :db
+    stream :stream}]
   (f/try-all [{:keys [group name]} pipeline-info
               runs (get-runs db group name)
               running (->> runs
@@ -114,7 +117,7 @@
       (respond {:runs running
                 :error "Pipeline has active runs. Wait for them to finish or stop them."}
                422)
-      (do (pipeline/delete db pipeline-info)
+      (do (pipeline/delete db stream pipeline-info)
           (respond "Ok" 200)))
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -156,14 +159,20 @@
 (defn pipeline-pause-unpause
   [pause?
    {{{:keys [group name]} :path} :parameters
-    db :db}]
+    db :db
+    {producer :producer} :stream}]
   (f/try-all [data (pipeline-data db group name)
               _ (when-not data
                   (f/fail :not-found))
               changed (if pause?
                         (assoc data :paused true)
                         (dissoc data :paused))
-              _ (xt/await-tx db (xt/submit-tx db [[::xt/put changed]]))]
+              _ (xt/await-tx db (xt/submit-tx db [[::xt/put changed]]))
+              _ (ev/emit producer
+                         {:type "Normal"
+                          :kind "Pipeline"
+                          :reason (if pause? "PipelinePaused" "PipelineUnpaused")
+                          :message (format "Pipeline %s/%s %s" group name (if pause? "paused" "unpaused"))})]
     (respond "Ok")
     (f/when-failed [err]
       (if (= :not-found (f/message err))
@@ -264,16 +273,18 @@
 
 (defn resource-provider-create
   [{{resource-provider :body} :parameters
-    db :db}]
-  (f/try-all [_ (externals/create db "resource-provider" resource-provider)]
+    db :db
+    {producer :producer} :stream}]
+  (f/try-all [_ (externals/create db producer "ResourceProvider" resource-provider)]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
 (defn resource-provider-delete
   [{{{:keys [name]} :path} :parameters
-    db :db}]
-  (f/try-all [_ (externals/delete db "resource-provider" name)]
+    db :db
+    {producer :producer} :stream}]
+  (f/try-all [_ (externals/delete db producer "ResourceProvider" name)]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
@@ -294,16 +305,18 @@
 
 (defn artifact-store-create
   [{{artifact-store :body} :parameters
-    db :db}]
-  (f/try-all [_ (externals/create db "artifact-store" artifact-store)]
+    db :db
+    {producer :producer} :stream}]
+  (f/try-all [_ (externals/create db producer "ArtifactStore" artifact-store)]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
 (defn artifact-store-delete
   [{{{:keys [name]} :path} :parameters
-    db :db}]
-  (f/try-all [_ (externals/delete db "artifact-store" name)]
+    db :db
+    {producer :producer} :stream}]
+  (f/try-all [_ (externals/delete db producer "ArtifactStore" name)]
     (respond "Ok")
     (f/when-failed [err]
       (respond (f/message err) 500))))

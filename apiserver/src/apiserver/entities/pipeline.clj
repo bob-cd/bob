@@ -7,17 +7,23 @@
 (ns apiserver.entities.pipeline
   (:require
    [clojure.tools.logging :as log]
+   [common.events :as ev]
    [failjure.core :as f]
    [xtdb.api :as xt]))
 
 (defn create
   "Creates a pipeline using the supplied data."
-  [db-client data]
-  (let [id (keyword (format "bob.pipeline.%s/%s" (:group data) (:name data)))]
+  [db-client {:keys [producer]} {:keys [group name] :as data}]
+  (let [id (keyword (format "bob.pipeline.%s/%s" group name))]
     (log/infof "Creating pipeline %s with id %s" data id)
     (xt/await-tx
      db-client
-     (xt/submit-tx db-client [[::xt/put (assoc data :xt/id id :type :pipeline)]]))))
+     (xt/submit-tx db-client [[::xt/put (assoc data :xt/id id :type :pipeline)]]))
+    (ev/emit producer
+             {:type "Normal"
+              :kind "Pipeline"
+              :reason "PipelineCreate"
+              :message (format "Pipeline created/updated %s/%s" group name)})))
 
 (defn- logs-of
   [db-client run-id]
@@ -40,13 +46,18 @@
 
 (defn delete
   "Deletes a pipeline along with its associated resources."
-  [db-client {:keys [group name]}]
+  [db-client {:keys [producer]} {:keys [group name]}]
   (log/infof "Deleting pipeline, runs and logs for (%s, %s)" group name)
   (f/try-all [id (keyword (format "bob.pipeline.%s/%s" group name))
               runs (runs-of db-client group name)
-              logs (mapcat #(logs-of db-client %) runs)]
-    (xt/await-tx
-     db-client
-     (xt/submit-tx db-client (map #(vector ::xt/delete %) (concat logs runs [id]))))
+              logs (mapcat #(logs-of db-client %) runs)
+              _ (xt/await-tx
+                 db-client
+                 (xt/submit-tx db-client (map #(vector ::xt/delete %) (concat logs runs [id]))))]
+    (ev/emit producer
+             {:type "Normal"
+              :kind "Pipeline"
+              :reason "PipelineDelete"
+              :message (format "Pipeline %s/%s deleted with related data" group name)})
     (f/when-failed [err]
       (log/errorf "Pipeline deletion error: %s" (f/message err)))))
