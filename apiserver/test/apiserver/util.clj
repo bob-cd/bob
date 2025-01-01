@@ -23,6 +23,7 @@
                    (dissoc :common)
                    (assoc-in [:bob/storage :url] "jdbc:postgresql://localhost:5433/bob-test")
                    (assoc-in [:bob/queue :url] "amqp://localhost:5673")
+                   (assoc-in [:bob/stream :url] "rabbitmq-stream://guest:guest@localhost:5552/%2f")
                    (update-in [:bob/queue :conf :queues] assoc "bob.container.jobs" {})
                    (update-in [:bob/queue :conf :bindings] assoc "bob.container.jobs" "bob.direct"))
         ds (jdbc/get-datasource {:dbtype "postgresql"
@@ -35,7 +36,8 @@
     (test-fn (system :bob/storage)
              (-> system
                  :bob/queue
-                 :chan))
+                 :chan)
+             (system :bob/stream))
     (ig/halt! system)
     (jdbc/execute! ds ["DELETE FROM tx_events;"])))
 

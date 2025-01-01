@@ -45,7 +45,7 @@
              (h/exec #(/ 5 0))))))
 
 (t/deftest health-check-test
-  (u/with-system (fn [db queue]
+  (u/with-system (fn [db queue _]
                    (t/testing "passing health check"
                      (let [{:keys [status body]} (h/health-check {:db db
                                                                   :queue queue})]
@@ -74,7 +74,7 @@
 
 (t/deftest pipeline-entities-test
   (u/with-system
-    (fn [db _]
+    (fn [db _ stream]
       (let [pipeline-id :bob.pipeline.test/test
             run-id :bob.pipeline.run/r-a-run
             log-id :bob.pipeline.log/l-a-log]
@@ -102,7 +102,8 @@
                                                 :branch "main"}}]
                           :image "busybox:musl"}
                 _ (h/pipeline-create {:parameters {:body pipeline}
-                                      :db db})
+                                      :db db
+                                      :stream stream})
                 effect (xt/entity (xt/db db) pipeline-id)]
             (t/is (= pipeline-id (:xt/id effect)))
             (u/spec-assert :bob.db/pipeline effect)))
@@ -120,7 +121,8 @@
                             :type :log-line
                             :run-id run-id}]]))
           (let [_ (h/pipeline-delete {:parameters {:path {:group "test" :name "test"}}
-                                      :db db})
+                                      :db db
+                                      :stream stream})
                 pipeline-effect (xt/entity (xt/db db) pipeline-id)
                 run-effect (xt/entity (xt/db db) run-id)
                 log-effect (xt/entity (xt/db db) log-id)]
@@ -129,7 +131,7 @@
             (t/is (nil? log-effect))))))))
 
 (t/deftest pipeline-direct-tests
-  (u/with-system (fn [db queue]
+  (u/with-system (fn [db queue _]
                    (t/testing "invalid pipeline deletion with active runs"
                      (xt/await-tx
                       db
@@ -187,7 +189,7 @@
                        (t/is (= "Pipeline is paused. Unpause it first." (:message body))))))))
 
 (t/deftest pipeline-fanout-tests
-  (u/with-system (fn [_db queue]
+  (u/with-system (fn [_db queue _]
                    (lq/declare queue
                                "bob.tests"
                                {:exclusive true
@@ -202,7 +204,7 @@
                      (u/spec-assert :bob.command/pipeline-stop (queue-get queue "bob.tests"))))))
 
 (t/deftest pipeline-pause-unpause
-  (u/with-system (fn [db _]
+  (u/with-system (fn [db _ stream]
                    (xt/await-tx
                     db
                     (xt/submit-tx
@@ -218,17 +220,19 @@
                      (h/pipeline-pause-unpause true
                                                {:parameters {:path {:group "dev"
                                                                     :name "test"}}
-                                                :db db})
+                                                :db db
+                                                :stream stream})
                      (t/is (:paused (h/pipeline-data db "dev" "test"))))
                    (t/testing "pipeline unpause"
                      (h/pipeline-pause-unpause false
                                                {:parameters {:path {:group "dev"
                                                                     :name "test"}}
-                                                :db db})
+                                                :db db
+                                                :stream stream})
                      (t/is (not (:paused (h/pipeline-data db "dev" "test"))))))))
 
 (t/deftest pipeline-logs-test
-  (u/with-system (fn [db _]
+  (u/with-system (fn [db _ _]
                    (t/testing "pipeline logs"
                      (xt/await-tx
                       db
@@ -260,7 +264,7 @@
                                   :message)))))))
 
 (t/deftest pipeline-status-test
-  (u/with-system (fn [db _]
+  (u/with-system (fn [db _ _]
                    (t/testing "existing pipeline status"
                      (xt/await-tx
                       db
@@ -285,7 +289,7 @@
                                 (:message body))))))))
 
 (t/deftest pipeline-artifact-fetch-test
-  (u/with-system (fn [db _]
+  (u/with-system (fn [db _ _]
                    (t/testing "fetching a valid artifact"
                      (xt/await-tx
                       db
@@ -328,7 +332,7 @@
                        (t/is (= 400 status)))))))
 
 (t/deftest pipeline-list-test
-  (u/with-system (fn [db _]
+  (u/with-system (fn [db _ _]
                    (t/testing "listing pipelines"
                      (xt/await-tx
                       db
@@ -370,7 +374,7 @@
                                     :message))))))))
 
 (t/deftest pipeline-runs-list-test
-  (u/with-system (fn [db _]
+  (u/with-system (fn [db _ _]
                    (t/testing "listing pipeline runs"
                      (xt/await-tx
                       db
@@ -401,22 +405,24 @@
 
 (t/deftest resource-provider-entities-test
   (u/with-system
-    (fn [db _]
+    (fn [db _ stream]
       (let [id :bob.resource-provider/github]
         (t/testing "creation"
           (let [_ (h/resource-provider-create {:parameters {:body {:name "github" :url "my-resource.com"}}
-                                               :db db})
+                                               :db db
+                                               :stream stream})
                 effect (xt/entity (xt/db db) id)]
             (t/is (= id (:xt/id effect)))
             (u/spec-assert :bob.db/resource-provider effect)))
         (t/testing "deletion"
           (let [_ (h/resource-provider-delete {:parameters {:path {:name "github"}}
-                                               :db db})
+                                               :db db
+                                               :stream stream})
                 effect (xt/entity (xt/db db) id)]
             (t/is (nil? effect))))))))
 
 (t/deftest resource-provider-test
-  (u/with-system (fn [db _]
+  (u/with-system (fn [db _ _]
                    (t/testing "resource-provider listing"
                      (xt/await-tx
                       db
@@ -441,22 +447,24 @@
 
 (t/deftest artifact-entities-test
   (u/with-system
-    (fn [db _]
+    (fn [db _ stream]
       (let [id :bob.artifact-store/s3]
         (t/testing "creation"
           (let [_ (h/artifact-store-create {:parameters {:body {:name "s3" :url "my-store.com"}}
-                                            :db db})
+                                            :db db
+                                            :stream stream})
                 effect (xt/entity (xt/db db) id)]
             (t/is (= id (:xt/id effect)))
             (u/spec-assert :bob.db/artifact-store effect)))
         (t/testing "deletion"
           (let [_ (h/artifact-store-delete {:parameters {:path {:name "s3"}}
-                                            :db db})
+                                            :db db
+                                            :stream stream})
                 effect (xt/entity (xt/db db) id)]
             (t/is (nil? effect))))))))
 
 (t/deftest artifact-store-test
-  (u/with-system (fn [db _]
+  (u/with-system (fn [db _ _]
                    (t/testing "artifact-store listing"
                      (xt/await-tx
                       db
@@ -481,7 +489,7 @@
 
 (t/deftest raw-query-test
   (u/with-system
-    (fn [db _]
+    (fn [db _ _]
       (t/testing "direct query"
         (xt/await-tx
          db
