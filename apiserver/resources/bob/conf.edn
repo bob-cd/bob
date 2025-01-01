@@ -6,26 +6,24 @@
 
 {:common #include "bob/common.edn"
  :bob/storage #ref [:common :bob/storage-conn]
+ :bob/stream #ref [:common :bob/stream-conf]
  :bob/queue {:url #ref [:common :bob/queue-conn :url]
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
              :api-url #ref [:common :bob/queue-api-url]
              :conf {:exchanges #ref [:common :bob/queue-conf :exchanges]
                     :queues #ref [:common :bob/queue-conf :queues]}}
- :bob/stream {:url #ref [:common :bob/stream-conf :url]
-              :name #ref [:common :bob/stream-conf :name]
-              :retention-days #ref [:common :bob/stream-conf :retention-days]}
- :bob/apiserver {:host #or [#env BOB_API_HOST "0.0.0.0"]
-                 :port #long #or [#env BOB_API_PORT 7777]
-                 :database #ig/ref :bob/storage
-                 :queue #ig/ref :bob/queue
-                 :stream-name #ref [:common :bob/stream-conf :name]
-                 :stream #ig/ref :bob/stream}
- :bob/apiserver-heartbeat {:queue {:api-url #ref [:common :bob/queue-api-url]
-                                   :username #ref [:common :bob/queue-conn :user]
-                                   :password #ref [:common :bob/queue-conn :password]}
-                           :db #ig/ref :bob/storage
-                           :freq #ref [:common :bob/health-check-freq]}
- :bob/apiserver-healthcheck {:queue #ig/ref :bob/queue
-                             :db #ig/ref :bob/storage
-                             :freq #ref [:common :bob/health-check-freq]}}
+ :apiserver/server {:host #or [#env BOB_API_HOST "0.0.0.0"]
+                    :port #long #or [#env BOB_API_PORT 7777]
+                    :database #ig/ref :bob/storage
+                    :queue #ig/ref :bob/queue
+                    :stream-name #ref [:common :bob/stream-conf :name]
+                    :stream #ig/ref :bob/stream}
+ :apiserver/heartbeat {:queue {:api-url #ref [:common :bob/queue-api-url]
+                               :username #ref [:common :bob/queue-conn :user]
+                               :password #ref [:common :bob/queue-conn :password]}
+                       :db #ig/ref :bob/storage
+                       :freq #ref [:common :bob/health-check-freq]}
+ :apiserver/healthcheck {:queue #ig/ref :bob/queue
+                         :db #ig/ref :bob/storage
+                         :freq #ref [:common :bob/health-check-freq]}}

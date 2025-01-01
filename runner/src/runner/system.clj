@@ -44,7 +44,7 @@
                                  broadcast-queue subscriber}})))
 
 (defmethod ig/init-key
-  :bob/runner-heartbeat
+  :runner/heartbeat
   [_ {:keys [queue db freq]}]
   (hb/schedule #(hb/beat-it db queue freq
                             :bob/node-type :runner/container
@@ -57,7 +57,7 @@
                freq))
 
 (defmethod ig/halt-key!
-  :bob/runner-heartbeat
+  :runner/heartbeat
   [_ task]
   (Future/.cancel task true))
 

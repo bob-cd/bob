@@ -19,7 +19,7 @@
    [java.util.concurrent Executors Future]))
 
 (defmethod ig/init-key
-  :bob/apiserver
+  :apiserver/server
   [_ {:keys [host port database queue stream-name stream]}]
   (log/info "Starting APIServer")
   (let [{:keys [env producer]} stream
@@ -35,32 +35,32 @@
     server))
 
 (defmethod ig/halt-key!
-  :bob/apiserver
+  :apiserver/server
   [_ server]
   (log/info "Stopping APIServer")
   (srv/stop! server))
 
 (defmethod ig/init-key
-  :bob/apiserver-heartbeat
+  :apiserver/heartbeat
   [_ {:keys [queue db freq]}]
   (hb/schedule #(hb/beat-it db queue freq :bob/node-type :apiserver)
                "heartbeat"
                freq))
 
 (defmethod ig/halt-key!
-  :bob/apiserver-heartbeat
+  :apiserver/heartbeat
   [_ task]
   (Future/.cancel task true))
 
 (defmethod ig/init-key
-  :bob/apiserver-healthcheck
+  :apiserver/healthcheck
   [_ {:keys [queue db freq]}]
   (hb/schedule #(hc/check (Executors/newVirtualThreadPerTaskExecutor) {:queue (:chan queue) :db db})
                "healthcheck"
                freq))
 
 (defmethod ig/halt-key!
-  :bob/apiserver-healthcheck
+  :apiserver/healthcheck
   [_ task]
   (Future/.cancel task true))
 

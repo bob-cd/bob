@@ -6,18 +6,16 @@
 
 {:common #include "bob/common.edn"
  :bob/storage #ref [:common :bob/storage-conn]
- :runner/queue-config {:database #ig/ref :bob/storage
-                       :queue #ref [:common :bob/queue-conf]
-                       :stream #ig/ref :bob/stream}
+ :bob/stream #ref [:common :bob/stream-conf]
  :bob/queue {:url #ref [:common :bob/queue-conn :url]
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
              :conf #ig/ref :runner/queue-config}
- :bob/runner-heartbeat {:queue {:api-url #ref [:common :bob/queue-api-url]
-                                :username #ref [:common :bob/queue-conn :user]
-                                :password #ref [:common :bob/queue-conn :password]}
-                        :db #ig/ref :bob/storage
-                        :freq #ref [:common :bob/health-check-freq]}
- :bob/stream {:url #ref [:common :bob/stream-conf :url]
-              :name #ref [:common :bob/stream-conf :name]
-              :retention-days #ref [:common :bob/stream-conf :retention-days]}}
+ :runner/queue-config {:database #ig/ref :bob/storage
+                       :queue #ref [:common :bob/queue-conf]
+                       :stream #ig/ref :bob/stream}
+ :runner/heartbeat {:queue {:api-url #ref [:common :bob/queue-api-url]
+                            :username #ref [:common :bob/queue-conn :user]
+                            :password #ref [:common :bob/queue-conn :password]}
+                    :db #ig/ref :bob/storage
+                    :freq #ref [:common :bob/health-check-freq]}}
