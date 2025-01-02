@@ -1,20 +1,22 @@
 # Runner
 
-This provides a general enough, containerised and ephemeral execution environment: [Pipeline](https://bob-cd.github.io/pages/concepts/pipeline.html) lifecycle and streaming of logs. Each pipeline begins with an initial container image and the steps are applied in order on that image to reach the final state. Multiple isolated pipeline runs could be done concurrently on a single runner.
+This provides a general enough, containerised and ephemeral execution environment: [Pipeline](https://bob-cd.github.io/pipelines/) lifecycle and streaming of logs. Each pipeline begins with an initial container image and the steps are applied in order on that image to reach the final state. Multiple isolated pipeline runs could be done concurrently on a single runner.
 
 **This is guaranteed to be [rootless](https://www.zend.com/blog/rootless-containers); ideal for usage in cloud native environments.**
 
 ## How does this work
+
 - This is implemented in Clojure/JVM
 - Uses [RabbitMQ](https://www.rabbitmq.com/) to receive messages and perform the necessary effects as well as producing events via stream
 - Uses [XTDB](https://xtdb.com) backed by [PostgreSQL](https://www.postgresql.org/) for temporal persistence
 - Uses [contajners](https://github.com/lispyclouds/contajners) to talk to [podman](https://podman.io/) to implement step executions.
 
 ## Configuration
+
 [Aero](https://github.com/juxt/aero) is used and therefore several variables can be set by specifying them as environment variables. Possible variables are:
 
 | Environment variables         | defaults                                         |
-|-------------------------------|--------------------------------------------------|
+| ----------------------------- | ------------------------------------------------ |
 | BOB_STORAGE_URL               | jdbc:postgresql://localhost:5432/bob             |
 | BOB_STORAGE_USER              | bob                                              |
 | BOB_STORAGE_PASSWORD          | bob                                              |
@@ -31,6 +33,7 @@ This provides a general enough, containerised and ephemeral execution environmen
 ## Building and Running
 
 ### Requirements, min versions, latest recommended.
+
 - JDK 19+
 - RabbitMQ 3.13+ with the [management-plugin](https://www.rabbitmq.com/docs/management)
 - PostgreSQL 11+
@@ -38,18 +41,22 @@ This provides a general enough, containerised and ephemeral execution environmen
 - [Babashka](https://github.com/babashka/babashka#installation)
 
 ### Using Docker to easily boot up a local cluster
+
 - Install Docker 18+ and start it up
 - Run `docker run -it --name bob-queue -p 5672:5672 -p 15672:15672 -p 5552:5552  -e RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS='-rabbitmq_stream advertised_host localhost' --entrypoint sh rabbitmq:management-alpine -c 'rabbitmq-plugins enable --offline rabbitmq_stream && rabbitmq-server'` to run the latest management enabled RabbitMQ instance on port `5672`, the streams interface on port `5552` and the admin control on port `15672`. The default credentials are `guest:guest`.
 - Run `docker exec bob-queue rabbitmq-plugins enable rabbitmq_stream` to enable the stream plugin on the RabbitMQ instance.
 - Run `docker run --rm -it --name bob-storage -p 5432:5432 -e POSTGRES_DB=bob -e POSTGRES_USER=bob -e POSTGRES_PASSWORD=bob postgres:alpine` to run the latest PostgreSQL instance on port `5432`.
 
 ### Ways of connecting Runner to the cluster
+
 - To build an uberjar run `bb compile` to obtain a `runner.jar`. Running `java --enable-preview -jar runner.jar` should connect to it.
 - To run directly without building a JAR, run `clojure -J--enable-preview -M -m runner.main` from this dir.
 
 ## Setting up the dev environment with the REPL
+
 - This uses [Integrant](https://github.com/weavejester/integrant) to manage state across the app.
 - When loaded into the editor/REPL, find the `reset` fn in this [namespace](/runner/src/runner/system.clj). Eval this when there is change to reload the state cleanly.
 
 ### Running integration tests
+
 Run `bb test` from this dir. (needs docker)

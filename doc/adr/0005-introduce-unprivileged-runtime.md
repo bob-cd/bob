@@ -13,6 +13,7 @@ Given its maturity, ubiquitous deployment and tooling around it, it gave us grea
 Bob is what it is mainly due to the enablement Docker had.
 
 However, it raises the following issues:
+
 - Docker mainly runs as a daemon and moreover **needs root access** for the daemon function
 - Bob is generally intended as a [Cloud Native](https://en.wikipedia.org/wiki/Cloud_native_computing) tool which means all components should be containerized.
   - Given that docker needs root permissions to run, the runner needs to be privileged to function, causing a security risk to the cluster
@@ -22,6 +23,7 @@ However, it raises the following issues:
 ## Decision
 
 Based on the above facts the following is decided:
+
 - Use [Podman](https://podman.io/) as the container runtime and orchestration engine for the following reasons:
   - It is rootless and daemonless
   - Developed by [RedHat](https://www.redhat.com/) and the [OCI](https://opencontainers.org/) community
