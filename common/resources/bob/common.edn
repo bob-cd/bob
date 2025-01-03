@@ -13,8 +13,12 @@
  :bob/queue-conf {:exchanges {"bob.direct" {:type "direct"
                                             :durable true}
                               "bob.fanout" {:type "fanout"
-                                            :durable true}}
-                  :queues {"bob.errors" {}}}
+                                            :durable true}
+                              "bob.dlx" {:type "direct"
+                                         :durable true}}
+                  :queues {"bob.errors" {}
+                           "bob.dlq" {}}
+                  :bindings {"bob.dlq" "bob.dlx"}}
  :bob/stream-conf {:name #or [#env BOB_STREAM_NAME "bob.event-stream"]
                    :url #or [#env BOB_STREAM_URL "rabbitmq-stream://guest:guest@localhost:5552/%2f"]
                    :retention-days #long #or [#env BOB_STREAM_RETENTION_DAYS 7]}

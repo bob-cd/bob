@@ -34,10 +34,11 @@
         jobs-queue "bob.container.jobs"]
     (merge-with merge
                 queue
-                {:queues {jobs-queue {}
-                          broadcast-queue {:arguments {}
-                                           :exclusive true
-                                           :auto-delete true}}
+                {:queues {jobs-queue {:args {"x-dead-letter-exchange" "bob.dlx"
+                                             "x-dead-letter-routing-key" "bob.dlq"}}
+                          broadcast-queue {:args {"x-queue-type" "classic"}
+                                           :props {:exclusive true
+                                                   :auto-delete true}}}
                  :bindings {jobs-queue "bob.direct"
                             broadcast-queue "bob.fanout"}
                  :subscriptions {jobs-queue subscriber

@@ -84,13 +84,11 @@
     (doseq [[ex props] (:exchanges conf)]
       (log/infof "Declaring exchange %s" ex)
       (le/declare chan ex (:type props) (select-keys props [:durable])))
-    (doseq [[queue props] (:queues conf)]
+    (doseq [[queue {:keys [props args]}] (:queues conf)]
       (log/infof "Declaring queue %s" queue)
-      (lq/declare chan queue (merge {:auto-delete false
-                                     :durable true
-                                     :exclusive false
-                                     :arguments {"x-queue-type" "quorum"}}
-                                    props)))
+      (let [opts (merge {:auto-delete false :durable true} props)
+            opts (assoc opts :arguments (merge {"x-queue-type" "quorum"} args))]
+        (lq/declare chan queue opts)))
     (doseq [[queue ex] (:bindings conf)]
       (log/infof "Binding %s -> %s" queue ex)
       (lq/bind chan
