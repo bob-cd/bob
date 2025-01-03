@@ -315,7 +315,7 @@
                                          (map ::xt/doc)
                                          (map :status)
                                          (into #{}))]
-                       (is (inst? (:scheduled-at-at run-info)))
+                       (is (inst? (:scheduled-at run-info)))
                        (is (inst? (:initiated-at run-info)))
                        (is (inst? (:initialized-at run-info)))
                        (is (inst? (:started-at run-info)))
@@ -341,12 +341,22 @@
                                                    :steps [{:cmd "echo hello"} {:cmd "this-bombs"}]
                                                    :vars {:k1 "v1"}
                                                    :image test-image}]]))
-                     (let [result @(p/start {:database database
+                     (let [run-id "r-a-run-id"
+                           _ (xt/await-tx database
+                                          (xt/submit-tx database
+                                                        [[::xt/put
+                                                          {:xt/id (keyword "bob.pipeline.run" run-id)
+                                                           :type :pipeline-run
+                                                           :status :pending
+                                                           :scheduled-at (Instant/now)
+                                                           :group "test"
+                                                           :name "test"}]]))
+                           result @(p/start {:database database
                                              :stream stream}
                                             queue
                                             {:group "test"
                                              :name "test"
-                                             :run-id "r-a-run-id"}
+                                             :run-id run-id}
                                             {})
                            id (f/message result)
                            run-info (xt/entity (xt/db database) (keyword "bob.pipeline.run" id))
@@ -359,11 +369,13 @@
                                          (map :status)
                                          (into #{}))]
                        (u/spec-assert :bob.db/run run-info)
+                       (is (inst? (:scheduled-at run-info)))
                        (is (inst? (:initiated-at run-info)))
                        (is (inst? (:initialized-at run-info)))
                        (is (inst? (:started-at run-info)))
                        (is (inst? (:completed-at run-info)))
                        (is (f/failed? result))
+                       (is (contains? statuses :pending))
                        (is (contains? statuses :initializing))
                        (is (contains? statuses :initialized))
                        (is (contains? statuses :running))
@@ -383,12 +395,22 @@
                                       :steps [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
                                       :vars {}
                                       :image test-image}]]))
-        (let [_ (p/start {:database database
+        (let [run-id "r-a-stop-id"
+              _ (xt/await-tx database
+                             (xt/submit-tx database
+                                           [[::xt/put
+                                             {:xt/id (keyword "bob.pipeline.run" run-id)
+                                              :type :pipeline-run
+                                              :status :pending
+                                              :scheduled-at (Instant/now)
+                                              :group "test"
+                                              :name "test"}]]))
+              _ (p/start {:database database
                           :stream stream}
                          queue
                          {:group "test"
                           :name "stop-test"
-                          :run-id "r-a-stop-id"}
+                          :run-id run-id}
                          {})
               _ (Thread/sleep 5000) ;; Longer, possibly flaky wait
               _ (p/stop {:database database
@@ -396,7 +418,7 @@
                         queue
                         {:group "test"
                          :name "stop-test"
-                         :run-id "r-a-stop-id"}
+                         :run-id run-id}
                         {})
               run-info (xt/entity (xt/db database) :bob.pipeline.run/r-a-stop-id)
               history (xt/entity-history (xt/db database)
@@ -408,11 +430,13 @@
                             (map :status)
                             (into #{}))]
           (u/spec-assert :bob.db/run run-info)
+          (is (inst? (:scheduled-at run-info)))
           (is (inst? (:initiated-at run-info)))
           (is (inst? (:initialized-at run-info)))
           (is (inst? (:started-at run-info)))
           (is (inst? (:completed-at run-info)))
           (is (not (contains? statuses :failed)))
+          (is (contains? statuses :pending))
           (is (contains? statuses :initializing))
           (is (contains? statuses :initialized))
           (is (contains? statuses :running))

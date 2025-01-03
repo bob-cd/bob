@@ -87,6 +87,8 @@
 
 (spec/def :bob/artifact-store (spec/keys :req-un [:bob.artifact-store/url]))
 
+(spec/def :bob.pipeline.run/scheduled-at inst?)
+
 (spec/def :bob.pipeline.run/initiated-at inst?)
 
 (spec/def :bob.pipeline.run/initialized-at inst?)
@@ -95,7 +97,7 @@
 
 (spec/def :bob.pipeline.run/completed-at inst?)
 
-(spec/def :pipeline.run/status #{:initializing :initialized :running :passed :failed :stopped})
+(spec/def :pipeline.run/status #{:pending :initializing :initialized :running :passed :failed :stopped})
 
 (spec/def :bob.pipeline.run/run-id (spec/and string? #(s/starts-with? % "r-")))
 
@@ -103,7 +105,8 @@
   (spec/keys :req-un [:bob.pipeline/group
                       :bob.pipeline/name
                       :pipeline.run/status]
-             :opt-un [:bob.pipeline.run/initiated-at
+             :opt-un [:bob.pipeline.run/scheduled-at
+                      :bob.pipeline.run/initiated-at
                       :bob.pipeline.run/initialized-at
                       :bob.pipeline.run/started-at
                       :bob.pipeline.run/completed-at]))
