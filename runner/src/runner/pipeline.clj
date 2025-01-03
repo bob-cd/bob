@@ -8,7 +8,6 @@
   (:require
    [clojure.spec.alpha :as spec]
    [clojure.tools.logging :as log]
-   [common.errors :as errors]
    [common.events :as ev]
    [common.schemas]
    [failjure.core :as f]
@@ -279,7 +278,6 @@
               (assoc (run-info-of database run-id) :status :failed :completed-at (Instant/now))]]))))
       (gc-images run-id)
       (clean-up-run run-id)
-      (errors/publish-error queue-chan (str "Pipeline failure: " (f/message err)))
       (when delivery-tag
         (lb/ack queue-chan delivery-tag))
       (f/fail run-id))))
@@ -288,7 +286,7 @@
   "Attempts to asynchronously start a pipeline by group and name."
   [config queue-chan {:keys [group name run-id] :as data} {:keys [delivery-tag]}]
   (if-not (spec/valid? :bob.command.pipeline-start/data data)
-    (errors/publish-error queue-chan (str "Invalid pipeline start command: " data))
+    (log/error "Invalid pipeline start command: " data)
     (let [run-db-id (keyword "bob.pipeline.run" run-id)
           run-info {:xt/id run-db-id
                     :type :pipeline-run
@@ -309,9 +307,9 @@
 
   Sets the :status in Db to :stopped and kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
-  [{:keys [database stream]} queue-chan {:keys [group name run-id] :as data} _meta]
+  [{:keys [database stream]} _queue-chan {:keys [group name run-id] :as data} _meta]
   (if-not (spec/valid? :bob.command.pipeline-stop/data data)
-    (errors/publish-error queue-chan (str "Invalid pipeline stop command: " data))
+    (log/error "Invalid pipeline stop command: " data)
     (when-let [run (get-in @node-state [:runs run-id])]
       (log/infof "Stopping run %s for pipeline %s %s"
                  run-id

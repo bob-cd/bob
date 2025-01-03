@@ -52,9 +52,6 @@
   (f/try-all [_ (->> (job-queues queue-conn-opts)
                      (map #(lq/message-count queue %))
                      (run! #(prom/gauge registry :bob_queued_jobs {} %)))
-              _ (->> "bob.errors"
-                     (lq/message-count queue)
-                     (prom/gauge registry :bob_errors {}))
               _ (count-statuses db)]
     (prom/serialize registry)
     (f/when-failed [err] err)))

@@ -8,8 +8,8 @@
   (:require
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
-   [common.errors :as err]
-   [failjure.core :as f]))
+   [failjure.core :as f]
+   [langohr.basic :as lb]))
 
 (defn queue-msg-subscriber
   [config routes ch meta ^bytes payload]
@@ -18,9 +18,12 @@
       (log/infof "payload %s, meta: %s" msg meta)
       (if-let [routed-fn (some-> meta :type routes)]
         (routed-fn config ch msg meta)
-        (err/publish-error ch (str "Could not route message: " msg))))
+        (do
+          (log/error (str "Could not route message: " msg))
+          (lb/nack ch (:delivery-tag meta) false false))))
     (f/when-failed [err]
-      (err/publish-error ch (format "Could not parse '%s': %s" (String/new payload "UTF-8") (f/message err))))))
+      (log/errorf "Could not parse '%s': %s" (String/new payload "UTF-8") (f/message err))
+      (lb/nack ch (:delivery-tag meta) false false))))
 
 (comment
   (set! *warn-on-reflection* true))

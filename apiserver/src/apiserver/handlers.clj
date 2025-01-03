@@ -348,16 +348,6 @@
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
-(defn errors
-  [{queue :queue}]
-  (f/try-all [[_ result] (lb/get queue "bob.errors" true)
-              response (if (nil? result)
-                         "No more errors"
-                         (-> result slurp (json/read-str :key-fn keyword) :message))]
-    (respond response 200)
-    (f/when-failed [err]
-      (respond (f/message err) 500))))
-
 (defn events
   [{{:keys [^Environment env name]} :stream}]
   {:status 200
@@ -434,7 +424,6 @@
    "ArtifactStoreDelete" artifact-store-delete
    "ArtifactStoreList" artifact-store-list
    "Query" query
-   "GetError" errors
    "GetEvents" events
    "GetMetrics" metrics
    "CCTray" cctray

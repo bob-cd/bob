@@ -932,37 +932,6 @@ paths:
                 unhealthy:
                   value:
                     message: "Query failed: <Error>"
-  "/error":
-    get:
-      operationId: GetError
-      summary: Fetches the next available system error
-      description: Fetches the next available error from the errors queue, this is a destructive read
-      tags:
-        - observability
-      x-cli-hidden: true
-
-      responses:
-        "200":
-          description: Successful fetch
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimpleResponse"
-              examples:
-                sucess:
-                  value:
-                    message: "errors"
-
-        default:
-          description: Failed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimpleResponse"
-              examples:
-                unhealthy:
-                  value:
-                    message: "<Some Error>"
 
   "/events":
     get:
