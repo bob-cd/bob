@@ -186,17 +186,20 @@
          dissoc
          run-id))
 
-(defn- start*
-  [{:keys [database stream] :as config} queue-chan group name run-id run-info run-db-id delivery-tag]
+(defn get-pipeline
+  [database group name]
   (f/try-all [pipeline (xt/entity (xt/db database)
                                   (keyword (format "bob.pipeline.%s/%s" group name)))
-              _ (when-not (spec/valid? :bob.db/pipeline pipeline)
-                  (f/fail (str "Invalid pipeline in DB: " pipeline)))
               _ (when-not pipeline
-                  (f/fail (format "Unable to find pipeline %s/%s"
-                                  group
-                                  name)))
-              {:keys [image steps vars]} pipeline
+                  (f/fail (format "Unable to find pipeline %s/%s" group name)))
+              _ (when-not (spec/valid? :bob.db/pipeline pipeline)
+                  (f/fail (str "Invalid pipeline in DB: " pipeline)))]
+    pipeline
+    (f/when-failed [err] err)))
+
+(defn- start*
+  [{:keys [database stream] :as config} queue-chan group name run-id run-db-id delivery-tag]
+  (f/try-all [{:keys [image steps vars]} (get-pipeline database group name)
               _ (log/infof "Starting new run: %s" run-id)
               producer (:producer stream)
               _ (ev/emit producer {:type "Normal"
@@ -206,7 +209,7 @@
               _ (xt/await-tx database
                              (xt/submit-tx database
                                            [[::xt/put
-                                             (assoc run-info
+                                             (assoc (run-info-of database run-id)
                                                     :status :initializing
                                                     :initiated-at (Instant/now))]]))
               _ (ev/emit producer {:type "Normal"
@@ -257,6 +260,7 @@
                   (lb/ack queue-chan delivery-tag))]
     run-id
     (f/when-failed [err]
+      (println "ERROR" (f/message err))
       (let [{:keys [status] :as run} (xt/entity (xt/db database) run-db-id)
             error (f/message err)]
         (when (and (spec/valid? :bob.db/run run)
@@ -287,13 +291,7 @@
   [config queue-chan {:keys [group name run-id] :as data} {:keys [delivery-tag]}]
   (if-not (spec/valid? :bob.command.pipeline-start/data data)
     (log/error "Invalid pipeline start command: " data)
-    (let [run-db-id (keyword "bob.pipeline.run" run-id)
-          run-info {:xt/id run-db-id
-                    :type :pipeline-run
-                    :group group
-                    :name name}
-          ;; TODO: nack if current node cannot process this
-          run-ref (future (start* config queue-chan group name run-id run-info run-db-id delivery-tag))]
+    (let [run-ref (future (start* config queue-chan group name run-id (keyword "bob.pipeline.run" run-id) delivery-tag))]
       (swap! node-state
              update-in
              [:runs run-id]

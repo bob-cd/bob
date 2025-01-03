@@ -284,6 +284,7 @@
                                              :name "test"
                                              :run-id run-id}
                                             {})
+                           _ (println "RESULT" result)
                            lines (->> (xt/q (xt/db database)
                                             {:find '[(pull log [:line]) time]
                                              :where [['log :type :log-line]
@@ -304,10 +305,12 @@
                                          (map ::xt/doc)
                                          (map :status)
                                          (into #{}))]
+                       (is (inst? (:scheduled-at-at run-info)))
                        (is (inst? (:initiated-at run-info)))
                        (is (inst? (:initialized-at run-info)))
                        (is (inst? (:started-at run-info)))
                        (is (inst? (:completed-at run-info)))
+                       (is (contains? statuses :pending))
                        (is (contains? statuses :initializing))
                        (is (contains? statuses :initialized))
                        (is (contains? statuses :running))

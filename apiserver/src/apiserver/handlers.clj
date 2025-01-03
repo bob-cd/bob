@@ -28,6 +28,7 @@
   (:import
    [com.rabbitmq.stream Environment MessageHandler OffsetSpecification]
    [java.io OutputStream]
+   [java.time Instant]
    [java.util.concurrent Executors]))
 
 (def executor (Executors/newVirtualThreadPerTaskExecutor))
@@ -128,20 +129,26 @@
     :parameters
     db :db
     queue :queue}]
-  (f/try-all [id (str "r-" (random-uuid))
-              data (pipeline-data db (:group pipeline-info) (:name pipeline-info))
+  (f/try-all [run-id (str "r-" (random-uuid))
+              {:keys [group name]} pipeline-info
+              data (pipeline-data db group name)
               _ (when-not data
-                  (f/fail :not-found))
-              {:keys [paused]} data]
-    (if paused
+                  (f/fail :not-found))]
+    (if (:paused data)
       (respond "Pipeline is paused. Unpause it first." 422)
-      ;; TODO: set pipeline state to pending?
-      (exec #(publish queue
-                      "pipeline/start"
-                      "bob.direct"
-                      (format "bob.%s.jobs" (or (:runner/type metadata) "container"))
-                      (assoc pipeline-info :run-id id))
-            id))
+      (let [run {:xt/id (keyword "bob.pipeline.run" run-id)
+                 :type :pipeline-run
+                 :status :pending
+                 :scheduled-at (Instant/now)
+                 :group group
+                 :name name}]
+        (xt/await-tx db (xt/submit-tx db [[::xt/put run]]))
+        (exec #(publish queue
+                        "pipeline/start"
+                        "bob.direct"
+                        (format "bob.%s.jobs" (or (:runner/type metadata) "container"))
+                        (assoc pipeline-info :run-id run-id))
+              run-id)))
     (f/when-failed [err]
       (if (= :not-found (f/message err))
         (respond "No such pipeline" 404)
