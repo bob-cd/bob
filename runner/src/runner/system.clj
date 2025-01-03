@@ -31,16 +31,22 @@
   [_ {:keys [queue] :as config}]
   (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
         subscriber (partial d/queue-msg-subscriber config routes)
-        jobs-queue "bob.container.jobs"]
+        jobs-queue "bob.container.jobs"
+        dlx "bob.container.dlx"
+        dlq "bob.container.dlq"]
     (merge-with merge
                 queue
-                {:queues {jobs-queue {:args {"x-dead-letter-exchange" "bob.dlx"
-                                             "x-dead-letter-routing-key" "bob.dlq"}}
+                {:exchanges {dlx {:type "direct"
+                                  :durable true}}
+                 :queues {jobs-queue {:args {"x-dead-letter-exchange" dlx
+                                             "x-dead-letter-routing-key" dlq}}
                           broadcast-queue {:args {"x-queue-type" "classic"}
                                            :props {:exclusive true
-                                                   :auto-delete true}}}
+                                                   :auto-delete true}}
+                          dlq {}}
                  :bindings {jobs-queue "bob.direct"
-                            broadcast-queue "bob.fanout"}
+                            broadcast-queue "bob.fanout"
+                            dlq dlx}
                  :subscriptions {jobs-queue subscriber
                                  broadcast-queue subscriber}})))
 
