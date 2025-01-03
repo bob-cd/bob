@@ -260,7 +260,6 @@
                   (lb/ack queue-chan delivery-tag))]
     run-id
     (f/when-failed [err]
-      (println "ERROR" (f/message err))
       (let [{:keys [status] :as run} (xt/entity (xt/db database) run-db-id)
             error (f/message err)]
         (when (and (spec/valid? :bob.db/run run)

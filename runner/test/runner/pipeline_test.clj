@@ -16,7 +16,9 @@
    [runner.engine-test :as et]
    [runner.pipeline :as p]
    [runner.util :as u]
-   [xtdb.api :as xt]))
+   [xtdb.api :as xt])
+  (:import
+   [java.time Instant]))
 
 (def test-image "alpine:latest")
 
@@ -277,6 +279,15 @@
                                                    :vars {:k1 "v1"}
                                                    :image test-image}]]))
                      (let [run-id "r-a-run-id"
+                           _ (xt/await-tx database
+                                          (xt/submit-tx database
+                                                        [[::xt/put
+                                                          {:xt/id (keyword "bob.pipeline.run" run-id)
+                                                           :type :pipeline-run
+                                                           :status :pending
+                                                           :scheduled-at (Instant/now)
+                                                           :group "test"
+                                                           :name "test"}]]))
                            result @(p/start {:database database
                                              :stream stream}
                                             queue
@@ -284,7 +295,6 @@
                                              :name "test"
                                              :run-id run-id}
                                             {})
-                           _ (println "RESULT" result)
                            lines (->> (xt/q (xt/db database)
                                             {:find '[(pull log [:line]) time]
                                              :where [['log :type :log-line]
