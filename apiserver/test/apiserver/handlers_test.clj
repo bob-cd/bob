@@ -131,7 +131,7 @@
             (t/is (nil? log-effect))))))))
 
 (t/deftest pipeline-direct-tests
-  (u/with-system (fn [db queue _]
+  (u/with-system (fn [db queue stream]
                    (t/testing "invalid pipeline deletion with active runs"
                      (xt/await-tx
                       db
@@ -151,7 +151,8 @@
                           :status :passed}]]))
                      (let [{:keys [status body]} (h/pipeline-delete {:parameters {:path {:group "dev" :name "test"}}
                                                                      :db db
-                                                                     :queue queue})]
+                                                                     :queue queue
+                                                                     :stream stream})]
                        (t/is (= 422 status))
                        (t/is (= {:error "Pipeline has active runs. Wait for them to finish or stop them."
                                  :runs ["r-1"]}
@@ -162,10 +163,12 @@
                                      :steps [{:cmd "echo hello"}]
                                      :image "busybox:musl"}
                            _ (h/pipeline-create {:parameters {:body pipeline}
-                                                 :db db})
+                                                 :db db
+                                                 :stream stream})
                            _ (h/pipeline-start {:parameters {:path {:group "dev" :name "test"}}
                                                 :queue queue
-                                                :db db})
+                                                :db db
+                                                :stream stream})
                            msg (queue-get queue "bob.container.jobs")]
                        (u/spec-assert :bob.command/pipeline-start msg)))
                    (t/testing "starting paused pipeline"
@@ -184,7 +187,8 @@
                      (let [{:keys [status body]} (h/pipeline-start {:parameters {:path {:group "dev-paused"
                                                                                         :name "test-paused"}}
                                                                     :queue queue
-                                                                    :db db})]
+                                                                    :db db
+                                                                    :stream stream})]
                        (t/is (= 422 status))
                        (t/is (= "Pipeline is paused. Unpause it first." (:message body))))))))
 

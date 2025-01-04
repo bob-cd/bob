@@ -154,7 +154,8 @@
                  {:type "Normal"
                   :kind "Pipeline"
                   :reason "PipelineRunScheduled"
-                  :message (str "Pipeline run scheduled " run-id)})))
+                  :message (str "Pipeline run scheduled " run-id)})
+        (respond run-id)))
     (f/when-failed [err]
       (if (= :not-found (f/message err))
         (respond "No such pipeline" 404)
