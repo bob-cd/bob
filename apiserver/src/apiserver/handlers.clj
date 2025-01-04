@@ -128,7 +128,8 @@
      metadata :body}
     :parameters
     db :db
-    queue :queue}]
+    queue :queue
+    {producer :producer} :stream}]
   (f/try-all [run-id (str "r-" (random-uuid))
               {:keys [group name]} pipeline-info
               data (pipeline-data db group name)
@@ -148,7 +149,12 @@
                         "bob.direct"
                         (format "bob.%s.jobs" (or (:runner/type metadata) "container"))
                         (assoc pipeline-info :run-id run-id))
-              run-id)))
+              run-id)
+        (ev/emit producer
+                 {:type "Normal"
+                  :kind "Pipeline"
+                  :reason "PipelineRunScheduled"
+                  :message (str "Pipeline run scheduled " run-id)})))
     (f/when-failed [err]
       (if (= :not-found (f/message err))
         (respond "No such pipeline" 404)

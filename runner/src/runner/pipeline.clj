@@ -302,33 +302,37 @@
 (defn stop
   "Idempotently stops a pipeline by group, name and run-id
 
-  Sets the :status in Db to :stopped and kills the container if present.
+  Sets the :status in Db to :stopped if pending or kills the container if present.
   This triggers a pipeline failure which is specially dealt with."
-  [{:keys [database stream]} _queue-chan {:keys [group name run-id] :as data} _meta]
+  [{:keys [database stream]} _queue-chan {:keys [run-id] :as data} _meta]
   (if-not (spec/valid? :bob.command.pipeline-stop/data data)
     (log/error "Invalid pipeline stop command: " data)
-    (when-let [run (get-in @node-state [:runs run-id])]
-      (log/infof "Stopping run %s for pipeline %s %s"
-                 run-id
-                 group
-                 name)
-      (xt/await-tx database
-                   (xt/submit-tx
-                    database
-                    [[::xt/put
-                      (assoc (run-info-of database run-id) :status :stopped :completed-at (Instant/now))]]))
+    (let [run-info (run-info-of database run-id)
+          set-stopped (fn [db run-info]
+                        (xt/await-tx db
+                                     (xt/submit-tx
+                                      db
+                                      [[::xt/put
+                                        (assoc run-info
+                                               :status :stopped
+                                               :completed-at (Instant/now))]])))]
+      (log/info "Stopping run" run-id)
       (ev/emit (:producer stream)
                {:type "Normal"
                 :reason "PipelineStopped"
                 :kind "Pipeline"
-                :message (str "Pipeline stopped " run-id)})
-      (when-let [container (:container-id run)]
-        (eng/kill-container container)
-        (eng/delete-container container)
-        (gc-images run-id))
-      (when-let [run (get-in @node-state [:runs run-id :ref])]
-        (when-not (future-done? run)
-          (future-cancel run))))))
+                :message (str "Pipeline run stopped " run-id)})
+      (if (= :pending (:status run-info))
+        (set-stopped database run-info)
+        (when-let [run (get-in @node-state [:runs run-id])]
+          (set-stopped database run-info)
+          (when-let [container (:container-id run)]
+            (eng/kill-container container)
+            (eng/delete-container container)
+            (gc-images run-id))
+          (when-let [run (get-in @node-state [:runs run-id :ref])]
+            (when-not (future-done? run)
+              (future-cancel run))))))))
 
 (comment
   (set! *warn-on-reflection* true)
