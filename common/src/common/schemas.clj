@@ -141,9 +141,7 @@
 
 (spec/def :bob.command.pipeline-stop/data
   (spec/keys :req-un
-             [:bob.pipeline/group
-              :bob.pipeline/name
-              :bob.command.pipeline-stop.data/run-id]))
+             [:bob.command.pipeline-stop.data/run-id]))
 
 (spec/def :bob.command/pipeline-stop
   (spec/keys :req-un

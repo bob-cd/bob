@@ -6,6 +6,7 @@
 
 (ns runner.pipeline
   (:require
+   [clojure.data.json :as json]
    [clojure.spec.alpha :as spec]
    [clojure.tools.logging :as log]
    [common.events :as ev]
@@ -308,6 +309,32 @@
           (when-let [run (get-in @node-state [:runs run-id :ref])]
             (when-not (future-done? run)
               (future-cancel run))))))))
+
+(defn retry
+  "Receives messages from the DLQ and retries with a backoff interval.
+
+  Retries by requeueing to the job queue if still pending."
+  [{:keys [database stream]} ch {:keys [delivery-tag type]} ^bytes payload]
+  (let [{:keys [run-id backoff] :as msg} (json/read-str (String/new payload "UTF-8") :key-fn keyword)
+        {:keys [status]} (run-info-of database run-id)]
+    (lb/ack ch delivery-tag)
+    (when (= :pending status)
+      (let [backoff (if backoff (* backoff 2) 2000)
+            to-log (format "Retrying run %s in %dms" run-id backoff)]
+        (log/info to-log)
+        (ev/emit (:producer stream)
+                 {:kind "Pipeline"
+                  :type "Normal"
+                  :reason "PipelineRunRetry"
+                  :message to-log})
+        (future
+          (Thread/sleep backoff)
+          (lb/publish ch
+                      "bob.direct"
+                      "bob.container.jobs"
+                      (json/write-str (assoc msg :backoff backoff))
+                      {:content-type "application/json"
+                       :type type}))))))
 
 (comment
   (set! *warn-on-reflection* true)

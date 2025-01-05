@@ -48,7 +48,8 @@
                             broadcast-queue "bob.fanout"
                             dlq dlx}
                  :subscriptions {jobs-queue subscriber
-                                 broadcast-queue subscriber}})))
+                                 broadcast-queue subscriber
+                                 dlq (partial p/retry config)}})))
 
 (defmethod ig/init-key
   :runner/heartbeat

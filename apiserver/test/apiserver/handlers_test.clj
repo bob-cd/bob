@@ -201,9 +201,7 @@
                                 :durable false})
                    (lq/bind queue "bob.tests" "bob.fanout")
                    (t/testing "pipeline stop"
-                     (h/pipeline-stop {:parameters {:path {:group "dev"
-                                                           :name "test"
-                                                           :id "r-a-run-id"}}
+                     (h/pipeline-stop {:parameters {:path {:run-id "r-a-run-id"}}
                                        :queue queue})
                      (u/spec-assert :bob.command/pipeline-stop (queue-get queue "bob.tests"))))))
 
