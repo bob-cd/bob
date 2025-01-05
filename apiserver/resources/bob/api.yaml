@@ -327,26 +327,14 @@ paths:
     post:
       operationId: PipelineStop
       summary: Stops a pipeline
-      description: Submits a pipeline stop request given the pipeline group, name and run id
+      description: Submits a pipeline stop request given the pipeline run-id
       tags:
         - pipeline
       x-cli-name: stop
       x-cli-group: pipelines
 
       parameters:
-        - name: group
-          required: true
-          in: path
-          description: The group of the pipeline
-          schema:
-            type: string
-        - name: name
-          required: true
-          in: path
-          description: The name of the pipeline
-          schema:
-            type: string
-        - name: id
+        - name: run-id
           required: true
           in: path
           description: The id of the pipeline run

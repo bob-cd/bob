@@ -284,7 +284,7 @@
       run-ref)))
 
 (defn stop
-  "Idempotently stops a pipeline by group, name and run-id
+  "Idempotently stops a pipeline by the run-id
 
   Sets the :status in Db to :stopped if pending or kills the container if present.
   This triggers a pipeline failure if running which is specially dealt with."

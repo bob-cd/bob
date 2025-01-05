@@ -168,7 +168,7 @@
                   "pipeline/stop"
                   "bob.fanout"
                   ""
-                  (s/rename-keys pipeline-info {:id :run-id}))))
+                  pipeline-info)))
 
 (defn pipeline-pause-unpause
   [pause?
