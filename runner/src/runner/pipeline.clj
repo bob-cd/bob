@@ -186,7 +186,7 @@
          dissoc
          run-id))
 
-(defn get-pipeline
+(defn- get-pipeline
   [database group name]
   (f/try-all [pipeline (xt/entity (xt/db database)
                                   (keyword (format "bob.pipeline.%s/%s" group name)))
@@ -197,8 +197,17 @@
     pipeline
     (f/when-failed [err] err)))
 
+(defn- set-run-status
+  [db run-id status time-key]
+  (xt/await-tx db
+               (xt/submit-tx db
+                             [[::xt/put
+                               (assoc (run-info-of db run-id)
+                                      :status status
+                                      time-key (Instant/now))]])))
+
 (defn- start*
-  [{:keys [database stream] :as config} queue-chan group name run-id run-db-id delivery-tag]
+  [{:keys [database stream] :as config} queue-chan group name run-id delivery-tag]
   (f/try-all [{:keys [image steps vars]} (get-pipeline database group name)
               _ (log/infof "Starting new run: %s" run-id)
               producer (:producer stream)
@@ -206,23 +215,13 @@
                                    :reason "StartPipelineRun"
                                    :kind "Pipeline"
                                    :message (format "Starting pipeline %s/%s with id %s" group name run-id)})
-              _ (xt/await-tx database
-                             (xt/submit-tx database
-                                           [[::xt/put
-                                             (assoc (run-info-of database run-id)
-                                                    :status :initializing
-                                                    :initiated-at (Instant/now))]]))
+              _ (set-run-status database run-id :initializing :initiated-at)
               _ (ev/emit producer {:type "Normal"
                                    :reason "ImagePull"
                                    :kind "Pipeline"
                                    :message (format "Pulling image %s for %s" image run-id)})
               _ (eng/pull-image image)
-              _ (xt/await-tx database
-                             (xt/submit-tx database
-                                           [[::xt/put
-                                             (assoc (run-info-of database run-id)
-                                                    :status :initialized
-                                                    :initialized-at (Instant/now))]]))
+              _ (set-run-status database run-id :initialized :initialized-at)
               _ (mark-image-for-gc image run-id)
               build-state {:image image
                            :mounted #{}
@@ -231,12 +230,7 @@
                            :env vars
                            :group group
                            :name name}
-              _ (xt/await-tx database
-                             (xt/submit-tx database
-                                           [[::xt/put
-                                             (assoc (run-info-of database run-id)
-                                                    :status :running
-                                                    :started-at (Instant/now))]]))
+              _ (set-run-status database run-id :running :started-at)
               _ (ev/emit producer {:type "Normal"
                                    :reason "PipelineRunning"
                                    :kind "Pipeline"
@@ -244,12 +238,7 @@
               _ (reduce #(exec-step config %1 %2) build-state steps) ;; This is WHOLE of Bob!
               _ (gc-images run-id)
               _ (clean-up-run run-id)
-              _ (xt/await-tx database
-                             (xt/submit-tx database
-                                           [[::xt/put
-                                             (assoc (run-info-of database run-id)
-                                                    :status :passed
-                                                    :completed-at (Instant/now))]]))
+              _ (set-run-status database run-id :passed :completed-at)
               _ (log/infof "Run successful %s" run-id)
               _ (log-event database run-id "Run successful")
               _ (ev/emit producer {:type "Normal"
@@ -260,7 +249,7 @@
                   (lb/ack queue-chan delivery-tag))]
     run-id
     (f/when-failed [err]
-      (let [{:keys [status] :as run} (xt/entity (xt/db database) run-db-id)
+      (let [{:keys [status] :as run} (xt/entity (xt/db database) (keyword "bob.pipeline.run" run-id))
             error (f/message err)]
         (when (and (spec/valid? :bob.db/run run)
                    (not= status :stopped))
@@ -273,12 +262,7 @@
                     :reason "PipelineFailed"
                     :kind "Pipeline"
                     :message (format "Pipeline %s failed: %s" run-id error)})
-          (xt/await-tx
-           database
-           (xt/submit-tx
-            database
-            [[::xt/put
-              (assoc (run-info-of database run-id) :status :failed :completed-at (Instant/now))]]))))
+          (set-run-status database run-id :failed :completed-at)))
       (gc-images run-id)
       (clean-up-run run-id)
       (when delivery-tag
@@ -290,7 +274,7 @@
   [config queue-chan {:keys [group name run-id] :as data} {:keys [delivery-tag]}]
   (if-not (spec/valid? :bob.command.pipeline-start/data data)
     (log/error "Invalid pipeline start command: " data)
-    (let [run-ref (future (start* config queue-chan group name run-id (keyword "bob.pipeline.run" run-id) delivery-tag))]
+    (let [run-ref (future (start* config queue-chan group name run-id delivery-tag))]
       (swap! node-state
              update-in
              [:runs run-id]
@@ -303,29 +287,20 @@
   "Idempotently stops a pipeline by group, name and run-id
 
   Sets the :status in Db to :stopped if pending or kills the container if present.
-  This triggers a pipeline failure which is specially dealt with."
+  This triggers a pipeline failure if running which is specially dealt with."
   [{:keys [database stream]} _queue-chan {:keys [run-id] :as data} _meta]
   (if-not (spec/valid? :bob.command.pipeline-stop/data data)
     (log/error "Invalid pipeline stop command: " data)
-    (let [run-info (run-info-of database run-id)
-          set-stopped (fn [db run-info]
-                        (xt/await-tx db
-                                     (xt/submit-tx
-                                      db
-                                      [[::xt/put
-                                        (assoc run-info
-                                               :status :stopped
-                                               :completed-at (Instant/now))]])))]
+    (let [run-info (run-info-of database run-id)]
       (log/info "Stopping run" run-id)
       (ev/emit (:producer stream)
                {:type "Normal"
                 :reason "PipelineStopped"
                 :kind "Pipeline"
                 :message (str "Pipeline run stopped " run-id)})
-      (if (= :pending (:status run-info))
-        (set-stopped database run-info)
+      (set-run-status database run-id :stopped :completed-at)
+      (when (= :running (:status run-info))
         (when-let [run (get-in @node-state [:runs run-id])]
-          (set-stopped database run-info)
           (when-let [container (:container-id run)]
             (eng/kill-container container)
             (eng/delete-container container)
@@ -432,17 +407,6 @@
                       :name "test"
                       :run-id run-id}
                      {}))
-
-  (xt/q (xt/db database)
-        '{:find [(pull log [:line])]
-          :where [[log :type :log-line] [log :run-id run-id]]})
-
-  (->> (xt/q (xt/db database)
-             '{:find [(pull run [:xt/id])]
-               :where [[run :type :pipeline-run]]})
-       first
-       (map :xt/id)
-       (map name))
 
   (xt/submit-tx database
                 [[::xt/put
