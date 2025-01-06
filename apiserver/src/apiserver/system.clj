@@ -18,8 +18,6 @@
   (:import
    [java.util.concurrent Executors Future]))
 
-(def node-id (delay (random-uuid)))
-
 (defmethod ig/init-key
   :apiserver/server
   [_ {:keys [host port database queue stream-name stream]}]
@@ -45,7 +43,7 @@
 (defmethod ig/init-key
   :apiserver/heartbeat
   [_ {:keys [queue db freq]}]
-  (hb/schedule #(hb/beat-it db queue freq @node-id :bob/node-type :apiserver)
+  (hb/schedule #(hb/beat-it db queue freq :bob/node-type :apiserver)
                "heartbeat"
                freq))
 
