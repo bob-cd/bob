@@ -9,17 +9,16 @@
   (:import
    [com.sun.management OperatingSystemMXBean] ;; TODO: Maybe something other than com.sun.*?
    [java.lang.management ManagementFactory]
-   [java.net InetAddress]
    [java.util.concurrent Executors TimeUnit]))
 
 (defn get-node-info
-  [extras]
+  [node-id extras]
   (let [bean ^OperatingSystemMXBean (ManagementFactory/getOperatingSystemMXBean)]
-    {(.getHostAddress (InetAddress/getLocalHost))
-     (merge {:cpu/load (.getSystemCpuLoad bean)
-             :mem/free (.getFreePhysicalMemorySize bean)
-             :mem/total (.getTotalPhysicalMemorySize bean)}
-            extras)}))
+    {node-id (merge {:cpu/count (Runtime/.availableProcessors (Runtime/getRuntime))
+                     :cpu/load (.getSystemCpuLoad bean)
+                     :mem/free (.getFreePhysicalMemorySize bean)
+                     :mem/total (.getTotalPhysicalMemorySize bean)}
+                    extras)}))
 
 (defn get-connections
   [timeout {:keys [api-url username password]}]
@@ -32,9 +31,9 @@
          (into #{}))))
 
 (defn beat-it
-  [db queue-info timeout & {:as extra-data}]
+  [db queue-info timeout node-id & {:as extra-data}]
   (f/try-all [id :bob.cluster/info
-              node-info (get-node-info extra-data)
+              node-info (get-node-info node-id extra-data)
               cluster (get (xt/entity (xt/db db) id) :data {}) ;; TODO: Assert the cluster-info spec
               cleaned (->> (get-connections timeout queue-info)
                            (set/difference (set (keys cluster)))
@@ -59,9 +58,10 @@
 
   (import '[xtdb.api IXtdb])
 
-  (get-node-info {})
+  (get-node-info (random-uuid) {})
 
-  (get-connections {:api-url "http://localhost:15672/api"
+  (get-connections 10000
+                   {:api-url "http://localhost:15672/api"
                     :username "guest"
                     :password "guest"})
 
@@ -83,4 +83,6 @@
            {:api-url "http://localhost:15672/api"
             :username "guest"
             :password "guest"}
+           10000
+           (random-uuid)
            :bob/node-type :runner :bob/workload [:foo]))

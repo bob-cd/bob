@@ -20,6 +20,8 @@
   {"pipeline/start" p/start
    "pipeline/stop" p/stop})
 
+(defonce node-id (delay (random-uuid)))
+
 (def config
   (-> "bob/conf.edn"
       (io/resource)
@@ -54,7 +56,7 @@
 (defmethod ig/init-key
   :runner/heartbeat
   [_ {:keys [queue db freq]}]
-  (hb/schedule #(hb/beat-it db queue freq
+  (hb/schedule #(hb/beat-it db queue freq @node-id
                             :bob/node-type :runner/container
                             :bob/runs (-> p/node-state
                                           deref
