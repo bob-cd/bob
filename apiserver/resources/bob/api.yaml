@@ -323,7 +323,7 @@ paths:
                   value:
                     message: "Pipeline is paused. Unpause it first."
 
-  "/pipelines/stop/groups/{group}/names/{name}/runs/{id}":
+  "/pipelines/stop/runs/{run-id}":
     post:
       operationId: PipelineStop
       summary: Stops a pipeline
