@@ -289,9 +289,11 @@
 
   Sets the :status in Db to :stopped if pending or kills the container if present.
   This triggers a pipeline failure if running which is specially dealt with."
-  [{:keys [database stream]} _queue-chan {:keys [run-id] :as data} _meta]
+  [{:keys [database stream]} queue-chan {:keys [run-id] :as data} {:keys [delivery-tag]}]
   (if-not (spec/valid? :bob.command.pipeline-stop/data data)
-    (log/error "Invalid pipeline stop command: " data)
+    (do
+      (log/error "Invalid pipeline stop command: " data)
+      (lb/ack queue-chan delivery-tag))
     (let [run-info (run-info-of database run-id)]
       (log/info "Stopping run" run-id)
       (ev/emit (:producer stream)

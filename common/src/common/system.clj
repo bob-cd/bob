@@ -73,11 +73,12 @@
 
 (defmethod ig/init-key
   :bob/queue
-  [_ {:keys [url user password conf api-url]}]
+  [_ {:keys [url user password conf api-url node-type]}]
   (let [conn-opts {:uri url
                    :username user
                    :password password
-                   :api-url api-url}
+                   :api-url api-url
+                   :connection-name (str node-type "-" (random-uuid))}
         conn (try-connect #(rmq/connect conn-opts))
         chan (lch/open conn)]
     (log/infof "Connected on channel id: %d" (.getChannelNumber chan))

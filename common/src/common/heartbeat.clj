@@ -16,7 +16,8 @@
   [extras]
   (let [bean ^OperatingSystemMXBean (ManagementFactory/getOperatingSystemMXBean)]
     {(.getHostAddress (InetAddress/getLocalHost))
-     (merge {:cpu/load (.getSystemCpuLoad bean)
+     (merge {:cpu/count (Runtime/.availableProcessors (Runtime/getRuntime))
+             :cpu/load (.getSystemCpuLoad bean)
              :mem/free (.getFreePhysicalMemorySize bean)
              :mem/total (.getTotalPhysicalMemorySize bean)}
             extras)}))

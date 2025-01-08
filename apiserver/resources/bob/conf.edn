@@ -11,6 +11,7 @@
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
              :api-url #ref [:common :bob/queue-api-url]
+             :node-type "apiserver"
              :conf {:exchanges #ref [:common :bob/queue-conf :exchanges]
                     :queues #ref [:common :bob/queue-conf :queues]}}
  :apiserver/server {:host #or [#env BOB_API_HOST "0.0.0.0"]
