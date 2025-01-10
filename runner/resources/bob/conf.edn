@@ -11,7 +11,7 @@
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
              :conf #ig/ref :runner/queue-config
-             :node-type "runner"}
+             :node-type "bob/runner"}
  :runner/queue-config {:database #ig/ref :bob/storage
                        :queue #ref [:common :bob/queue-conf]
                        :stream #ig/ref :bob/stream}

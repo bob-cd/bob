@@ -11,6 +11,7 @@
    [apiserver.entities.pipeline :as pipeline]
    [apiserver.healthcheck :as hc]
    [apiserver.metrics :as metrics]
+   [apiserver.runs :as r]
    [babashka.http-client :as http]
    [clojure.data.json :as json]
    [clojure.instant :as ins]
@@ -19,10 +20,10 @@
    [clojure.spec.alpha :as spec]
    [clojure.string :as cs]
    [clojure.tools.logging :as log]
+   [common.capacity :as cp]
    [common.events :as ev]
    [common.schemas]
    [failjure.core :as f]
-   [langohr.basic :as lb]
    [ring.core.protocols :as p]
    [xtdb.api :as xt])
   (:import
@@ -40,15 +41,6 @@
    {:status status
     :body {:message content}}))
 
-(defn publish
-  [chan msg-type exchange routing-key message]
-  (lb/publish chan
-              exchange
-              routing-key
-              (json/write-str message :key-fn #(subs (str %) 1))
-              {:content-type "application/json"
-               :type msg-type}))
-
 (defn pipeline-data
   [db group name]
   (f/try-all [data (xt/entity
@@ -59,15 +51,6 @@
                   (f/fail (str "Invalid pipeline: " data)))]
     data
     (f/when-failed [err] err)))
-
-(defn exec
-  ([task]
-   (exec task "Ok"))
-  ([task response]
-   (let [result (f/try* (task))]
-     (if (f/failed? result)
-       (respond (f/message result) 500)
-       (respond response)))))
 
 (defn api-spec
   [_]
@@ -124,8 +107,7 @@
       (respond (f/message err) 500))))
 
 (defn pipeline-start
-  [{{pipeline-info :path
-     metadata :body}
+  [{{pipeline-info :path}
     :parameters
     db :db
     queue :queue
@@ -144,17 +126,12 @@
                  :group group
                  :name name}]
         (xt/await-tx db (xt/submit-tx db [[::xt/put run]]))
-        (exec #(publish queue
-                        "pipeline/start"
-                        "bob.direct"
-                        (format "bob.%s.jobs" (or (:runner/type metadata) "container"))
-                        (assoc pipeline-info :run-id run-id))
-              run-id)
         (ev/emit producer
                  {:type "Normal"
                   :kind "Pipeline"
                   :reason "PipelineRunScheduled"
                   :message (str "Pipeline run scheduled " run-id)})
+        (r/dispatch-start db queue data run-id)
         (respond run-id)))
     (f/when-failed [err]
       (if (= :not-found (f/message err))
@@ -162,13 +139,11 @@
         (respond (f/message err) 500)))))
 
 (defn pipeline-stop
-  [{{pipeline-info :path} :parameters
+  [{{{:keys [run-id]} :path} :parameters
+    db :db
     queue :queue}]
-  (exec #(publish queue
-                  "pipeline/stop"
-                  "bob.fanout"
-                  ""
-                  pipeline-info)))
+  (r/dispatch-stop db queue run-id)
+  (respond "Ok"))
 
 (defn pipeline-pause-unpause
   [pause?
@@ -412,7 +387,7 @@
 
 (defn cluster-info
   [{db :db}]
-  (f/try-all [info (get (xt/entity (xt/db db) :bob.cluster/info) :data {})]
+  (f/try-all [info (cp/cluster-info db)]
     (respond info)
     (f/when-failed [err]
       (respond (f/message err) 500))))

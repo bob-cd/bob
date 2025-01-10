@@ -8,6 +8,7 @@
   (:require
    [aero.core :as aero]
    [apiserver.healthcheck :as hc]
+   [apiserver.runs :as r]
    [apiserver.server :as s]
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
@@ -17,6 +18,11 @@
    [s-exp.hirundo :as srv])
   (:import
    [java.util.concurrent Executors Future]))
+
+(defmethod ig/init-key
+  :apiserver/queue-config
+  [_ {:keys [queue] :as config}]
+  (merge-with merge queue {:subscriptions {"bob.dlq" (partial r/retry config)}}))
 
 (defmethod ig/init-key
   :apiserver/server

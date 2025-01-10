@@ -6,7 +6,6 @@
 
 (ns runner.pipeline
   (:require
-   [clojure.data.json :as json]
    [clojure.spec.alpha :as spec]
    [clojure.tools.logging :as log]
    [common.events :as ev]
@@ -14,6 +13,7 @@
    [failjure.core :as f]
    [langohr.basic :as lb]
    [runner.artifact :as a]
+   [runner.capacity :as cp]
    [runner.engine :as eng]
    [runner.resource :as r]
    [xtdb.api :as xt])
@@ -271,18 +271,30 @@
       (f/fail run-id))))
 
 (defn start
-  "Attempts to asynchronously start a pipeline by group and name."
-  [config queue-chan {:keys [group name run-id] :as data} {:keys [delivery-tag]}]
+  "Attempts to asynchronously start a pipeline by group and name.
+
+  Rejects it if there isn't any capacity on the current runner."
+  [{:keys [database stream] :as config} queue-chan {:keys [group name run-id] :as data} {:keys [delivery-tag]}]
   (if-not (spec/valid? :bob.command.pipeline-start/data data)
-    (log/error "Invalid pipeline start command: " data)
-    (let [run-ref (future (start* config queue-chan group name run-id delivery-tag))]
-      (swap! node-state
-             update-in
-             [:runs run-id]
-             assoc
-             :ref
-             run-ref)
-      run-ref)))
+    (do (log/error "Invalid pipeline start command: " data)
+        (lb/ack queue-chan delivery-tag))
+    (if (cp/has-capacity? (get-pipeline database group name))
+      (let [run-ref (future (start* config queue-chan group name run-id delivery-tag))]
+        (swap! node-state
+               update-in
+               [:runs run-id]
+               assoc
+               :ref
+               run-ref)
+        run-ref)
+      (let [msg (format "Rejected run %s due to insufficient capacity" run-id)]
+        (lb/nack queue-chan delivery-tag false false)
+        (log/warn msg)
+        (ev/emit (:producer stream)
+                 {:kind "Pipeline"
+                  :type "Warning"
+                  :reason "PipelineRunRejected"
+                  :message msg})))))
 
 (defn stop
   "Idempotently stops a pipeline by the run-id
@@ -290,53 +302,25 @@
   Sets the :status in Db to :stopped if pending or kills the container if present.
   This triggers a pipeline failure if running which is specially dealt with."
   [{:keys [database stream]} queue-chan {:keys [run-id] :as data} {:keys [delivery-tag]}]
+  (lb/ack queue-chan delivery-tag)
   (if-not (spec/valid? :bob.command.pipeline-stop/data data)
+    (log/error "Invalid pipeline stop command: " data)
     (do
-      (log/error "Invalid pipeline stop command: " data)
-      (lb/ack queue-chan delivery-tag))
-    (let [run-info (run-info-of database run-id)]
       (log/info "Stopping run" run-id)
       (ev/emit (:producer stream)
                {:type "Normal"
-                :reason "PipelineStopped"
+                :reason "PipelineStopping"
                 :kind "Pipeline"
-                :message (str "Pipeline run stopped " run-id)})
+                :message (str "Stopping run " run-id)})
       (set-run-status database run-id :stopped :completed-at)
-      (when (= :running (:status run-info))
-        (when-let [run (get-in @node-state [:runs run-id])]
-          (when-let [container (:container-id run)]
-            (eng/kill-container container)
-            (eng/delete-container container)
-            (gc-images run-id))
-          (when-let [run (get-in @node-state [:runs run-id :ref])]
-            (when-not (future-done? run)
-              (future-cancel run))))))))
-
-(defn retry
-  "Receives messages from the DLQ and retries with a backoff interval.
-
-  Retries by requeueing to the job queue if still pending."
-  [{:keys [database stream]} ch {:keys [delivery-tag type]} ^bytes payload]
-  (let [{:keys [run-id backoff] :as msg} (json/read-str (String/new payload "UTF-8") :key-fn keyword)
-        {:keys [status]} (run-info-of database run-id)]
-    (lb/ack ch delivery-tag)
-    (when (= :pending status)
-      (let [backoff (if backoff (* backoff 2) 2000)
-            to-log (format "Retrying run %s in %dms" run-id backoff)]
-        (log/info to-log)
-        (ev/emit (:producer stream)
-                 {:kind "Pipeline"
-                  :type "Normal"
-                  :reason "PipelineRunRetry"
-                  :message to-log})
-        (future
-          (Thread/sleep backoff)
-          (lb/publish ch
-                      "bob.direct"
-                      "bob.container.jobs"
-                      (json/write-str (assoc msg :backoff backoff))
-                      {:content-type "application/json"
-                       :type type}))))))
+      (when-let [run (get-in @node-state [:runs run-id])]
+        (when-let [container (:container-id run)]
+          (eng/kill-container container)
+          (eng/delete-container container)
+          (gc-images run-id))
+        (when-let [run (get-in @node-state [:runs run-id :ref])]
+          (when-not (future-done? run)
+            (future-cancel run)))))))
 
 (comment
   (set! *warn-on-reflection* true)

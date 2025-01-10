@@ -29,27 +29,18 @@
 (defmethod ig/init-key
   :runner/queue-config
   [_ {:keys [queue] :as config}]
-  (let [broadcast-queue (str "bob.broadcasts." (random-uuid))
-        subscriber (partial d/queue-msg-subscriber config routes)
-        jobs-queue "bob.container.jobs"
-        dlx "bob.container.dlx"
-        dlq "bob.container.dlq"]
+  (let [subscriber (partial d/queue-msg-subscriber config routes)
+        node-id (first (keys (hb/get-node-info {})))
+        jobs-queue (str "bob.jobs." node-id)]
     (merge-with merge
                 queue
-                {:exchanges {dlx {:type "direct"
-                                  :durable true}}
-                 :queues {jobs-queue {:args {"x-dead-letter-exchange" dlx
-                                             "x-dead-letter-routing-key" dlq}}
-                          broadcast-queue {:args {"x-queue-type" "classic"}
-                                           :props {:exclusive true
-                                                   :auto-delete true}}
-                          dlq {}}
-                 :bindings {jobs-queue "bob.direct"
-                            broadcast-queue "bob.fanout"
-                            dlq dlx}
-                 :subscriptions {jobs-queue subscriber
-                                 broadcast-queue subscriber
-                                 dlq (partial p/retry config)}})))
+                {:queues {jobs-queue {:args {"x-dead-letter-exchange" "bob.dlx"
+                                             "x-dead-letter-routing-key" "bob.dlq"
+                                             "x-queue-type" "classic"}
+                                      :props {:exclusive true
+                                              :auto-delete true}}}
+                 :bindings {jobs-queue "bob.direct"}
+                 :subscriptions {jobs-queue subscriber}})))
 
 (defmethod ig/init-key
   :runner/heartbeat

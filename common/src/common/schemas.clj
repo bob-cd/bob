@@ -71,13 +71,43 @@
 
 (spec/def :bob.pipeline/resources (spec/coll-of :bob.pipeline/resource))
 
+(defn mem-quota?
+  [s]
+  (and (string? s)
+       (re-matches #"^(\d+)([KMGTPE]i{0,1})$" s)))
+
+(defn cpu-quota?
+  [n]
+  (and (double? n)
+       (>= n 0.0)
+       (<= n 1.0)))
+
+(spec/def :bob.pipeline.quotas/cpu cpu-quota?)
+
+(spec/def :bob.pipeline.quotas/mem mem-quota?)
+
+(spec/def :bob.pipeline.quotas/requests
+  (spec/keys :opt-un
+             [:bob.pipeline.quotas/mem]))
+
+(spec/def :bob.pipeline.quotas/limits
+  (spec/keys :opt-un
+             [:bob.pipeline.quotas/cpu
+              :bob.pipeline.quotas/mem]))
+
+(spec/def :bob.pipeline/quotas
+  (spec/keys :opt-un
+             [:bob.pipeline.quotas/requests
+              :bob.pipeline.quotas/limits]))
+
 (spec/def :bob/pipeline
   (spec/keys :req-un [:bob.pipeline/group
                       :bob.pipeline/name
                       :bob.pipeline/image
                       :bob.pipeline/steps]
              :opt-un [:bob.pipeline/vars
-                      :bob.pipeline/resources]))
+                      :bob.pipeline/resources
+                      :bob.pipeline/quotas]))
 
 (spec/def :bob.resource-provider/url string?)
 

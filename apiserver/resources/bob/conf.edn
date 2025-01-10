@@ -11,9 +11,10 @@
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
              :api-url #ref [:common :bob/queue-api-url]
-             :node-type "apiserver"
-             :conf {:exchanges #ref [:common :bob/queue-conf :exchanges]
-                    :queues #ref [:common :bob/queue-conf :queues]}}
+             :node-type "bob/apiserver"
+             :conf #ig/ref :apiserver/queue-config}
+ :apiserver/queue-config {:queue #ref [:common :bob/queue-conf]
+                          :stream #ig/ref :bob/stream}
  :apiserver/server {:host #or [#env BOB_API_HOST "0.0.0.0"]
                     :port #long #or [#env BOB_API_PORT 7777]
                     :database #ig/ref :bob/storage

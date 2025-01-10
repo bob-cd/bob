@@ -1139,6 +1139,17 @@ components:
         vars:
           $ref: "#/components/schemas/Vars"
 
+    Quota:
+      type: object
+      properties:
+        cpu:
+          type: number
+          description: The percentage of total CPUs. Eg 0.7 = 70% of all the cores in a node
+        mem:
+          type: string
+          pattern: ^(\d+)([KMGTPE]i{0,1})$
+          description: The memory value in bytes. Eg 1Gi, 4096Mi, 1Ti, 1024Ki, 5Ei
+
     Pipeline:
       type: object
       required:
@@ -1165,9 +1176,22 @@ components:
           $ref: "#/components/schemas/Vars"
         resources:
           type: array
+          description: The list of declared resources
           items:
             $ref: "#/components/schemas/Resource"
-          description: The list of declared resources
+        quotas:
+          type: object
+          description: Map of quotas like limits, requests
+          properties:
+            limits:
+              $ref: "#/components/schemas/Quota"
+            requests:
+              type: object
+              properties:
+                mem:
+                  type: string
+                  pattern: ^(\d+)([KMGTPE]i{0,1})$
+                  description: The memory value in bytes. Eg 1Gi, 4096Mi, 1Ti, 1024Ki, 5Ei
 
     StringList:
       type: array

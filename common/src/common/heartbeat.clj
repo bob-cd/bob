@@ -62,7 +62,8 @@
 
   (get-node-info {})
 
-  (get-connections {:api-url "http://localhost:15672/api"
+  (get-connections 10000
+                   {:api-url "http://localhost:15672/api"
                     :username "guest"
                     :password "guest"})
 
