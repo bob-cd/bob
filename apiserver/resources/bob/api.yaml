@@ -483,7 +483,7 @@ paths:
                   value:
                     message: "<some error message>"
 
-  "/pipelines/status/runs/{id}":
+  "/pipelines/status/runs/{run-id}":
     get:
       operationId: PipelineStatus
       summary: Fetches the status of the pipeline
@@ -494,7 +494,7 @@ paths:
       x-cli-group: pipelines
 
       parameters:
-        - name: id
+        - name: run-id
           required: true
           in: path
           description: The id of the pipeline run

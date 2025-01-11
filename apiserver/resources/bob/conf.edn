@@ -13,7 +13,8 @@
              :api-url #ref [:common :bob/queue-api-url]
              :node-type "bob/apiserver"
              :conf #ig/ref :apiserver/queue-config}
- :apiserver/queue-config {:queue #ref [:common :bob/queue-conf]
+ :apiserver/queue-config {:database #ig/ref :bob/storage
+                          :queue #ref [:common :bob/queue-conf]
                           :stream #ig/ref :bob/stream}
  :apiserver/server {:host #or [#env BOB_API_HOST "0.0.0.0"]
                     :port #long #or [#env BOB_API_PORT 7777]

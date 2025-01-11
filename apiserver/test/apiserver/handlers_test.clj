@@ -9,13 +9,11 @@
    [apiserver.handlers :as h]
    [apiserver.util :as u]
    [babashka.http-client :as http]
-   [clojure.data.json :as json]
    [clojure.java.io :as io]
    [clojure.spec.alpha]
    [clojure.test :as t]
    [common.schemas]
    [failjure.core :as f]
-   [langohr.basic :as lb]
    [langohr.channel :as lch]
    [xtdb.api :as xt])
   (:import
@@ -245,13 +243,13 @@
                                        :status :running}]]))
                      (t/is (= :running
                               (-> (h/pipeline-status {:db db
-                                                      :parameters {:path {:id "r-1"}}})
+                                                      :parameters {:path {:run-id "r-1"}}})
                                   :body
                                   :message))))
                    (t/testing "non-existing pipeline status"
                      (let [{:keys [status body]}
                            (h/pipeline-status {:db db
-                                               :parameters {:path {:id "r-2"}}})]
+                                               :parameters {:path {:run-id "r-2"}}})]
                        (t/is (= 404 status))
                        (t/is (= "Cannot find status"
                                 (:message body))))))))

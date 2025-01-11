@@ -8,6 +8,7 @@
   (:require
    [aero.core :as aero]
    [clojure.java.io :as io]
+   [clojure.tools.logging :as log]
    [common.dispatch :as d]
    [common.heartbeat :as hb]
    [common.system :as cs]
@@ -30,15 +31,16 @@
   :runner/queue-config
   [_ {:keys [queue] :as config}]
   (let [subscriber (partial d/queue-msg-subscriber config routes)
-        node-id (first (keys (hb/get-node-info {})))
+        node-id (first (keys (hb/get-node-info {}))) ;; TODO: See if server named queues can be used here?
         jobs-queue (str "bob.jobs." node-id)]
     (merge-with merge
                 queue
                 {:queues {jobs-queue {:args {"x-dead-letter-exchange" "bob.dlx"
                                              "x-dead-letter-routing-key" "bob.dlq"
+                                             "x-expires" 300000 ;; Configurable?
                                              "x-queue-type" "classic"}
-                                      :props {:exclusive true
-                                              :auto-delete true}}}
+                                      :props {:auto-delete true ;; TODO: should this queue be deleted on shutdown/exclusive?
+                                              :durable false}}}
                  :bindings {jobs-queue "bob.direct"}
                  :subscriptions {jobs-queue subscriber}})))
 
@@ -65,7 +67,8 @@
 (defn start
   []
   (alter-var-root #'system
-                  (constantly (ig/init config))))
+                  (constantly (do (ig/init config)
+                                  (log/info "Ready")))))
 
 (defn stop
   []

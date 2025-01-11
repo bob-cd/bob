@@ -187,9 +187,9 @@
       (respond (f/message err) 500))))
 
 (defn pipeline-status
-  [{{{:keys [id]} :path} :parameters
+  [{{{:keys [run-id]} :path} :parameters
     db :db}]
-  (f/try-all [run (xt/entity (xt/db db) (keyword "bob.pipeline.run" id))
+  (f/try-all [run (xt/entity (xt/db db) (keyword "bob.pipeline.run" run-id))
               status (if (and (some? run)
                               (not (spec/valid? :bob.db/run run)))
                        (f/fail (str "Invalid run: " run))
@@ -240,7 +240,6 @@
                       (respond 400))
         (respond (str err) 500)))))
 
-;; TODO: Better way hopefully?
 (defn pipeline-list
   [{{{:keys [group name status]
       :as query}

@@ -12,7 +12,7 @@
 (defn cluster-info
   [db]
   (-> (xt/db db)
-      (xt/entity :bob/cluster-info)
+      (xt/entity :bob.cluster/info)
       (get :data {})))
 
 (defn ->bytes
@@ -41,16 +41,18 @@
             (first)
             (:mem/free)))))
 
-(defn nodes-with-capacity
+;; TODO: Maybe query the DB?
+(defn runners-with-capacity
   "Returns all nodes with capacity"
   [db {{:keys [mem]} :requests}]
-  (if-not mem
-    []
-    (->> (cluster-info db)
-         (filter (fn [[_ {:keys [node-type free]}]]
-                   (and (= "runner" (namespace node-type))
-                        (<= (->bytes mem) free))))
-         (map first))))
+  (->> (cluster-info db)
+       (filter (fn [[_ {:keys [:bob/node-type]}]]
+                 (= "runner" (namespace node-type))))
+       (filter (fn [[_ {:keys [:mem/free]}]]
+                 (if-not mem
+                   true
+                   (<= (->bytes mem) free))))
+       (map first)))
 
 (comment
   (->bytes "1024Mi")

@@ -26,7 +26,7 @@
   ([db ch pipeline run-id]
    (dispatch-start db ch pipeline run-id 2000))
   ([db ch {:keys [group name quotas]} run-id backoff]
-   (let [nodes (cp/nodes-with-capacity db quotas)
+   (let [nodes (cp/runners-with-capacity db quotas)
          cmd {:group group :name name :run-id run-id :backoff backoff}
          msg-type "pipeline/start"]
      (if (empty? nodes)
