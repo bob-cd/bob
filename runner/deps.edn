@@ -6,7 +6,7 @@
 
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.15"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.16"}
         com.rabbitmq/stream-client {:mvn/version "0.21.0"}
         com.xtdb/xtdb-core {:mvn/version "1.24.4"}
         common/common {:local/root "../common"}

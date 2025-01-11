@@ -14,9 +14,9 @@
    [xtdb.api :as xt]))
 
 (defn- publish
-  [ch exhchange queue-name msg msg-type]
+  [ch exchange queue-name msg msg-type]
   (lb/publish ch
-              exhchange
+              exchange
               queue-name
               (json/write-str msg)
               {:content-type "application/json"

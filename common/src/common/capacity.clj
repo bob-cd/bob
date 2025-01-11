@@ -44,10 +44,12 @@
 (defn nodes-with-capacity
   "Returns all nodes with capacity"
   [db {{:keys [mem]} :requests}]
-  (let [req-mem (->bytes mem)]
+  (if-not mem
+    []
     (->> (cluster-info db)
-         (filter (fn [[_ info]]
-                   (<= req-mem (:mem/free info))))
+         (filter (fn [[_ {:keys [node-type free]}]]
+                   (and (= "runner" (namespace node-type))
+                        (<= (->bytes mem) free))))
          (map first))))
 
 (comment

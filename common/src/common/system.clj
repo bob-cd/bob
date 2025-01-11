@@ -67,10 +67,6 @@
   (log/info "Disconnecting DB")
   (IXtdb/.close node))
 
-(defn fanout?
-  [conf ex]
-  (= "fanout" (get-in conf [:exchanges ex :type])))
-
 (defmethod ig/init-key
   :bob/queue
   [_ {:keys [url user password conf api-url node-type]}]
@@ -95,9 +91,7 @@
       (lq/bind chan
                queue
                ex
-               (if (fanout? conf ex)
-                 {}
-                 {:routing-key queue})))
+               {:routing-key queue}))
     (doseq [[queue subscriber] (:subscriptions conf)]
       (log/infof "Subscribing to %s" queue)
       (lc/subscribe chan queue subscriber))

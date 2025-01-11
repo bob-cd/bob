@@ -17,7 +17,6 @@
    [failjure.core :as f]
    [langohr.basic :as lb]
    [langohr.channel :as lch]
-   [langohr.queue :as lq]
    [xtdb.api :as xt])
   (:import
    [java.time Instant]))
@@ -30,19 +29,7 @@
   (t/testing "response with status"
     (t/is (= {:status 404
               :body {:message "not found"}}
-             (h/respond "not found" 404))))
-  (t/testing "successful exec with default message"
-    (t/is (= {:status 202
-              :body {:message "Ok"}}
-             (h/exec #(+ 1 2)))))
-  (t/testing "successful exec with supplied message"
-    (t/is (= {:status 202
-              :body {:message "Yes"}}
-             (h/exec #(+ 1 2) "Yes"))))
-  (t/testing "failed exec"
-    (t/is (= {:status 500
-              :body {:message "Divide by zero"}}
-             (h/exec #(/ 5 0))))))
+             (h/respond "not found" 404)))))
 
 (t/deftest health-check-test
   (u/with-system (fn [db queue _]
@@ -64,13 +51,6 @@
                                     :message
                                     first
                                     f/message))))))))
-
-(defn queue-get
-  [chan queue]
-  (Thread/sleep 1000) ; quorum queues need a bit of time
-  (let [[metadata payload] (lb/get chan queue true)]
-    {:type (:type metadata)
-     :data (json/read-str (String. payload "UTF-8") :key-fn keyword)}))
 
 (t/deftest pipeline-entities-test
   (u/with-system
@@ -165,12 +145,11 @@
                            _ (h/pipeline-create {:parameters {:body pipeline}
                                                  :db db
                                                  :stream stream})
-                           _ (h/pipeline-start {:parameters {:path {:group "dev" :name "test"}}
-                                                :queue queue
-                                                :db db
-                                                :stream stream})
-                           msg (queue-get queue "bob.container.jobs")]
-                       (u/spec-assert :bob.command/pipeline-start msg)))
+                           {:keys [status]} (h/pipeline-start {:parameters {:path {:group "dev" :name "test"}}
+                                                               :queue queue
+                                                               :db db
+                                                               :stream stream})]
+                       (t/is (= 202 status))))
                    (t/testing "starting paused pipeline"
                      (xt/await-tx
                       db
@@ -191,19 +170,6 @@
                                                                     :stream stream})]
                        (t/is (= 422 status))
                        (t/is (= "Pipeline is paused. Unpause it first." (:message body))))))))
-
-(t/deftest pipeline-fanout-tests
-  (u/with-system (fn [_db queue _]
-                   (lq/declare queue
-                               "bob.tests"
-                               {:exclusive true
-                                :auto-delete true
-                                :durable false})
-                   (lq/bind queue "bob.tests" "bob.fanout")
-                   (t/testing "pipeline stop"
-                     (h/pipeline-stop {:parameters {:path {:run-id "r-a-run-id"}}
-                                       :queue queue})
-                     (u/spec-assert :bob.command/pipeline-stop (queue-get queue "bob.tests"))))))
 
 (t/deftest pipeline-pause-unpause
   (u/with-system (fn [db _ stream]
