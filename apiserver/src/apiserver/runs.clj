@@ -23,9 +23,9 @@
                :type msg-type}))
 
 (defn dispatch-start
-  ([db ch pipeline run-id]
-   (dispatch-start db ch pipeline run-id 2000))
-  ([db ch {:keys [group name quotas]} run-id backoff]
+  ([db ch producer pipeline run-id]
+   (dispatch-start db ch producer pipeline run-id 2000))
+  ([db ch producer {:keys [group name quotas]} run-id backoff]
    (let [nodes (cp/runners-with-capacity db quotas)
          cmd {:group group :name name :run-id run-id :backoff backoff}
          msg-type "pipeline/start"]
@@ -35,22 +35,33 @@
                 "bob.dlq"
                 cmd
                 msg-type)
-       (publish ch
-                "bob.direct"
-                (str "bob.jobs." (rand-nth nodes)) ; To ensure a normal distribution
-                cmd
-                msg-type)))))
+       (let [node-id (rand-nth nodes)] ; To ensure a normal distribution
+         (ev/emit producer
+                  {:kind "Pipeline"
+                   :type "Normal"
+                   :reason "PipelineStartDispatch"
+                   :message (format "Starting run %s on node %s" run-id node-id)})
+         (publish ch
+                  "bob.direct"
+                  (str "bob.jobs." node-id)
+                  cmd
+                  msg-type))))))
 
 (defn dispatch-stop
-  [db ch run-id]
-  (let [id (->> (cp/cluster-info db)
-                (filter (fn [[_ info]]
-                          (contains? (set (:bob/runs info)) run-id)))
-                (map first))]
-    (when id
+  [db ch producer run-id]
+  (let [node-id (->> (cp/cluster-info db)
+                     (filter (fn [[_ info]]
+                               (contains? (set (:bob/runs info)) run-id)))
+                     (map first))]
+    (when node-id
+      (ev/emit producer
+               {:kind "Pipeline"
+                :type "Normal"
+                :reason "PipelineStopDispatch"
+                :message (format "Stopping run %s on node %s" run-id node-id)})
       (publish ch
                "bob.direct"
-               (str "bob.jobs." id)
+               (str "bob.jobs." node-id)
                {:run-id run-id}
                "pipeline/stop"))))
 
@@ -61,12 +72,13 @@
   Retries by requeueing to the job queue if still pending."
   [{:keys [database stream]} ch {:keys [delivery-tag]} ^bytes payload]
   (let [{:keys [group name run-id backoff]} (json/read-str (String/new payload "UTF-8") :key-fn keyword)
-        {:keys [status]} (xt/entity (xt/db database) (keyword "bob.pipeline.run" run-id))]
+        {:keys [status]} (xt/entity (xt/db database) (keyword "bob.pipeline.run" run-id))
+        producer (:producer stream)]
     (lb/ack ch delivery-tag)
     (when (= :pending status) ; check this as it could be stopped (cancelled) by user
       (let [to-log (format "Retrying run %s in %dms" run-id backoff)]
         (log/info to-log)
-        (ev/emit (:producer stream)
+        (ev/emit producer
                  {:kind "Pipeline"
                   :type "Normal"
                   :reason "PipelineRunRetry"
@@ -76,6 +88,7 @@
           (dispatch-start
            database
            ch
+           producer
            (xt/entity (xt/db database) (keyword (str "bob.pipeline." group) name))
            run-id
            (* backoff 2)))))))

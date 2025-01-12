@@ -327,17 +327,18 @@
                           :steps [{:cmd "echo boo"}]}]]))
                      (let [resp (h/pipeline-list {:db db
                                                   :parameters {:query {:group "dev"}}})]
-                       (t/is (= [{:group "dev"
-                                  :image "alpine:latest"
-                                  :name "test2"
-                                  :steps [{:cmd "echo yesnt"}]}
-                                 {:group "dev"
-                                  :image "busybox:musl"
-                                  :name "test1"
-                                  :steps [{:cmd "echo yes"}]}]
+                       (t/is (= #{{:group "dev"
+                                   :image "alpine:latest"
+                                   :name "test2"
+                                   :steps [{:cmd "echo yesnt"}]}
+                                  {:group "dev"
+                                   :image "busybox:musl"
+                                   :name "test1"
+                                   :steps [{:cmd "echo yes"}]}}
                                 (-> resp
                                     :body
-                                    :message))))))))
+                                    :message
+                                    (set)))))))))
 
 (t/deftest pipeline-runs-list-test
   (u/with-system (fn [db _ _]

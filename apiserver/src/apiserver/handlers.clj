@@ -143,7 +143,7 @@
                   :kind "Pipeline"
                   :reason "PipelineRunScheduled"
                   :message (str "Pipeline run scheduled " run-id)})
-        (r/dispatch-start db queue data run-id)
+        (r/dispatch-start db queue producer data run-id)
         (respond run-id)))
     (f/when-failed [err]
       (if (= :not-found (f/message err))
@@ -153,17 +153,20 @@
 (defn pipeline-stop
   [{{{:keys [run-id]} :path} :parameters
     db :db
-    queue :queue}]
+    queue :queue
+    {producer :producer} :stream}]
   (f/try-all [{:keys [status] :as run} (get-run db run-id)]
-    (do (case status
-          :running (r/dispatch-stop db queue run-id)
-          :pending (->> [[::xt/put (assoc run
-                                          :status :stopped
-                                          :completed-at (Instant/now))]]
-                        (xt/submit-tx db)
-                        (xt/await-tx db))
-          (log/warnf "Ignoring stop cmd for run %s due to status %s" run-id status))
-        (respond "Ok"))
+    (if-not status
+      (respond "Cannot find run" 404)
+      (do (case status
+            :running (r/dispatch-stop db queue producer run-id)
+            :pending (->> [[::xt/put (assoc run
+                                            :status :stopped
+                                            :completed-at (Instant/now))]]
+                          (xt/submit-tx db)
+                          (xt/await-tx db))
+            (log/warnf "Ignoring stop cmd for run %s due to status %s" run-id status))
+          (respond "Ok")))
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -264,7 +267,7 @@
      :query}
     :parameters
     db :db}]
-  (f/try-all [base-query '{:find [(pull pipeline [:steps :vars :resources :image :group :name :paused])]
+  (f/try-all [base-query '{:find [(pull pipeline [*])]
                            :where [[pipeline :type :pipeline]]}
               clauses {:group [['pipeline :group group]]
                        :name [['pipeline :name name]]
@@ -272,8 +275,11 @@
                                 ['run :status status]]}
               filters (mapcat #(get clauses (key %)) query)
               result (xt/q (xt/db db)
-                           (update-in base-query [:where] into filters))]
-    (respond (map first result) 200)
+                           (update-in base-query [:where] into filters))
+              cleaned (->> result
+                           (map first)
+                           (map #(dissoc % :xt/id :type)))]
+    (respond cleaned 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
