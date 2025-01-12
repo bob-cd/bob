@@ -54,6 +54,7 @@
                {:run-id run-id}
                "pipeline/stop"))))
 
+;; TODO: What happens if the apiserver with a backoff goes down?
 (defn retry
   "Receives messages from the DLQ and retries with a backoff interval.
 

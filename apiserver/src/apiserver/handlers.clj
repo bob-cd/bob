@@ -32,7 +32,7 @@
    [java.time Instant]
    [java.util.concurrent Executors]))
 
-(def executor (Executors/newVirtualThreadPerTaskExecutor))
+;; Helpers
 
 (defn respond
   ([content]
@@ -52,20 +52,13 @@
     data
     (f/when-failed [err] err)))
 
-(defn api-spec
-  [_]
-  {:status 200
-   :headers {"Content-Type" "application/yaml"}
-   :body (-> "bob/api.yaml"
-             io/resource
-             io/input-stream)})
-
-(defn health-check
-  [{:keys [db queue]}]
-  (let [check (hc/check executor {:db db :queue queue})]
-    (if (f/failed? check)
-      (respond (f/message check) 500)
-      (respond "Yes we can! 🔨 🔨" 200))))
+(defn get-run
+  [db run-id]
+  (let [run (xt/entity (xt/db db) (keyword "bob.pipeline.run" run-id))]
+    (if (and (some? run)
+             (not (spec/valid? :bob.db/run run)))
+      (f/fail (str "Invalid run: " run))
+      run)))
 
 (defn get-runs
   [db group name]
@@ -77,6 +70,25 @@
     (map first result)
     (f/when-failed [err]
       err)))
+
+;; Handlers
+
+(defn api-spec
+  [_]
+  {:status 200
+   :headers {"Content-Type" "application/yaml"}
+   :body (-> "bob/api.yaml"
+             io/resource
+             io/input-stream)})
+
+(def executor (Executors/newVirtualThreadPerTaskExecutor))
+
+(defn health-check
+  [{:keys [db queue]}]
+  (let [check (hc/check executor {:db db :queue queue})]
+    (if (f/failed? check)
+      (respond (f/message check) 500)
+      (respond "Yes we can! 🔨 🔨" 200))))
 
 (defn pipeline-create
   [{{pipeline :body} :parameters
@@ -142,8 +154,18 @@
   [{{{:keys [run-id]} :path} :parameters
     db :db
     queue :queue}]
-  (r/dispatch-stop db queue run-id)
-  (respond "Ok"))
+  (f/try-all [{:keys [status] :as run} (get-run db run-id)]
+    (do (case status
+          :running (r/dispatch-stop db queue run-id)
+          :pending (->> [[::xt/put (assoc run
+                                          :status :stopped
+                                          :completed-at (Instant/now))]]
+                        (xt/submit-tx db)
+                        (xt/await-tx db))
+          (log/warnf "Ignoring stop cmd for run %s due to status %s" run-id status))
+        (respond "Ok"))
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
 
 (defn pipeline-pause-unpause
   [pause?
@@ -189,11 +211,7 @@
 (defn pipeline-status
   [{{{:keys [run-id]} :path} :parameters
     db :db}]
-  (f/try-all [run (xt/entity (xt/db db) (keyword "bob.pipeline.run" run-id))
-              status (if (and (some? run)
-                              (not (spec/valid? :bob.db/run run)))
-                       (f/fail (str "Invalid run: " run))
-                       (:status run))]
+  (f/try-all [{:keys [status]} (get-run db run-id)]
     (if (some? status)
       (respond status 200)
       (respond "Cannot find status" 404))
