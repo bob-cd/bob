@@ -35,7 +35,7 @@
                 "bob.dlq"
                 cmd
                 msg-type)
-       (let [node-id (rand-nth nodes)] ; To ensure a normal distribution
+       (let [node-id (rand-nth nodes)] ; TODO: Probably needs fairer scheduling
          (ev/emit producer
                   {:kind "Pipeline"
                    :type "Normal"

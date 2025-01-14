@@ -171,14 +171,6 @@
                     (f/message err))
         err))))
 
-(defn run-info-of
-  [database run-id]
-  (f/try-all [run-info (xt/entity (xt/db database) (keyword "bob.pipeline.run" run-id))
-              _ (when-not (spec/valid? :bob.db/run run-info)
-                  (f/fail (str "Invalid run: " run-info)))]
-    run-info
-    (f/when-failed [err] err)))
-
 (defn clean-up-run
   [run-id]
   (swap! node-state
@@ -200,12 +192,14 @@
 
 (defn- set-run-status
   [db run-id status time-key]
-  (xt/await-tx db
-               (xt/submit-tx db
-                             [[::xt/put
-                               (assoc (run-info-of db run-id)
-                                      :status status
-                                      time-key (Instant/now))]])))
+  (f/try-all [run (-> (xt/db db)
+                      (xt/entity (keyword "bob.pipeline.run" run-id))
+                      (assoc :status status time-key (Instant/now)))
+              _ (->> [[::xt/put run]]
+                     (xt/submit-tx db)
+                     (xt/await-tx db))]
+    :ok
+    (f/when-failed [err] err)))
 
 (defn- start*
   [{:keys [database stream] :as config} queue-chan group name run-id delivery-tag]
