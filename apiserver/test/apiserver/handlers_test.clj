@@ -242,7 +242,7 @@
                                        :group "dev"
                                        :name "test"
                                        :status :running}]]))
-                     (t/is (= :running
+                     (t/is (= "running"
                               (-> (h/pipeline-status {:db db
                                                       :parameters {:path {:run-id "r-1"}}})
                                   :body

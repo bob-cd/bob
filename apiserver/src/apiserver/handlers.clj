@@ -215,7 +215,7 @@
     db :db}]
   (f/try-all [{:keys [status]} (get-run db run-id)]
     (if (some? status)
-      (respond status 200)
+      (respond (name status) 200)
       (respond "Cannot find status" 404))
     (f/when-failed [err]
       (respond (f/message err) 500))))
