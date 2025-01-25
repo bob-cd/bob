@@ -14,7 +14,6 @@
    [apiserver.runs :as r]
    [babashka.http-client :as http]
    [clojure.data.json :as json]
-   [clojure.instant :as ins]
    [clojure.java.io :as io]
    [clojure.set :as s]
    [clojure.spec.alpha :as spec]
@@ -353,7 +352,7 @@
   (f/try-all [query (read-string q)
               db-in-time (if (nil? t)
                            (xt/db db)
-                           (xt/db db (ins/read-instant-date t)))]
+                           (xt/db db t))]
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body (json/write-str (xt/q db-in-time query))}

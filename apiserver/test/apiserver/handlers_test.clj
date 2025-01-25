@@ -17,7 +17,8 @@
    [langohr.channel :as lch]
    [xtdb.api :as xt])
   (:import
-   [java.time Instant]))
+   [java.time Instant]
+   [java.util Date]))
 
 (t/deftest helpers-test
   (t/testing "default response"
@@ -475,7 +476,7 @@
              {:query
               {:q "{:find [(pull f [:type])] :where [[f :type :indian]]})"}}})))))
       (t/testing "timed query"
-        (let [point-in-time (str (Instant/now))]
+        (let [point-in-time (Date/new)]
           (xt/await-tx
            db
            (xt/submit-tx

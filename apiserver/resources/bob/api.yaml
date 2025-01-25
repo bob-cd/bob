@@ -512,15 +512,9 @@ paths:
                 passed:
                   value:
                     message: "passed"
-                running:
-                  value:
-                    message: "running"
                 failed:
                   value:
                     message: "failed"
-                stopped:
-                  value:
-                    message: "stopped"
         "404":
           description: Cannot find status
           content:
@@ -898,6 +892,7 @@ paths:
           in: query
           schema:
             type: string
+            format: date-time
 
       responses:
         "200":
@@ -1231,8 +1226,17 @@ components:
       required:
         - message
       properties:
-        schema:
-          $ref: "#/components/schemas/SimpleResponse"
+        message:
+          type: string
+          enum:
+            - pending
+            - initializing
+            - initialized
+            - running
+            - passed
+            - failed
+            - stopped
+
     ResourceProviderAttributes:
       type: object
       required:

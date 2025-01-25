@@ -12,7 +12,7 @@
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.13.1"}
-        io.github.lispyclouds/contajners {:git/sha "82d389d931ea2330679f2f4fc3464cf033f223fc"}
+        io.github.lispyclouds/contajners {:git/sha "c58c1f31b39d57f8525babc4e061f7b3e8155c94"}
         org.babashka/http-client {:mvn/version "0.4.22"}
         org.clojure/clojure {:mvn/version "1.12.0"}
         org.clojure/data.json {:mvn/version "2.5.1"}
