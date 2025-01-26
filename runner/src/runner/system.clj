@@ -29,9 +29,8 @@
 
 (defmethod ig/init-key
   :runner/queue-config
-  [_ {:keys [queue] :as config}]
+  [_ {:keys [queue node-id] :as config}]
   (let [subscriber (partial d/queue-msg-subscriber config routes)
-        node-id (first (keys (hb/get-node-info {}))) ;; TODO: See if server named queues can be used here?
         jobs-queue (str "bob.jobs." node-id)]
     (merge-with merge
                 queue
@@ -46,9 +45,8 @@
 
 (defmethod ig/init-key
   :runner/heartbeat
-  [_ {:keys [queue db freq]}]
-  (hb/schedule #(hb/beat-it db queue freq
-                            :bob/node-type :runner/container
+  [_ {:keys [queue db freq node-id]}]
+  (hb/schedule #(hb/beat-it db queue freq node-id
                             :bob/runs (-> p/node-state
                                           deref
                                           :runs

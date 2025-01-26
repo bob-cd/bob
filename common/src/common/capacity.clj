@@ -6,6 +6,7 @@
 
 (ns common.capacity
   (:require
+   [clojure.string :as str]
    [common.heartbeat :as hb]
    [xtdb.api :as xt]))
 
@@ -46,8 +47,7 @@
   "Returns all nodes with capacity"
   [db {{:keys [mem]} :requests}]
   (->> (cluster-info db)
-       (filter (fn [[_ {:keys [:bob/node-type]}]]
-                 (= "runner" (namespace node-type))))
+       (filter #(str/starts-with? (key %) "bob/runner"))
        (filter (fn [[_ {:keys [:mem/free]}]]
                  (if-not mem
                    true

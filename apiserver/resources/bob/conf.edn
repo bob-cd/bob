@@ -5,14 +5,15 @@
 ; https://opensource.org/licenses/MIT.
 
 {:common #include "bob/common.edn"
+ :bob/node-id {:node-type "bob/apiserver"}
  :bob/storage #ref [:common :bob/storage-conn]
  :bob/stream #ref [:common :bob/stream-conf]
  :bob/queue {:url #ref [:common :bob/queue-conn :url]
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
              :api-url #ref [:common :bob/queue-api-url]
-             :node-type "bob/apiserver"
-             :conf #ig/ref :apiserver/queue-config}
+             :conf #ig/ref :apiserver/queue-config
+             :node-id #ig/ref :bob/node-id}
  :apiserver/queue-config {:database #ig/ref :bob/storage
                           :queue #ref [:common :bob/queue-conf]
                           :stream #ig/ref :bob/stream}
@@ -26,7 +27,8 @@
                                :username #ref [:common :bob/queue-conn :user]
                                :password #ref [:common :bob/queue-conn :password]}
                        :db #ig/ref :bob/storage
-                       :freq #ref [:common :bob/health-check-freq]}
+                       :freq #ref [:common :bob/health-check-freq]
+                       :node-id #ig/ref :bob/node-id}
  :apiserver/healthcheck {:queue #ig/ref :bob/queue
                          :db #ig/ref :bob/storage
                          :freq #ref [:common :bob/health-check-freq]}}

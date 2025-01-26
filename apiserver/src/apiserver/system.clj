@@ -48,8 +48,8 @@
 
 (defmethod ig/init-key
   :apiserver/heartbeat
-  [_ {:keys [queue db freq]}]
-  (hb/schedule #(hb/beat-it db queue freq :bob/node-type :apiserver)
+  [_ {:keys [queue db freq node-id]}]
+  (hb/schedule #(hb/beat-it db queue freq node-id)
                "heartbeat"
                freq))
 

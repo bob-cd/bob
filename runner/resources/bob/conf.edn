@@ -5,18 +5,21 @@
 ; https://opensource.org/licenses/MIT.
 
 {:common #include "bob/common.edn"
+ :bob/node-id {:node-type "bob/runner"}
  :bob/storage #ref [:common :bob/storage-conn]
  :bob/stream #ref [:common :bob/stream-conf]
  :bob/queue {:url #ref [:common :bob/queue-conn :url]
              :user #ref [:common :bob/queue-conn :user]
              :password #ref [:common :bob/queue-conn :password]
              :conf #ig/ref :runner/queue-config
-             :node-type "bob/runner"}
+             :node-id #ig/ref :bob/node-id}
  :runner/queue-config {:database #ig/ref :bob/storage
                        :queue #ref [:common :bob/queue-conf]
-                       :stream #ig/ref :bob/stream}
+                       :stream #ig/ref :bob/stream
+                       :node-id #ig/ref :bob/node-id}
  :runner/heartbeat {:queue {:api-url #ref [:common :bob/queue-api-url]
                             :username #ref [:common :bob/queue-conn :user]
                             :password #ref [:common :bob/queue-conn :password]}
                     :db #ig/ref :bob/storage
-                    :freq #ref [:common :bob/health-check-freq]}}
+                    :freq #ref [:common :bob/health-check-freq]
+                    :node-id #ig/ref :bob/node-id}}

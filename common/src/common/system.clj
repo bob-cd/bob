@@ -69,12 +69,12 @@
 
 (defmethod ig/init-key
   :bob/queue
-  [_ {:keys [url user password conf api-url node-type]}]
+  [_ {:keys [url user password conf api-url node-id]}]
   (let [conn-opts {:uri url
                    :username user
                    :password password
                    :api-url api-url
-                   :connection-name (str node-type "-" (random-uuid))}
+                   :connection-name node-id}
         conn (try-connect #(rmq/connect conn-opts))
         chan (lch/open conn)]
     (log/infof "Connected on channel id: %d" (.getChannelNumber chan))
@@ -131,6 +131,11 @@
   (log/info "Tearing down RabbitMQ stream")
   (StreamProducer/.close producer)
   (Environment/.close env))
+
+(defmethod ig/init-key
+  :bob/node-id
+  [_ {:keys [node-type]}]
+  (str node-type "-" (random-uuid)))
 
 (defmethod aero/reader
   'ig/ref
