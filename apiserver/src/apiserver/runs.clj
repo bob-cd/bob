@@ -30,6 +30,7 @@
          cmd {:group group :name name :run-id run-id :backoff backoff}
          msg-type "pipeline/start"]
      (if (empty? nodes)
+       ;; TODO: add reason for retry
        (publish ch
                 "bob.dlx"
                 "bob.dlq"
@@ -65,7 +66,6 @@
                {:run-id run-id}
                "pipeline/stop"))))
 
-;; TODO: What happens if the apiserver with a backoff goes down?
 (defn retry
   "Receives messages from the DLQ and retries with a backoff interval.
 
@@ -74,8 +74,8 @@
   (let [{:keys [group name run-id backoff]} (json/read-str (String/new payload "UTF-8") :key-fn keyword)
         {:keys [status]} (xt/entity (xt/db database) (keyword "bob.pipeline.run" run-id))
         producer (:producer stream)]
-    (lb/ack ch delivery-tag)
-    (when (= :pending status) ; check this as it could be stopped (cancelled) by user
+    (if (not= :pending status)
+      (lb/ack ch delivery-tag) ; ack as it could be stopped (cancelled) by user
       (let [to-log (format "Retrying run %s in %dms" run-id backoff)]
         (log/info to-log)
         (ev/emit producer
@@ -91,4 +91,5 @@
            producer
            (xt/entity (xt/db database) (keyword (str "bob.pipeline." group) name))
            run-id
-           (* backoff 2)))))))
+           (* backoff 2))
+          (lb/ack ch delivery-tag)))))) ; This ensures the message isn't lost if the retrying apiserver goes down
