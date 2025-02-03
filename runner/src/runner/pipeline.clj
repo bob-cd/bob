@@ -73,7 +73,7 @@
                              run-id
                              (str "Fetching and mounting resource " resource))
                 pipeline (xt/entity (xt/db database)
-                                    (keyword (format "bob.pipeline.%s/%s" group name)))
+                                    (keyword (str "bob.pipeline." group) name))
                 _ (when-not (spec/valid? :bob.db/pipeline pipeline)
                     (f/fail "Invalid pipeline: " pipeline))
                 resource-info (->> pipeline
@@ -182,7 +182,7 @@
 (defn- get-pipeline
   [database group name]
   (f/try-all [pipeline (xt/entity (xt/db database)
-                                  (keyword (format "bob.pipeline.%s/%s" group name)))
+                                  (keyword (str "bob.pipeline." group) name))
               _ (when-not pipeline
                   (f/fail (format "Unable to find pipeline %s/%s" group name)))
               _ (when-not (spec/valid? :bob.db/pipeline pipeline)

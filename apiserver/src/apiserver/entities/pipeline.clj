@@ -14,7 +14,7 @@
 (defn create
   "Creates a pipeline using the supplied data."
   [db-client {:keys [producer]} {:keys [group name] :as data}]
-  (let [id (keyword (format "bob.pipeline.%s/%s" group name))]
+  (let [id (keyword (str "bob.pipeline." group) name)]
     (log/infof "Creating pipeline %s with id %s" data id)
     (xt/await-tx
      db-client
@@ -48,7 +48,7 @@
   "Deletes a pipeline along with its associated resources."
   [db-client {:keys [producer]} {:keys [group name]}]
   (log/infof "Deleting pipeline, runs and logs for (%s, %s)" group name)
-  (f/try-all [id (keyword (format "bob.pipeline.%s/%s" group name))
+  (f/try-all [id (keyword (str "bob.pipeline." group) name)
               runs (runs-of db-client group name)
               logs (mapcat #(logs-of db-client %) runs)
               _ (xt/await-tx
