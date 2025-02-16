@@ -30,7 +30,7 @@ COPY runner.jar .
 RUN echo -e "set -e \n\
 podman system service -t 0 unix:///tmp/pod.sock & \n\
 /jdk/bin/java --enable-preview -jar runner.jar" > entrypoint.sh
-ENV CONTAINER_ENGINE_URL "unix:///tmp/pod.sock"
+ENV CONTAINER_ENGINE_URL="unix:///tmp/pod.sock"
 
 USER 1000:1000
 
