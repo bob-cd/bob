@@ -89,9 +89,11 @@
      (concat
       common-steps
       [(run "Build executables" "bb compile")
+       ; See: https://github.com/docker/buildx/issues/314
        (run "Create multi-platform capabale buildx builder"
             "docker run --privileged --rm tonistiigi/binfmt --install all
-           docker buildx create --use")
+             docker run --rm --privileged multiarch/qemu-user-static --reset -p yes -c yes
+             docker buildx create --use")
        (run "Docker login" "echo ${GHCR_TOKEN} | docker login ghcr.io --username lispyclouds --password-stdin")
        (run "Build and publish images" "bb image")]))}))
 
