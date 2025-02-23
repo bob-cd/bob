@@ -32,6 +32,8 @@
 
 (def java-download-url "https://download.oracle.com/java/23/latest/jdk-23_linux-x64_bin.tar.gz")
 
+(def vm-image "ubuntu-2404:current")
+
 (def common-steps
   [:checkout
    (run "Git clean slate" "rm -rf ~/.gitconfig")
@@ -57,7 +59,7 @@
   [shorted?]
   (gen-job
    shorted?
-   {:machine {:image "ubuntu-2204:current"}
+   {:machine {:image vm-image}
     :resource_class "large"
     :environment {:JAVA_HOME java-home
                   :JAVA_CMD (str java-home "/bin/java")}
@@ -77,7 +79,7 @@
   [shorted?]
   (gen-job
    shorted?
-   {:machine {:image "ubuntu-2204:current"}
+   {:machine {:image vm-image}
     :resource_class "large"
     :environment {:JAVA_HOME java-home
                   :JAVA_CMD (str java-home "/bin/java")}
