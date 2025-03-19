@@ -8,7 +8,9 @@
   (:require
    [apiserver.system :as system]
    [clojure.tools.logging :as log])
-  (:gen-class))
+  (:gen-class)
+  (:import
+   [java.util.concurrent Executors]))
 
 (defn shutdown!
   []
@@ -19,6 +21,8 @@
 
 (defn -main
   [& _]
+  ; Replace future-call's executor with virtual threads
+  (set-agent-send-off-executor! (Executors/newVirtualThreadPerTaskExecutor))
   (.addShutdownHook (Runtime/getRuntime)
                     (.unstarted (Thread/ofVirtual) shutdown!))
   (system/start))
