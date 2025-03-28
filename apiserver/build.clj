@@ -5,7 +5,9 @@
 ; https://opensource.org/licenses/MIT.
 
 (ns build
-  (:require [clojure.tools.build.api :as b]))
+  (:require [clojure.data.json :as json]
+            [clojure.tools.build.api :as b]
+            [clojure.tools.build.tasks.uber :as uber]))
 
 (def uber-file "apiserver.jar")
 
@@ -13,6 +15,16 @@
   [_]
   (b/delete {:path "target"})
   (b/delete {:path uber-file}))
+
+(defn append-json
+  [{:keys [path in existing _state]}]
+  {:write
+   {path
+    {:append false
+     :string
+     (json/write-str
+      (concat (json/read-str (slurp existing))
+              (json/read-str (#'uber/stream->string in))))}}})
 
 (defn uber
   [_]
@@ -37,4 +49,9 @@
     (b/uber {:class-dir class-dir
              :uber-file uber-file
              :basis basis
-             :main 'apiserver.main})))
+             :main 'apiserver.main
+             ;; See: https://github.com/mpenet/hirundo?tab=readme-ov-file#building-uberjars-with-hirundo
+             :conflict-handlers {"META-INF/helidon/service.loader" :append-dedupe
+                                 "META-INF/helidon/feature-metadata.properties" :append-dedupe
+                                 "META-INF/helidon/config-metadata.json" append-json
+                                 "META-INF/helidon/service-registry.json" append-json}})))
