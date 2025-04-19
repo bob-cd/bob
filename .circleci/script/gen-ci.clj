@@ -30,7 +30,7 @@
 
 (def java-home "/tmp/jdk")
 
-(def java-download-url "https://download.oracle.com/java/23/latest/jdk-23_linux-x64_bin.tar.gz")
+(def java-download-url "https://download.oracle.com/java/24/latest/jdk-24_linux-x64_bin.tar.gz")
 
 (def vm-image "ubuntu-2404:current")
 

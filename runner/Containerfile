@@ -4,7 +4,7 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-FROM docker.io/azul/zulu-openjdk:23 AS jdk
+FROM docker.io/azul/zulu-openjdk:24 AS jdk
 # FROM docker.io/azul/zulu-openjdk-alpine:23 AS jdk
 
 # needed only in non-alpine
