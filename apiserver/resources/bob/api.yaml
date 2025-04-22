@@ -73,7 +73,7 @@ paths:
                   value:
                     message: "Yes we can! 🔨 🔨"
 
-        default:
+        "500":
           description: Failed health check
           content:
             application/json:
@@ -140,7 +140,7 @@ paths:
                         image: busybox:musl
                         steps:
                           - cmd: echo hello
-        default:
+        "500":
           description: Failed listing of pipelines
           content:
             application/json:
@@ -202,7 +202,7 @@ paths:
                 success:
                   value:
                     message: "Ok"
-        default:
+        "500":
           description: Failed creation of the pipeline
           content:
             application/json:
@@ -262,6 +262,16 @@ paths:
                       runs:
                         - run-id-1
                         - run-id-2
+        "500":
+          description: Failed deletion of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
 
   "/pipelines/start/groups/{group}/names/{name}":
     post:
@@ -312,6 +322,16 @@ paths:
                 success:
                   value:
                     message: "Run ID of the pipeline"
+        "404":
+          description: Pipeline not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "No such pipeline"
         "422":
           description: Pipeline cannot be started
           content:
@@ -322,6 +342,16 @@ paths:
                 success:
                   value:
                     message: "Pipeline is paused. Unpause it first."
+        "500":
+          description: Failed starting pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
 
   "/pipelines/stop/runs/{run-id}":
     post:
@@ -352,6 +382,16 @@ paths:
                 success:
                   value:
                     message: "Ok"
+        "500":
+          description: Failed stopping pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
 
   "/pipelines/pause/groups/{group}/names/{name}":
     post:
@@ -388,6 +428,26 @@ paths:
                 success:
                   value:
                     message: "Ok"
+        "404":
+          description: Pipeline not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "No such pipeline"
+        "500":
+          description: Failed pausing pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
 
   "/pipelines/unpause/groups/{group}/names/{name}":
     post:
@@ -424,6 +484,26 @@ paths:
                 success:
                   value:
                     message: "Ok"
+        "404":
+          description: Pipeline not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "No such pipeline"
+        "500":
+          description: Failed unpausing pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
 
   "/pipelines/logs/runs/{id}/offset/{offset}/lines/{lines}":
     get:
@@ -472,7 +552,7 @@ paths:
                       - "log line 4"
                       - "[bob] log line 5"
                       - "log line 6"
-        default:
+        "500":
           description: Failed log fetch
           content:
             application/json:
@@ -525,7 +605,7 @@ paths:
                 failure:
                   value:
                     message: "Cannot find status"
-        default:
+        "500":
           description: Failed status fetch of the pipeline
           content:
             application/json:
@@ -587,7 +667,17 @@ paths:
               schema:
                 type: string
                 format: binary
-        default:
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
+        "500":
           description: Failed artifact fetch
           content:
             application/json:
@@ -640,7 +730,7 @@ paths:
                         status: passed
                       - run-id: r-a-failed-id
                         status: failed
-        default:
+        "500":
           description: Failed listing of pipeline runs
           content:
             application/json:
@@ -685,6 +775,16 @@ paths:
                     message:
                       - "github-provider"
                       - "salsa-provider"
+        "500":
+          description: Failed listing resource-providers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
 
     post:
       operationId: ResourceProviderCreate
@@ -719,7 +819,7 @@ paths:
                 success:
                   value:
                     message: "Ok"
-        default:
+        "500":
           description: Failed to create a resource provider
           content:
             application/json:
@@ -759,6 +859,16 @@ paths:
                 success:
                   value:
                     message: "Ok"
+        "500":
+          description: Failed deleting resource-provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
 
   "/artifact-stores":
     get:
@@ -794,6 +904,16 @@ paths:
                     message:
                       - "s3-store"
                       - "file-store"
+        "500":
+          description: Failed listing artifact-stores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
 
     post:
       operationId: ArtifactStoreCreate
@@ -828,7 +948,7 @@ paths:
                 success:
                   value:
                     message: "Ok"
-        default:
+        "500":
           description: Failed to create an artifact store
           content:
             application/json:
@@ -868,6 +988,16 @@ paths:
                 success:
                   value:
                     message: "Ok"
+        "500":
+          description: Failed deleting artifact-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
 
   "/query":
     get:
@@ -905,7 +1035,7 @@ paths:
                 sucess:
                   value: []
 
-        default:
+        "500":
           description: Failed query
           content:
             application/json:
@@ -934,17 +1064,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/EventsResponse"
 
-        default:
-          description: Failed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimpleResponse"
-              examples:
-                unhealthy:
-                  value:
-                    message: "<Some Error>"
-
   "/metrics":
     get:
       operationId: GetMetrics
@@ -964,8 +1083,7 @@ paths:
               examples:
                 sucess:
                   value: "... Prometheus compatible metrics ..."
-
-        default:
+        "500":
           description: Failed
           content:
             application/json:
@@ -1007,8 +1125,7 @@ paths:
                       lastBuildLabel: "r-0ef55ba9-e397-461c-a6d9-f52f95544882"
                       lastBuildTime: "2020-12-21T14:35:21.577028Z"
                       webUrl: null
-
-        default:
+        "500":
           description: Failed
           content:
             application/json:
@@ -1035,6 +1152,16 @@ paths:
             application/json:
               schema:
                 type: object
+        "500":
+          description: Failed fetching info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "Error message"
 
 components:
   schemas:
