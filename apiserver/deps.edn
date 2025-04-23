@@ -15,12 +15,12 @@
         io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
         io.github.lispyclouds/navi {:git/sha "a2a0517efebf312e2247ea14d7a897a7c5b4104a"}
         metosin/muuntaja {:mvn/version "0.6.11"}
-        metosin/reitit-core {:mvn/version "0.7.2"}
-        metosin/reitit-http {:mvn/version "0.7.2"}
-        metosin/reitit-interceptors {:mvn/version "0.7.2"}
-        metosin/reitit-malli {:mvn/version "0.7.2"}
-        metosin/reitit-ring {:mvn/version "0.7.2"}
-        metosin/reitit-sieppari {:mvn/version "0.7.2"}
+        metosin/reitit-core {:mvn/version "0.8.0"}
+        metosin/reitit-http {:mvn/version "0.8.0"}
+        metosin/reitit-interceptors {:mvn/version "0.8.0"}
+        metosin/reitit-malli {:mvn/version "0.8.0"}
+        metosin/reitit-ring {:mvn/version "0.8.0"}
+        metosin/reitit-sieppari {:mvn/version "0.8.0"}
         org.babashka/http-client {:mvn/version "0.4.22"}
         org.clojure/clojure {:mvn/version "1.12.0"}
         org.clojure/data.json {:mvn/version "2.5.1"}
