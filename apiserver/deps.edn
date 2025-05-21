@@ -13,7 +13,7 @@
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.13.1"}
         io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
-        io.github.lispyclouds/navi {:git/sha "a2a0517efebf312e2247ea14d7a897a7c5b4104a"}
+        io.github.lispyclouds/navi {:git/sha "ac0d2742ee7ac841f598a91e5fe073e578b948d1"}
         metosin/muuntaja {:mvn/version "0.6.11"}
         metosin/reitit-core {:mvn/version "0.8.0"}
         metosin/reitit-http {:mvn/version "0.8.0"}
@@ -36,5 +36,5 @@
                                cider/cider-nrepl {:mvn/version "RELEASE"}}
                   :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]
                   :jvm-opts ["--enable-preview"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.8" :git/sha "2fdfd66"}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.9" :git/sha "e405aac"}}
                    :ns-default build}}}
