@@ -13,7 +13,7 @@
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.13.1"}
         io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
-        io.github.lispyclouds/navi {:git/sha "ac0d2742ee7ac841f598a91e5fe073e578b948d1"}
+        io.github.lispyclouds/navi {:git/sha "87d3af3bc4f3842278d057259a294caa7fd4a7a4"}
         metosin/muuntaja {:mvn/version "0.6.11"}
         metosin/reitit-core {:mvn/version "0.9.1"}
         metosin/reitit-http {:mvn/version "0.9.1"}
@@ -21,7 +21,7 @@
         metosin/reitit-malli {:mvn/version "0.9.1"}
         metosin/reitit-ring {:mvn/version "0.9.1"}
         metosin/reitit-sieppari {:mvn/version "0.9.1"}
-        org.babashka/http-client {:mvn/version "0.4.22"}
+        org.babashka/http-client {:mvn/version "0.4.23"}
         org.clojure/clojure {:mvn/version "1.12.1"}
         org.clojure/data.json {:mvn/version "2.5.1"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha9"}
