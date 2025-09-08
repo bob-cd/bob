@@ -7,8 +7,8 @@
 {:paths ["../tasks"]
  :tasks {:requires ([tasks :as t])
          cclean {:doc "Cleans up cluster containers"
-                 :task (do (t/scrun "kill bob-test-storage bob-test-queue artifact-local")
-                           (t/scrun "rm bob-test-storage bob-test-queue artifact-local")
+                 :task (do (t/scrun "kill bob-test-storage bob-test-queue artifact-local logger-local")
+                           (t/scrun "rm bob-test-storage bob-test-queue artifact-local logger-local")
                            (t/scrun "network rm -f bob-net")
                            (t/scrun "volume prune -f"))}
          prep {:doc "Prepares the deps"

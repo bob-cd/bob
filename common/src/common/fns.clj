@@ -25,7 +25,6 @@
               _ (when-not logger
                   (f/fail "Cannot locate logger for pipeline"))
               _ (when-not (spec/valid? :bob.db/logger logger)
-                  (f/fail (str "Invalid logger: " logger)))
-              _ (prn "logger" logger)]
+                  (f/fail (str "Invalid logger: " logger)))]
     logger
     (f/when-failed [err] err)))
