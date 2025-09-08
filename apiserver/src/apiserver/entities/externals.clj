@@ -12,7 +12,8 @@
 
 (def as-id
   {"ResourceProvider" "resource-provider"
-   "ArtifactStore" "artifact-store"})
+   "ArtifactStore" "artifact-store"
+   "Logger" "logger"})
 
 (defn create
   "Register with an unique name and an url supplied in a map."

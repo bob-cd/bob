@@ -21,13 +21,14 @@
    [clojure.tools.logging :as log]
    [common.capacity :as cp]
    [common.events :as ev]
+   [common.fns :as fns]
    [common.schemas]
    [failjure.core :as f]
    [ring.core.protocols :as p]
    [xtdb.api :as xt])
   (:import
    [com.rabbitmq.stream Environment MessageHandler OffsetSpecification]
-   [java.io OutputStream]
+   [java.io BufferedReader InputStream OutputStream]
    [java.time Instant]
    [java.util.concurrent Executors]))
 
@@ -193,20 +194,39 @@
         (respond (f/message err) 500)))))
 
 (defn pipeline-logs
-  [{{{:keys [id offset lines]} :path} :parameters
+  [{{{:keys [group name id]} :path
+     {:keys [follow]} :query} :parameters
     db :db}]
-  (f/try-all [result (xt/q (xt/db db)
-                           {:find '[(pull log [:line]) time]
-                            :where [['log :type :log-line]
-                                    ['log :time 'time]
-                                    ['log :run-id id]]
-                            :order-by [['time :asc]]
-                            :limit lines
-                            :offset offset})
-              response (->> result
-                            (map first)
-                            (map :line))]
-    (respond response 200)
+  (f/try-all [{:keys [url]} (fns/get-logger db group name)
+              url (cs/join "/" [url "bob_logs" group name id])
+              url (if follow
+                    (str url "?follow=true")
+                    url)
+              {:keys [body status]} (http/get url
+                                              {:as :stream
+                                               :throw false})
+              _ (when (>= status 400)
+                  (f/fail (slurp body)))]
+    {:status 200
+     :headers {"Connection" "Keep-Alive"
+               "Transfer-Encoding" "chunked"
+               "X-Content-Type-Options" "nosniff"}
+     :body (if-not follow
+             body
+             (reify p/StreamableResponseBody
+               (write-body-to-stream [_ _ output-stream]
+                 (with-open [r (io/reader body)
+                             w (io/writer output-stream)]
+                   (try
+                     (loop []
+                       (let [line (BufferedReader/.readLine r)]
+                         (doto w
+                           (.write (str line \newline)) ; need the \newline to signal end of chunk
+                           (.flush)))
+                       (recur))
+                     (catch Exception _
+                       (InputStream/.close body)
+                       (OutputStream/.close output-stream)))))))}
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -346,6 +366,38 @@
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
+(defn logger-create
+  [{{logger :body} :parameters
+    db :db
+    {producer :producer} :stream}]
+  (f/try-all [_ (externals/create db producer "Logger" logger)]
+    (respond "Ok")
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
+(defn logger-delete
+  [{{{:keys [name]} :path} :parameters
+    db :db
+    {producer :producer} :stream}]
+  (f/try-all [_ (externals/delete db producer "Logger" name)]
+    (respond "Ok")
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
+(defn logger-list
+  [{{{:keys [name]} :query} :parameters
+    db :db}]
+  (f/try-all [clauses [['logger :type :logger]]
+              clauses (if name
+                        (conj clauses ['logger :name name])
+                        clauses)
+              result (xt/q (xt/db db)
+                           {:find '[(pull logger [:name :url])]
+                            :where clauses})]
+    (respond (map first result) 200)
+    (f/when-failed [err]
+      (respond (f/message err) 500))))
+
 (defn query
   [{{{:keys [q t]} :query} :parameters
     db :db}]
@@ -434,6 +486,9 @@
    "ArtifactStoreCreate" artifact-store-create
    "ArtifactStoreDelete" artifact-store-delete
    "ArtifactStoreList" artifact-store-list
+   "LoggerCreate" logger-create
+   "LoggerDelete" logger-delete
+   "LoggerList" logger-list
    "Query" query
    "GetEvents" events
    "GetMetrics" metrics

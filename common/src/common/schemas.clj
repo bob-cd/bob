@@ -15,6 +15,8 @@
 
 (spec/def :bob.pipeline/image string?)
 
+(spec/def :bob.pipeline/logger string?)
+
 (spec/def :bob.pipeline/paused boolean?)
 
 (spec/def :bob.pipeline/vars map?)
@@ -104,6 +106,7 @@
   (spec/keys :req-un [:bob.pipeline/group
                       :bob.pipeline/name
                       :bob.pipeline/image
+                      :bob.pipeline/logger
                       :bob.pipeline/steps]
              :opt-un [:bob.pipeline/vars
                       :bob.pipeline/resources
@@ -116,6 +119,10 @@
 (spec/def :bob.artifact-store/url string?)
 
 (spec/def :bob/artifact-store (spec/keys :req-un [:bob.artifact-store/url]))
+
+(spec/def :bob.logger/url string?)
+
+(spec/def :bob/logger (spec/keys :req-un [:bob.logger/url]))
 
 (spec/def :bob.pipeline.run/scheduled-at inst?)
 
@@ -141,17 +148,7 @@
                       :bob.pipeline.run/started-at
                       :bob.pipeline.run/completed-at]))
 
-(spec/def :bob.pipeline.run.log-line/time inst?)
-
-(spec/def :bob.pipeline.run.log-line/line string?)
-
-(spec/def :bob.pipeline.run/log-line
-  (spec/keys :req-un
-             [:bob.pipeline.run.log-line/time
-              :bob.pipeline.run/run-id
-              :bob.pipeline.run.log-line/line]))
-
-(spec/def :bob.command.pipeline-start/type #{"pipeline/start"})
+(spec/def :bob.command.pipelne-start/type #{"pipeline/start"})
 
 (spec/def :bob.command.pipeline-start/run-id :bob.pipeline.run/run-id)
 
@@ -222,30 +219,20 @@
               :bob.resource-provider/url
               :bob.resource-provider/name]))
 
+(spec/def :bob.logger/name string?)
+
+(spec/def :bob.db.logger/type #{:logger})
+
+(spec/def :bob.db/logger
+  (spec/keys :req-un
+             [:bob.db.logger/type
+              :bob.logger/url
+              :bob.logger/name]))
+
 (spec/def :bob.db.pipeline/type #{:pipeline})
 
 (spec/def :bob.db/pipeline
   (spec/merge :bob/pipeline (spec/keys :req-un [:bob.db.pipeline/type])))
-
-(spec/def :bob.db.log-line/type #{:log-line})
-
-(spec/def :bob.db.log-line/line string?)
-
-(spec/def :bob.db/log-line
-  (spec/keys :req-un
-             [:bob.db.log-line/type
-              :bob.pipeline.run/run-id
-              :bob.db.log-line/line]))
-
-(spec/def :bob.db.log-line-event/line
-  (spec/and :bob.db.log-line/line
-            #(s/starts-with? % "[bob]")))
-
-(spec/def :bob.db/log-line-event
-  (spec/keys :req-un
-             [:bob.db.log-line/type
-              :bob.pipeline.run/run-id
-              :bob.db.log-line-event/line]))
 
 (spec/def :bob.db.run/type #{:pipeline-run})
 
@@ -256,7 +243,7 @@
 (spec/def :bob.cluster.event/at int?)
 (spec/def :bob.cluster.event/type #{"Normal" "Warning" "Error"})
 (spec/def :bob.cluster.event/reason string?)
-(spec/def :bob.cluster.event/kind #{"Pipeline" "ResourceProvider" "ArtifactStore"})
+(spec/def :bob.cluster.event/kind #{"Pipeline" "ResourceProvider" "ArtifactStore" "Logger"})
 (spec/def :bob.cluster.event/message string?)
 
 (spec/def :bob.cluster/event

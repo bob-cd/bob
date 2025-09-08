@@ -9,7 +9,7 @@
          cclean {:doc "Cleans up cluster containers"
                  :task (do (t/scrun "kill bob-test-storage bob-test-queue resource-git artifact-local podman")
                            (t/scrun "rm bob-test-storage bob-test-queue resource-git artifact-local podman")
-                           (t/scrun "network rm bob-net")
+                           (t/scrun "network rm -f bob-net")
                            (t/scrun "volume prune -f"))}
          prep {:doc "Prepares the deps"
                :task (do (clojure "-P" "-A:build")
@@ -24,10 +24,12 @@
                        (t/crun "run -d --name bob-test-queue -p 5673:5672 -p 5552:5552 --network bob-net -e RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS='-rabbitmq_stream advertised_host localhost' --entrypoint sh rabbitmq:management-alpine -c 'rabbitmq-plugins enable --offline rabbitmq_stream && rabbitmq-server'")
                        (t/crun "run -d --name resource-git -p 8000:8000 --network bob-net ghcr.io/bob-cd/resource-git")
                        (t/crun "run -d --name artifact-local -p 8001:8001 --network bob-net ghcr.io/bob-cd/artifact-local")
+                       (t/crun "run -d --name logger-local -p 8002:8002 --network bob-net ghcr.io/bob-cd/logger-local")
                        (println "Waiting for cluster readiness.")
                        (t/wait-for {"podman" "http://localhost:8080/v5.6.0/libpod/_ping"
                                     "resource-git" "http://localhost:8000/ping"
                                     "artifact-store" "http://localhost:8001/ping"
+                                    "logger-local" "http://localhost:8002/ping"
                                     "postgres" "tcp://127.0.0.1:5433"
                                     "rabbitmq" "tcp://127.0.0.1:5673"})
                        (t/crun "exec bob-test-queue rabbitmq-plugins enable rabbitmq_stream")

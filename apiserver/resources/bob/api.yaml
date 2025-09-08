@@ -28,6 +28,8 @@ tags:
     description: Operations for artifacts and artifact stores
   - name: resource
     description: Operations for resource and resource providers
+  - name: logger
+    description: Operations for loggers
   - name: analytics
     description: Operations for cluster analytics
   - name: observability
@@ -505,53 +507,48 @@ paths:
                   value:
                     message: "Error message"
 
-  "/pipelines/logs/runs/{id}/offset/{offset}/lines/{lines}":
+  "/pipelines/logs/groups/{group}/names/{name}/runs/{id}":
     get:
       operationId: PipelineLogs
       summary: Fetches the logs of a pipeline
-      description: Streams the pipeline logs from the DB given the pipeline run id, offset and lines to fetch
+      description: Streams the pipeline logs from the logger
       tags:
         - pipeline
       x-cli-name: logs
       x-cli-group: pipelines
 
       parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
         - name: id
           required: true
           in: path
           description: The id of the pipeline run
           schema:
             type: string
-        - name: offset
-          required: true
-          in: path
-          description: The starting line of the logs
+        - name: follow
+          in: query
+          description: Set this to true to stream live logs
           schema:
-            type: integer
-        - name: lines
-          required: true
-          in: path
-          description: The number of lines from the starting line
-          schema:
-            type: integer
+            type: boolean
 
       responses:
         "200":
           description: Logs of the pipeline run
           content:
-            application/json:
+            text/plain:
               schema:
-                $ref: "#/components/schemas/PipelineLogsResponse"
-              examples:
-                success:
-                  value:
-                    message:
-                      - "[bob] log line 1"
-                      - "log line 2"
-                      - "log line 3"
-                      - "log line 4"
-                      - "[bob] log line 5"
-                      - "log line 6"
+                type: string
         "500":
           description: Failed log fetch
           content:
@@ -999,6 +996,129 @@ paths:
                   value:
                     message: "Error message"
 
+  "/loggers":
+    get:
+      operationId: LoggerList
+      summary: Lists all registered loggers by name
+      description: Lists all registered loggers by name
+      tags:
+        - logger
+      x-cli-name: list
+      x-cli-group: loggers
+      x-cli-aliases:
+        - ls
+        - get
+
+      parameters:
+        - name: name
+          required: false
+          in: query
+          description: The name of the logger to filter by
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: List of loggers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoggersResponse"
+        "500":
+          description: Failed listing loggers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
+
+    post:
+      operationId: LoggerCreate
+      summary: Creates an logger with its name and attributes
+      description: Submits a new logger creation request given the name and url
+      tags:
+        - logger
+      x-cli-name: create
+      x-cli-group: loggers
+
+      requestBody:
+        description: The attributes of the logger
+        required: true
+        x-cli-name: spec
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoggerAttributes"
+            examples:
+              attributes:
+                value:
+                  url: "http://my-logger:8002"
+
+      responses:
+        "202":
+          description: Successfully created a logger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+        "500":
+          description: Failed to create a logger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Logger may already be registered"
+
+  "/loggers/{name}":
+    delete:
+      operationId: LoggerDelete
+      summary: Deletes an logger by name
+      description: Submits a logger deletion request given the name
+      tags:
+        - logger
+      x-cli-name: delete
+      x-cli-group: loggers
+
+      parameters:
+        - name: name
+          required: true
+          in: path
+          description: Unique name of the logger
+          schema:
+            type: string
+
+      responses:
+        "202":
+          description: Successfully delete a logger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+        "500":
+          description: Failed deleting logger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Error message"
+
   "/query":
     get:
       operationId: Query
@@ -1279,6 +1399,7 @@ components:
         - name
         - steps
         - image
+        - logger
       properties:
         group:
           description: The group of the pipeline
@@ -1296,6 +1417,9 @@ components:
           description: The image to use, e.g. a docker or os image
         vars:
           $ref: "#/components/schemas/Vars"
+        logger:
+          description: The logger used to store run logs
+          type: string
         resources:
           type: array
           description: The list of declared resources
@@ -1314,19 +1438,6 @@ components:
                   type: string
                   pattern: ^(\d+)([KMGTPE]i{0,1})$
                   description: The memory value in bytes. Eg 1Gi, 4096Mi, 1Ti, 1024Ki, 5Ei
-
-    StringList:
-      type: array
-      items:
-        type: string
-
-    PipelineLogsResponse:
-      type: object
-      required:
-        - message
-      properties:
-        message:
-          $ref: "#/components/schemas/StringList"
 
     PipelinesResponse:
       type: object
@@ -1409,6 +1520,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ArtifactStoreAttributes"
+
+    LoggerAttributes:
+      type: object
+      required:
+        - name
+        - url
+      properties:
+        name:
+          type: string
+          description: Unique name of the logger
+        url:
+          type: string
+          description: The reachable URL from Bob for the logger
+
+    LoggersResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoggerAttributes"
 
     EventsResponse:
       type: object

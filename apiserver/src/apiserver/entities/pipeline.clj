@@ -25,15 +25,6 @@
               :reason "PipelineCreate"
               :message (format "Pipeline created/updated %s/%s" group name)})))
 
-(defn- logs-of
-  [db-client run-id]
-  (->> (xt/q (xt/db db-client)
-             {:find '[(pull log [:xt/id])]
-              :where [['log :type :log-line]
-                      ['log :run-id run-id]]})
-       (map first)
-       (map :xt/id)))
-
 (defn- runs-of
   [db-client group name]
   (->> (xt/q (xt/db db-client)
@@ -42,7 +33,7 @@
                       ['run :group group]
                       ['run :name name]]})
        (map first)
-       (map :xt/id)))
+       (mapv :xt/id)))
 
 (defn delete
   "Deletes a pipeline along with its associated resources."
@@ -50,10 +41,9 @@
   (log/infof "Deleting pipeline, runs and logs for (%s, %s)" group name)
   (f/try-all [id (keyword (str "bob.pipeline." group) name)
               runs (runs-of db-client group name)
-              logs (mapcat #(logs-of db-client %) runs)
               _ (xt/await-tx
                  db-client
-                 (xt/submit-tx db-client (map #(vector ::xt/delete %) (concat logs runs [id]))))]
+                 (xt/submit-tx db-client (map #(vector ::xt/delete %) (conj runs id))))]
     (ev/emit producer
              {:type "Normal"
               :kind "Pipeline"

@@ -12,7 +12,7 @@
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "0.13.1"}
-        io.github.lispyclouds/contajners {:git/sha "1696515cdc8399abf5ade0dd2a69cdc92c19c649"}
+        io.github.lispyclouds/contajners {:git/sha "028930b98479d9182a596cb189124ab9aed367e8"}
         org.babashka/http-client {:mvn/version "0.4.23"}
         org.clojure/clojure {:mvn/version "1.12.2"}
         org.clojure/data.json {:mvn/version "2.5.1"}
@@ -20,7 +20,7 @@
         org.kamranzafar/jtar {:mvn/version "2.3"}}
  :aliases {:test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
                                org.clojure/test.check {:mvn/version "1.1.1"}
-                               com.github.seancorfield/next.jdbc {:mvn/version "1.3.1048"}}
+                               com.github.seancorfield/next.jdbc {:mvn/version "1.3.1070"}}
                   :extra-paths ["test"]
                   :main-opts ["-m" "kaocha.runner"]
                   :jvm-opts ["--enable-preview"]}

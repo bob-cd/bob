@@ -6,10 +6,13 @@
 
 (ns runner.pipeline
   (:require
+   [babashka.http-client :as http]
    [clojure.spec.alpha :as spec]
+   [clojure.string :as str]
    [clojure.tools.logging :as log]
    [common.capacity :as cp]
    [common.events :as ev]
+   [common.fns :as fns]
    [common.schemas]
    [failjure.core :as f]
    [langohr.basic :as lb]
@@ -24,19 +27,14 @@
   (atom {:images-for-gc {}
          :runs {}}))
 
-(defn log->db
-  [database run-id line]
-  (xt/submit-tx database
-                [[::xt/put
-                  {:xt/id (keyword (str "bob.pipeline.log/l-" (random-uuid)))
-                   :type :log-line
-                   :time (Instant/now)
-                   :run-id run-id
-                   :line line}]]))
+(defn save-log
+  [logger-url group name run-id line]
+  (http/put (str/join "/" [logger-url "bob_logs" group name run-id])
+            {:body line}))
 
 (defn log-event
-  [database run-id line]
-  (log->db database run-id (str "[bob] " line)))
+  [logger-url group name run-id line]
+  (save-log logger-url group name run-id (str "[bob] " line)))
 
 (defn mark-image-for-gc
   [image run-id]
@@ -60,7 +58,7 @@
 
 (defn resourceful-step
   "Create a resource mounted image for a step if it needs it."
-  [{:keys [database stream]}
+  [{:keys [database stream logger-url]}
    {:keys [group name image run-id]}
    step]
   (if-let [resource (:needs_resource step)]
@@ -69,7 +67,9 @@
                             :reason "ResourceFetch"
                             :kind "Pipeline"
                             :message (str "Fetching resource for " run-id)})
-                _ (log-event database
+                _ (log-event logger-url
+                             group
+                             name
                              run-id
                              (str "Fetching and mounting resource " resource))
                 pipeline (xt/entity (xt/db database)
@@ -113,7 +113,7 @@
   or a Failure shorting the reduce.
 
   Returns the final build state or a Failure."
-  [{:keys [database stream] :as config}
+  [{:keys [database stream logger-url] :as config}
    {:keys [image run-id env group name] :as build-state}
    step]
   (if (f/failed? build-state)
@@ -130,13 +130,15 @@
                          assoc
                          :container-id
                          id)
-                _ (let [result (eng/start-container id #(log->db database run-id %))]
+                _ (let [result (eng/start-container id #(save-log logger-url group name run-id %))]
                     (when (f/failed? result)
                       (log/debugf "Removing failed container %s" id)
                       (clean-up-container id run-id))
                     result)
                 _ (when-let [artifact (:produces_artifact step)]
-                    (log-event database
+                    (log-event logger-url
+                               group
+                               name
                                run-id
                                (str "Uploading artifact " artifact))
                     (ev/emit (:producer stream)
@@ -202,7 +204,7 @@
     (f/when-failed [err] err)))
 
 (defn- start*
-  [{:keys [database stream] :as config} queue-chan group name run-id delivery-tag]
+  [{:keys [database stream logger-url] :as config} queue-chan group name run-id delivery-tag]
   (f/try-all [{:keys [image steps vars]} (get-pipeline database group name)
               _ (log/infof "Starting new run: %s" run-id)
               producer (:producer stream)
@@ -235,7 +237,7 @@
               _ (clean-up-run run-id)
               _ (set-run-status database run-id :passed :completed-at)
               _ (log/infof "Run successful %s" run-id)
-              _ (log-event database run-id "Run successful")
+              _ (log-event logger-url group name run-id "Run successful")
               _ (ev/emit producer {:type "Normal"
                                    :reason "PipelineSuccessful"
                                    :kind "Pipeline"
@@ -251,7 +253,7 @@
           (log/infof "Marking run %s as failed with reason: %s"
                      run-id
                      error)
-          (log-event database run-id (str "Run failed: " error))
+          (log-event logger-url group name run-id (str "Run failed: " error))
           (ev/emit (:producer stream)
                    {:type "Warning"
                     :reason "PipelineFailed"
@@ -273,7 +275,8 @@
     (do (log/error "Invalid pipeline start command: " data)
         (lb/ack queue-chan delivery-tag))
     (if (cp/has-capacity? (get-pipeline database group name))
-      (let [run-ref (future (start* config queue-chan group name run-id delivery-tag))]
+      (let [{:keys [url]} (fns/get-logger database group name)
+            run-ref (future (start* (assoc config :logger-url url) queue-chan group name run-id delivery-tag))]
         (swap! node-state
                update-in
                [:runs run-id]
