@@ -228,7 +228,11 @@
                        (InputStream/.close body)
                        (OutputStream/.close output-stream)))))))}
     (f/when-failed [err]
-      (respond (f/message err) 500))))
+      (let [msg (f/message err)]
+        (case (f/message err)
+          "Run not found" (respond msg 404)
+          "Cannot locate logger for pipeline" (respond (str msg ": Make sure it exists") 400)
+          (respond (f/message err) 500))))))
 
 (defn pipeline-status
   [{{{:keys [run-id]} :path} :parameters
