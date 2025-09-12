@@ -59,7 +59,6 @@
         (t/testing "creation"
           (let [pipeline {:group "test"
                           :name "test"
-                          :logger "logger-local"
                           :steps [{:cmd "echo hello"}
                                   {:needs_resource "source"
                                    :cmd "ls"}
@@ -116,12 +115,14 @@
              :type :pipeline-run
              :group "dev"
              :name "test"
+             :logger "logger-local"
              :status :running}]
            [::xt/put
             {:xt/id :bob.pipeline.run/r-2
              :type :pipeline-run
              :group "dev"
              :name "test"
+             :logger "logger-local"
              :status :passed}]
            [::xt/put
             {:xt/id :bob.logger/logger-local
@@ -139,7 +140,6 @@
       (t/testing "pipeline start"
         (let [pipeline {:group "dev"
                         :name "test"
-                        :logger "logger-local"
                         :steps [{:cmd "echo hello"}]
                         :image "busybox:musl"}
               _ (h/pipeline-create {:parameters {:body pipeline}
@@ -161,7 +161,6 @@
              :group "dev-paused"
              :name "test-paused"
              :image "busybox:musl"
-             :logger "logger-local"
              :paused true
              :steps [{:cmd "echo yes"}]}]]))
         (let [{:keys [status body]} (h/pipeline-start {:parameters {:path {:group "dev-paused"
@@ -185,7 +184,6 @@
            :group "dev"
            :name "test"
            :image "busybox:musl"
-           :logger "logger-local"
            :steps [{:cmd "echo yes"}]}]]))
       (t/testing "pipeline pause"
         (h/pipeline-pause-unpause true
@@ -212,25 +210,22 @@
            (xt/submit-tx
             db
             [[::xt/put
-              {:xt/id :bob.pipeline.dev/test
-               :type :pipeline
-               :group "test"
+              {:xt/id :bob.pipeline.run/r1
+               :type :pipeline-run
+               :group "dev"
                :name "test"
-               :image "busybox:musl"
                :logger "logger-local"
-               :steps []}]
+               :status :passed}]
              [::xt/put
               {:xt/id :bob.logger/logger-local
                :type :logger
                :name "logger-local"
                :url "http://localhost:8002"}]]))
-          (http/put "http://localhost:8002/bob_logs/test/test/r1"
+          (http/put "http://localhost:8002/bob_logs/r1"
                     {:body payload})
           (t/is (= payload
                    (-> {:db db
-                        :parameters {:path {:group "test"
-                                            :name "test"
-                                            :id "r1"}}}
+                        :parameters {:path {:id "r1"}}}
                        (h/pipeline-logs)
                        (:body)
                        (slurp)))))))))
@@ -247,6 +242,7 @@
                           :type :pipeline-run
                           :group "dev"
                           :name "test"
+                          :logger "logger-local"
                           :status :running}]]))
         (t/is (= "running"
                  (-> (h/pipeline-status {:db db
@@ -319,14 +315,12 @@
              :group "dev"
              :name "test1"
              :image "busybox:musl"
-             :logger "logger-local"
              :steps [{:cmd "echo yes"}]}]
            [::xt/put
             {:xt/id :bob.pipeline.dev/test2
              :type :pipeline
              :group "dev"
              :name "test2"
-             :logger "logger-local"
              :image "alpine:latest"
              :steps [{:cmd "echo yesnt"}]}]
            [::xt/put
@@ -334,7 +328,6 @@
              :type :pipeline
              :group "prod"
              :name "test1"
-             :logger "logger-local"
              :image "alpine:latest"
              :steps [{:cmd "echo boo"}]}]]))
         (let [resp (h/pipeline-list {:db db
@@ -342,12 +335,10 @@
           (t/is (= #{{:group "dev"
                       :image "alpine:latest"
                       :name "test2"
-                      :logger "logger-local"
                       :steps [{:cmd "echo yesnt"}]}
                      {:group "dev"
                       :image "busybox:musl"
                       :name "test1"
-                      :logger "logger-local"
                       :steps [{:cmd "echo yes"}]}}
                    (-> resp
                        :body
@@ -367,23 +358,26 @@
              :type :pipeline-run
              :group "dev"
              :name "test"
+             :logger "logger-local"
              :status :passed}]
            [::xt/put
             {:xt/id :bob.pipeline.run/r-2
              :type :pipeline-run
              :group "dev"
              :name "test"
+             :logger "logger-local"
              :status :failed}]]))
         (let [resp (h/pipeline-runs-list {:db db
                                           :parameters {:path {:group "dev"
                                                               :name "test"}}})]
-          (t/is (= [{:run-id "r-1"
-                     :status :passed}
-                    {:run-id "r-2"
-                     :status :failed}]
+          (t/is (= #{{:run-id "r-1"
+                      :status :passed}
+                     {:run-id "r-2"
+                      :status :failed}}
                    (-> resp
                        :body
-                       :message))))))))
+                       :message
+                       (set)))))))))
 
 (t/deftest resource-provider-entities-test
   (u/with-system

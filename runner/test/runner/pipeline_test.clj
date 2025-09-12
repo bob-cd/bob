@@ -56,7 +56,6 @@
                                       :name "test"
                                       :steps []
                                       :vars {}
-                                      :logger "logger-local"
                                       :resources [{:name "source"
                                                    :type "external"
                                                    :provider "git"
@@ -127,7 +126,6 @@
                                       :name "test"
                                       :steps []
                                       :vars {}
-                                      :logger "logger-local"
                                       :resources [{:name "source"
                                                    :type "external"
                                                    :provider "git"
@@ -198,7 +196,6 @@
                                       :name "test"
                                       :steps []
                                       :vars {}
-                                      :logger "logger-local"
                                       :resources [{:name "source"
                                                    :type "external"
                                                    :provider "git"
@@ -256,7 +253,6 @@
                                       :type :pipeline
                                       :group "test"
                                       :name "test"
-                                      :logger "logger-local"
                                       :steps [{:cmd "echo hello"}
                                               {:cmd "sh -c 'echo \"ENV: ${k1}\"'"}
                                               {:cmd "sh -c 'echo \"ENV: ${k1} ${k2}\"'"
@@ -270,6 +266,7 @@
                                              {:xt/id (keyword "bob.pipeline.run" run-id)
                                               :type :pipeline-run
                                               :status :pending
+                                              :logger "logger-local"
                                               :scheduled-at (Instant/now)
                                               :group "test"
                                               :name "test"}]]))
@@ -278,9 +275,10 @@
                                queue
                                {:group "test"
                                 :name "test"
+                                :logger "logger-local"
                                 :run-id run-id}
                                {})
-              lines (:body (http/get (str "http://localhost:8002/bob_logs/test/test/" run-id)))
+              lines (:body (http/get (str "http://localhost:8002/bob_logs/" run-id)))
               history (xt/entity-history (xt/db database)
                                          (keyword "bob.pipeline.run" result)
                                          :desc
@@ -320,7 +318,6 @@
                                       :type :pipeline
                                       :group "test"
                                       :name "test"
-                                      :logger "logger-local"
                                       :steps [{:cmd "echo hello"} {:cmd "this-bombs"}]
                                       :vars {:k1 "v1"}
                                       :image test-image}]]))
@@ -332,6 +329,7 @@
                                               :type :pipeline-run
                                               :status :pending
                                               :scheduled-at (Instant/now)
+                                              :logger "logger-local"
                                               :group "test"
                                               :name "test"}]]))
               result @(p/start {:database database
@@ -339,6 +337,7 @@
                                queue
                                {:group "test"
                                 :name "test"
+                                :logger "logger-local"
                                 :run-id run-id}
                                {})
               id (f/message result)
@@ -380,7 +379,6 @@
                                       :type :pipeline
                                       :group "test"
                                       :name "stop-test"
-                                      :logger "logger-local"
                                       :steps [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
                                       :vars {}
                                       :image test-image}]]))
@@ -392,6 +390,7 @@
                                               :type :pipeline-run
                                               :status :pending
                                               :scheduled-at (Instant/now)
+                                              :logger "logger-local"
                                               :group "test"
                                               :name "test"}]]))
               _ (p/start {:database database
@@ -399,6 +398,7 @@
                          queue
                          {:group "test"
                           :name "stop-test"
+                          :logger "logger-local"
                           :run-id run-id}
                          {})
               _ (Thread/sleep 5000) ;; Longer, possibly flaky wait

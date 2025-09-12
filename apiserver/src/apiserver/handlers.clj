@@ -72,8 +72,7 @@
 
 (defn get-logger
   [db run-id]
-  (f/try-all [_ (prn (xt/entity (xt/db db) (keyword "bob.pipeline.run" run-id)))
-              logger (->> {:find ['(pull logger [*])]
+  (f/try-all [logger (->> {:find ['(pull logger [*])]
                            :where [['run :xt/id (keyword "bob.pipeline.run" run-id)]
                                    ['run :logger 'logger-name]
                                    ['logger :type :logger]
