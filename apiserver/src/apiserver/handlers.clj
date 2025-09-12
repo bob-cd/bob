@@ -21,7 +21,6 @@
    [clojure.tools.logging :as log]
    [common.capacity :as cp]
    [common.events :as ev]
-   [common.fns :as fns]
    [common.schemas]
    [failjure.core :as f]
    [ring.core.protocols :as p]
@@ -71,6 +70,21 @@
     (f/when-failed [err]
       err)))
 
+(defn get-logger
+  [db run-id]
+  (f/try-all [_ (prn (xt/entity (xt/db db) (keyword "bob.pipeline.run" run-id)))
+              logger (->> {:find ['(pull logger [*])]
+                           :where [['run :xt/id (keyword "bob.pipeline.run" run-id)]
+                                   ['run :logger 'logger-name]
+                                   ['logger :type :logger]
+                                   ['logger :name 'logger-name]]}
+                          (xt/q (xt/db db))
+                          (ffirst))
+              _ (when-not (spec/valid? :bob.db/logger logger)
+                  (f/fail (str "Invalid logger: " logger)))]
+    logger
+    (f/when-failed [err] err)))
+
 ;; Handlers
 
 (defn api-spec
@@ -119,13 +133,12 @@
       (respond (f/message err) 500))))
 
 (defn pipeline-start
-  [{{pipeline-info :path}
+  [{{{:keys [group name logger]} :path}
     :parameters
     db :db
     queue :queue
     {producer :producer} :stream}]
   (f/try-all [run-id (str "r-" (random-uuid))
-              {:keys [group name]} pipeline-info
               data (pipeline-data db group name)
               _ (when-not data
                   (f/fail :not-found))]
@@ -135,6 +148,7 @@
                  :type :pipeline-run
                  :status :pending
                  :scheduled-at (Instant/now)
+                 :logger logger
                  :group group
                  :name name}]
         (xt/await-tx db (xt/submit-tx db [[::xt/put run]]))
@@ -143,7 +157,7 @@
                   :kind "Pipeline"
                   :reason "PipelineRunScheduled"
                   :message (str "Pipeline run scheduled " run-id)})
-        (r/dispatch-start db queue producer data run-id)
+        (r/dispatch-start db queue producer (assoc data :logger logger) run-id)
         (respond run-id)))
     (f/when-failed [err]
       (if (= :not-found (f/message err))
@@ -194,11 +208,11 @@
         (respond (f/message err) 500)))))
 
 (defn pipeline-logs
-  [{{{:keys [group name id]} :path
+  [{{{:keys [id]} :path
      {:keys [follow]} :query} :parameters
     db :db}]
-  (f/try-all [{:keys [url]} (fns/get-logger db group name)
-              url (cs/join "/" [url "bob_logs" group name id])
+  (f/try-all [{:keys [url]} (get-logger db id)
+              url (str url "/bob_logs/" id)
               url (if follow
                     (str url "?follow=true")
                     url)
@@ -231,7 +245,6 @@
       (let [msg (f/message err)]
         (case (f/message err)
           "Run not found" (respond msg 404)
-          "Cannot locate logger for pipeline" (respond (str msg ": Make sure it exists") 400)
           (respond (f/message err) 500))))))
 
 (defn pipeline-status

@@ -15,8 +15,6 @@
 
 (spec/def :bob.pipeline/image string?)
 
-(spec/def :bob.pipeline/logger string?)
-
 (spec/def :bob.pipeline/paused boolean?)
 
 (spec/def :bob.pipeline/vars map?)
@@ -106,7 +104,6 @@
   (spec/keys :req-un [:bob.pipeline/group
                       :bob.pipeline/name
                       :bob.pipeline/image
-                      :bob.pipeline/logger
                       :bob.pipeline/steps]
              :opt-un [:bob.pipeline/vars
                       :bob.pipeline/resources
@@ -134,14 +131,17 @@
 
 (spec/def :bob.pipeline.run/completed-at inst?)
 
-(spec/def :pipeline.run/status #{:pending :initializing :initialized :running :passed :failed :stopped})
+(spec/def :bob.pipeline.run/status #{:pending :initializing :initialized :running :passed :failed :stopped})
 
 (spec/def :bob.pipeline.run/run-id (spec/and string? #(s/starts-with? % "r-")))
+
+(spec/def :bob.pipeline.run/logger string?)
 
 (spec/def :bob.pipeline/run
   (spec/keys :req-un [:bob.pipeline/group
                       :bob.pipeline/name
-                      :pipeline.run/status]
+                      :bob.pipeline.run/status
+                      :bob.pipeline.run/logger]
              :opt-un [:bob.pipeline.run/scheduled-at
                       :bob.pipeline.run/initiated-at
                       :bob.pipeline.run/initialized-at
@@ -155,7 +155,8 @@
 (spec/def :bob.command.pipeline-start/data
   (spec/keys :req-un [:bob.pipeline/group
                       :bob.pipeline/name
-                      :bob.command.pipeline-start/run-id]))
+                      :bob.command.pipeline-start/run-id
+                      :bob.pipeline.run/logger]))
 
 (spec/def :bob.command/pipeline-start
   (spec/keys :req-un

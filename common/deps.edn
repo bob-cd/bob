@@ -12,7 +12,7 @@
         com.xtdb/xtdb-core {:mvn/version "1.24.5"}
         com.xtdb/xtdb-jdbc {:mvn/version "1.24.5"}
         failjure/failjure {:mvn/version "2.3.0"}
-        integrant/integrant {:mvn/version "0.13.1"}
+        integrant/integrant {:mvn/version "1.0.0"}
         org.babashka/http-client {:mvn/version "0.4.23"}
         org.clojure/data.json {:mvn/version "2.5.1"}
         org.clojure/tools.logging {:mvn/version "1.3.0"}

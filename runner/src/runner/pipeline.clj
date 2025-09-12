@@ -8,11 +8,9 @@
   (:require
    [babashka.http-client :as http]
    [clojure.spec.alpha :as spec]
-   [clojure.string :as str]
    [clojure.tools.logging :as log]
    [common.capacity :as cp]
    [common.events :as ev]
-   [common.fns :as fns]
    [common.schemas]
    [failjure.core :as f]
    [langohr.basic :as lb]
@@ -28,13 +26,13 @@
          :runs {}}))
 
 (defn save-log
-  [logger-url group name run-id line]
-  (http/put (str/join "/" [logger-url "bob_logs" group name run-id])
+  [logger-url run-id line]
+  (http/put (str logger-url "/bob_logs/" run-id)
             {:body line}))
 
 (defn log-event
-  [logger-url group name run-id line]
-  (save-log logger-url group name run-id (str "[bob] " line)))
+  [logger-url run-id line]
+  (save-log logger-url run-id (str "[bob] " line)))
 
 (defn mark-image-for-gc
   [image run-id]
@@ -68,8 +66,6 @@
                             :kind "Pipeline"
                             :message (str "Fetching resource for " run-id)})
                 _ (log-event logger-url
-                             group
-                             name
                              run-id
                              (str "Fetching and mounting resource " resource))
                 pipeline (xt/entity (xt/db database)
@@ -130,15 +126,13 @@
                          assoc
                          :container-id
                          id)
-                _ (let [result (eng/start-container id #(save-log logger-url group name run-id %))]
+                _ (let [result (eng/start-container id #(save-log logger-url run-id %))]
                     (when (f/failed? result)
                       (log/debugf "Removing failed container %s" id)
                       (clean-up-container id run-id))
                     result)
                 _ (when-let [artifact (:produces_artifact step)]
                     (log-event logger-url
-                               group
-                               name
                                run-id
                                (str "Uploading artifact " artifact))
                     (ev/emit (:producer stream)
@@ -237,7 +231,7 @@
               _ (clean-up-run run-id)
               _ (set-run-status database run-id :passed :completed-at)
               _ (log/infof "Run successful %s" run-id)
-              _ (log-event logger-url group name run-id "Run successful")
+              _ (log-event logger-url run-id "Run successful")
               _ (ev/emit producer {:type "Normal"
                                    :reason "PipelineSuccessful"
                                    :kind "Pipeline"
@@ -253,7 +247,7 @@
           (log/infof "Marking run %s as failed with reason: %s"
                      run-id
                      error)
-          (log-event logger-url group name run-id (str "Run failed: " error))
+          (log-event logger-url run-id (str "Run failed: " error))
           (ev/emit (:producer stream)
                    {:type "Warning"
                     :reason "PipelineFailed"
@@ -270,12 +264,14 @@
   "Attempts to asynchronously start a pipeline by group and name.
 
   Rejects it if there isn't any capacity on the current runner."
-  [{:keys [database stream] :as config} queue-chan {:keys [group name run-id] :as data} {:keys [delivery-tag]}]
+  [{:keys [database stream] :as config} queue-chan {:keys [group name run-id logger] :as data} {:keys [delivery-tag]}]
   (if-not (spec/valid? :bob.command.pipeline-start/data data)
     (do (log/error "Invalid pipeline start command: " data)
         (lb/ack queue-chan delivery-tag))
     (if (cp/has-capacity? (get-pipeline database group name))
-      (let [{:keys [url]} (fns/get-logger database group name)
+      (let [{:keys [url]} (xt/entity (xt/db database) (keyword "bob.logger" logger))
+            _ (when-not url
+                (f/fail (str "Invalid logger: " logger)))
             run-ref (future (start* (assoc config :logger-url url) queue-chan group name run-id delivery-tag))]
         (swap! node-state
                update-in

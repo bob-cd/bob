@@ -25,9 +25,9 @@
 (defn dispatch-start
   ([db ch producer pipeline run-id]
    (dispatch-start db ch producer pipeline run-id 2000))
-  ([db ch producer {:keys [group name quotas]} run-id backoff]
+  ([db ch producer {:keys [group name quotas logger]} run-id backoff]
    (let [nodes (cp/runners-with-capacity db quotas)
-         cmd {:group group :name name :run-id run-id :backoff backoff}
+         cmd {:group group :name name :run-id run-id :backoff backoff :logger logger}
          msg-type "pipeline/start"]
      (if (empty? nodes)
        ;; TODO: add reason for retry

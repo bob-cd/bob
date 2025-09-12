@@ -275,7 +275,7 @@ paths:
                   value:
                     message: "Error message"
 
-  "/pipelines/start/groups/{group}/names/{name}":
+  "/pipelines/start/groups/{group}/names/{name}/loggers/{logger}":
     post:
       operationId: PipelineStart
       summary: Starts a pipeline
@@ -298,6 +298,12 @@ paths:
           description: The name of the pipeline
           schema:
             type: string
+        - name: logger
+          required: true
+          in: path
+          description: The name of the logger to use for this run
+          schema:
+            type: string
 
       requestBody:
         description: Optional metadata map for runners. If provided must include runner/type
@@ -310,7 +316,7 @@ paths:
                 - runner/type
               properties:
                 runner/type:
-                  description: Describes which runner type a job is intended for, defaults to docker
+                  description: Describes which runner type a job is intended for, defaults to container
                   type: string
 
       responses:
@@ -507,7 +513,7 @@ paths:
                   value:
                     message: "Error message"
 
-  "/pipelines/logs/groups/{group}/names/{name}/runs/{id}":
+  "/pipelines/logs/runs/{id}":
     get:
       operationId: PipelineLogs
       summary: Fetches the logs of a pipeline
@@ -518,18 +524,6 @@ paths:
       x-cli-group: pipelines
 
       parameters:
-        - name: group
-          required: true
-          in: path
-          description: The group of the pipeline
-          schema:
-            type: string
-        - name: name
-          required: true
-          in: path
-          description: The name of the pipeline
-          schema:
-            type: string
         - name: id
           required: true
           in: path
@@ -549,6 +543,12 @@ paths:
             text/plain:
               schema:
                 type: string
+        "404":
+          description: Logs not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
         "500":
           description: Failed log fetch
           content:
@@ -1399,7 +1399,6 @@ components:
         - name
         - steps
         - image
-        - logger
       properties:
         group:
           description: The group of the pipeline
@@ -1417,9 +1416,6 @@ components:
           description: The image to use, e.g. a docker or os image
         vars:
           $ref: "#/components/schemas/Vars"
-        logger:
-          description: The logger used to store run logs
-          type: string
         resources:
           type: array
           description: The list of declared resources
