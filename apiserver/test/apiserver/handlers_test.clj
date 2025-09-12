@@ -371,9 +371,11 @@
                                           :parameters {:path {:group "dev"
                                                               :name "test"}}})]
           (t/is (= #{{:run-id "r-1"
-                      :status :passed}
+                      :status :passed
+                      :logger "logger-local"}
                      {:run-id "r-2"
-                      :status :failed}}
+                      :status :failed
+                      :logger "logger-local"}}
                    (-> resp
                        :body
                        :message
