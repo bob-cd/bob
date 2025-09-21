@@ -292,7 +292,7 @@
                         (conj filters (filter #(= name (:name %))))
                         filters)]
     (respond (if (seq filters)
-               (apply eduction (conj filters pipelines))
+               (into [] (apply comp filters) pipelines)
                pipelines)
              200)
     (f/when-failed [err]
