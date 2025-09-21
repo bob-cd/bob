@@ -8,24 +8,21 @@
   (:require
    [babashka.http-client :as http]
    [clojure.test :refer [deftest is testing]]
+   [common.store :as store]
    [failjure.core :as f]
    [runner.artifact :as a]
    [runner.engine :as eng]
-   [runner.util :as u]
-   [xtdb.api :as xt]))
+   [runner.util :as u]))
 
 (deftest upload-artifact-test
   (eng/pull-image "busybox:musl")
   (u/with-system
     (fn [database _ _]
       (let [id (eng/create-container "busybox:musl")]
-        (xt/await-tx database
-                     (xt/submit-tx database
-                                   [[::xt/put
-                                     {:xt/id :bob.artifact-store/local
-                                      :type :artifact-store
-                                      :url "http://localhost:8001"
-                                      :name "local"}]]))
+        (store/put database
+                   "bob.artifact-store/local"
+                   {:url "http://localhost:8001"
+                    :name "local"})
 
         (testing "successful artifact upload"
           (is (= "Ok"
@@ -37,8 +34,5 @@
         (testing "unsuccessful artifact upload"
           (is (f/failed? (a/upload-artifact database "dev" "test" "r-1" "file1" id "/invalid-path" "local")))
           (is (= 404
-                 (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file1" {:throw false})))))
-        (xt/await-tx database
-                     (xt/submit-tx database
-                                   [[::xt/delete :bob.artifact-store/local]])))))
+                 (:status (http/get "http://localhost:8001/bob_artifact/dev/test/r-1/file1" {:throw false}))))))))
   (eng/delete-image "busybox:musl"))

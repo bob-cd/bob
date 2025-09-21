@@ -10,8 +10,8 @@
    [clojure.tools.logging :as log]
    [common.capacity :as cp]
    [common.events :as ev]
-   [langohr.basic :as lb]
-   [xtdb.api :as xt]))
+   [common.store :as store]
+   [langohr.basic :as lb]))
 
 (defn- publish
   [ch exchange queue-name msg msg-type]
@@ -72,7 +72,7 @@
   Retries by requeueing to the job queue if still pending."
   [{:keys [database stream]} ch {:keys [delivery-tag]} ^bytes payload]
   (let [{:keys [group name run-id backoff]} (json/read-str (String/new payload "UTF-8") :key-fn keyword)
-        {:keys [status]} (xt/entity (xt/db database) (keyword "bob.pipeline.run" run-id))
+        {:keys [status]} (store/get-one database (str "bob.pipeline.run/" run-id))
         producer (:producer stream)]
     (if (not= :pending status)
       (lb/ack ch delivery-tag) ; ack as it could be stopped (cancelled) by user
@@ -89,7 +89,7 @@
            database
            ch
            producer
-           (xt/entity (xt/db database) (keyword (str "bob.pipeline." group) name))
+           (store/get-one database (str "bob.pipeline/" group ":" name))
            run-id
            (* backoff 2))
           (lb/ack ch delivery-tag)))))) ; This ensures the message isn't lost if the retrying apiserver goes down

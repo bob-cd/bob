@@ -13,18 +13,16 @@
    [apiserver.metrics :as metrics]
    [apiserver.runs :as r]
    [babashka.http-client :as http]
-   [clojure.data.json :as json]
    [clojure.java.io :as io]
-   [clojure.set :as s]
    [clojure.spec.alpha :as spec]
    [clojure.string :as cs]
    [clojure.tools.logging :as log]
    [common.capacity :as cp]
    [common.events :as ev]
    [common.schemas]
+   [common.store :as store]
    [failjure.core :as f]
-   [ring.core.protocols :as p]
-   [xtdb.api :as xt])
+   [ring.core.protocols :as p])
   (:import
    [com.rabbitmq.stream Environment MessageHandler OffsetSpecification]
    [java.io BufferedReader InputStream OutputStream]
@@ -42,44 +40,37 @@
 
 (defn pipeline-data
   [db group name]
-  (f/try-all [data (xt/entity
-                    (xt/db db)
-                    (keyword (str "bob.pipeline." group) name))
+  (f/try-all [data (store/get-one db (str "bob.pipeline/" group ":" name))
               _ (when (and (some? data)
-                           (not (spec/valid? :bob.db/pipeline data)))
+                           (not (spec/valid? :bob/pipeline data)))
                   (f/fail (str "Invalid pipeline: " data)))]
     data
     (f/when-failed [err] err)))
 
 (defn get-run
   [db run-id]
-  (let [run (xt/entity (xt/db db) (keyword "bob.pipeline.run" run-id))]
-    (if (and (some? run)
-             (not (spec/valid? :bob.db/run run)))
-      (f/fail (str "Invalid run: " run))
-      run)))
+  (let [data (store/get-one db (str "bob.pipeline.run/" run-id))]
+    (if (and (some? data)
+             (not (spec/valid? :bob.pipeline/run data)))
+      (f/fail (str "Invalid run: " data))
+      data)))
 
 (defn get-runs
   [db group name]
-  (f/try-all [result (xt/q (xt/db db)
-                           {:find ['(pull run [*])]
-                            :where [['run :type :pipeline-run]
-                                    ['run :group group]
-                                    ['run :name name]]})]
-    (map first result)
-    (f/when-failed [err]
-      err)))
+  (f/try-all [result (->> (store/get db "bob.pipeline.run/" {:prefix true})
+                          (map #(let [{:keys [key value]} %
+                                      id (subs key (inc (cs/index-of key "/")))]
+                                  (assoc value :run-id id)))
+                          (filter #(and (= (:group %) group)
+                                        (= (:name %) name))))]
+    result
+    (f/when-failed [err] err)))
 
 (defn get-logger
   [db run-id]
-  (f/try-all [logger (->> {:find ['(pull logger [*])]
-                           :where [['run :xt/id (keyword "bob.pipeline.run" run-id)]
-                                   ['run :logger 'logger-name]
-                                   ['logger :type :logger]
-                                   ['logger :name 'logger-name]]}
-                          (xt/q (xt/db db))
-                          (ffirst))
-              _ (when-not (spec/valid? :bob.db/logger logger)
+  (f/try-all [{:keys [logger]} (store/get-one db (str "bob.pipeline.run/" run-id))
+              logger (store/get-one db (str "bob.logger/" logger))
+              _ (when-not (spec/valid? :bob/logger logger)
                   (f/fail (str "Invalid logger: " logger)))]
     logger
     (f/when-failed [err] err)))
@@ -117,11 +108,9 @@
     db :db
     stream :stream}]
   (f/try-all [{:keys [group name]} pipeline-info
-              runs (get-runs db group name)
-              running (->> runs
+              running (->> (get-runs db group name)
                            (filter #(= (:status %) :running))
-                           (map :xt/id)
-                           (map clojure.core/name))]
+                           (map :run-id))]
     (if (seq running)
       (respond {:runs running
                 :error "Pipeline has active runs. Wait for them to finish or stop them."}
@@ -143,14 +132,14 @@
                   (f/fail :not-found))]
     (if (:paused data)
       (respond "Pipeline is paused. Unpause it first." 422)
-      (let [run {:xt/id (keyword "bob.pipeline.run" run-id)
-                 :type :pipeline-run
-                 :status :pending
-                 :scheduled-at (Instant/now)
-                 :logger logger
-                 :group group
-                 :name name}]
-        (xt/await-tx db (xt/submit-tx db [[::xt/put run]]))
+      (do
+        (store/put db
+                   (str "bob.pipeline.run/" run-id)
+                   {:status :pending
+                    :scheduled-at (Instant/now)
+                    :logger logger
+                    :group group
+                    :name name})
         (ev/emit producer
                  {:type "Normal"
                   :kind "Pipeline"
@@ -173,11 +162,11 @@
       (respond "Cannot find run" 404)
       (do (case status
             :running (r/dispatch-stop db queue producer run-id)
-            :pending (->> [[::xt/put (assoc run
-                                            :status :stopped
-                                            :completed-at (Instant/now))]]
-                          (xt/submit-tx db)
-                          (xt/await-tx db))
+            :pending (store/put db
+                                (str "bob.pipeline.run/" run-id)
+                                (assoc run
+                                       :status :stopped
+                                       :completed-at (Instant/now)))
             (log/warnf "Ignoring stop cmd for run %s due to status %s" run-id status))
           (respond "Ok")))
     (f/when-failed [err]
@@ -194,7 +183,7 @@
               changed (if pause?
                         (assoc data :paused true)
                         (dissoc data :paused))
-              _ (xt/await-tx db (xt/submit-tx db [[::xt/put changed]]))
+              _ (store/put db (str "bob.pipeline/" group ":" name) changed)
               _ (ev/emit producer
                          {:type "Normal"
                           :kind "Pipeline"
@@ -259,25 +248,21 @@
 (defn pipeline-runs-list
   [{{{:keys [group name]} :path} :parameters
     db :db}]
-  (f/try-all [runs (get-runs db group name)
-              response (->> runs
-                            (map #(dissoc % :group :name :type))
-                            (map #(s/rename-keys % {:xt/id :run-id}))
-                            (map #(update % :run-id clojure.core/name)))]
-    (respond response 200)
+  (f/try-all [runs (get-runs db group name)]
+    (respond (map #(dissoc % :group :name) runs) 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
 (defn pipeline-artifact
   [{{{:keys [group name id store-name artifact-name]} :path} :parameters
     db :db}]
-  (f/try-all [store (xt/entity (xt/db db) (keyword "bob.artifact-store" store-name))
-              _ (when (nil? store)
+  (f/try-all [data (store/get-one db (str "bob.artifact-store/" store-name))
+              _ (when (nil? data)
                   (f/fail {:type :external
                            :msg (str "Cannot locate artifact store " store-name)}))
-              base-url (if-not (spec/valid? :bob.db/artifact-store store)
-                         (f/fail (str "Invalid artifact-store: " store))
-                         (:url store))
+              base-url (if-not (spec/valid? :bob/artifact-store data)
+                         (f/fail (str "Invalid artifact-store: " data))
+                         (:url data))
               url (cs/join "/" [base-url "bob_artifact" group name id artifact-name])
               {:keys [body status]} (http/get url
                                               {:as :stream
@@ -297,24 +282,19 @@
         (respond (str err) 500)))))
 
 (defn pipeline-list
-  [{{{:keys [group name status]
-      :as query}
-     :query}
-    :parameters
+  [{{{:keys [group name]} :query} :parameters
     db :db}]
-  (f/try-all [base-query '{:find [(pull pipeline [*])]
-                           :where [[pipeline :type :pipeline]]}
-              clauses {:group [['pipeline :group group]]
-                       :name [['pipeline :name name]]
-                       :status [['run :type :pipeline-run]
-                                ['run :status status]]}
-              filters (mapcat #(get clauses (key %)) query)
-              result (xt/q (xt/db db)
-                           (update-in base-query [:where] into filters))
-              cleaned (->> result
-                           (map first)
-                           (map #(dissoc % :xt/id :type)))]
-    (respond cleaned 200)
+  (f/try-all [pipelines (map :value (store/get db "bob.pipeline/" {:prefix true}))
+              filters (if group
+                        [(filter #(= group (:group %)))]
+                        [])
+              filters (if name
+                        (conj filters (filter #(= name (:name %))))
+                        filters)]
+    (respond (if (seq filters)
+               (apply eduction (conj filters pipelines))
+               pipelines)
+             200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -339,14 +319,11 @@
 (defn resource-provider-list
   [{{{:keys [name]} :query} :parameters
     db :db}]
-  (f/try-all [clauses [['resource-provider :type :resource-provider]]
-              clauses (if name
-                        (conj clauses ['resource-provider :name name])
-                        clauses)
-              result (xt/q (xt/db db)
-                           {:find '[(pull resource-provider [:name :url])]
-                            :where clauses})]
-    (respond (map first result) 200)
+  (f/try-all [all (map :value (store/get db "bob.resource-provider/" {:prefix true}))]
+    (respond (if name
+               (filter #(= name (:name %)) all)
+               all)
+             200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -371,14 +348,11 @@
 (defn artifact-store-list
   [{{{:keys [name]} :query} :parameters
     db :db}]
-  (f/try-all [clauses [['artifact-store :type :artifact-store]]
-              clauses (if name
-                        (conj clauses ['artifact-store :name name])
-                        clauses)
-              result (xt/q (xt/db db)
-                           {:find '[(pull artifact-store [:name :url])]
-                            :where clauses})]
-    (respond (map first result) 200)
+  (f/try-all [all (map :value (store/get db "bob.artifact-store/" {:prefix true}))]
+    (respond (if name
+               (filter #(= name (:name %)) all)
+               all)
+             200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -403,27 +377,11 @@
 (defn logger-list
   [{{{:keys [name]} :query} :parameters
     db :db}]
-  (f/try-all [clauses [['logger :type :logger]]
-              clauses (if name
-                        (conj clauses ['logger :name name])
-                        clauses)
-              result (xt/q (xt/db db)
-                           {:find '[(pull logger [:name :url])]
-                            :where clauses})]
-    (respond (map first result) 200)
-    (f/when-failed [err]
-      (respond (f/message err) 500))))
-
-(defn query
-  [{{{:keys [q t]} :query} :parameters
-    db :db}]
-  (f/try-all [query (read-string q)
-              db-in-time (if (nil? t)
-                           (xt/db db)
-                           (xt/db db t))]
-    {:status 200
-     :headers {"Content-Type" "application/json"}
-     :body (json/write-str (xt/q db-in-time query))}
+  (f/try-all [all (map :value (store/get db "bob.logger/" {:prefix true}))]
+    (respond (if name
+               (filter #(= name (:name %)) all)
+               all)
+             200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -478,7 +436,7 @@
 (defn cluster-info
   [{db :db}]
   (f/try-all [info (cp/cluster-info db)]
-    (respond info)
+    (respond info 200)
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
@@ -505,7 +463,6 @@
    "LoggerCreate" logger-create
    "LoggerDelete" logger-delete
    "LoggerList" logger-list
-   "Query" query
    "GetEvents" events
    "GetMetrics" metrics
    "CCTray" cctray

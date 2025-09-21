@@ -11,9 +11,15 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.test :as t]
+   [common.store :as store]
    [common.system :as cs]
-   [integrant.core :as ig]
-   [next.jdbc :as jdbc]))
+   [integrant.core :as ig]))
+
+(defn clear-db
+  [db]
+  (->> (store/get db "bob." {:prefix true})
+       (map :key)
+       (run! #(store/delete db %))))
 
 (defn with-system
   [test-fn]
@@ -21,23 +27,17 @@
                    (io/resource)
                    (aero/read-config {:resolver cs/resource-resolver})
                    (dissoc :common)
-                   (assoc-in [:bob/storage :url] "jdbc:postgresql://localhost:5433/bob-test")
+                   (assoc-in [:bob/storage :urls] "http://localhost:2380")
                    (assoc-in [:bob/queue :url] "amqp://localhost:5673")
                    (assoc-in [:bob/stream :url] "rabbitmq-stream://guest:guest@localhost:5552/%2f"))
-        ds (jdbc/get-datasource {:dbtype "postgresql"
-                                 :dbname "bob-test"
-                                 :user "bob"
-                                 :password "bob"
-                                 :host "localhost"
-                                 :port 5433})
         system (ig/init config)]
     (test-fn (system :bob/storage)
              (-> system
                  :bob/queue
                  :chan)
              (system :bob/stream))
-    (ig/halt! system)
-    (jdbc/execute! ds ["DELETE FROM tx_events;"])))
+    (clear-db (:bob/storage system))
+    (ig/halt! system)))
 
 (defn spec-assert
   [spec value]

@@ -91,7 +91,7 @@ paths:
               examples:
                 unhealthy:
                   value:
-                    message: "Health check failed: Postgres not healthy"
+                    message: "Health check failed: DB not healthy"
 
   "/pipelines":
     get:
@@ -117,12 +117,6 @@ paths:
           required: false
           in: query
           description: The name of the pipeline
-          schema:
-            type: string
-        - name: status
-          required: false
-          in: query
-          description: The status of the pipeline
           schema:
             type: string
 
@@ -1118,53 +1112,6 @@ paths:
                 failure:
                   value:
                     message: "Error message"
-
-  "/query":
-    get:
-      operationId: Query
-      summary: Runs a query on XTDB, intended for point in time analytics
-      description: Runs a direct xt datalog read query on the DB, useful for arbitrary analytics and point in time queries
-      tags:
-        - analytics
-      x-cli-name: run
-      x-cli-group: query
-
-      parameters:
-        - name: q
-          description: Query to execute
-          required: true
-          in: query
-          schema:
-            type: string
-        - name: t
-          description: Point in time
-          required: false
-          in: query
-          schema:
-            type: string
-            format: date-time
-
-      responses:
-        "200":
-          description: Successful query
-          content:
-            application/json:
-              schema:
-                type: object
-              examples:
-                sucess:
-                  value: []
-
-        "500":
-          description: Failed query
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SimpleResponse"
-              examples:
-                unhealthy:
-                  value:
-                    message: "Query failed: <Error>"
 
   "/events":
     get:

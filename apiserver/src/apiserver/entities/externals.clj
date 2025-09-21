@@ -8,7 +8,7 @@
   (:require
    [clojure.tools.logging :as log]
    [common.events :as ev]
-   [xtdb.api :as xt]))
+   [common.store :as store]))
 
 (def as-id
   {"ResourceProvider" "resource-provider"
@@ -18,16 +18,9 @@
 (defn create
   "Register with an unique name and an url supplied in a map."
   [db producer kind {:keys [name url]}]
-  (let [id (keyword (str "bob." (as-id kind)) name)]
+  (let [id (str "bob." (as-id kind) "/" name)]
     (log/infof "Creating %s at %s with id %s" kind url id)
-    (xt/await-tx
-     db
-     (xt/submit-tx db
-                   [[::xt/put
-                     {:xt/id id
-                      :type (keyword (as-id kind))
-                      :url url
-                      :name name}]]))
+    (store/put db id {:url url :name name})
     (ev/emit producer
              {:type "Normal"
               :kind kind
@@ -38,9 +31,7 @@
   "Unregisters by its name supplied in a map."
   [db producer kind name]
   (log/infof "Deleting %s %s" kind name)
-  (xt/await-tx
-   db
-   (xt/submit-tx db [[::xt/delete (keyword (str "bob." (as-id kind)) name)]]))
+  (store/delete db (str "bob." (as-id kind) "/" name))
   (ev/emit producer
            {:type "Normal"
             :kind kind

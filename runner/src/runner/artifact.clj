@@ -11,14 +11,14 @@
    [clojure.string :as s]
    [clojure.tools.logging :as log]
    [common.schemas]
+   [common.store :as store]
    [failjure.core :as f]
-   [runner.engine :as eng]
-   [xtdb.api :as xt]))
+   [runner.engine :as eng]))
 
 (defn store-url
-  [db-client store]
-  (f/try-all [store (xt/entity (xt/db db-client) (keyword "bob.artifact-store" store))
-              _ (when-not (spec/valid? :bob.db/artifact-store store)
+  [db-client store-name]
+  (f/try-all [store (store/get-one db-client (str "bob.artifact-store/" store-name))
+              _ (when-not (spec/valid? :bob/artifact-store store)
                   (f/fail "Invalid artifact store: " store))]
     (:url store)
     (f/when-failed [err]
@@ -41,13 +41,11 @@
       "Ok"
       (f/when-failed [err]
         (log/errorf "Error in uploading artifact: %s" (f/message err))
-        (f/try*
-         (eng/delete-container container-id))
+        (f/try* (eng/delete-container container-id))
         err))
     (do
       (log/error "Error locating Artifact Store")
-      (f/try*
-       (eng/delete-container container-id))
+      (f/try* (eng/delete-container container-id))
       (f/fail "No such artifact store registered"))))
 
 (comment

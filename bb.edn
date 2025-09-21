@@ -14,8 +14,7 @@
                  (def image-task "bb image")
                  (def push-task "bb push")
                  (def clean-task "bb clean")
-                 ; TODO: Remove exclusions if moving to XT2 or upgrading 1.x
-                 (def antq-task "clojure -Sdeps '{:deps {com.github.liquidz/antq {:mvn/version \"RELEASE\"}}}' -M -m antq.core outdated --upgrade --exclude=com.xtdb/xtdb-core --exclude=com.xtdb/xtdb-jdbc"))
+                 (def antq-task "clojure -Sdeps '{:deps {com.github.liquidz/antq {:mvn/version \"RELEASE\"}}}' -M -m antq.core outdated --upgrade"))
 
          apiserver {:doc "Builds the apiserver"
                     :task (shell {:dir apiserver-dir} compile-task)}

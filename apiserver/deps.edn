@@ -8,7 +8,6 @@
  :deps {aero/aero {:mvn/version "1.1.6"}
         ch.qos.logback/logback-classic {:mvn/version "1.5.18"}
         com.s-exp/hirundo {:mvn/version "0.1.43"}
-        com.xtdb/xtdb-core {:mvn/version "1.24.5"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "1.0.0"}
@@ -26,8 +25,7 @@
         org.clojure/data.json {:mvn/version "2.5.1"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha9"}
         org.clojure/tools.logging {:mvn/version "1.3.0"}}
- :aliases {:test {:extra-deps {com.github.seancorfield/next.jdbc {:mvn/version "1.3.1070"}
-                               lambdaisland/kaocha {:mvn/version "1.91.1392"}
+ :aliases {:test {:extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
                                org.clojure/test.check {:mvn/version "1.1.1"}}
                   :extra-paths ["test"]
                   :main-opts ["-m" "kaocha.runner"]

@@ -8,21 +8,21 @@
   (:require
    [aero.core :as aero]
    [clojure.java.io :as io]
+   [clojure.string :as str]
    [clojure.tools.logging :as log]
+   [common.store :as store]
    [failjure.core :as f]
    [integrant.core :as ig]
    [langohr.channel :as lch]
    [langohr.consumers :as lc]
    [langohr.core :as rmq]
    [langohr.exchange :as le]
-   [langohr.queue :as lq]
-   [xtdb.api :as xt])
+   [langohr.queue :as lq])
   (:import
    [com.rabbitmq.stream Environment StreamException]
    [com.rabbitmq.stream.impl StreamProducer]
    [java.net ConnectException]
-   [java.time Duration]
-   [xtdb.api IXtdb]))
+   [java.time Duration]))
 
 (def config
   (-> "bob/common.edn"
@@ -49,23 +49,15 @@
 
 (defmethod ig/init-key
   :bob/storage
-  [_ {:keys [url user password]}]
+  [_ {:keys [urls]}]
   (log/info "Connecting to DB")
-  (try-connect
-   #(xt/start-node {:xtdb.jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
-                                                :db-spec {:jdbcUrl url
-                                                          :user user
-                                                          :password password}}
-                    :xtdb/tx-log {:xtdb/module 'xtdb.jdbc/->tx-log
-                                  :connection-pool :xtdb.jdbc/connection-pool}
-                    :xtdb/document-store {:xtdb/module 'xtdb.jdbc/->document-store
-                                          :connection-pool :xtdb.jdbc/connection-pool}})))
+  (try-connect #(store/open {:urls (str/split urls #",")})))
 
 (defmethod ig/halt-key!
   :bob/storage
-  [_ node]
+  [_ conn]
   (log/info "Disconnecting DB")
-  (IXtdb/.close node))
+  (store/close conn))
 
 (defmethod ig/init-key
   :bob/queue

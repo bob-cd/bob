@@ -12,12 +12,12 @@
    [common.capacity :as cp]
    [common.events :as ev]
    [common.schemas]
+   [common.store :as store]
    [failjure.core :as f]
    [langohr.basic :as lb]
    [runner.artifact :as a]
    [runner.engine :as eng]
-   [runner.resource :as r]
-   [xtdb.api :as xt])
+   [runner.resource :as r])
   (:import
    [java.time Instant]))
 
@@ -68,9 +68,8 @@
                 _ (log-event logger-url
                              run-id
                              (str "Fetching and mounting resource " resource))
-                pipeline (xt/entity (xt/db database)
-                                    (keyword (str "bob.pipeline." group) name))
-                _ (when-not (spec/valid? :bob.db/pipeline pipeline)
+                pipeline (store/get-one database (str "bob.pipeline/" group ":" name))
+                _ (when-not (spec/valid? :bob/pipeline pipeline)
                     (f/fail "Invalid pipeline: " pipeline))
                 resource-info (->> pipeline
                                    :resources
@@ -177,23 +176,20 @@
 
 (defn- get-pipeline
   [database group name]
-  (f/try-all [pipeline (xt/entity (xt/db database)
-                                  (keyword (str "bob.pipeline." group) name))
+  (f/try-all [pipeline (store/get-one database (str "bob.pipeline/" group ":" name))
               _ (when-not pipeline
                   (f/fail (format "Unable to find pipeline %s/%s" group name)))
-              _ (when-not (spec/valid? :bob.db/pipeline pipeline)
+              _ (when-not (spec/valid? :bob/pipeline pipeline)
                   (f/fail (str "Invalid pipeline in DB: " pipeline)))]
     pipeline
     (f/when-failed [err] err)))
 
 (defn- set-run-status
   [db run-id status time-key]
-  (f/try-all [run (-> (xt/db db)
-                      (xt/entity (keyword "bob.pipeline.run" run-id))
+  (f/try-all [id (str "bob.pipeline.run/" run-id)
+              run (-> (store/get-one db id)
                       (assoc :status status time-key (Instant/now)))
-              _ (->> [[::xt/put run]]
-                     (xt/submit-tx db)
-                     (xt/await-tx db))]
+              _ (store/put db id run)]
     :ok
     (f/when-failed [err] err)))
 
@@ -240,9 +236,9 @@
                   (lb/ack queue-chan delivery-tag))]
     run-id
     (f/when-failed [err]
-      (let [{:keys [status] :as run} (xt/entity (xt/db database) (keyword "bob.pipeline.run" run-id))
+      (let [{:keys [status] :as run} (store/get-one database (str "bob.pipeline.run/" run-id))
             error (f/message err)]
-        (when (and (spec/valid? :bob.db/run run)
+        (when (and (spec/valid? :bob.pipeline/run run)
                    (not= status :stopped))
           (log/infof "Marking run %s as failed with reason: %s"
                      run-id
@@ -269,7 +265,7 @@
     (do (log/error "Invalid pipeline start command: " data)
         (lb/ack queue-chan delivery-tag))
     (if (cp/has-capacity? (get-pipeline database group name))
-      (let [{:keys [url]} (xt/entity (xt/db database) (keyword "bob.logger" logger))
+      (let [{:keys [url]} (store/get-one database (str "bob.logger/" logger))
             _ (when-not url
                 (f/fail (str "Invalid logger: " logger)))
             run-ref (future (start* (assoc config :logger-url url) queue-chan group name run-id delivery-tag))]
@@ -331,107 +327,4 @@
           {:images-for-gc {}
            :runs {}})
 
-  @node-state
-
-  (require '[runner.system :as sys])
-  (def database (:bob/storage sys/system))
-  (def queue-chan (get-in sys/system [:bob/queue :chan]))
-  (def producer (get-in sys/system [:bob/stream :producer]))
-  (def run-id "r-60a0d2e8-ec6e-4004-8136-978f4e042f25")
-
-  (xt/submit-tx database
-                [[::xt/put
-                  {:xt/id :bob.pipeline.test/test
-                   :group "test"
-                   :name "test"
-                   :steps [{:cmd "echo hello"}
-                           {:needs_resource "source"
-                            :cmd "ls"}]
-                   :vars {:k1 "v1"
-                          :k2 "v2"}
-                   :resources [{:name "source"
-                                :type "external"
-                                :provider "git"
-                                :params {:repo "https://github.com/bob-cd/bob"
-                                         :branch "main"}}]
-                   :type :pipeline
-                   :image "busybox:musl"}]])
-
-  (xt/entity (xt/db database) :bob.pipeline.test/test)
-
-  (xt/submit-tx database
-                [[::xt/put
-                  {:xt/id :bob.resource-provider/git
-                   :url "http://localhost:8000"
-                   :type :resource-provider
-                   :name "git"}]])
-
-  (xt/entity (xt/db database) :bob.resource-provider/git)
-
-  (resourceful-step {:database database
-                     :producer producer}
-                    {:group "test"
-                     :name "test"
-                     :run-id "a-run-id"}
-                    {:needs_resource "source"
-                     :image "busybox:musl"
-                     :cmd "ls"})
-
-  (xt/submit-tx database
-                [[::xt/put
-                  {:xt/id :bob.artifact-store/local
-                   :url "http://localhost:8001"}]])
-
-  (xt/entity (xt/db database) :bob.artifact-store/local)
-
-  (exec-step {:database database
-              :producer producer}
-             {:image "docker.io/busybox:musl"
-              :mounted #{}
-              :run-id "a-run-id"
-              :env {:type "yes"}
-              :group "test"
-              :name "test"
-              :type :pipeline}
-             {:needs_resource "source"
-              :cmd "ls"
-              :produces_artifact {:path "README.md"
-                                  :name "readme"
-                                  :store "local"}})
-
-  (def my-start (start {:database database
-                        :producer producer}
-                       queue-chan
-                       {:group "test"
-                        :name "test"
-                        :run-id run-id}
-                       {:delivery-tag 1}))
-
-  (def my-stop (stop {:database database
-                      :producer producer}
-                     queue-chan
-                     {:group "test"
-                      :name "test"
-                      :run-id run-id}
-                     {}))
-
-  (xt/submit-tx database
-                [[::xt/put
-                  {:xt/id :bob.pipeline.test/stop-test
-                   :steps [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
-                   :image "busybox:musl"}]])
-
-  (xt/entity (xt/db database) :bob.pipeline.test/stop-test)
-
-  (start database
-         queue-chan
-         {:group "test"
-          :name "stop-test"}
-         {:delivery-tag 1})
-
-  (stop database
-        nil
-        {:group "test"
-         :name "stop-test"
-         :run-id "r-ff185a8a-b6a6-48df-8630-650b025cafad"}
-        {}))
+  @node-state)

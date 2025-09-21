@@ -204,42 +204,22 @@
 
 (spec/def :bob.artifact-store/name :bob.pipeline.artifact/store)
 
-(spec/def :bob.db.artifact-store/type #{:artifact-store})
-
-(spec/def :bob.db/artifact-store
+(spec/def :bob/artifact-store
   (spec/keys :req-un
-             [:bob.db.artifact-store/type
-              :bob.artifact-store/url
+             [:bob.artifact-store/url
               :bob.artifact-store/name]))
 
-(spec/def :bob.db.resource-provider/type #{:resource-provider})
-
-(spec/def :bob.db/resource-provider
+(spec/def :bob/resource-provider
   (spec/keys :req-un
-             [:bob.db.resource-provider/type
-              :bob.resource-provider/url
+             [:bob.resource-provider/url
               :bob.resource-provider/name]))
 
 (spec/def :bob.logger/name string?)
 
-(spec/def :bob.db.logger/type #{:logger})
-
-(spec/def :bob.db/logger
+(spec/def :bob/logger
   (spec/keys :req-un
-             [:bob.db.logger/type
-              :bob.logger/url
+             [:bob.logger/url
               :bob.logger/name]))
-
-(spec/def :bob.db.pipeline/type #{:pipeline})
-
-(spec/def :bob.db/pipeline
-  (spec/merge :bob/pipeline (spec/keys :req-un [:bob.db.pipeline/type])))
-
-(spec/def :bob.db.run/type #{:pipeline-run})
-
-(spec/def :bob.db/run
-  (spec/merge :bob.pipeline/run
-              (spec/keys :req-un [:bob.db.run/type])))
 
 (spec/def :bob.cluster.event/at int?)
 (spec/def :bob.cluster.event/type #{"Normal" "Warning" "Error"})

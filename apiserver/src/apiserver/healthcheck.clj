@@ -8,8 +8,8 @@
   (:require
    [babashka.http-client :as http]
    [clojure.tools.logging :as log]
-   [failjure.core :as f]
-   [xtdb.api :as xt])
+   [common.store :as store]
+   [failjure.core :as f])
   (:import
    [com.rabbitmq.client Channel]
    [java.util.concurrent ExecutorService Future]))
@@ -21,8 +21,7 @@
 
 (defn db
   [{:keys [db]}]
-  (when (not (xt/status db))
-    (f/fail "DB is unhealthy")))
+  (f/try* (store/ping db)))
 
 (defn check-entity
   [{:keys [name url]}]
@@ -35,12 +34,11 @@
 
 (defn check-entities
   [{db :db}]
-  (let [result (xt/q (xt/db db)
-                     '{:find [(pull entity [:name :url])]
-                       :where [(or [entity :type :artifact-store]
-                                   [entity :type :resource-provider])]})]
-    (->> result
-         (map first)
+  (let [artifact-stores (store/get db "bob.artifact-store/" {:prefix true})
+        resource-providers (store/get db "bob.resource-provider/" {:prefix true})
+        loggers (store/get db "bob.logger/" {:prefix true})]
+    (->> (concat artifact-stores resource-providers loggers)
+         (map :value)
          (map check-entity)
          (filter f/failed?)
          (into []))))

@@ -8,12 +8,11 @@
   (:require
    [clojure.string :as str]
    [common.heartbeat :as hb]
-   [xtdb.api :as xt]))
+   [common.store :as store]))
 
 (defn cluster-info
   [db]
-  (-> (xt/db db)
-      (xt/entity :bob.cluster/info)
+  (-> (store/get-one db "bob.cluster/info")
       (get :data {})))
 
 (defn ->bytes

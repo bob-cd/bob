@@ -8,10 +8,10 @@
   (:require
    [babashka.http-client :as http]
    [clojure.data.json :as json]
+   [common.store :as store]
    [failjure.core :as f]
    [langohr.queue :as lq]
-   [prometheus.core :as prom]
-   [xtdb.api :as xt]))
+   [prometheus.core :as prom]))
 
 (def registry (prom/new-registry))
 
@@ -24,11 +24,9 @@
 
 (defn count-statuses
   [db]
-  (f/try-all [result (xt/q (xt/db db)
-                           '{:find [(pull run [:status :xt/id])]
-                             :where [[run :type :pipeline-run]]})
+  (f/try-all [result (store/get db "bob.pipeline.run/" {:prefix true})
               counts (->> result
-                          (map first)
+                          (map :value)
                           (map :status)
                           (frequencies))]
     (doseq [[status count] counts]

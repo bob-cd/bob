@@ -21,6 +21,7 @@ Bob's API (accessible entirely through HTTP) enables a core set of CI/CD feature
 - Environment: Key-Value pair associated with either Steps and/or Pipelines
 - Resource: Things (like source code or artifacts) consumed by Pipelines
 - Artifact: Something produced by a Pipeline
+- Logs: The logs produced from a Pipeline run
 
 The following services form the core cluster:
 

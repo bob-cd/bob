@@ -5,8 +5,8 @@
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.tools.logging :as log]
-   [failjure.core :as f]
-   [xtdb.api :as xt])
+   [common.store :as store]
+   [failjure.core :as f])
   (:import
    [com.sun.management OperatingSystemMXBean] ;; TODO: Maybe something other than com.sun.*?
    [java.lang.management ManagementFactory]
@@ -34,13 +34,14 @@
 
 (defn beat-it
   [db queue-info timeout node-id & {:as extra-data}]
-  (f/try-all [id :bob.cluster/info
+  (f/try-all [id "bob.cluster/info"
               node-info {node-id (get-node-info extra-data)}
-              cluster (get (xt/entity (xt/db db) id) :data {}) ;; TODO: Assert the cluster-info spec
+              cluster (-> (store/get-one db id)
+                          (get :data {}))
               cleaned (->> (get-connections timeout queue-info)
                            (set/difference (set (keys cluster)))
                            (apply dissoc cluster))]
-    (xt/await-tx db (xt/submit-tx db [[::xt/put {:xt/id id :data (merge cleaned node-info)}]]))
+    (store/put db id {:data (merge cleaned node-info)})
     (f/when-failed [err]
       (log/errorf "Error sending heartbeat to %s: %s" (:api-url queue-info) err))))
 
@@ -58,33 +59,9 @@
 (comment
   (set! *warn-on-reflection* true)
 
-  (import '[xtdb.api IXtdb])
-
   (get-node-info {})
 
   (get-connections 10000
                    {:api-url "http://localhost:15672/api"
                     :username "guest"
-                    :password "guest"})
-
-  (def node
-    (xt/start-node {:xtdb.jdbc/connection-pool {:dialect {:xtdb/module 'xtdb.jdbc.psql/->dialect}
-                                                :db-spec {:jdbcUrl "jdbc:postgresql://localhost:5432/bob"
-                                                          :user "bob"
-                                                          :password "bob"}}
-                    :xtdb/tx-log {:xtdb/module 'xtdb.jdbc/->tx-log
-                                  :connection-pool :xtdb.jdbc/connection-pool}
-                    :xtdb/document-store {:xtdb/module 'xtdb.jdbc/->document-store
-                                          :connection-pool :xtdb.jdbc/connection-pool}}))
-
-  (IXtdb/.close node)
-
-  (xt/entity (xt/db node) :bob.cluster/info)
-
-  (beat-it node
-           {:api-url "http://localhost:15672/api"
-            :username "guest"
-            :password "guest"}
-           10000
-           "bob/foo"
-           :bob/runs [:foo]))
+                    :password "guest"}))

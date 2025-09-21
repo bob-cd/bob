@@ -8,17 +8,15 @@
   (:require
    [clojure.tools.logging :as log]
    [common.events :as ev]
-   [failjure.core :as f]
-   [xtdb.api :as xt]))
+   [common.store :as store]
+   [failjure.core :as f]))
 
 (defn create
   "Creates a pipeline using the supplied data."
-  [db-client {:keys [producer]} {:keys [group name] :as data}]
-  (let [id (keyword (str "bob.pipeline." group) name)]
+  [db {:keys [producer]} {:keys [group name] :as data}]
+  (let [id (str "bob.pipeline/" group ":" name)]
     (log/infof "Creating pipeline %s with id %s" data id)
-    (xt/await-tx
-     db-client
-     (xt/submit-tx db-client [[::xt/put (assoc data :xt/id id :type :pipeline)]]))
+    (store/put db id data)
     (ev/emit producer
              {:type "Normal"
               :kind "Pipeline"
@@ -26,24 +24,19 @@
               :message (format "Pipeline created/updated %s/%s" group name)})))
 
 (defn- runs-of
-  [db-client group name]
-  (->> (xt/q (xt/db db-client)
-             {:find '[(pull run [:xt/id])]
-              :where ['[run :type :pipeline-run]
-                      ['run :group group]
-                      ['run :name name]]})
-       (map first)
-       (mapv :xt/id)))
+  [db group name]
+  (->> (store/get db "bob.pipeline.run/" {:prefix true})
+       (filter #(and (= group (:group (:value %)))
+                     (= name (:name (:value %)))))
+       (map :key)))
 
 (defn delete
   "Deletes a pipeline along with its associated resources."
-  [db-client {:keys [producer]} {:keys [group name]}]
+  [db {:keys [producer]} {:keys [group name]}]
   (log/infof "Deleting pipeline, runs and logs for (%s, %s)" group name)
-  (f/try-all [id (keyword (str "bob.pipeline." group) name)
-              runs (runs-of db-client group name)
-              _ (xt/await-tx
-                 db-client
-                 (xt/submit-tx db-client (map #(vector ::xt/delete %) (conj runs id))))]
+  (f/try-all [runs (runs-of db group name)
+              _ (run! #(store/delete db %) runs)
+              _ (store/delete db (str "bob.pipeline/" group ":" name))]
     (ev/emit producer
              {:type "Normal"
               :kind "Pipeline"

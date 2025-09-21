@@ -13,11 +13,9 @@
    [clojure.spec.alpha]
    [clojure.test :as t]
    [common.schemas]
+   [common.store :as store]
    [failjure.core :as f]
-   [langohr.channel :as lch]
-   [xtdb.api :as xt])
-  (:import
-   [java.util Date]))
+   [langohr.channel :as lch]))
 
 (t/deftest helpers-test
   (t/testing "default response"
@@ -54,8 +52,8 @@
 (t/deftest pipeline-entities-test
   (u/with-system
     (fn [db _ stream]
-      (let [pipeline-id :bob.pipeline.test/test
-            run-id :bob.pipeline.run/r-a-run]
+      (let [pipeline-id "bob.pipeline/test:test"
+            run-id "bob.pipeline.run/r-a-run"]
         (t/testing "creation"
           (let [pipeline {:group "test"
                           :name "test"
@@ -82,23 +80,17 @@
                 _ (h/pipeline-create {:parameters {:body pipeline}
                                       :db db
                                       :stream stream})
-                effect (xt/entity (xt/db db) pipeline-id)]
-            (t/is (= pipeline-id (:xt/id effect)))
-            (u/spec-assert :bob.db/pipeline effect)))
+                effect (store/get-one db pipeline-id)]
+            (t/is (= "test" (:group effect)))
+            (t/is (= "test" (:name effect)))
+            (u/spec-assert :bob/pipeline effect)))
         (t/testing "deletion"
-          (xt/await-tx
-           db
-           (xt/submit-tx db
-                         [[::xt/put
-                           {:xt/id run-id
-                            :type :pipeline-run
-                            :group "test"
-                            :name "test"}]]))
+          (store/put db run-id {:group "test" :name "test"})
           (let [_ (h/pipeline-delete {:parameters {:path {:group "test" :name "test"}}
                                       :db db
                                       :stream stream})
-                pipeline-effect (xt/entity (xt/db db) pipeline-id)
-                run-effect (xt/entity (xt/db db) run-id)]
+                pipeline-effect (store/get-one db pipeline-id)
+                run-effect (store/get-one db run-id)]
             (t/is (nil? pipeline-effect))
             (t/is (nil? run-effect))))))))
 
@@ -106,29 +98,20 @@
   (u/with-system
     (fn [db queue stream]
       (t/testing "invalid pipeline deletion with active runs"
-        (xt/await-tx
-         db
-         (xt/submit-tx
-          db
-          [[::xt/put
-            {:xt/id :bob.pipeline.run/r-1
-             :type :pipeline-run
-             :group "dev"
-             :name "test"
-             :logger "logger-local"
-             :status :running}]
-           [::xt/put
-            {:xt/id :bob.pipeline.run/r-2
-             :type :pipeline-run
-             :group "dev"
-             :name "test"
-             :logger "logger-local"
-             :status :passed}]
-           [::xt/put
-            {:xt/id :bob.logger/logger-local
-             :type :logger
-             :name "logger-local"
-             :url "http://localhost:8002"}]]))
+        (store/put db
+                   "bob.pipeline.run/r-1"
+                   {:group "dev"
+                    :name "test"
+                    :logger "logger-local"
+                    :status :running}
+                   "bob.pipeline.run/r-2"
+                   {:group "dev"
+                    :name "test"
+                    :logger "logger-local"
+                    :status :passed}
+                   "bob.logger/logger-local"
+                   {:name "logger-local"
+                    :url "http://localhost:8002"})
         (let [{:keys [status body]} (h/pipeline-delete {:parameters {:path {:group "dev" :name "test"}}
                                                         :db db
                                                         :queue queue
@@ -151,18 +134,13 @@
                                                   :stream stream})]
           (t/is (= 202 status))))
       (t/testing "starting paused pipeline"
-        (xt/await-tx
-         db
-         (xt/submit-tx
-          db
-          [[::xt/put
-            {:xt/id :bob.pipeline.dev-paused/test-paused
-             :type :pipeline
-             :group "dev-paused"
-             :name "test-paused"
-             :image "busybox:musl"
-             :paused true
-             :steps [{:cmd "echo yes"}]}]]))
+        (store/put db
+                   "bob.pipeline/dev-paused:test-paused"
+                   {:group "dev-paused"
+                    :name "test-paused"
+                    :image "busybox:musl"
+                    :paused true
+                    :steps [{:cmd "echo yes"}]})
         (let [{:keys [status body]} (h/pipeline-start {:parameters {:path {:group "dev-paused"
                                                                            :name "test-paused"}}
                                                        :queue queue
@@ -174,17 +152,12 @@
 (t/deftest pipeline-pause-unpause
   (u/with-system
     (fn [db _ stream]
-      (xt/await-tx
-       db
-       (xt/submit-tx
-        db
-        [[::xt/put
-          {:xt/id :bob.pipeline.dev/test
-           :type :pipeline
-           :group "dev"
-           :name "test"
-           :image "busybox:musl"
-           :steps [{:cmd "echo yes"}]}]]))
+      (store/put db
+                 "bob.pipeline/dev:test"
+                 {:group "dev"
+                  :name "test"
+                  :image "busybox:musl"
+                  :steps [{:cmd "echo yes"}]})
       (t/testing "pipeline pause"
         (h/pipeline-pause-unpause true
                                   {:parameters {:path {:group "dev"
@@ -205,22 +178,15 @@
     (fn [db _ _]
       (t/testing "pipeline logs"
         (let [payload "l1\nl2\nl3"]
-          (xt/await-tx
-           db
-           (xt/submit-tx
-            db
-            [[::xt/put
-              {:xt/id :bob.pipeline.run/r1
-               :type :pipeline-run
-               :group "dev"
-               :name "test"
-               :logger "logger-local"
-               :status :passed}]
-             [::xt/put
-              {:xt/id :bob.logger/logger-local
-               :type :logger
-               :name "logger-local"
-               :url "http://localhost:8002"}]]))
+          (store/put db
+                     "bob.pipeline.run/r1"
+                     {:group "dev"
+                      :name "test"
+                      :logger "logger-local"
+                      :status :passed}
+                     "bob.logger/logger-local"
+                     {:name "logger-local"
+                      :url "http://localhost:8002"})
           (http/put "http://localhost:8002/bob_logs/r1"
                     {:body payload})
           (t/is (= payload
@@ -234,16 +200,12 @@
   (u/with-system
     (fn [db _ _]
       (t/testing "existing pipeline status"
-        (xt/await-tx
-         db
-         (xt/submit-tx db
-                       [[::xt/put
-                         {:xt/id :bob.pipeline.run/r-1
-                          :type :pipeline-run
-                          :group "dev"
-                          :name "test"
-                          :logger "logger-local"
-                          :status :running}]]))
+        (store/put db
+                   "bob.pipeline.run/r-1"
+                   {:group "dev"
+                    :name "test"
+                    :logger "logger-local"
+                    :status :running})
         (t/is (= "running"
                  (-> (h/pipeline-status {:db db
                                          :parameters {:path {:run-id "r-1"}}})
@@ -261,15 +223,10 @@
   (u/with-system
     (fn [db _ _]
       (t/testing "fetching a valid artifact"
-        (xt/await-tx
-         db
-         (xt/submit-tx
-          db
-          [[::xt/put
-            {:xt/id :bob.artifact-store/local
-             :type :artifact-store
-             :name "local"
-             :url "http://localhost:8001"}]]))
+        (store/put db
+                   "bob.artifact-store/local"
+                   {:name "local"
+                    :url "http://localhost:8001"})
         (http/post "http://localhost:8001/bob_artifact/dev/test/a-run-id/file"
                    {:body (io/input-stream "test/test.tar")})
         (let [{:keys [status headers]}
@@ -305,31 +262,22 @@
   (u/with-system
     (fn [db _ _]
       (t/testing "listing pipelines"
-        (xt/await-tx
-         db
-         (xt/submit-tx
-          db
-          [[::xt/put
-            {:xt/id :bob.pipeline.dev/test1
-             :type :pipeline
-             :group "dev"
-             :name "test1"
-             :image "busybox:musl"
-             :steps [{:cmd "echo yes"}]}]
-           [::xt/put
-            {:xt/id :bob.pipeline.dev/test2
-             :type :pipeline
-             :group "dev"
-             :name "test2"
-             :image "alpine:latest"
-             :steps [{:cmd "echo yesnt"}]}]
-           [::xt/put
-            {:xt/id :bob.pipeline.prod/test1
-             :type :pipeline
-             :group "prod"
-             :name "test1"
-             :image "alpine:latest"
-             :steps [{:cmd "echo boo"}]}]]))
+        (store/put db
+                   "bob.pipeline/dev:test1"
+                   {:group "dev"
+                    :name "test1"
+                    :image "busybox:musl"
+                    :steps [{:cmd "echo yes"}]}
+                   "bob.pipeline/dev:test2"
+                   {:group "dev"
+                    :name "test2"
+                    :image "alpine:latest"
+                    :steps [{:cmd "echo yesnt"}]}
+                   "bob.pipeline/prod:test1"
+                   {:group "prod"
+                    :name "test1"
+                    :image "alpine:latest"
+                    :steps [{:cmd "echo boo"}]})
         (let [resp (h/pipeline-list {:db db
                                      :parameters {:query {:group "dev"}}})]
           (t/is (= #{{:group "dev"
@@ -349,24 +297,17 @@
   (u/with-system
     (fn [db _ _]
       (t/testing "listing pipeline runs"
-        (xt/await-tx
-         db
-         (xt/submit-tx
-          db
-          [[::xt/put
-            {:xt/id :bob.pipeline.run/r-1
-             :type :pipeline-run
-             :group "dev"
-             :name "test"
-             :logger "logger-local"
-             :status :passed}]
-           [::xt/put
-            {:xt/id :bob.pipeline.run/r-2
-             :type :pipeline-run
-             :group "dev"
-             :name "test"
-             :logger "logger-local"
-             :status :failed}]]))
+        (store/put db
+                   "bob.pipeline.run/r-1"
+                   {:group "dev"
+                    :name "test"
+                    :logger "logger-local"
+                    :status :passed}
+                   "bob.pipeline.run/r-2"
+                   {:group "dev"
+                    :name "test"
+                    :logger "logger-local"
+                    :status :failed})
         (let [resp (h/pipeline-runs-list {:db db
                                           :parameters {:path {:group "dev"
                                                               :name "test"}}})]
@@ -384,38 +325,32 @@
 (t/deftest resource-provider-entities-test
   (u/with-system
     (fn [db _ stream]
-      (let [id :bob.resource-provider/github]
+      (let [id "bob.resource-provider/github"]
         (t/testing "creation"
           (h/resource-provider-create {:parameters {:body {:name "github" :url "my-resource.com"}}
                                        :db db
                                        :stream stream})
-          (let [effect (xt/entity (xt/db db) id)]
-            (t/is (= id (:xt/id effect)))
-            (u/spec-assert :bob.db/resource-provider effect)))
+          (let [effect (store/get-one db id)]
+            (t/is (= "my-resource.com" (:url effect)))
+            (u/spec-assert :bob/resource-provider effect)))
         (t/testing "deletion"
           (h/resource-provider-delete {:parameters {:path {:name "github"}}
                                        :db db
                                        :stream stream})
-          (let [effect (xt/entity (xt/db db) id)]
+          (let [effect (store/get-one db id)]
             (t/is (nil? effect))))))))
 
 (t/deftest resource-provider-test
   (u/with-system
     (fn [db _ _]
       (t/testing "resource-provider listing"
-        (xt/await-tx
-         db
-         (xt/submit-tx db
-                       [[::xt/put
-                         {:xt/id :bob.resource-provider/test1
-                          :type :resource-provider
-                          :name "test1"
-                          :url "http://localhost:8000"}]
-                        [::xt/put
-                         {:xt/id :bob.resource-provider/test2
-                          :type :resource-provider
-                          :name "test2"
-                          :url "http://localhost:8001"}]]))
+        (store/put db
+                   "bob.resource-provider/test1"
+                   {:name "test1"
+                    :url "http://localhost:8000"}
+                   "bob.resource-provider/test2"
+                   {:name "test2"
+                    :url "http://localhost:8001"})
         (t/is (= [{:name "test1"
                    :url "http://localhost:8000"}
                   {:name "test2"
@@ -427,38 +362,32 @@
 (t/deftest artifact-entities-test
   (u/with-system
     (fn [db _ stream]
-      (let [id :bob.artifact-store/s3]
+      (let [id "bob.artifact-store/s3"]
         (t/testing "creation"
           (h/artifact-store-create {:parameters {:body {:name "s3" :url "my-store.com"}}
                                     :db db
                                     :stream stream})
-          (let [effect (xt/entity (xt/db db) id)]
-            (t/is (= id (:xt/id effect)))
-            (u/spec-assert :bob.db/artifact-store effect)))
+          (let [effect (store/get-one db id)]
+            (t/is (= "my-store.com" (:url effect)))
+            (u/spec-assert :bob/artifact-store effect)))
         (t/testing "deletion"
           (h/artifact-store-delete {:parameters {:path {:name "s3"}}
                                     :db db
                                     :stream stream})
-          (let [effect (xt/entity (xt/db db) id)]
+          (let [effect (store/get-one db id)]
             (t/is (nil? effect))))))))
 
 (t/deftest artifact-store-test
   (u/with-system
     (fn [db _ _]
       (t/testing "artifact-store listing"
-        (xt/await-tx
-         db
-         (xt/submit-tx db
-                       [[::xt/put
-                         {:xt/id :bob.artifact-store/test1
-                          :type :artifact-store
-                          :name "test1"
-                          :url "http://localhost:8000"}]
-                        [::xt/put
-                         {:xt/id :bob.artifact-store/test2
-                          :type :artifact-store
-                          :name "test2"
-                          :url "http://localhost:8001"}]]))
+        (store/put db
+                   "bob.artifact-store/test1"
+                   {:name "test1"
+                    :url "http://localhost:8000"}
+                   "bob.artifact-store/test2"
+                   {:name "test2"
+                    :url "http://localhost:8001"})
         (t/is (= [{:name "test1"
                    :url "http://localhost:8000"}
                   {:name "test2"
@@ -470,38 +399,32 @@
 (t/deftest logger-entities-test
   (u/with-system
     (fn [db _ stream]
-      (let [id :bob.logger/logger-local]
+      (let [id "bob.logger/logger-local"]
         (t/testing "creation"
           (h/logger-create {:parameters {:body {:name "logger-local" :url "my-logger.com"}}
                             :db db
                             :stream stream})
-          (let [effect (xt/entity (xt/db db) id)]
-            (t/is (= id (:xt/id effect)))
-            (u/spec-assert :bob.db/logger effect)))
+          (let [effect (store/get-one db id)]
+            (t/is (= "my-logger.com" (:url effect)))
+            (u/spec-assert :bob/logger effect)))
         (t/testing "deletion"
           (h/logger-delete {:parameters {:path {:name "logger-local"}}
                             :db db
                             :stream stream})
-          (let [effect (xt/entity (xt/db db) id)]
+          (let [effect (store/get-one db id)]
             (t/is (nil? effect))))))))
 
 (t/deftest logger-test
   (u/with-system
     (fn [db _ _]
       (t/testing "logger listing"
-        (xt/await-tx
-         db
-         (xt/submit-tx db
-                       [[::xt/put
-                         {:xt/id :bob.logger/test1
-                          :type :logger
-                          :name "test1"
-                          :url "http://localhost:8000"}]
-                        [::xt/put
-                         {:xt/id :bob.logger/test2
-                          :type :logger
-                          :name "test2"
-                          :url "http://localhost:8001"}]]))
+        (store/put db
+                   "bob.logger/test1"
+                   {:name "test1"
+                    :url "http://localhost:8000"}
+                   "bob.logger/test2"
+                   {:name "test2"
+                    :url "http://localhost:8001"})
         (t/is (= [{:name "test1"
                    :url "http://localhost:8000"}
                   {:name "test2"
@@ -509,41 +432,3 @@
                  (-> (h/logger-list {:db db})
                      :body
                      :message)))))))
-
-(t/deftest raw-query-test
-  (u/with-system
-    (fn [db _ _]
-      (t/testing "direct query"
-        (xt/await-tx
-         db
-         (xt/submit-tx
-          db
-          [[::xt/put
-            {:xt/id :food/biryani
-             :type :indian}]]))
-        (t/is
-         (=
-          "[[{\"type\":\"indian\"}]]"
-          (:body
-           (h/query
-            {:db db
-             :parameters
-             {:query
-              {:q "{:find [(pull f [:type])] :where [[f :type :indian]]})"}}})))))
-      (t/testing "timed query"
-        (let [point-in-time (Date/new)]
-          (xt/await-tx
-           db
-           (xt/submit-tx
-            db
-            [[::xt/delete :food/biryani]]))
-          (t/is
-           (=
-            "[[{\"type\":\"indian\"}]]"
-            (:body
-             (h/query
-              {:db db
-               :parameters
-               {:query
-                {:q "{:find [(pull f [:type])] :where [[f :type :indian]]})"
-                 :t point-in-time}}})))))))))

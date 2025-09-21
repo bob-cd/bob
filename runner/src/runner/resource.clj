@@ -12,10 +12,10 @@
    [clojure.string :as s]
    [clojure.tools.logging :as log]
    [common.schemas]
+   [common.store :as store]
    [failjure.core :as f]
    [runner.artifact :as a]
-   [runner.engine :as eng]
-   [xtdb.api :as xt])
+   [runner.engine :as eng])
   (:import
    [java.io BufferedOutputStream File FileOutputStream]
    [org.kamranzafar.jtar TarInputStream TarOutputStream]))
@@ -61,17 +61,14 @@
 (defn valid-resource-provider?
   "Checks if the resource is registered."
   [db-client resource]
-  (some? (xt/entity (xt/db db-client) (keyword "bob.resource-provider" (:provider resource)))))
+  (some? (store/get-one db-client (str "bob.resource-provider/" (:provider resource)))))
 
 (defn url-of
   "Generates a URL for the resource fetch of a pipeline."
   [db-client {:keys [name type provider params]}]
   (case type
-    "external" (let [{:keys [url] :as rp} (->> provider
-                                               (str "bob.resource-provider/")
-                                               keyword
-                                               (xt/entity (xt/db db-client)))
-                     _ (when-not (spec/valid? :bob.db/resource-provider rp)
+    "external" (let [{:keys [url] :as rp} (store/get-one db-client (str "bob.resource-provider/" provider))
+                     _ (when-not (spec/valid? :bob/resource-provider rp)
                          (throw (Exception. (str "Invalid resource provider: " rp))))
                      query (s/join "&"
                                    (map #(format "%s=%s"
