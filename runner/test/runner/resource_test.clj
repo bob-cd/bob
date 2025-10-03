@@ -10,11 +10,11 @@
    [clojure.string :as s]
    [clojure.test :refer [deftest is testing]]
    [common.store :as store]
+   [common.test-utils :as u]
    [contajners.core :as c]
    [failjure.core :as f]
    [runner.engine :as eng]
-   [runner.resource :as r]
-   [runner.util :as u])
+   [runner.resource :as r])
   (:import
    [org.kamranzafar.jtar TarInputStream]))
 
@@ -39,42 +39,44 @@
     (is (s/starts-with? entry "source/"))))
 
 (deftest ^:integration valid-resource-provider-test
-  (u/with-system (fn [database _ _]
-                   (store/put database
-                              "bob.resource-provider/git"
-                              {:name "git"
-                               :url "http://localhost:8000"})
-                   (testing "valid resource provider"
-                     (is (r/valid-resource-provider? database {:provider "git"})))
-                   (testing "invalid resource provider"
-                     (is (not (r/valid-resource-provider? database {:provider "invalid"})))))))
+  (u/with-runner-system
+    (fn [database _ _]
+      (store/put database
+                 "bob.resource-provider/git"
+                 {:name "git"
+                  :url "http://localhost:8000"})
+      (testing "valid resource provider"
+        (is (r/valid-resource-provider? database {:provider "git"})))
+      (testing "invalid resource provider"
+        (is (not (r/valid-resource-provider? database {:provider "invalid"})))))))
 
 (deftest ^:integration url-generation-test
-  (u/with-system (fn [database _ _]
-                   (store/put database
-                              "bob.resource-provider/git"
-                              {:name "git"
-                               :url "http://localhost:8000"}
-                              "bob.artifact-store/local"
-                              {:name "local"
-                               :url "http://localhost:8001"})
-                   (testing "generate url for an external resource"
-                     (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
-                            (r/url-of database
-                                      {:name "source"
-                                       :provider "git"
-                                       :type "external"
-                                       :params {:repo "a-repo"
-                                                :branch "a-branch"}}))))
-                   (testing "generate url for an internal resource"
-                     (is (= "http://localhost:8001/bob_artifact/dev/test/a-run-id/jar"
-                            (r/url-of database
-                                      {:name "jar"
-                                       :provider "local"
-                                       :type "internal"
-                                       :params {:group "dev"
-                                                :name "test"
-                                                :run-id "a-run-id"}})))))))
+  (u/with-runner-system
+    (fn [database _ _]
+      (store/put database
+                 "bob.resource-provider/git"
+                 {:name "git"
+                  :url "http://localhost:8000"}
+                 "bob.artifact-store/local"
+                 {:name "local"
+                  :url "http://localhost:8001"})
+      (testing "generate url for an external resource"
+        (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
+               (r/url-of database
+                         {:name "source"
+                          :provider "git"
+                          :type "external"
+                          :params {:repo "a-repo"
+                                   :branch "a-branch"}}))))
+      (testing "generate url for an internal resource"
+        (is (= "http://localhost:8001/bob_artifact/dev/test/a-run-id/jar"
+               (r/url-of database
+                         {:name "jar"
+                          :provider "local"
+                          :type "internal"
+                          :params {:group "dev"
+                                   :name "test"
+                                   :run-id "a-run-id"}})))))))
 
 (deftest ^:integration initial-image-test
   (eng/pull-image "busybox:musl")
@@ -91,27 +93,28 @@
   (eng/delete-image "busybox:musl"))
 
 (deftest ^:integration mounted-image-test
-  (u/with-system (fn [database _ _]
-                   (store/put database
-                              "bob.resource-provider/git"
-                              {:name "git"
-                               :url "http://localhost:8000"})
-                   (eng/pull-image "busybox:musl")
-                   (testing "successful mount"
-                     (let [image (r/mounted-image-from database
-                                                       {:name "source"
-                                                        :type "external"
-                                                        :provider "git"
-                                                        :params {:repo "https://github.com/lispyclouds/bob-example"
-                                                                 :branch "main"}}
-                                                       "busybox:musl")
-                           images (->> (c/invoke eng/images {:op :ImageListLibpod})
-                                       (map :Id))]
-                       (is (some #{image} images))
-                       (eng/delete-image "busybox:musl")))
-                   (testing "unsuccessful mount"
-                     (is (f/failed? (r/mounted-image-from database
-                                                          {:name "source"
-                                                           :provider "invalid"}
-                                                          "invalid"))))
-                   (eng/delete-image "busybox:musl"))))
+  (u/with-runner-system
+    (fn [database _ _]
+      (store/put database
+                 "bob.resource-provider/git"
+                 {:name "git"
+                  :url "http://localhost:8000"})
+      (eng/pull-image "busybox:musl")
+      (testing "successful mount"
+        (let [image (r/mounted-image-from database
+                                          {:name "source"
+                                           :type "external"
+                                           :provider "git"
+                                           :params {:repo "https://github.com/lispyclouds/bob-example"
+                                                    :branch "main"}}
+                                          "busybox:musl")
+              images (->> (c/invoke eng/images {:op :ImageListLibpod})
+                          (map :Id))]
+          (is (some #{image} images))
+          (eng/delete-image "busybox:musl")))
+      (testing "unsuccessful mount"
+        (is (f/failed? (r/mounted-image-from database
+                                             {:name "source"
+                                              :provider "invalid"}
+                                             "invalid"))))
+      (eng/delete-image "busybox:musl"))))

@@ -4,7 +4,7 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-(ns runner.util
+(ns common.test-utils
   (:require
    [aero.core :as aero]
    [clojure.java.io :as io]
@@ -12,8 +12,7 @@
    [clojure.test :as t]
    [common.store :as store]
    [common.system :as cs]
-   [integrant.core :as ig]
-   [runner.system]))
+   [integrant.core :as ig]))
 
 (defn clear-db
   [db]
@@ -21,7 +20,7 @@
        (map :key)
        (run! #(store/delete db %))))
 
-(defn with-system
+(defn- with-system
   [test-fn]
   (let [config (-> "bob/conf.edn"
                    (io/resource)
@@ -38,6 +37,16 @@
              (system :bob/stream))
     (clear-db (:bob/storage system))
     (ig/halt! system)))
+
+(defn with-apiserver-system
+  [test-fn]
+  (require '[apiserver.system])
+  (with-system test-fn))
+
+(defn with-runner-system
+  [test-fn]
+  (require '[runner.system])
+  (with-system test-fn))
 
 (defn spec-assert
   [spec value]

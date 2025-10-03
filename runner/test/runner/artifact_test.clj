@@ -9,14 +9,14 @@
    [babashka.http-client :as http]
    [clojure.test :refer [deftest is testing]]
    [common.store :as store]
+   [common.test-utils :as u]
    [failjure.core :as f]
    [runner.artifact :as a]
-   [runner.engine :as eng]
-   [runner.util :as u]))
+   [runner.engine :as eng]))
 
 (deftest upload-artifact-test
   (eng/pull-image "busybox:musl")
-  (u/with-system
+  (u/with-runner-system
     (fn [database _ _]
       (let [id (eng/create-container "busybox:musl")]
         (store/put database

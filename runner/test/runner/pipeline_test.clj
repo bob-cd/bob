@@ -12,11 +12,11 @@
    [clojure.test :refer [deftest is testing]]
    [common.schemas]
    [common.store :as store]
+   [common.test-utils :as u]
    [failjure.core :as f]
    [runner.engine :as eng]
    [runner.engine-test :as et]
-   [runner.pipeline :as p]
-   [runner.util :as u])
+   [runner.pipeline :as p])
   (:import
    [java.time Instant]))
 
@@ -47,7 +47,7 @@
                        (filter #(= % test-image))))))))
 
 (deftest ^:integration resource-mounts
-  (u/with-system
+  (u/with-runner-system
     (fn [database _ stream]
       (testing "successful resource provisioning of a step"
         (eng/pull-image test-image)
@@ -77,7 +77,7 @@
           (eng/delete-image image))
         (eng/delete-image test-image))))
 
-  (u/with-system (fn [database _ stream]
+  (u/with-runner-system (fn [database _ stream]
                    (testing "unsuccessful resource provisioning of a step"
                      (is (f/failed? (p/resourceful-step {:database database :stream stream}
                                                         {:group "test"
@@ -98,7 +98,7 @@
 (deftest ^:integration successful-step-executions
   (testing "successful simple step execution"
     (eng/pull-image test-image)
-    (u/with-system (fn [database _ stream]
+    (u/with-runner-system (fn [database _ stream]
                      (let [initial-state {:image test-image
                                           :mounted #{}
                                           :run-id "r-a-simple-run-id"
@@ -114,7 +114,7 @@
 
   (testing "successful step with resource execution"
     (eng/pull-image test-image)
-    (u/with-system
+    (u/with-runner-system
       (fn [database _ stream]
         (store/put database
                    "bob.resource-provider/git"
@@ -146,7 +146,7 @@
 
   (testing "successful step with artifact execution"
     (eng/pull-image test-image)
-    (u/with-system
+    (u/with-runner-system
       (fn [database _ stream]
         (store/put database
                    "bob.artifact-store/local"
@@ -171,7 +171,7 @@
 
   (testing "successful step with resource and artifact execution"
     (eng/pull-image test-image)
-    (u/with-system
+    (u/with-runner-system
       (fn [database _ stream]
         (store/put database
                    "bob.resource-provider/git"
@@ -214,7 +214,7 @@
     (is (reduced? (p/exec-step {:database :database :stream :stream} (f/fail "this is fine") {}))))
 
   (testing "wrong command step failure"
-    (u/with-system (fn [database _ stream]
+    (u/with-runner-system (fn [database _ stream]
                      (let [initial-state {:image test-image
                                           :mounted #{}
                                           :run-id "r-a-simple-run-id"
@@ -228,7 +228,7 @@
 
 (deftest ^:integration pipeline-starts
   (testing "successful pipeline run"
-    (u/with-system
+    (u/with-runner-system
       (fn [database queue stream]
         (store/put database
                    "bob.logger/logger-local"
@@ -280,7 +280,7 @@
           (u/spec-assert :bob.pipeline/run run-info)))))
 
   (testing "failed pipeline run"
-    (u/with-system
+    (u/with-runner-system
       (fn [database queue stream]
         (store/put database
                    "bob.logger/logger-local"
@@ -328,7 +328,7 @@
 
 (deftest ^:integration pipeline-stop
   (testing "stopping a pipeline run"
-    (u/with-system
+    (u/with-runner-system
       (fn [database queue stream]
         (store/put database
                    "bob.logger/logger-local"

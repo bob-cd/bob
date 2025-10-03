@@ -7,13 +7,13 @@
 (ns apiserver.handlers-test
   (:require
    [apiserver.handlers :as h]
-   [apiserver.util :as u]
    [babashka.http-client :as http]
    [clojure.java.io :as io]
    [clojure.spec.alpha]
    [clojure.test :as t]
    [common.schemas]
    [common.store :as store]
+   [common.test-utils :as u]
    [failjure.core :as f]
    [langohr.channel :as lch]))
 
@@ -28,7 +28,7 @@
              (h/respond "not found" 404)))))
 
 (t/deftest health-check-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db queue _]
       (t/testing "passing health check"
         (let [{:keys [status body]} (h/health-check {:db db
@@ -50,7 +50,7 @@
                        f/message))))))))
 
 (t/deftest pipeline-entities-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ stream]
       (let [pipeline-id "bob.pipeline/test:test"
             run-id "bob.pipeline.run/r-a-run"]
@@ -95,7 +95,7 @@
             (t/is (nil? run-effect))))))))
 
 (t/deftest pipeline-direct-tests
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db queue stream]
       (t/testing "invalid pipeline deletion with active runs"
         (store/put db
@@ -150,7 +150,7 @@
           (t/is (= "Pipeline is paused. Unpause it first." (:message body))))))))
 
 (t/deftest pipeline-pause-unpause
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ stream]
       (store/put db
                  "bob.pipeline/dev:test"
@@ -174,7 +174,7 @@
         (t/is (not (:paused (h/pipeline-data db "dev" "test"))))))))
 
 (t/deftest pipeline-logs-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ _]
       (t/testing "pipeline logs"
         (let [payload "l1\nl2\nl3"]
@@ -197,7 +197,7 @@
                        (slurp)))))))))
 
 (t/deftest pipeline-status-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ _]
       (t/testing "existing pipeline status"
         (store/put db
@@ -220,7 +220,7 @@
                    (:message body))))))))
 
 (t/deftest pipeline-artifact-fetch-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ _]
       (t/testing "fetching a valid artifact"
         (store/put db
@@ -259,7 +259,7 @@
           (t/is (= 400 status)))))))
 
 (t/deftest pipeline-list-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ _]
       (t/testing "listing pipelines"
         (store/put db
@@ -294,7 +294,7 @@
                        (set)))))))))
 
 (t/deftest pipeline-runs-list-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ _]
       (t/testing "listing pipeline runs"
         (store/put db
@@ -323,7 +323,7 @@
                        (set)))))))))
 
 (t/deftest resource-provider-entities-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ stream]
       (let [id "bob.resource-provider/github"]
         (t/testing "creation"
@@ -341,7 +341,7 @@
             (t/is (nil? effect))))))))
 
 (t/deftest resource-provider-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ _]
       (t/testing "resource-provider listing"
         (store/put db
@@ -360,7 +360,7 @@
                      :message)))))))
 
 (t/deftest artifact-entities-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ stream]
       (let [id "bob.artifact-store/s3"]
         (t/testing "creation"
@@ -378,7 +378,7 @@
             (t/is (nil? effect))))))))
 
 (t/deftest artifact-store-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ _]
       (t/testing "artifact-store listing"
         (store/put db
@@ -397,7 +397,7 @@
                      :message)))))))
 
 (t/deftest logger-entities-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ stream]
       (let [id "bob.logger/logger-local"]
         (t/testing "creation"
@@ -415,7 +415,7 @@
             (t/is (nil? effect))))))))
 
 (t/deftest logger-test
-  (u/with-system
+  (u/with-apiserver-system
     (fn [db _ _]
       (t/testing "logger listing"
         (store/put db
