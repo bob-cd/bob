@@ -6,9 +6,9 @@
 
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.19"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.20"}
         com.novemberain/langohr {:mvn/version "5.6.0"}
-        com.rabbitmq/stream-client {:mvn/version "1.2.0"}
+        com.rabbitmq/stream-client {:mvn/version "1.3.0"}
         com.taoensso/nippy {:mvn/version "3.6.0"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "1.0.1"}
