@@ -26,7 +26,7 @@
                        (t/crun "run -d --name artifact-local -p 8001:8001 --network bob-net ghcr.io/bob-cd/artifact-local")
                        (t/crun "run -d --name logger-local -p 8002:8002 --network bob-net ghcr.io/bob-cd/logger-local")
                        (println "Waiting for cluster readiness.")
-                       (t/wait-for {"podman" "http://localhost:8080/v5.7.0/libpod/_ping"
+                       (t/wait-for {"podman" "http://localhost:8080/v5.7.1/libpod/_ping"
                                     "resource-git" "http://localhost:8000/ping"
                                     "artifact-store" "http://localhost:8001/ping"
                                     "logger-local" "http://localhost:8002/ping"
