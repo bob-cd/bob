@@ -97,7 +97,7 @@ paths:
     get:
       operationId: PipelineList
       summary: List all pipelines filtered by group, name and status, case sensitive
-      description: Fetches all the known pipelines given the pipeline group, name and an optional status
+      description: Fetches all the known pipelines given the pipeline group and name
       tags:
         - pipeline
       x-cli-name: list
