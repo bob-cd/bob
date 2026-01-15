@@ -237,7 +237,7 @@
                                                         :store-name "local"
                                                         :artifact-name "file"}}})]
           (t/is (= 200 status))
-          (t/is (= "application/tar" (get headers "Content-Type")))))
+          (t/is (= "application/octet-stream" (get headers "Content-Type")))))
       (t/testing "unregistered artifact store"
         (let [{:keys [status body]}
               (h/pipeline-artifact {:db db

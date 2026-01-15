@@ -271,7 +271,7 @@
                   (f/fail {:type :external
                            :msg (slurp body)}))]
     {:status 200
-     :headers {"Content-Type" "application/tar"}
+     :headers {"Content-Type" "application/octet-stream"}
      :body body}
     (f/when-failed [err]
       (case (get (f/message err) :type)
