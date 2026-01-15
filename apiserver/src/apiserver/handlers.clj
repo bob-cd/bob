@@ -116,7 +116,7 @@
                 :error "Pipeline has active runs. Wait for them to finish or stop them."}
                422)
       (do (pipeline/delete db stream pipeline-info)
-          (respond "Ok" 200)))
+          (respond "Ok")))
     (f/when-failed [err]
       (respond (f/message err) 500))))
 
