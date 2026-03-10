@@ -6,20 +6,20 @@
 
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.31"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.32"}
         com.s-exp/hirundo {:mvn/version "0.1.44"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "1.0.1"}
         io.github.HealthSamurai/prometheus.clj {:git/sha "da2265539b1e65ac5b6d3a570f9f12a95b54361f"}
-        io.github.lispyclouds/navi {:git/sha "94600dc47c25987b566946910af10d237af83bb1"}
+        io.github.lispyclouds/navi {:git/sha "ac3d286b66cff33f4a921e41062df28f12a0670a"}
         metosin/muuntaja {:mvn/version "0.6.11"}
-        metosin/reitit-core {:mvn/version "0.10.0"}
-        metosin/reitit-http {:mvn/version "0.10.0"}
-        metosin/reitit-interceptors {:mvn/version "0.10.0"}
-        metosin/reitit-malli {:mvn/version "0.10.0"}
-        metosin/reitit-ring {:mvn/version "0.10.0"}
-        metosin/reitit-sieppari {:mvn/version "0.10.0"}
+        metosin/reitit-core {:mvn/version "0.10.1"}
+        metosin/reitit-http {:mvn/version "0.10.1"}
+        metosin/reitit-interceptors {:mvn/version "0.10.1"}
+        metosin/reitit-malli {:mvn/version "0.10.1"}
+        metosin/reitit-ring {:mvn/version "0.10.1"}
+        metosin/reitit-sieppari {:mvn/version "0.10.1"}
         org.babashka/http-client {:mvn/version "0.4.23"}
         org.clojure/clojure {:mvn/version "1.12.4"}
         org.clojure/data.json {:mvn/version "2.5.2"}
