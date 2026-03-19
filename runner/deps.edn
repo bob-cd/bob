@@ -11,7 +11,7 @@
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "1.0.1"}
-        io.github.lispyclouds/contajners {:git/sha "6414f226ceab32c30a9bead27f21bfae0b3c839a"}
+        io.github.lispyclouds/contajners {:git/sha "ece6b80e00baac40b046d6cb50ec08730e4ed238"}
         org.babashka/http-client {:mvn/version "0.4.23"}
         org.clojure/clojure {:mvn/version "1.12.4"}
         org.clojure/data.json {:mvn/version "2.5.2"}
@@ -26,5 +26,5 @@
                                cider/cider-nrepl {:mvn/version "RELEASE"}}
                   :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]
                   :jvm-opts ["--enable-preview"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.12" :git/sha "97c5562"}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.13" :git/sha "ae52edf"}}
                    :ns-default build}}}

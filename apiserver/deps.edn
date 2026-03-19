@@ -34,5 +34,5 @@
                                cider/cider-nrepl {:mvn/version "RELEASE"}}
                   :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]
                   :jvm-opts ["--enable-preview"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.12" :git/sha "97c5562"}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.13" :git/sha "ae52edf"}}
                    :ns-default build}}}
