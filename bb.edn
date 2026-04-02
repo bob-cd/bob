@@ -60,7 +60,7 @@
                         (shell {:dir apiserver-dir} clean-task)
                         (shell {:dir runner-dir} clean-task))}
 
-         antq {:doc "Upgrade deps"
+         deps {:doc "Upgrade deps"
                :task (do
                        (println "Checking:" apiserver-dir)
                        (shell {:dir apiserver-dir} antq-task)
