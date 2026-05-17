@@ -13,7 +13,7 @@
         integrant/integrant {:mvn/version "1.0.1"}
         io.github.lispyclouds/contajners {:git/sha "c894273727e561b25cd40799ff733f6378a9e58d"}
         org.babashka/http-client {:mvn/version "0.4.23"}
-        org.clojure/clojure {:mvn/version "1.12.4"}
+        org.clojure/clojure {:mvn/version "1.12.5"}
         org.clojure/data.json {:mvn/version "2.5.2"}
         org.clojure/tools.logging {:mvn/version "1.3.1"}
         org.kamranzafar/jtar {:mvn/version "2.3"}}
