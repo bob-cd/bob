@@ -6,12 +6,12 @@
 
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.32"}
-        com.rabbitmq/stream-client {:mvn/version "1.6.0"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.34"}
+        com.rabbitmq/stream-client {:mvn/version "1.7.0"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
         integrant/integrant {:mvn/version "1.0.1"}
-        io.github.lispyclouds/contajners {:git/sha "c894273727e561b25cd40799ff733f6378a9e58d"}
+        io.github.lispyclouds/contajners {:git/sha "e4e86fc674806a7f77e06574552a6e1181452858"}
         org.babashka/http-client {:mvn/version "0.4.23"}
         org.clojure/clojure {:mvn/version "1.12.5"}
         org.clojure/data.json {:mvn/version "2.5.2"}
@@ -26,5 +26,5 @@
                                cider/cider-nrepl {:mvn/version "RELEASE"}}
                   :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]
                   :jvm-opts ["--enable-preview"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.13" :git/sha "ae52edf"}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.14" :git/sha "1176afd"}}
                    :ns-default build}}}

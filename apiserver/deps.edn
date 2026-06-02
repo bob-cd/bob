@@ -6,7 +6,7 @@
 
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
-        ch.qos.logback/logback-classic {:mvn/version "1.5.32"}
+        ch.qos.logback/logback-classic {:mvn/version "1.5.34"}
         com.s-exp/hirundo {:mvn/version "0.1.44"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.0"}
@@ -34,5 +34,5 @@
                                cider/cider-nrepl {:mvn/version "RELEASE"}}
                   :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]
                   :jvm-opts ["--enable-preview"]}
-           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.13" :git/sha "ae52edf"}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.14" :git/sha "1176afd"}}
                    :ns-default build}}}
