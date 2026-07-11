@@ -41,10 +41,11 @@
 (deftest ^:integration valid-resource-provider-test
   (u/with-runner-system
     (fn [database _ _]
-      (store/put database
-                 "bob.resource-provider/git"
-                 {:name "git"
-                  :url "http://localhost:8000"})
+      (store/kv-put database
+                    "bob_resource-provider"
+                    "git"
+                    {:name "git"
+                     :url "http://localhost:8000"})
       (testing "valid resource provider"
         (is (r/valid-resource-provider? database {:provider "git"})))
       (testing "invalid resource provider"
@@ -53,13 +54,16 @@
 (deftest ^:integration url-generation-test
   (u/with-runner-system
     (fn [database _ _]
-      (store/put database
-                 "bob.resource-provider/git"
-                 {:name "git"
-                  :url "http://localhost:8000"}
-                 "bob.artifact-store/local"
-                 {:name "local"
-                  :url "http://localhost:8001"})
+      (store/kv-put database
+                    "bob_resource-provider"
+                    "git"
+                    {:name "git"
+                     :url "http://localhost:8000"})
+      (store/kv-put database
+                    "bob_artifact-store"
+                    "local"
+                    {:name "local"
+                     :url "http://localhost:8001"})
       (testing "generate url for an external resource"
         (is (= "http://localhost:8000/bob_resource?repo=a-repo&branch=a-branch"
                (r/url-of database
@@ -95,10 +99,11 @@
 (deftest ^:integration mounted-image-test
   (u/with-runner-system
     (fn [database _ _]
-      (store/put database
-                 "bob.resource-provider/git"
-                 {:name "git"
-                  :url "http://localhost:8000"})
+      (store/kv-put database
+                    "bob_resource-provider"
+                    "git"
+                    {:name "git"
+                     :url "http://localhost:8000"})
       (eng/pull-image "busybox:musl")
       (testing "successful mount"
         (let [image (r/mounted-image-from database

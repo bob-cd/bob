@@ -24,15 +24,6 @@
 
 (def logger-url "http://localhost:8002")
 
-(defn history
-  [db key]
-  (let [{:keys [value create-rev mod-rev]} (first (store/get db key))]
-    (if-not value
-      []
-      (reduce #(conj %1 (store/get-one db key {:rev %2}))
-              [value]
-              (range (dec mod-rev) (dec create-rev) -1)))))
-
 (deftest ^:integration garbage-collection
   (testing "mark image"
     (let [state (p/mark-image-for-gc "a-image" "a-run-id")]
@@ -51,21 +42,24 @@
     (fn [database _ stream]
       (testing "successful resource provisioning of a step"
         (eng/pull-image test-image)
-        (store/put database
-                   "bob.resource-provider/git"
-                   {:url "http://localhost:8000"
-                    :name "git"}
-                   "bob.pipeline/test:test"
-                   {:group "test"
-                    :name "test"
-                    :steps []
-                    :vars {}
-                    :resources [{:name "source"
-                                 :type "external"
-                                 :provider "git"
-                                 :params {:repo "https://github.com/bob-cd/bob"
-                                          :branch "main"}}]
-                    :image test-image})
+        (store/kv-put database
+                      "bob_resource-provider"
+                      "git"
+                      {:url "http://localhost:8000"
+                       :name "git"})
+        (store/kv-put database
+                      "bob_pipeline"
+                      "test:test"
+                      {:group "test"
+                       :name "test"
+                       :steps []
+                       :vars {}
+                       :resources [{:name "source"
+                                    :type "external"
+                                    :provider "git"
+                                    :params {:repo "https://github.com/bob-cd/bob"
+                                             :branch "main"}}]
+                       :image test-image})
         (let [image (p/resourceful-step {:database database :stream stream :logger-url logger-url}
                                         {:group "test"
                                          :name "test"
@@ -77,15 +71,16 @@
           (eng/delete-image image))
         (eng/delete-image test-image))))
 
-  (u/with-runner-system (fn [database _ stream]
-                   (testing "unsuccessful resource provisioning of a step"
-                     (is (f/failed? (p/resourceful-step {:database database :stream stream}
-                                                        {:group "test"
-                                                         :name "test"
-                                                         :image test-image
-                                                         :run-id "a-run-id"}
-                                                        {:needs_resource "source"
-                                                         :cmd "ls"}))))))
+  (u/with-runner-system
+    (fn [database _ stream]
+      (testing "unsuccessful resource provisioning of a step"
+        (is (f/failed? (p/resourceful-step {:database database :stream stream}
+                                           {:group "test"
+                                            :name "test"
+                                            :image test-image
+                                            :run-id "a-run-id"}
+                                           {:needs_resource "source"
+                                            :cmd "ls"}))))))
 
   (testing "mount needed for step"
     (is (p/mount-needed? {:mounted #{"another-resource"}} {:needs_resource "a-resource"}))
@@ -98,39 +93,43 @@
 (deftest ^:integration successful-step-executions
   (testing "successful simple step execution"
     (eng/pull-image test-image)
-    (u/with-runner-system (fn [database _ stream]
-                     (let [initial-state {:image test-image
-                                          :mounted #{}
-                                          :run-id "r-a-simple-run-id"
-                                          :env {}
-                                          :group "test"
-                                          :name "test"}
-                           step {:cmd "ls"}
-                           final-state (p/exec-step {:database database :stream stream} initial-state step)]
-                       (is (not (f/failed? final-state)))
-                       (is (not= test-image (:image final-state)))
-                       (is (empty? (:mounted final-state))))
-                     (p/gc-images "a-simple-run-id"))))
+    (u/with-runner-system
+      (fn [database _ stream]
+        (let [initial-state {:image test-image
+                             :mounted #{}
+                             :run-id "r-a-simple-run-id"
+                             :env {}
+                             :group "test"
+                             :name "test"}
+              step {:cmd "ls"}
+              final-state (p/exec-step {:database database :stream stream} initial-state step)]
+          (is (not (f/failed? final-state)))
+          (is (not= test-image (:image final-state)))
+          (is (empty? (:mounted final-state))))
+        (p/gc-images "a-simple-run-id"))))
 
   (testing "successful step with resource execution"
     (eng/pull-image test-image)
     (u/with-runner-system
       (fn [database _ stream]
-        (store/put database
-                   "bob.resource-provider/git"
-                   {:name "git"
-                    :url "http://localhost:8000"}
-                   "bob.pipeline/test:test"
-                   {:group "test"
-                    :name "test"
-                    :steps []
-                    :vars {}
-                    :resources [{:name "source"
-                                 :type "external"
-                                 :provider "git"
-                                 :params {:repo "https://github.com/bob-cd/bob"
-                                          :branch "main"}}]
-                    :image test-image})
+        (store/kv-put database
+                      "bob_resource-provider"
+                      "git"
+                      {:name "git"
+                       :url "http://localhost:8000"})
+        (store/kv-put database
+                      "bob_pipeline"
+                      "test:test"
+                      {:group "test"
+                       :name "test"
+                       :steps []
+                       :vars {}
+                       :resources [{:name "source"
+                                    :type "external"
+                                    :provider "git"
+                                    :params {:repo "https://github.com/bob-cd/bob"
+                                             :branch "main"}}]
+                       :image test-image})
         (let [initial-state {:image test-image
                              :mounted #{}
                              :run-id "r-a-resource-run-id"
@@ -148,10 +147,11 @@
     (eng/pull-image test-image)
     (u/with-runner-system
       (fn [database _ stream]
-        (store/put database
-                   "bob.artifact-store/local"
-                   {:name "local"
-                    :url "http://localhost:8001"})
+        (store/kv-put database
+                      "bob_artifact-store"
+                      "local"
+                      {:name "local"
+                       :url "http://localhost:8001"})
         (let [initial-state {:image test-image
                              :mounted #{}
                              :run-id "r-a-artifact-run-id"
@@ -173,24 +173,29 @@
     (eng/pull-image test-image)
     (u/with-runner-system
       (fn [database _ stream]
-        (store/put database
-                   "bob.resource-provider/git"
-                   {:name "git"
-                    :url "http://localhost:8000"}
-                   "bob.artifact-store/local"
-                   {:name "local"
-                    :url "http://localhost:8001"}
-                   "bob.pipeline/test:test"
-                   {:group "test"
-                    :name "test"
-                    :steps []
-                    :vars {}
-                    :resources [{:name "source"
-                                 :type "external"
-                                 :provider "git"
-                                 :params {:repo "https://github.com/bob-cd/bob"
-                                          :branch "main"}}]
-                    :image test-image})
+        (store/kv-put database
+                      "bob_resource-provider"
+                      "git"
+                      {:name "git"
+                       :url "http://localhost:8000"})
+        (store/kv-put database
+                      "bob_artifact-store"
+                      "local"
+                      {:name "local"
+                       :url "http://localhost:8001"})
+        (store/kv-put database
+                      "bob_pipeline"
+                      "test:test"
+                      {:group "test"
+                       :name "test"
+                       :steps []
+                       :vars {}
+                       :resources [{:name "source"
+                                    :type "external"
+                                    :provider "git"
+                                    :params {:repo "https://github.com/bob-cd/bob"
+                                             :branch "main"}}]
+                       :image test-image})
         (let [initial-state {:image test-image
                              :mounted #{}
                              :run-id "r-a-full-run-id"
@@ -214,43 +219,48 @@
     (is (reduced? (p/exec-step {:database :database :stream :stream} (f/fail "this is fine") {}))))
 
   (testing "wrong command step failure"
-    (u/with-runner-system (fn [database _ stream]
-                     (let [initial-state {:image test-image
-                                          :mounted #{}
-                                          :run-id "r-a-simple-run-id"
-                                          :env {}
-                                          :group "test"
-                                          :name "test"}
-                           step {:cmd "this-bombs"}
-                           final-state (p/exec-step {:database database :stream stream} initial-state step)]
-                       (is (f/failed? final-state)))
-                     (p/gc-images "a-simple-run-id")))))
+    (u/with-runner-system
+      (fn [database _ stream]
+        (let [initial-state {:image test-image
+                             :mounted #{}
+                             :run-id "r-a-simple-run-id"
+                             :env {}
+                             :group "test"
+                             :name "test"}
+              step {:cmd "this-bombs"}
+              final-state (p/exec-step {:database database :stream stream} initial-state step)]
+          (is (f/failed? final-state)))
+        (p/gc-images "a-simple-run-id")))))
 
 (deftest ^:integration pipeline-starts
   (testing "successful pipeline run"
     (u/with-runner-system
       (fn [database queue stream]
-        (store/put database
-                   "bob.logger/logger-local"
-                   {:url logger-url
-                    :name "logger-local"}
-                   "bob.pipeline/test:test"
-                   {:group "test"
-                    :name "test"
-                    :steps [{:cmd "echo hello"}
-                            {:cmd "sh -c 'echo \"ENV: ${k1}\"'"}
-                            {:cmd "sh -c 'echo \"ENV: ${k1} ${k2}\"'"
-                             :vars {:k1 "v2" :k2 "v3"}}]
-                    :vars {:k1 "v1"}
-                    :image test-image})
+        (store/kv-put database
+                      "bob_logger"
+                      "logger-local"
+                      {:url logger-url
+                       :name "logger-local"})
+        (store/kv-put database
+                      "bob_pipeline"
+                      "test:test"
+                      {:group "test"
+                       :name "test"
+                       :steps [{:cmd "echo hello"}
+                               {:cmd "sh -c 'echo \"ENV: ${k1}\"'"}
+                               {:cmd "sh -c 'echo \"ENV: ${k1} ${k2}\"'"
+                                :vars {:k1 "v2" :k2 "v3"}}]
+                       :vars {:k1 "v1"}
+                       :image test-image})
         (let [run-id "r-a-run-id"
-              _ (store/put database
-                           (str "bob.pipeline.run/" run-id)
-                           {:status :pending
-                            :logger "logger-local"
-                            :scheduled-at (Instant/now)
-                            :group "test"
-                            :name "test"})
+              _ (store/kv-put database
+                              "bob_pipeline_run"
+                              run-id
+                              {:status :pending
+                               :logger "logger-local"
+                               :scheduled-at (Instant/now)
+                               :group "test"
+                               :name "test"})
               result @(p/start {:database database
                                 :stream stream}
                                queue
@@ -260,8 +270,9 @@
                                 :run-id run-id}
                                {})
               lines (:body (http/get (str "http://localhost:8002/bob_logs/" run-id)))
-              run-info (store/get-one database (str "bob.pipeline.run/" result))
-              statuses (->> (history database (str "bob.pipeline.run/" result))
+              run-info (store/kv-get database "bob_pipeline_run" result)
+              statuses (->> (store/kv-history database "bob_pipeline_run" result)
+                            (map :value)
                             (map :status)
                             (into #{}))]
           (is (inst? (:scheduled-at run-info)))
@@ -282,24 +293,28 @@
   (testing "failed pipeline run"
     (u/with-runner-system
       (fn [database queue stream]
-        (store/put database
-                   "bob.logger/logger-local"
-                   {:url logger-url
-                    :name "logger-local"}
-                   "bob.pipeline/test:test"
-                   {:group "test"
-                    :name "test"
-                    :steps [{:cmd "echo hello"} {:cmd "this-bombs"}]
-                    :vars {:k1 "v1"}
-                    :image test-image})
+        (store/kv-put database
+                      "bob_logger"
+                      "logger-local"
+                      {:url logger-url
+                       :name "logger-local"})
+        (store/kv-put database
+                      "bob_pipeline"
+                      "test:test"
+                      {:group "test"
+                       :name "test"
+                       :steps [{:cmd "echo hello"} {:cmd "this-bombs"}]
+                       :vars {:k1 "v1"}
+                       :image test-image})
         (let [run-id "r-a-run-id"
-              _ (store/put database
-                           (str "bob.pipeline.run/" run-id)
-                           {:status :pending
-                            :scheduled-at (Instant/now)
-                            :logger "logger-local"
-                            :group "test"
-                            :name "test"})
+              _ (store/kv-put database
+                              "bob_pipeline_run"
+                              run-id
+                              {:status :pending
+                               :scheduled-at (Instant/now)
+                               :logger "logger-local"
+                               :group "test"
+                               :name "test"})
               result @(p/start {:database database
                                 :stream stream}
                                queue
@@ -309,8 +324,9 @@
                                 :run-id run-id}
                                {})
               id (f/message result)
-              run-info (store/get-one database (str "bob.pipeline.run/" id))
-              statuses (->> (history database (str "bob.pipeline.run/" id))
+              run-info (store/kv-get database "bob_pipeline_run" id)
+              statuses (->> (store/kv-history database "bob_pipeline_run" id)
+                            (map :value)
                             (map :status)
                             (into #{}))]
           (u/spec-assert :bob.pipeline/run run-info)
@@ -330,24 +346,28 @@
   (testing "stopping a pipeline run"
     (u/with-runner-system
       (fn [database queue stream]
-        (store/put database
-                   "bob.logger/logger-local"
-                   {:url logger-url
-                    :name "logger-local"}
-                   "bob.pipeline/test:stop-test"
-                   {:group "test"
-                    :name "stop-test"
-                    :steps [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
-                    :vars {}
-                    :image test-image})
+        (store/kv-put database
+                      "bob_logger"
+                      "logger-local"
+                      {:url logger-url
+                       :name "logger-local"})
+        (store/kv-put database
+                      "bob_pipeline"
+                      "test:stop-test"
+                      {:group "test"
+                       :name "stop-test"
+                       :steps [{:cmd "sh -c 'while :; do echo ${RANDOM}; sleep 1; done'"}]
+                       :vars {}
+                       :image test-image})
         (let [run-id "r-a-stop-id"
-              _ (store/put database
-                           (str "bob.pipeline.run/" run-id)
-                           {:status :pending
-                            :scheduled-at (Instant/now)
-                            :logger "logger-local"
-                            :group "test"
-                            :name "test"})
+              _ (store/kv-put database
+                              "bob_pipeline_run"
+                              run-id
+                              {:status :pending
+                               :scheduled-at (Instant/now)
+                               :logger "logger-local"
+                               :group "test"
+                               :name "test"})
               _ (p/start {:database database
                           :stream stream}
                          queue
@@ -364,8 +384,9 @@
                          :name "stop-test"
                          :run-id run-id}
                         {})
-              run-info (store/get-one database "bob.pipeline.run/r-a-stop-id")
-              statuses (->> (history database "bob.pipeline.run/r-a-stop-id")
+              run-info (store/kv-get database "bob_pipeline_run" "r-a-stop-id")
+              statuses (->> (store/kv-history database "bob_pipeline_run" "r-a-stop-id")
+                            (map :value)
                             (map :status)
                             (into #{}))]
           (u/spec-assert :bob.pipeline/run run-info)

@@ -34,9 +34,9 @@
 
 (defn check-entities
   [{db :db}]
-  (let [artifact-stores (store/get db "bob.artifact-store/" {:prefix true})
-        resource-providers (store/get db "bob.resource-provider/" {:prefix true})
-        loggers (store/get db "bob.logger/" {:prefix true})]
+  (let [artifact-stores (store/kv-list db "bob_artifact-store")
+        resource-providers (store/kv-list db "bob_resource-provider")
+        loggers (store/kv-list db "bob_logger")]
     (->> (concat artifact-stores resource-providers loggers)
          (map :value)
          (map check-entity)

@@ -7,7 +7,7 @@ This is the coherent gateway for the Bob cluster having the REST API, schema che
 - This is implemented in Clojure/JVM
 - Implements a [spec-first](https://www.atlassian.com/blog/technology/spec-first-api-development) REST API with this OpenAPI 3.0+ [schema](/apiserver/src/main/resources/bob/api.yaml)
 - Uses [RabbitMQ](https://www.rabbitmq.com/) to send the requests from the API and receive events from the runner via RabbitMQs streams interface
-- Uses [etcd](https://etcd.io/) for cluster state and coordination
+- Uses [NATS](https://nats.io/) for cluster state and coordination
 
 ## Configuration
 
@@ -37,7 +37,7 @@ This is the coherent gateway for the Bob cluster having the REST API, schema che
 
 - JDK 19+
 - RabbitMQ 3.13+ with the [management-plugin](https://www.rabbitmq.com/docs/management)
-- etcd 3.6+
+- NATS 2+
 - Clojure [tools.deps](https://clojure.org/guides/getting_started)
 - [Babashka](https://github.com/babashka/babashka#installation)
 - A bob logger like [logger-local](https://github.com/bob-cd/logger-local)

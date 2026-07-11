@@ -17,7 +17,7 @@
 
 (defn store-url
   [db-client store-name]
-  (f/try-all [store (store/get-one db-client (str "bob.artifact-store/" store-name))
+  (f/try-all [store (store/kv-get db-client "bob_artifact-store" store-name)
               _ (when-not (spec/valid? :bob/artifact-store store)
                   (f/fail "Invalid artifact store: " store))]
     (:url store)

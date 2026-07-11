@@ -4,7 +4,9 @@
 ; license that can be found in the LICENSE file or at
 ; https://opensource.org/licenses/MIT.
 
-{:bob/storage-conn {:urls #or [#env BOB_STORAGE_URLS "http://localhost:2379"]}
+{:bob/storage-conn {:urls #or [#env BOB_STORAGE_URLS "nats://localhost:4222"]
+                    :max-history #long #or [#env BOB_STORAGE_MAX_HISTORY 64]
+                    :timeout #long #or [#env BOB_HEALTH_CHECK_FREQ 10000]}
  :bob/queue-conn {:url #or [#env BOB_QUEUE_URL "amqp://localhost:5672"]
                   :user #or [#env BOB_QUEUE_USER "guest"]
                   :password #or [#env BOB_QUEUE_PASSWORD "guest"]}

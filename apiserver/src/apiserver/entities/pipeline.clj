@@ -16,18 +16,17 @@
 (defn create
   "Creates a pipeline using the supplied data."
   [db {:keys [producer]} {:keys [group name] :as data}]
-  (let [id (str "bob.pipeline/" group ":" name)]
-    (log/infof "Creating pipeline %s with id %s" data id)
-    (store/put db id (spec/conform :bob/pipeline data))
-    (ev/emit producer
-             {:type "Normal"
-              :kind "Pipeline"
-              :reason "PipelineCreate"
-              :message (format "Pipeline created/updated %s/%s" group name)})))
+  (log/infof "Creating pipeline %s" data)
+  (store/kv-put db "bob_pipeline" (str group ":" name) (spec/conform :bob/pipeline data))
+  (ev/emit producer
+           {:type "Normal"
+            :kind "Pipeline"
+            :reason "PipelineCreate"
+            :message (format "Pipeline created/updated %s/%s" group name)}))
 
 (defn- runs-of
   [db group name]
-  (->> (store/get db "bob.pipeline.run/" {:prefix true})
+  (->> (store/kv-list db "bob_pipeline_run")
        (filter #(and (= group (:group (:value %)))
                      (= name (:name (:value %)))))
        (map :key)))
@@ -37,8 +36,8 @@
   [db {:keys [producer]} {:keys [group name]}]
   (log/infof "Deleting pipeline, runs and logs for (%s, %s)" group name)
   (f/try-all [runs (runs-of db group name)
-              _ (run! #(store/delete db %) runs)
-              _ (store/delete db (str "bob.pipeline/" group ":" name))]
+              _ (run! #(store/kv-del db "bob_pipeline_run" %) runs)
+              _ (store/kv-del db "bob_pipeline" (str group ":" name))]
     (ev/emit producer
              {:type "Normal"
               :kind "Pipeline"

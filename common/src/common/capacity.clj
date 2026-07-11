@@ -12,7 +12,7 @@
 
 (defn cluster-info
   [db]
-  (-> (store/get-one db "bob.cluster/info")
+  (-> (store/kv-get db "bob_cluster" "info")
       (get :data {})))
 
 (defn ->bytes

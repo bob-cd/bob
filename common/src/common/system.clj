@@ -49,9 +49,11 @@
 
 (defmethod ig/init-key
   :bob/storage
-  [_ {:keys [urls]}]
+  [_ {:keys [urls timeout max-history]}]
   (log/info "Connecting to DB")
-  (try-connect #(store/open {:urls (str/split urls #",")})))
+  (try-connect #(store/open {:urls (str/split urls #",")
+                             :timeout timeout
+                             :max-history max-history})))
 
 (defmethod ig/halt-key!
   :bob/storage

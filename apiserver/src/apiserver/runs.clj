@@ -72,7 +72,7 @@
   Retries by requeueing to the job queue if still pending."
   [{:keys [database stream]} ch {:keys [delivery-tag]} ^bytes payload]
   (let [{:keys [group name run-id backoff]} (json/read-str (String/new payload "UTF-8") :key-fn keyword)
-        {:keys [status]} (store/get-one database (str "bob.pipeline.run/" run-id))
+        {:keys [status]} (store/kv-get database "bob_pipeline_run" run-id)
         producer (:producer stream)]
     (if (not= :pending status)
       (lb/ack ch delivery-tag) ; ack as it could be stopped (cancelled) by user
@@ -89,7 +89,7 @@
            database
            ch
            producer
-           (store/get-one database (str "bob.pipeline/" group ":" name))
+           (store/kv-get database "bob_pipeline" (str group ":" name))
            run-id
            (* backoff 2))
           (lb/ack ch delivery-tag)))))) ; This ensures the message isn't lost if the retrying apiserver goes down

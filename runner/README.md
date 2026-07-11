@@ -8,7 +8,7 @@ This provides a general enough, containerised and ephemeral execution environmen
 
 - This is implemented in Clojure/JVM
 - Uses [RabbitMQ](https://www.rabbitmq.com/) to receive messages and perform the necessary effects as well as producing events via stream
-- Uses [etcd](https://etcd.io/) for cluster state and coordination
+- Uses [NATS](https://nats.io/) for cluster state and coordination
 - Uses [contajners](https://github.com/lispyclouds/contajners) to talk to [podman](https://podman.io/) to implement step executions
 
 ## Configuration
@@ -36,7 +36,7 @@ This provides a general enough, containerised and ephemeral execution environmen
 
 - JDK 19+
 - RabbitMQ 3.13+ with the [management-plugin](https://www.rabbitmq.com/docs/management)
-- etcd 3.6+
+- NATS 2+
 - Clojure [tools.deps](https://clojure.org/guides/getting_started)
 - [Babashka](https://github.com/babashka/babashka#installation)
 

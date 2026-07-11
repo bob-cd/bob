@@ -19,10 +19,11 @@
   (u/with-runner-system
     (fn [database _ _]
       (let [id (eng/create-container "busybox:musl")]
-        (store/put database
-                   "bob.artifact-store/local"
-                   {:url "http://localhost:8001"
-                    :name "local"})
+        (store/kv-put database
+                      "bob_artifact-store"
+                      "local"
+                      {:url "http://localhost:8001"
+                       :name "local"})
 
         (testing "successful artifact upload"
           (is (= "Ok"

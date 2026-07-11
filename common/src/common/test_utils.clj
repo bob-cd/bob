@@ -16,9 +16,9 @@
 
 (defn clear-db
   [db]
-  (->> (store/get db "bob." {:prefix true})
-       (map :key)
-       (run! #(store/delete db %))))
+  (doseq [bucket store/buckets
+          k (map :key (store/kv-list db bucket))]
+    (store/kv-del db bucket k)))
 
 (defn- with-system
   [test-fn]
@@ -26,7 +26,7 @@
                    (io/resource)
                    (aero/read-config {:resolver cs/resource-resolver})
                    (dissoc :common)
-                   (assoc-in [:bob/storage :urls] "http://localhost:2380")
+                   (assoc-in [:bob/storage :urls] "nats://localhost:4223")
                    (assoc-in [:bob/queue :url] "amqp://localhost:5673")
                    (assoc-in [:bob/stream :url] "rabbitmq-stream://guest:guest@localhost:5552/%2f"))
         system (ig/init config)]

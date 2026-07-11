@@ -26,7 +26,7 @@
 
 (defn generate-report
   [db]
-  (f/try-all [projects (->> (store/get db "bob.pipeline.run/" {:prefix true})
+  (f/try-all [projects (->> (store/kv-list db "bob_pipeline_run")
                             (map :value)
                             (mapcat make-project))]
     (-> [:Projects projects]

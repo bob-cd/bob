@@ -18,20 +18,19 @@
 (defn create
   "Register with an unique name and an url supplied in a map."
   [db producer kind {:keys [name url]}]
-  (let [id (str "bob." (as-id kind) "/" name)]
-    (log/infof "Creating %s at %s with id %s" kind url id)
-    (store/put db id {:url url :name name})
-    (ev/emit producer
-             {:type "Normal"
-              :kind kind
-              :reason (str kind "Create")
-              :message (str kind " " name " created/updated")})))
+  (log/infof "Creating %s at %s" kind url)
+  (store/kv-put db (str "bob_" (as-id kind)) name {:url url :name name})
+  (ev/emit producer
+           {:type "Normal"
+            :kind kind
+            :reason (str kind "Create")
+            :message (str kind " " name " created/updated")}))
 
 (defn delete
   "Unregisters by its name supplied in a map."
   [db producer kind name]
   (log/infof "Deleting %s %s" kind name)
-  (store/delete db (str "bob." (as-id kind) "/" name))
+  (store/kv-del db (str "bob_" (as-id kind)) name)
   (ev/emit producer
            {:type "Normal"
             :kind kind

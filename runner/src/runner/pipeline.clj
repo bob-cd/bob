@@ -68,7 +68,7 @@
                 _ (log-event logger-url
                              run-id
                              (str "Fetching and mounting resource " resource))
-                pipeline (store/get-one database (str "bob.pipeline/" group ":" name))
+                pipeline (store/kv-get database "bob_pipeline" (str group ":" name))
                 _ (when-not (spec/valid? :bob/pipeline pipeline)
                     (f/fail "Invalid pipeline: " pipeline))
                 resource-info (->> pipeline
@@ -176,7 +176,7 @@
 
 (defn- get-pipeline
   [database group name]
-  (f/try-all [pipeline (store/get-one database (str "bob.pipeline/" group ":" name))
+  (f/try-all [pipeline (store/kv-get database "bob_pipeline" (str group ":" name))
               _ (when-not pipeline
                   (f/fail (format "Unable to find pipeline %s/%s" group name)))
               _ (when-not (spec/valid? :bob/pipeline pipeline)
@@ -186,10 +186,9 @@
 
 (defn- set-run-status
   [db run-id status time-key]
-  (f/try-all [id (str "bob.pipeline.run/" run-id)
-              run (-> (store/get-one db id)
+  (f/try-all [run (-> (store/kv-get db "bob_pipeline_run" run-id)
                       (assoc :status status time-key (Instant/now)))
-              _ (store/put db id run)]
+              _ (store/kv-put db "bob_pipeline_run" run-id run)]
     :ok
     (f/when-failed [err] err)))
 
@@ -236,7 +235,7 @@
                   (lb/ack queue-chan delivery-tag))]
     run-id
     (f/when-failed [err]
-      (let [{:keys [status] :as run} (store/get-one database (str "bob.pipeline.run/" run-id))
+      (let [{:keys [status] :as run} (store/kv-get database "bob_pipeline_run" run-id)
             error (f/message err)]
         (when (and (spec/valid? :bob.pipeline/run run)
                    (not= status :stopped))
@@ -265,7 +264,7 @@
     (do (log/error "Invalid pipeline start command: " data)
         (lb/ack queue-chan delivery-tag))
     (if (cp/has-capacity? (get-pipeline database group name))
-      (let [{:keys [url]} (store/get-one database (str "bob.logger/" logger))
+      (let [{:keys [url]} (store/kv-get database "bob_logger" logger)
             _ (when-not url
                 (f/fail (str "Invalid logger: " logger)))
             run-ref (future (start* (assoc config :logger-url url) queue-chan group name run-id delivery-tag))]
