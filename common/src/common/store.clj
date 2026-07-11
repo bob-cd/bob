@@ -154,18 +154,29 @@
           (nats/remove-handler conn hh)
           (nats/invoke conn {:op "UNSUB" :args {:sid sid}}))))))
 
-(def buckets ["bob_pipeline"
-              "bob_resource-provider"
-              "bob_artifact-store"
-              "bob_logger"
-              "bob_pipeline_run"])
+(def pipeline-bucket "bob_pipeline")
+
+(def resource-provider-bucket "bob_resource-provider")
+
+(def artifact-store-bucket "bob_artifact-store")
+
+(def logger-bucket "bob_logger")
+
+(def pipeline-run-bucket "bob_pipeline_run")
+
+(def cluster-bucket "bob_cluster")
 
 (defn open
   [{:keys [urls timeout max-history]}]
   (let [conn (-> {:claxon/urls urls}
                  (nats/connect)
                  (assoc :bob/timeout timeout))]
-    (doseq [bucket buckets]
+    (doseq [bucket [pipeline-bucket
+                    resource-provider-bucket
+                    artifact-store-bucket
+                    logger-bucket
+                    pipeline-run-bucket
+                    cluster-bucket]]
       (let [stream (str "KV_" bucket)]
         (jreq conn
               (str "$JS.API.STREAM.CREATE." stream)
@@ -262,18 +273,18 @@
 
   (ping c)
 
-  (kv-put c "bob_pipeline" "foo" {:foo 42069})
-  (kv-put c "bob_pipeline" "foo" {:foo 69})
-  (kv-put c "bob_pipeline" "foo2" {:foo 420 :bar 69})
+  (kv-put c pipeline-bucket "foo" {:foo 42069})
+  (kv-put c pipeline-bucket "foo" {:foo 69})
+  (kv-put c pipeline-bucket "foo2" {:foo 420 :bar 69})
   (kv-put c "bob_logger" "foo" {:foo 420 :bar 69 :baz 42069})
-  (kv-get c "bob_pipeline" "foo")
-  (kv-get c "bob_pipeline" "foo2")
-  (kv-get c "bob_pipeline" "foo3")
-  (kv-get c "bob_pipeline" "foos")
-  (kv-get c "bob_pipeline" "foo" {:rev 1})
+  (kv-get c pipeline-bucket "foo")
+  (kv-get c pipeline-bucket "foo2")
+  (kv-get c pipeline-bucket "foo3")
+  (kv-get c pipeline-bucket "foos")
+  (kv-get c pipeline-bucket "foo" {:rev 1})
   (kv-get c "bob_logger" "foo")
-  (kv-list c "bob_pipeline")
-  (kv-history c "bob_pipeline" "foo")
-  (kv-del c "bob_pipeline" "foo")
+  (kv-list c pipeline-bucket)
+  (kv-history c pipeline-bucket "foo")
+  (kv-del c pipeline-bucket "foo")
 
   (close c))

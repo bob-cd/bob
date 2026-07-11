@@ -12,8 +12,9 @@
 
 (defn cluster-info
   [db]
-  (-> (store/kv-get db "bob_cluster" "info")
-      (get :data {})))
+  (let [i (store/kv-get db store/cluster-bucket "info")]
+    (-> i
+        (get :data {}))))
 
 (defn ->bytes
   [mem]

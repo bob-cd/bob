@@ -16,7 +16,12 @@
 
 (defn clear-db
   [db]
-  (doseq [bucket store/buckets
+  (doseq [bucket [store/pipeline-bucket
+                  store/resource-provider-bucket
+                  store/artifact-store-bucket
+                  store/logger-bucket
+                  store/pipeline-run-bucket
+                  store/cluster-bucket]
           k (map :key (store/kv-list db bucket))]
     (store/kv-del db bucket k)))
 

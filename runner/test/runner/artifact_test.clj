@@ -20,7 +20,7 @@
     (fn [database _ _]
       (let [id (eng/create-container "busybox:musl")]
         (store/kv-put database
-                      "bob_artifact-store"
+                      store/artifact-store-bucket
                       "local"
                       {:url "http://localhost:8001"
                        :name "local"})

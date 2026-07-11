@@ -61,13 +61,13 @@
 (defn valid-resource-provider?
   "Checks if the resource is registered."
   [db-client resource]
-  (some? (store/kv-get db-client "bob_resource-provider" (:provider resource))))
+  (some? (store/kv-get db-client store/resource-provider-bucket (:provider resource))))
 
 (defn url-of
   "Generates a URL for the resource fetch of a pipeline."
   [db-client {:keys [name type provider params]}]
   (case type
-    "external" (let [{:keys [url] :as rp} (store/kv-get db-client "bob_resource-provider" provider)
+    "external" (let [{:keys [url] :as rp} (store/kv-get db-client store/resource-provider-bucket provider)
                      _ (when-not (spec/valid? :bob/resource-provider rp)
                          (throw (Exception. (str "Invalid resource provider: " rp))))
                      query (s/join "&"

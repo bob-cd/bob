@@ -43,12 +43,12 @@
       (testing "successful resource provisioning of a step"
         (eng/pull-image test-image)
         (store/kv-put database
-                      "bob_resource-provider"
+                      store/resource-provider-bucket
                       "git"
                       {:url "http://localhost:8000"
                        :name "git"})
         (store/kv-put database
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "test:test"
                       {:group "test"
                        :name "test"
@@ -113,12 +113,12 @@
     (u/with-runner-system
       (fn [database _ stream]
         (store/kv-put database
-                      "bob_resource-provider"
+                      store/resource-provider-bucket
                       "git"
                       {:name "git"
                        :url "http://localhost:8000"})
         (store/kv-put database
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "test:test"
                       {:group "test"
                        :name "test"
@@ -148,7 +148,7 @@
     (u/with-runner-system
       (fn [database _ stream]
         (store/kv-put database
-                      "bob_artifact-store"
+                      store/artifact-store-bucket
                       "local"
                       {:name "local"
                        :url "http://localhost:8001"})
@@ -174,17 +174,17 @@
     (u/with-runner-system
       (fn [database _ stream]
         (store/kv-put database
-                      "bob_resource-provider"
+                      store/resource-provider-bucket
                       "git"
                       {:name "git"
                        :url "http://localhost:8000"})
         (store/kv-put database
-                      "bob_artifact-store"
+                      store/artifact-store-bucket
                       "local"
                       {:name "local"
                        :url "http://localhost:8001"})
         (store/kv-put database
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "test:test"
                       {:group "test"
                        :name "test"
@@ -237,12 +237,12 @@
     (u/with-runner-system
       (fn [database queue stream]
         (store/kv-put database
-                      "bob_logger"
+                      store/logger-bucket
                       "logger-local"
                       {:url logger-url
                        :name "logger-local"})
         (store/kv-put database
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "test:test"
                       {:group "test"
                        :name "test"
@@ -254,7 +254,7 @@
                        :image test-image})
         (let [run-id "r-a-run-id"
               _ (store/kv-put database
-                              "bob_pipeline_run"
+                              store/pipeline-run-bucket
                               run-id
                               {:status :pending
                                :logger "logger-local"
@@ -270,8 +270,8 @@
                                 :run-id run-id}
                                {})
               lines (:body (http/get (str "http://localhost:8002/bob_logs/" run-id)))
-              run-info (store/kv-get database "bob_pipeline_run" result)
-              statuses (->> (store/kv-history database "bob_pipeline_run" result)
+              run-info (store/kv-get database store/pipeline-run-bucket result)
+              statuses (->> (store/kv-history database store/pipeline-run-bucket result)
                             (map :value)
                             (map :status)
                             (into #{}))]
@@ -294,12 +294,12 @@
     (u/with-runner-system
       (fn [database queue stream]
         (store/kv-put database
-                      "bob_logger"
+                      store/logger-bucket
                       "logger-local"
                       {:url logger-url
                        :name "logger-local"})
         (store/kv-put database
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "test:test"
                       {:group "test"
                        :name "test"
@@ -308,7 +308,7 @@
                        :image test-image})
         (let [run-id "r-a-run-id"
               _ (store/kv-put database
-                              "bob_pipeline_run"
+                              store/pipeline-run-bucket
                               run-id
                               {:status :pending
                                :scheduled-at (Instant/now)
@@ -324,8 +324,8 @@
                                 :run-id run-id}
                                {})
               id (f/message result)
-              run-info (store/kv-get database "bob_pipeline_run" id)
-              statuses (->> (store/kv-history database "bob_pipeline_run" id)
+              run-info (store/kv-get database store/pipeline-run-bucket id)
+              statuses (->> (store/kv-history database store/pipeline-run-bucket id)
                             (map :value)
                             (map :status)
                             (into #{}))]
@@ -347,12 +347,12 @@
     (u/with-runner-system
       (fn [database queue stream]
         (store/kv-put database
-                      "bob_logger"
+                      store/logger-bucket
                       "logger-local"
                       {:url logger-url
                        :name "logger-local"})
         (store/kv-put database
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "test:stop-test"
                       {:group "test"
                        :name "stop-test"
@@ -361,7 +361,7 @@
                        :image test-image})
         (let [run-id "r-a-stop-id"
               _ (store/kv-put database
-                              "bob_pipeline_run"
+                              store/pipeline-run-bucket
                               run-id
                               {:status :pending
                                :scheduled-at (Instant/now)
@@ -384,8 +384,8 @@
                          :name "stop-test"
                          :run-id run-id}
                         {})
-              run-info (store/kv-get database "bob_pipeline_run" "r-a-stop-id")
-              statuses (->> (store/kv-history database "bob_pipeline_run" "r-a-stop-id")
+              run-info (store/kv-get database store/pipeline-run-bucket "r-a-stop-id")
+              statuses (->> (store/kv-history database store/pipeline-run-bucket "r-a-stop-id")
                             (map :value)
                             (map :status)
                             (into #{}))]

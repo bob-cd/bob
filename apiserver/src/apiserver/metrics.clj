@@ -24,7 +24,7 @@
 
 (defn count-statuses
   [db]
-  (f/try-all [counts (->> (store/kv-list db "bob_pipeline_run")
+  (f/try-all [counts (->> (store/kv-list db store/pipeline-run-bucket)
                           (map :value)
                           (map :status)
                           (frequencies))]

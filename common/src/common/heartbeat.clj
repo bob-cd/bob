@@ -35,12 +35,12 @@
 (defn beat-it
   [db queue-info timeout node-id & {:as extra-data}]
   (f/try-all [node-info {node-id (get-node-info extra-data)}
-              cluster (-> (store/kv-get db "bob_cluster" "info")
+              cluster (-> (store/kv-get db store/cluster-bucket "info")
                           (get :data {}))
               cleaned (->> (get-connections timeout queue-info)
                            (set/difference (set (keys cluster)))
                            (apply dissoc cluster))]
-    (store/kv-put db "bob_cluster" "info" {:data (merge cleaned node-info)})
+    (store/kv-put db store/cluster-bucket "info" {:data (merge cleaned node-info)})
     (f/when-failed [err]
       (log/errorf "Error sending heartbeat to %s: %s" (:api-url queue-info) err))))
 

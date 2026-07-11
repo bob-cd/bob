@@ -78,17 +78,17 @@
               _ (h/pipeline-create {:parameters {:body pipeline}
                                     :db db
                                     :stream stream})
-              effect (store/kv-get db "bob_pipeline" "test:test")]
+              effect (store/kv-get db store/pipeline-bucket "test:test")]
           (t/is (= "test" (:group effect)))
           (t/is (= "test" (:name effect)))
           (u/spec-assert :bob/pipeline effect))
         (t/testing "deletion"
-          (store/kv-put db "bob_pipeline_run" "r-a-run" {:group "test" :name "test"})
+          (store/kv-put db store/pipeline-run-bucket "r-a-run" {:group "test" :name "test"})
           (let [_ (h/pipeline-delete {:parameters {:path {:group "test" :name "test"}}
                                       :db db
                                       :stream stream})
-                pipeline-effect (store/kv-get db "bob_pipeline" "test:test")
-                run-effect (store/kv-get db "bob_pipeline_run" "r-a-run")]
+                pipeline-effect (store/kv-get db store/pipeline-bucket "test:test")
+                run-effect (store/kv-get db store/pipeline-run-bucket "r-a-run")]
             (t/is (nil? pipeline-effect))
             (t/is (nil? run-effect))))))))
 
@@ -97,21 +97,21 @@
     (fn [db queue stream]
       (t/testing "invalid pipeline deletion with active runs"
         (store/kv-put db
-                      "bob_pipeline_run"
+                      store/pipeline-run-bucket
                       "r-1"
                       {:group "dev"
                        :name "test"
                        :logger "logger-local"
                        :status :running})
         (store/kv-put db
-                      "bob_pipeline_run"
+                      store/pipeline-run-bucket
                       "r-2"
                       {:group "dev"
                        :name "test"
                        :logger "logger-local"
                        :status :passed})
         (store/kv-put db
-                      "bob_logger"
+                      store/logger-bucket
                       "logger-local"
                       {:name "logger-local"
                        :url "http://localhost:8002"})
@@ -138,7 +138,7 @@
           (t/is (= 202 status))))
       (t/testing "starting paused pipeline"
         (store/kv-put db
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "dev-paused:test-paused"
                       {:group "dev-paused"
                        :name "test-paused"
@@ -157,7 +157,7 @@
   (u/with-apiserver-system
     (fn [db _ stream]
       (store/kv-put db
-                    "bob_pipeline"
+                    store/pipeline-bucket
                     "dev:test"
                     {:group "dev"
                      :name "test"
@@ -184,14 +184,14 @@
       (t/testing "pipeline logs"
         (let [payload "l1\nl2\nl3"]
           (store/kv-put db
-                        "bob_pipeline_run"
+                        store/pipeline-run-bucket
                         "r1"
                         {:group "dev"
                          :name "test"
                          :logger "logger-local"
                          :status :passed})
           (store/kv-put db
-                        "bob_logger"
+                        store/logger-bucket
                         "logger-local"
                         {:name "logger-local"
                          :url "http://localhost:8002"})
@@ -209,7 +209,7 @@
     (fn [db _ _]
       (t/testing "existing pipeline status"
         (store/kv-put db
-                      "bob_pipeline_run"
+                      store/pipeline-run-bucket
                       "r-1"
                       {:group "dev"
                        :name "test"
@@ -233,7 +233,7 @@
     (fn [db _ _]
       (t/testing "fetching a valid artifact"
         (store/kv-put db
-                      "bob_artifact-store"
+                      store/artifact-store-bucket
                       "local"
                       {:name "local"
                        :url "http://localhost:8001"})
@@ -273,21 +273,21 @@
     (fn [db _ _]
       (t/testing "listing pipelines"
         (store/kv-put db
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "dev:test1"
                       {:group "dev"
                        :name "test1"
                        :image "busybox:musl"
                        :steps [{:cmd "echo yes"}]})
         (store/kv-put db
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "dev:test2"
                       {:group "dev"
                        :name "test2"
                        :image "alpine:latest"
                        :steps [{:cmd "echo yesnt"}]})
         (store/kv-put db
-                      "bob_pipeline"
+                      store/pipeline-bucket
                       "prod:test1"
                       {:group "prod"
                        :name "test1"
@@ -313,14 +313,14 @@
     (fn [db _ _]
       (t/testing "listing pipeline runs"
         (store/kv-put db
-                      "bob_pipeline_run"
+                      store/pipeline-run-bucket
                       "r-1"
                       {:group "dev"
                        :name "test"
                        :logger "logger-local"
                        :status :passed})
         (store/kv-put db
-                      "bob_pipeline_run"
+                      store/pipeline-run-bucket
                       "r-2"
                       {:group "dev"
                        :name "test"
@@ -347,14 +347,14 @@
         (h/resource-provider-create {:parameters {:body {:name "github" :url "my-resource.com"}}
                                      :db db
                                      :stream stream})
-        (let [effect (store/kv-get db "bob_resource-provider" "github")]
+        (let [effect (store/kv-get db store/resource-provider-bucket "github")]
           (t/is (= "my-resource.com" (:url effect)))
           (u/spec-assert :bob/resource-provider effect)))
       (t/testing "deletion"
         (h/resource-provider-delete {:parameters {:path {:name "github"}}
                                      :db db
                                      :stream stream})
-        (let [effect (store/kv-get db "bob_resource-provider" "github")]
+        (let [effect (store/kv-get db store/resource-provider-bucket "github")]
           (t/is (nil? effect)))))))
 
 (t/deftest resource-provider-test
@@ -362,12 +362,12 @@
     (fn [db _ _]
       (t/testing "resource-provider listing"
         (store/kv-put db
-                      "bob_resource-provider"
+                      store/resource-provider-bucket
                       "test1"
                       {:name "test1"
                        :url "http://localhost:8000"})
         (store/kv-put db
-                      "bob_resource-provider"
+                      store/resource-provider-bucket
                       "test2"
                       {:name "test2"
                        :url "http://localhost:8001"})
@@ -387,14 +387,14 @@
         (h/artifact-store-create {:parameters {:body {:name "s3" :url "my-store.com"}}
                                   :db db
                                   :stream stream})
-        (let [effect (store/kv-get db "bob_artifact-store" "s3")]
+        (let [effect (store/kv-get db store/artifact-store-bucket "s3")]
           (t/is (= "my-store.com" (:url effect)))
           (u/spec-assert :bob/artifact-store effect)))
       (t/testing "deletion"
         (h/artifact-store-delete {:parameters {:path {:name "s3"}}
                                   :db db
                                   :stream stream})
-        (let [effect (store/kv-get db "bob_artifact-store" "s3")]
+        (let [effect (store/kv-get db store/artifact-store-bucket "s3")]
           (t/is (nil? effect)))))))
 
 (t/deftest artifact-store-test
@@ -402,12 +402,12 @@
     (fn [db _ _]
       (t/testing "artifact-store listing"
         (store/kv-put db
-                      "bob_artifact-store"
+                      store/artifact-store-bucket
                       "test1"
                       {:name "test1"
                        :url "http://localhost:8000"})
         (store/kv-put db
-                      "bob_artifact-store"
+                      store/artifact-store-bucket
                       "test2"
                       {:name "test2"
                        :url "http://localhost:8001"})
@@ -427,14 +427,14 @@
         (h/logger-create {:parameters {:body {:name "logger-local" :url "my-logger.com"}}
                           :db db
                           :stream stream})
-        (let [effect (store/kv-get db "bob_logger" "logger-local")]
+        (let [effect (store/kv-get db store/logger-bucket "logger-local")]
           (t/is (= "my-logger.com" (:url effect)))
           (u/spec-assert :bob/logger effect)))
       (t/testing "deletion"
         (h/logger-delete {:parameters {:path {:name "logger-local"}}
                           :db db
                           :stream stream})
-        (let [effect (store/kv-get db "bob_logger" "logger-local")]
+        (let [effect (store/kv-get db store/logger-bucket "logger-local")]
           (t/is (nil? effect)))))))
 
 (t/deftest logger-test
@@ -442,12 +442,12 @@
     (fn [db _ _]
       (t/testing "logger listing"
         (store/kv-put db
-                      "bob_logger"
+                      store/logger-bucket
                       "test1"
                       {:name "test1"
                        :url "http://localhost:8000"})
         (store/kv-put db
-                      "bob_logger"
+                      store/logger-bucket
                       "test2"
                       {:name "test2"
                        :url "http://localhost:8001"})

@@ -42,7 +42,7 @@
   (u/with-runner-system
     (fn [database _ _]
       (store/kv-put database
-                    "bob_resource-provider"
+                    store/resource-provider-bucket
                     "git"
                     {:name "git"
                      :url "http://localhost:8000"})
@@ -55,12 +55,12 @@
   (u/with-runner-system
     (fn [database _ _]
       (store/kv-put database
-                    "bob_resource-provider"
+                    store/resource-provider-bucket
                     "git"
                     {:name "git"
                      :url "http://localhost:8000"})
       (store/kv-put database
-                    "bob_artifact-store"
+                    store/artifact-store-bucket
                     "local"
                     {:name "local"
                      :url "http://localhost:8001"})
@@ -100,7 +100,7 @@
   (u/with-runner-system
     (fn [database _ _]
       (store/kv-put database
-                    "bob_resource-provider"
+                    store/resource-provider-bucket
                     "git"
                     {:name "git"
                      :url "http://localhost:8000"})

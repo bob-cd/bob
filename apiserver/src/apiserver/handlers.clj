@@ -40,7 +40,7 @@
 
 (defn pipeline-data
   [db group name]
-  (f/try-all [data (store/kv-get db "bob_pipeline" (str group ":" name))
+  (f/try-all [data (store/kv-get db store/pipeline-bucket (str group ":" name))
               _ (when (and (some? data)
                            (not (spec/valid? :bob/pipeline data)))
                   (f/fail (str "Invalid pipeline: " data)))]
@@ -49,7 +49,7 @@
 
 (defn get-run
   [db run-id]
-  (let [data (store/kv-get db "bob_pipeline_run" run-id)]
+  (let [data (store/kv-get db store/pipeline-run-bucket run-id)]
     (if (and (some? data)
              (not (spec/valid? :bob.pipeline/run data)))
       (f/fail (str "Invalid run: " data))
@@ -57,7 +57,7 @@
 
 (defn get-runs
   [db group name]
-  (f/try-all [result (->> (store/kv-list db "bob_pipeline_run")
+  (f/try-all [result (->> (store/kv-list db store/pipeline-run-bucket)
                           (map #(let [{:keys [key value]} %]
                                   (assoc value :run-id key)))
                           (filter #(and (= (:group %) group)
@@ -67,8 +67,8 @@
 
 (defn get-logger
   [db run-id]
-  (f/try-all [{:keys [logger]} (store/kv-get db "bob_pipeline_run" run-id)
-              logger (store/kv-get db "bob_logger" logger)
+  (f/try-all [{:keys [logger]} (store/kv-get db store/pipeline-run-bucket run-id)
+              logger (store/kv-get db store/logger-bucket logger)
               _ (when-not (spec/valid? :bob/logger logger)
                   (f/fail (str "Invalid logger: " logger)))]
     logger
@@ -133,7 +133,7 @@
       (respond "Pipeline is paused. Unpause it first." 422)
       (do
         (store/kv-put db
-                      "bob_pipeline_run"
+                      store/pipeline-run-bucket
                       run-id
                       {:status :pending
                        :scheduled-at (Instant/now)
@@ -163,7 +163,7 @@
       (do (case status
             :running (r/dispatch-stop db queue producer run-id)
             :pending (store/kv-put db
-                                   "bob_pipeline_run"
+                                   store/pipeline-run-bucket
                                    run-id
                                    (assoc run
                                           :status :stopped
@@ -184,7 +184,7 @@
               changed (if pause?
                         (assoc data :paused true)
                         (dissoc data :paused))
-              _ (store/kv-put db "bob_pipeline" (str group ":" name) changed)
+              _ (store/kv-put db store/pipeline-bucket (str group ":" name) changed)
               _ (ev/emit producer
                          {:type "Normal"
                           :kind "Pipeline"
@@ -257,7 +257,7 @@
 (defn pipeline-artifact
   [{{{:keys [group name id store-name artifact-name]} :path} :parameters
     db :db}]
-  (f/try-all [data (store/kv-get db "bob_artifact-store" store-name)
+  (f/try-all [data (store/kv-get db store/artifact-store-bucket store-name)
               _ (when (nil? data)
                   (f/fail {:type :external
                            :msg (str "Cannot locate artifact store " store-name)}))
@@ -285,7 +285,7 @@
 (defn pipeline-list
   [{{{:keys [group name]} :query} :parameters
     db :db}]
-  (f/try-all [pipelines (map :value (store/kv-list db "bob_pipeline"))
+  (f/try-all [pipelines (map :value (store/kv-list db store/pipeline-bucket))
               filters (if group
                         [(filter #(= group (:group %)))]
                         [])
@@ -320,7 +320,7 @@
 (defn resource-provider-list
   [{{{:keys [name]} :query} :parameters
     db :db}]
-  (f/try-all [all (map :value (store/kv-list db "bob_resource-provider"))]
+  (f/try-all [all (map :value (store/kv-list db store/resource-provider-bucket))]
     (respond (if name
                (filter #(= name (:name %)) all)
                all)
@@ -349,7 +349,7 @@
 (defn artifact-store-list
   [{{{:keys [name]} :query} :parameters
     db :db}]
-  (f/try-all [all (map :value (store/kv-list db "bob_artifact-store"))]
+  (f/try-all [all (map :value (store/kv-list db store/artifact-store-bucket))]
     (respond (if name
                (filter #(= name (:name %)) all)
                all)
@@ -378,7 +378,7 @@
 (defn logger-list
   [{{{:keys [name]} :query} :parameters
     db :db}]
-  (f/try-all [all (map :value (store/kv-list db "bob_logger"))]
+  (f/try-all [all (map :value (store/kv-list db store/logger-bucket))]
     (respond (if name
                (filter #(= name (:name %)) all)
                all)
