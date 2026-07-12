@@ -166,27 +166,25 @@
 
 (def cluster-bucket "bob_cluster")
 
-(defn open
-  [{:keys [urls timeout max-history]}]
-  (let [conn (-> {:claxon/urls urls}
-                 (nats/connect)
-                 (assoc :bob/timeout timeout))]
-    (doseq [bucket [pipeline-bucket
-                    resource-provider-bucket
-                    artifact-store-bucket
-                    logger-bucket
-                    pipeline-run-bucket
-                    cluster-bucket]]
-      (let [stream (str "KV_" bucket)]
-        (jreq conn
-              (str "$JS.API.STREAM.CREATE." stream)
-              {"name" stream
-               "subjects" [(str "$KV." bucket ".>")]
-               "max_msgs_per_subject" max-history
-               "discard" "old"
-               "deny_delete" true
-               "allow_rollup_hdrs" true})))
-    conn))
+(defn setup
+  [{:keys [conn max-history]}]
+  (doseq [bucket [pipeline-bucket
+                  resource-provider-bucket
+                  artifact-store-bucket
+                  logger-bucket
+                  pipeline-run-bucket
+                  cluster-bucket]]
+    (let [stream (str "KV_" bucket)]
+      (jreq conn
+            (str "$JS.API.STREAM.CREATE." stream)
+            {"name" stream
+             "subjects" [(str "$KV." bucket ".>")]
+             "max_msgs_per_subject" max-history
+             "discard" "old"
+             "deny_delete" true
+             "allow_rollup_hdrs" true
+             "storage" "file"})))
+  conn)
 
 (defn kv-get
   ([conn bucket k]
@@ -267,22 +265,25 @@
 
   (nippy/thaw (nippy/freeze {:foo "bar"}))
 
-  (def c (open {:urls ["nats://localhost:4222"]
-                :timeout 2000
-                :max-history 64}))
+  (def conn (-> {:claxon/urls ["nats://localhost:4222"]}
+                (nats/connect)
+                (assoc :bob/timeout 2000)))
+
+  (def c (setup {:conn conn
+                 :max-history 64}))
 
   (ping c)
 
   (kv-put c pipeline-bucket "foo" {:foo 42069})
   (kv-put c pipeline-bucket "foo" {:foo 69})
   (kv-put c pipeline-bucket "foo2" {:foo 420 :bar 69})
-  (kv-put c "bob_logger" "foo" {:foo 420 :bar 69 :baz 42069})
+  (kv-put c logger-bucket "foo" {:foo 420 :bar 69 :baz 42069})
   (kv-get c pipeline-bucket "foo")
   (kv-get c pipeline-bucket "foo2")
   (kv-get c pipeline-bucket "foo3")
   (kv-get c pipeline-bucket "foos")
   (kv-get c pipeline-bucket "foo" {:rev 1})
-  (kv-get c "bob_logger" "foo")
+  (kv-get c logger-bucket "foo")
   (kv-list c pipeline-bucket)
   (kv-history c pipeline-bucket "foo")
   (kv-del c pipeline-bucket "foo")

@@ -7,6 +7,7 @@
 (ns common.system
   (:require
    [aero.core :as aero]
+   [claxon.client :as nats]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.tools.logging :as log]
@@ -51,9 +52,11 @@
   :bob/storage
   [_ {:keys [urls timeout max-history]}]
   (log/info "Connecting to DB")
-  (try-connect #(store/open {:urls (str/split urls #",")
-                             :timeout timeout
-                             :max-history max-history})))
+  (try-connect
+   #(store/setup {:conn (-> {:claxon/urls (str/split urls #",")}
+                            (nats/connect)
+                            (assoc :bob/timeout timeout))
+                  :max-history max-history})))
 
 (defmethod ig/halt-key!
   :bob/storage

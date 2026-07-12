@@ -1,3 +1,9 @@
+; Copyright 2018- Rahul De
+;
+; Use of this source code is governed by an MIT-style
+; license that can be found in the LICENSE file or at
+; https://opensource.org/licenses/MIT.
+
 (ns common.heartbeat
   (:require
    [babashka.http-client :as http-client]
