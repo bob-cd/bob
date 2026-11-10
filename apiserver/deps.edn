@@ -6,7 +6,7 @@
 
 {:paths ["src" "resources"]
  :deps {aero/aero {:mvn/version "1.1.6"}
-        ch.qos.logback/logback-classic {:mvn/version "1.6.5"}
+        ch.qos.logback/logback-classic {:mvn/version "1.6.6"}
         com.s-exp/hirundo {:mvn/version "0.1.44"}
         common/common {:local/root "../common"}
         failjure/failjure {:mvn/version "2.3.70"}
@@ -20,7 +20,7 @@
         metosin/reitit-malli {:mvn/version "0.11.0"}
         metosin/reitit-ring {:mvn/version "0.11.0"}
         metosin/reitit-sieppari {:mvn/version "0.11.0"}
-        org.babashka/http-client {:mvn/version "0.4.25"}
+        org.babashka/http-client {:mvn/version "0.4.26"}
         org.clojure/clojure {:mvn/version "1.12.6"}
         org.clojure/data.json {:mvn/version "2.5.2"}
         org.clojure/data.xml {:mvn/version "0.2.0-alpha11"}

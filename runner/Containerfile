@@ -22,7 +22,7 @@ RUN jlink \
     --no-header-files \
     --output jlinked
 
-FROM quay.io/podman/stable:v5.8.7
+FROM quay.io/podman/stable:v6.1.3
 # FROM docker.io/mgoltzsche/podman:x.x.x-minimal
 
 COPY --from=jdk /jlinked jdk

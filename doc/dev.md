@@ -38,7 +38,7 @@ docker run \
 --cap-add sys_admin \
 --cap-add mknod \
 -p 8080:8080 \
-quay.io/podman/stable:v5.8.7 \
+quay.io/podman/stable:v6.1.3 \
 podman system service -t 0 tcp://0.0.0.0:8080
 ```
 
